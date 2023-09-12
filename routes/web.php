@@ -25,4 +25,4 @@ Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
 
-Route::get('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
+Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
