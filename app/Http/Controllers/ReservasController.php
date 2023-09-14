@@ -83,7 +83,9 @@ class ReservasController extends Controller
                 'alias' => $data['alias'],
                 'idiomas' => $data['idiomas'],
                 'telefono' => $data['telefono'],
+                'identificador' => $data['email'],
             ]);
+            return $crearCliente;
 
             // $idBookingApartamento = explode('-', $data['apartamento']);
 
