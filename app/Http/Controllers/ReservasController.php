@@ -76,13 +76,13 @@ class ReservasController extends Controller
         // Almacenamos la peticion en un archivo
         Storage::disk('local')->put($data['codigo_reserva'].'-' . $hoy .'.txt', json_encode($request->all()));
         // Comprobamos si la reserva ya existe
-        $comprobarReserva = Reserva::where('codigo_reserva', $data->codigo_reserva)->first();
+        $comprobarReserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
         // Si la reserva no existe procedemos al registro
         if ($comprobarReserva == null) {
             $crearCliente = Cliente::create([
-                'alias' => $data->alias,
-                'idiomas' => $data->idiomas,
-                'telefono' => $data->telefono,
+                'alias' => $data['alias'],
+                'idiomas' => $data['idiomas'],
+                'telefono' => $data['telefono'],
             ]);
 
             // $idBookingApartamento = explode('-', $data['apartamento']);
