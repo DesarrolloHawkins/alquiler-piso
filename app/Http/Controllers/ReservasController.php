@@ -85,9 +85,9 @@ class ReservasController extends Controller
                 'telefono' => $data->telefono,
             ]);
 
-            $idBookingApartamento = explode('-', $data->apartamento);
+            // $idBookingApartamento = explode('-', $data->apartamento);
 
-            $apartamento = Apartamento::where('id_booking', $idBookingApartamento[1]);
+            $apartamento = Apartamento::where('id_booking', $data->apartamento);
 
             $crearReserva = Reserva::create([
                 'codigo_reserva' => $data->codigo_reserva,
