@@ -71,6 +71,8 @@ class ReservasController extends Controller
     public function agregarReserva(Request $request){
 
         $hoy = Carbon::now();
+        $cliente;
+        $reserva;
         // Convertimos las Request en la data
         $data = $request->all();
         // Almacenamos la peticion en un archivo
@@ -79,29 +81,44 @@ class ReservasController extends Controller
         $comprobarReserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
         // Si la reserva no existe procedemos al registro
         if ($comprobarReserva == null) {
-            $crearCliente = Cliente::create([
-                'alias' => $data['alias'],
-                'idiomas' => $data['idiomas'],
-                'telefono' => $data['telefono'],
-                'identificador' => $data['email'],
-            ]);
-            return $crearCliente;
-
-            // $idBookingApartamento = explode('-', $data['apartamento']);
+            $verificarCliente = Cliente::where('identificador',$data['email'] )->first();
+            if ($verificarCliente == null) {
+                $crearCliente = Cliente::create([
+                    'alias' => $data['alias'],
+                    'idiomas' => $data['idiomas'],
+                    'telefono' => $data['telefono'],
+                    'identificador' => $data['email'],
+                ]);
+                $cliente = $crearCliente;
+            }else {
+                $cliente = $verificarCliente;
+            }
+            
+            $fecha_entrada = explode(',', $data['fecha_entrada']);
+            $fecha_salida = explode(',', $data['fecha_salida']);
 
             $apartamento = Apartamento::where('id_booking', $data['apartamento']);
 
-            $crearReserva = Reserva::create([
-                'codigo_reserva' => $data['codigo_reserva'],
-                'origen' => 'Booking',
-                'fecha_entrada' => $data['fecha_entrada'],
-                'fecha_salida' => $data['fecha_salida'],
-                'precio' => $data['precio'],
-                'apartamento_id' => $apartamento->id,
-                'cliente_id' => $crearCliente->id,
-                'estado_id' => 1
+            $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
+            if ($verificarReserva == null) {
+                $crearReserva = Reserva::create([
+                    'codigo_reserva' => $data['codigo_reserva'],
+                    'origen' => 'Booking',
+                    'fecha_entrada' => Carbon::createFromFormat('d M Y', $fecha_entrada[1]),
+                    'fecha_salida' => Carbon::createFromFormat('d M Y', $fecha_salida[1]),
+                    'precio' => $data['precio'],
+                    'apartamento_id' => $apartamento->id,
+                    'cliente_id' => $cliente->id,
+                    'estado_id' => 1
+    
+                ]);
+                $reserva = $crearReserva;
 
-            ]);
+            } else {
+                $reserva = $verificarReserva;
+
+            }
+            
             return response(true);
         } else {
             return response(true);
