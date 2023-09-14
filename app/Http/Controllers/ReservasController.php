@@ -74,7 +74,7 @@ class ReservasController extends Controller
         // Convertimos las Request en la data
         $data = $request->all();
         // Almacenamos la peticion en un archivo
-        Storage::disk('local')->put($data->codigo_reserva .'-' . $hoy .'.txt', json_encode($request->all()));
+        Storage::disk('local')->put($data['codigo_reserva'].'-' . $hoy .'.txt', json_encode($request->all()));
         // Comprobamos si la reserva ya existe
         $comprobarReserva = Reserva::where('codigo_reserva', $data->codigo_reserva)->first();
         // Si la reserva no existe procedemos al registro
@@ -85,16 +85,16 @@ class ReservasController extends Controller
                 'telefono' => $data->telefono,
             ]);
 
-            // $idBookingApartamento = explode('-', $data->apartamento);
+            // $idBookingApartamento = explode('-', $data['apartamento']);
 
-            $apartamento = Apartamento::where('id_booking', $data->apartamento);
+            $apartamento = Apartamento::where('id_booking', $data['apartamento']);
 
             $crearReserva = Reserva::create([
-                'codigo_reserva' => $data->codigo_reserva,
+                'codigo_reserva' => $data['codigo_reserva'],
                 'origen' => 'Booking',
-                'fecha_entrada' => $data->fecha_entrada,
-                'fecha_salida' => $data->fecha_salida,
-                'precio' => $data->precio,
+                'fecha_entrada' => $data['fecha_entrada'],
+                'fecha_salida' => $data['fecha_salida'],
+                'precio' => $data['precio'],
                 'apartamento_id' => $apartamento->id,
                 'cliente_id' => $crearCliente->id,
                 'estado_id' => 1
