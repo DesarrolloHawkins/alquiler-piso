@@ -19,11 +19,14 @@ class Reserva extends Model
         'cliente_id',
         'apartamento_id',
         'estado_id',
+        'origen',
         'fecha_entrada',
         'fecha_salida',
+        'precio',
         'verificado',
         'dni_entregado',
         'enviado_webpol',
+        'codigo_reserva'
     ];
 
     /**

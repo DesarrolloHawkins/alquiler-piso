@@ -16,6 +16,7 @@ class Apartamento extends Model
      */
     protected $fillable = [
         'nombre',
+        'id_booking',
     ];
 
     /**
