@@ -28,3 +28,5 @@ Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
 Route::post('/verificar-reserva', [App\Http\Controllers\ReservasController::class, 'verificarReserva'])->name('reservas.verificarReserva');
 Route::post('/enviar-dni/{id}', [App\Http\Controllers\ReservasController::class, 'enviarDni'])->name('reservas.enviarDni');
+
+Route::post('/comprobar-reserva/{id}', [App\Http\Controllers\ComprobarReserva::class, 'index'])->name('comprobar.index');

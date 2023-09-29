@@ -93,19 +93,23 @@ class ReservasController extends Controller
             }else {
                 $cliente = $verificarCliente;
             }
-            
+            $locale = 'es'; // Establece el idioma a español para reconocer 'jue' como 'jueves' y 'sep' como 'septiembre'
+
+			Carbon::setLocale($locale);
             $fecha_entrada = explode(',', $data['fecha_entrada']);
             $fecha_salida = explode(',', $data['fecha_salida']);
+			//return $fecha_salida[1];
 
-            $apartamento = Apartamento::where('id_booking', $data['apartamento']);
+            $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
 
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
+			
             if ($verificarReserva == null) {
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
                     'origen' => 'Booking',
-                    'fecha_entrada' => Carbon::createFromFormat('d M Y', $fecha_entrada[1]),
-                    'fecha_salida' => Carbon::createFromFormat('d M Y', $fecha_salida[1]),
+                    'fecha_entrada' => Carbon::createFromFormat(' d M Y', $fecha_entrada[1]),
+                    'fecha_salida' => Carbon::createFromFormat(' d M Y', $fecha_salida[1]),
                     'precio' => $data['precio'],
                     'apartamento_id' => $apartamento->id,
                     'cliente_id' => $cliente->id,
@@ -121,7 +125,7 @@ class ReservasController extends Controller
             
             return response(true);
         } else {
-            return response(true);
+            return response('Ya existe esa reserva');
         }
 
     }
