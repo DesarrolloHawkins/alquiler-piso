@@ -124,7 +124,13 @@ class ReservasController extends Controller
             //$apartamento = Apartamento::where('id_booking', $data['codigo_reserva'])->first();
 
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
-			
+            if ($data['origen'] == 'Booking') {
+                $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
+                # code...
+            }else if($data['origen'] == 'Airbnb'){
+                $apartamento = Apartamento::where('id_airbnb', $data['apartamento'])->first();
+            }
+
             if ($verificarReserva == null) {
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
@@ -132,7 +138,7 @@ class ReservasController extends Controller
                     'fecha_entrada' =>  $fecha_entrada,
                     'fecha_salida' => $fecha_salida,
                     'precio' => $data['precio'],
-                    'apartamento_id' => 1,
+                    'apartamento_id' => $apartamento->id,
                     'cliente_id' => $cliente->id,
                     'estado_id' => 1
     
