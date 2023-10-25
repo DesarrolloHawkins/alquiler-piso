@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 class ComprobarReserva extends Controller
 {
     public function index($estado){
-
+        // Comprobamos la reserva
         $reserva = Reserva::where('codigo_reserva', $estado)->first();
-
+        // Si la reserva  existe
         if($reserva != null){
-            return true;
+            return response('La reserva existe', 200);
         }
-        return response('Bad Request', 400);
+        // Si no existe la reserva
+        return response('La reserva no existe', 404);
     }
 }
