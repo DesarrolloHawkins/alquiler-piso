@@ -14,6 +14,6 @@ class ComprobarReserva extends Controller
         if($reserva != null){
             return true;
         }
-        return false;
+        return response(400);
     }
 }
