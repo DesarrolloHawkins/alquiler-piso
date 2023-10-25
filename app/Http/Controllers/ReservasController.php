@@ -193,21 +193,6 @@ class ReservasController extends Controller
         }
 
     }
-
-    public function verificarReserva(Request $request){
-		//return 'ok';
-
-        // Obtenemos los dato de la Reserva
-        $data = $request->all();
-        // Comprobamos si existe
-        $reserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
-
-        if ($reserva != null) {
-            return response('La reserva existe', 404);
-        }
-        
-        return response('No existe la reserva', 200);
-    }
 	
 	public function cancelarAirBnb($reserva){
         // Conprobamos la reserva con el codigo de reserva
@@ -220,7 +205,7 @@ class ReservasController extends Controller
         // Cambiamos el estado a CAncelado
 		$reserva->estado_id = 4;
 		$reserva->save();
-        
+
         return response('La reserva de ha cancelado', 200);
 		
 	}

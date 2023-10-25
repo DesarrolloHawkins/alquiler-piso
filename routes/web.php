@@ -29,7 +29,7 @@ Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
 
 // Verificar Reserva de Booking
-Route::post('/verificar-reserva', [App\Http\Controllers\ReservasController::class, 'verificarReserva'])->name('reservas.verificarReserva');
+Route::post('/verificar-reserva', [App\Http\Controllers\ComprobarReserva::class, 'verificarReserva'])->name('reservas.verificarReserva');
 Route::post('/enviar-dni/{id}', [App\Http\Controllers\ReservasController::class, 'enviarDni'])->name('reservas.enviarDni');
 
 // Verificar Reserva de Airbnb
