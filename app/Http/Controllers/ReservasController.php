@@ -128,7 +128,34 @@ class ReservasController extends Controller
                 $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
                 # code...
             }else if($data['origen'] == 'Airbnb'){
-                $apartamento = Apartamento::where('id_airbnb', $data['apartamento'])->first();
+                switch ($data['apartamento']) {
+                    case 'Ático nuevo en pleno centro. Plaza alta.':
+                        $apartamento = ['id'=> 1];
+                        break;
+                    case 'Apartamento interior Algeciras 2a':
+                        $apartamento = ['id'=> 2];
+                        break;
+                    case 'Apartamento en el absoluto centro 2b':
+                        $apartamento = ['id'=> 3];
+                        break;
+                    case 'Apartamento interior centro en Algeciras 1º A':
+                        $apartamento = ['id'=> 4];
+                        break;
+                    case 'Apartamento en absoluto centro. 1ºB':
+                        $apartamento = ['id'=> 5];
+                        break;
+                    case 'Apartamento en absoluto centro. ba':
+                        $apartamento = ['id'=> 6];
+                        break;
+                    case 'ÁApartamento BB Centro Algeciras':
+                        $apartamento = ['id'=> 7];
+                        break;
+
+                    
+                    default:
+                        $apartamento = ['id'=> null];
+                        break;
+                }
             }
 
             if ($verificarReserva == null) {
