@@ -70,6 +70,7 @@ class ReservasController extends Controller
 
     public function agregarReserva(Request $request){
 
+
         $hoy = Carbon::now();
         $cliente;
         $reserva;
@@ -81,37 +82,57 @@ class ReservasController extends Controller
         $comprobarReserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
         // Si la reserva no existe procedemos al registro
         if ($comprobarReserva == null) {
-            $verificarCliente = Cliente::where('identificador',$data['email'] )->first();
+            $verificarCliente = Cliente::where('telefono',$data['telefono'] )->first();
             if ($verificarCliente == null) {
-                $crearCliente = Cliente::create([
-                    'alias' => $data['alias'],
-                    'idiomas' => $data['idiomas'],
-                    'telefono' => $data['telefono'],
-                    'identificador' => $data['email'],
-                ]);
-                $cliente = $crearCliente;
+				if (preg_match('/^(.*?)\n(\d+)\s*adulto(?:s)?/', $data['alias'], $matches)) {
+					$nombre = trim($matches[1]);
+					$num_adultos = $matches[2];
+
+
+					$crearCliente = Cliente::create([
+						'alias' => $nombre,
+						'idiomas' => $data['idiomas'],
+						'telefono' => $data['telefono'],
+						'identificador' => $data['email'],
+					]);
+					$cliente = $crearCliente;
+					
+				}else {
+					$crearCliente = Cliente::create([
+						'alias' => $data['alias'],
+						'idiomas' => $data['idiomas'],
+						'telefono' => $data['telefono'],
+						'identificador' => $data['email'],
+					]);
+					$cliente = $crearCliente;
+				}
+				
+				
             }else {
                 $cliente = $verificarCliente;
             }
             $locale = 'es'; // Establece el idioma a español para reconocer 'jue' como 'jueves' y 'sep' como 'septiembre'
 
 			Carbon::setLocale($locale);
-            $fecha_entrada = explode(',', $data['fecha_entrada']);
-            $fecha_salida = explode(',', $data['fecha_salida']);
+           	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada']);
+			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida']);
+
+
+
 			//return $fecha_salida[1];
 
-            $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
+            //$apartamento = Apartamento::where('id_booking', $data['codigo_reserva'])->first();
 
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
 			
             if ($verificarReserva == null) {
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
-                    'origen' => 'Booking',
-                    'fecha_entrada' => Carbon::createFromFormat(' d M Y', $fecha_entrada[1]),
-                    'fecha_salida' => Carbon::createFromFormat(' d M Y', $fecha_salida[1]),
+                    'origen' => $data['origen'],
+                    'fecha_entrada' =>  $fecha_entrada,
+                    'fecha_salida' => $fecha_salida,
                     'precio' => $data['precio'],
-                    'apartamento_id' => $apartamento->id,
+                    'apartamento_id' => 1,
                     'cliente_id' => $cliente->id,
                     'estado_id' => 1
     
@@ -123,7 +144,7 @@ class ReservasController extends Controller
 
             }
             
-            return response(true);
+            return response('Registrado');
         } else {
             return response('Ya existe esa reserva');
         }
@@ -131,6 +152,7 @@ class ReservasController extends Controller
     }
 
     public function verificarReserva(Request $request){
+		return 'ok';
         $data = $request->all();
 
         $reserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
@@ -141,4 +163,11 @@ class ReservasController extends Controller
         
         return response(false);
     }
+	
+	public function cancelarAirBnb($reserva){
+		$reserva = Reserva::where('codigo_reserva', $reserva)->first();
+		$reserva->estado_id = 4;
+		$reserva->save();
+		
+	}
 }

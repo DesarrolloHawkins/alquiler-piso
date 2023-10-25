@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 class ComprobarReserva extends Controller
 {
     public function index($estado){
+
         $reserva = Reserva::where('codigo_reserva', $estado)->first();
 
         if($reserva != null){

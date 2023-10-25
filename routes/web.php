@@ -19,14 +19,19 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Vistas
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
 Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
-
+// Añadir Reserva
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
+
+// Verificar Reserva de Booking
 Route::post('/verificar-reserva', [App\Http\Controllers\ReservasController::class, 'verificarReserva'])->name('reservas.verificarReserva');
 Route::post('/enviar-dni/{id}', [App\Http\Controllers\ReservasController::class, 'enviarDni'])->name('reservas.enviarDni');
 
+// Verificar Reserva de Airbnb
 Route::post('/comprobar-reserva/{id}', [App\Http\Controllers\ComprobarReserva::class, 'index'])->name('comprobar.index');
+Route::post('/cancelar-airbnb/{reserva}', [App\Http\Controllers\ReservasController::class, 'cancelarAirBnb'])->name('cancelarAirBnb.index');
