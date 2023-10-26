@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('apartamentos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->nullable();
+            $table->string('id_booking')->nullable();
+            $table->string('id_airbnb')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GestionApartamento;
+use App\Models\Reserva;
 use Illuminate\Http\Request;
 
 class GestionApartamentoController extends Controller
@@ -22,8 +23,11 @@ class GestionApartamentoController extends Controller
      */
     public function index()
     {
-        //
-        return view('gestion.index');
+        $reservasPendientes = Reserva::apartamentosPendiente();
+        $reservasOcupados = Reserva::apartamentosOcupados();
+        $reservasSalida = Reserva::apartamentosSalida();
+        $reservasLimpieza = Reserva::apartamentosLimpiados();
+        return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza'));
     }
 
     /**
@@ -31,7 +35,7 @@ class GestionApartamentoController extends Controller
      */
     public function create()
     {
-        //
+      
     }
 
     /**

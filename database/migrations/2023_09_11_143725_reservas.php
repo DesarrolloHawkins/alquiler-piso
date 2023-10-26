@@ -16,11 +16,15 @@ return new class extends Migration
             $table->unsignedBigInteger('cliente_id')->nullable();
             $table->unsignedBigInteger('apartamento_id')->nullable();
             $table->unsignedBigInteger('estado_id')->nullable();
+            $table->string('origen')->nullable();
             $table->date('fecha_entrada')->nullable();
             $table->date('fecha_salida')->nullable();
+            $table->string('precio')->nullable();
             $table->tinyInteger('verificado')->nullable();
             $table->tinyInteger('dni_entregado')->nullable();
             $table->tinyInteger('enviado_webpol')->nullable();
+            $table->string('codigo_reserva')->nullable();
+            $table->string('fecha_limpieza')->nullable();
             
             $table->timestamps();
             $table->softDeletes();

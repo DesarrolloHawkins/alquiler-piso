@@ -70,7 +70,7 @@
             </div>
         </nav>
 
-        <main class="py-4">
+        <main class="py-4 contendor">
             @yield('content')
         </main>
         <footer class="nav-bar-mobile bg-dark-subtle p-2">

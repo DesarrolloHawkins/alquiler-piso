@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -26,7 +27,9 @@ class Reserva extends Model
         'verificado',
         'dni_entregado',
         'enviado_webpol',
-        'codigo_reserva'
+        'codigo_reserva',
+        'fecha_limpieza'
+        
     ];
 
     /**
@@ -67,4 +70,48 @@ class Reserva extends Model
     {
         return $this->belongsTo(\App\Models\Estado::class,'estado_id');
     }
+
+     /**
+     * Obtener apartamentos pendientes para el dia de hoy
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public static function apartamentosPendiente()
+    {
+        $hoy = Carbon::now();
+        return self::whereDate('fecha_salida', $hoy)->get();
+    }
+    /**
+     * Obtener apartamentos ocupados para el dia de hoy
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public static function apartamentosOcupados()
+    {
+        $hoy = Carbon::now();
+        return self::whereDate('fecha_entrada','<=', $hoy)->get();
+    }
+
+    /**
+     * Obtener apartamentos fechas salida para el dia de mañana
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public static function apartamentosSalida()
+    {
+        $manana = Carbon::now()->addDay();
+        return self::whereDate('fecha_salida', $manana)->get();
+    }
+
+    /**
+     * Obtener apartamentos fechas salida para el dia de mañana
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public static function apartamentosLimpiados()
+    {
+        $hoy = Carbon::now();
+        return self::whereDate('fecha_limpieza', $hoy)->get();
+    }
 }
+

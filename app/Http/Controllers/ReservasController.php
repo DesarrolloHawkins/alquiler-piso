@@ -165,6 +165,9 @@ class ReservasController extends Controller
                             $apartamento = (object) ['id'=> null];
                             break;
                     }
+                } else {
+                    $apartamento = Apartamento::where('id_web', $data['apartamento'])->first();
+
                 }
                 // Formateamos el precio
                 $precioOriginal = $data['precio'];
