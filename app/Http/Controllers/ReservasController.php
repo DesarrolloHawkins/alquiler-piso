@@ -166,13 +166,17 @@ class ReservasController extends Controller
                             break;
                     }
                 }
+                // Formateamos el precio
+                $precioOriginal = $data['precio'];
+                $precioSinSimbolo = preg_replace('/[€\s]/', '', $precioOriginal);
+                $precio = floatval($precioSinSimbolo);
                 // Creamos la Reserva
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
                     'origen' => $data['origen'],
                     'fecha_entrada' =>  $fecha_entrada,
                     'fecha_salida' => $fecha_salida,
-                    'precio' => $data['precio'],
+                    'precio' => $precio,
                     'apartamento_id' => $apartamento->id,
                     'cliente_id' => $cliente->id,
                     'estado_id' => 1
