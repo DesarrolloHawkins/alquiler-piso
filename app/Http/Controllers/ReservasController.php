@@ -139,30 +139,30 @@ class ReservasController extends Controller
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
                     switch ($data['apartamento']) {
                         case 'Ático nuevo en pleno centro. Plaza alta.':
-                            $apartamento = ['id'=> 1];
+                            $apartamento = (object) ['id'=> 1];
                             break;
                         case 'Apartamento interior Algeciras 2a':
-                            $apartamento = ['id'=> 2];
+                            $apartamento = (object) ['id'=> 2];
                             break;
                         case 'Apartamento en el absoluto centro 2b':
-                            $apartamento = ['id'=> 3];
+                            $apartamento = (object) ['id'=> 3];
                             break;
                         case 'Apartamento interior centro en Algeciras 1º A':
-                            $apartamento = ['id'=> 4];
+                            $apartamento = (object) ['id'=> 4];
                             break;
                         case 'Apartamento en absoluto centro. 1ºB':
-                            $apartamento = ['id'=> 5];
+                            $apartamento = (object) ['id'=> 5];
                             break;
                         case 'Apartamento en absoluto centro. ba':
-                            $apartamento = ['id'=> 6];
+                            $apartamento = (object) ['id'=> 6];
                             break;
                         case 'ÁApartamento BB Centro Algeciras':
-                            $apartamento = ['id'=> 7];
+                            $apartamento = (object) ['id'=> 7];
                             break;
     
                         
                         default:
-                            $apartamento = ['id'=> null];
+                            $apartamento = (object) ['id'=> null];
                             break;
                     }
                 }
