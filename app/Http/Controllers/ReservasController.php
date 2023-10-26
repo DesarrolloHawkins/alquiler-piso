@@ -126,7 +126,7 @@ class ReservasController extends Controller
             // Parseamos las Fechas
            	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada']);
 			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida']);
-            return $data['codigo_reserva'];
+            
             // Verificamos si la reserva existe por el codigo de reserva
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
             // Si la reserva no existe
