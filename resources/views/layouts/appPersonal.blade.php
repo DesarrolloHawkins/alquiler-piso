@@ -7,21 +7,23 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
+    <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
+    
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Scripts -->
+
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-info-subtle shadow-sm">
+        <nav class="navbar navbar-expand-md navbar-light bg-color-primero shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
+                @yield('volver')
+                <a class="navbar-brand text-white" href="{{ url('/') }}">
+                    {{ config('app.name', 'Hawkins Suite') }}
                 </a>
                 @yield('bienvenido')
 
@@ -73,7 +75,7 @@
         <main class="py-4 contendor">
             @yield('content')
         </main>
-        <footer class="nav-bar-mobile bg-dark-subtle p-2">
+        <footer class="nav-bar-mobile bg-color-primero p-2">
             <div class="row px-3">
                 <div class="col-3 ">
                    <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
@@ -124,5 +126,13 @@
             </div>
         </footer>
     </div>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
+
+    {{-- Scripts --}}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    @include('sweetalert::alert')
+   
+    @yield('scripts')
 </body>
 </html>

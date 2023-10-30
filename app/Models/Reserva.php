@@ -79,7 +79,7 @@ class Reserva extends Model
     public static function apartamentosPendiente()
     {
         $hoy = Carbon::now();
-        return self::whereDate('fecha_salida', $hoy)->get();
+        return self::where('fecha_limpieza', null)->whereDate('fecha_salida', $hoy)->get();
     }
     /**
      * Obtener apartamentos ocupados para el dia de hoy

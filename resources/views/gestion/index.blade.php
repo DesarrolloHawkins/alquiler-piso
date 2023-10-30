@@ -9,48 +9,99 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header text-white bg-warning"><i class="fa-solid fa-circle-info"></i><span class="ms-2 text-uppercase fw-bold">{{ __('Apartamentos Pendientes') }}</span></div>
-
-                <div class="card-body">
-                    
-                    @if (count($reservasPendientes) > 0)
-                        <ol class="list-group list-group-numbered">
-                            @foreach ($reservasPendientes as $reservaPendiente)
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div class="ms-2 me-auto">
-                                    <div class="fw-bold">{{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div>
-                                    Fecha Salida: {{$reservaPendiente->fecha_salida}}
-                                </div>
-                                {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
-                            </li>
-                            @endforeach
-                        </ol>
-                    @else
-                        <h5>No hay apartamentos pendientes</h5>
-                    @endif
+                <div class="accordion" id="accordionExample">                   
+                    <div class="accordion-item ">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                {{ __('Apartamentos para limpiar HOY') }}
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                          <div class="accordion-body">
+                            @if (count($reservasPendientes) > 0)
+                                <ol class="list-group list-group-numbered">
+                                    @foreach ($reservasPendientes as $reservaPendiente)
+                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">{{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div>
+                                                Fecha Salida: {{$reservaPendiente->fecha_salida}}
+                                            </div>
+                                        </a>
+                                        
+                                        {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                                    @endforeach
+                                </ol>
+                            @else
+                                <h5>No hay apartamentos pendientes</h5>
+                            @endif
+                          </div>
+                        </div>
+                    </div> 
                 </div>
             </div>
             <div class="card mt-4">
-                <div class="card-header text-white bg-success"><i class="fa-solid fa-circle-check"></i><span class="ms-2 text-uppercase fw-bold">{{ __('Apartamentos Realizados HOY') }}</span></div>
-
-                <div class="card-body">
-                    @if (count($reservasLimpieza) > 0)
-                        <ol class="list-group list-group-numbered">
-                            @foreach ($reservasLimpieza as $reservaLimpieza)
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div class="ms-2 me-auto">
-                                <div class="fw-bold">{{$reservaLimpieza->apartamento->nombre}} - {{$reservaLimpieza->origen}}</div>
-                                Fecha Limpieza: {{$reservaLimpieza->fecha_limpieza}}
-                                </div>
-                                {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
-                            </li>
-                            @endforeach
-                        </ol>
-                    @else
-                        <h5>No hay apartamentos ocupados</h5>
-                    @endif                </div>
+                <div class="accordion" id="accordionLimpio">                   
+                    <div class="accordion-item ">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
+                                {{ __('Apartamentos por Terminar') }}
+                            </button>
+                        </h2>
+                        <div id="collapseLimpios" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
+                          <div class="accordion-body">
+                            @if (count($reservasEnLimpieza) > 0)
+                                <ol class="list-group list-group-numbered">
+                                    @foreach ($reservasEnLimpieza as $reservaEnLimpieza)
+                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.edit', $reservaEnLimpieza->id)}}">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">{{$reservaEnLimpieza->apartamento->nombre}}</div>
+                                                Fecha Comienzo: {{$reservaEnLimpieza->fecha_comienzo}}
+                                            </div>
+                                        </a>
+                                        
+                                        {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                                    @endforeach
+                                </ol>
+                            @else
+                                <h5>No hay apartamentos en limpieza</h5>
+                            @endif
+                          </div>
+                        </div>
+                    </div> 
+                </div>
             </div>
             <div class="card mt-4">
+                <div class="accordion" id="accordionLimpio">                   
+                    <div class="accordion-item ">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
+                                {{ __('Apartamentos Limpiados HOY') }}
+                            </button>
+                        </h2>
+                        <div id="collapseLimpios" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
+                          <div class="accordion-body">
+                            @if (count($reservasLimpieza) > 0)
+                                <ol class="list-group list-group-numbered">
+                                    @foreach ($reservasLimpieza as $reservaLimpieza)
+                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">{{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div>
+                                                Fecha Salida: {{$reservaPendiente->fecha_salida}}
+                                            </div>
+                                        </a>
+                                        
+                                        {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                                    @endforeach
+                                </ol>
+                            @else
+                                <h5>No hay apartamentos pendientes</h5>
+                            @endif
+                          </div>
+                        </div>
+                    </div> 
+                </div>
+            </div>
+            {{-- <div class="card mt-4">
                 <div class="card-header text-white bg-danger"><i class="fa-solid fa-hourglass-half"></i><span class="ms-2 text-uppercase fw-bold">{{ __('Apartamentos Ocupados') }}</span></div>
 
                 <div class="card-body">
@@ -62,7 +113,6 @@
                                 <div class="fw-bold">{{$reservaOcupada->apartamento->nombre}} - {{$reservaOcupada->origen}}</div>
                                 Fecha Salida: {{$reservaOcupada->fecha_salida}}
                                 </div>
-                                {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                             </li>
                             @endforeach
                         </ol>
@@ -70,28 +120,40 @@
                         <h5>No hay apartamentos ocupados</h5>
                     @endif
                 </div>
-            </div>
+            </div> --}}
             <div class="card mt-4">
-                <div class="card-header text-white bg-info"><i class="fa-solid fa-circle-chevron-right"></i><span class="ms-2 text-uppercase fw-bold">{{ __('Apartamentos con Salida Mañana') }}</span></div>
-
-                <div class="card-body">
-                    @if (count($reservasSalida) > 0)
-                        <ol class="list-group list-group-numbered">
-                            @foreach ($reservasSalida as $reservaSalida)
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div class="ms-2 me-auto">
-                                <div class="fw-bold">{{$reservaSalida->apartamento->nombre}} - {{$reservaSalida->origen}}</div>
-                                Fecha Salida: {{$reservaSalida->fecha_salida}}
-                                </div>
-                                {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
-                            </li>
-                            @endforeach 
-                        </ol>                
-                    @else
-                        <h5>No hay apartamentos con salida mañana</h5>
-                    @endif
+                <div class="accordion" id="accordionManania">                   
+                    <div class="accordion-item ">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManania" aria-expanded="true" aria-controls="collapseManania">
+                                {{ __('Apartamentos previstos Mañana') }}
+                                {{-- <span class="badge bg-primary rounded-pill">{{count($reservasSalida)}}</span>  --}}
+                            </button>
+                        </h2>
+                        <div id="collapseManania" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionManania">
+                          <div class="accordion-body">
+                            @if (count($reservasSalida) > 0)
+                                <ol class="list-group list-group-numbered">
+                                    @foreach ($reservasSalida as $reservaSalida)
+                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaSalida->apartamento_id)}}">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">{{$reservaSalida->apartamento->nombre}} - {{$reservaSalida->origen}}</div>
+                                                Fecha Salida: {{$reservaSalida->fecha_salida}}
+                                            </div>
+                                        </a>
+                                        
+                                        {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                                    @endforeach
+                                </ol>
+                            @else
+                                <h5>No hay apartamentos pendientes</h5>
+                            @endif
+                          </div>
+                        </div>
+                    </div> 
                 </div>
             </div>
+            
         </div>
     </div>
 </div>
