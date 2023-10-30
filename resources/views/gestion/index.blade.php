@@ -18,7 +18,7 @@
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                           <div class="accordion-body">
-                            @if (count($reservasPendientes) > 0)
+                            @if (count($reservasPendientes) >= 1)
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasPendientes as $reservaPendiente)
                                         <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
@@ -83,10 +83,10 @@
                             @if (count($reservasLimpieza) > 0)
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasLimpieza as $reservaLimpieza)
-                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
+                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaLimpieza->id)}}">
                                             <div class="ms-2 me-auto">
-                                                <div class="fw-bold">{{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div>
-                                                Fecha Salida: {{$reservaPendiente->fecha_salida}}
+                                                <div class="fw-bold">{{$reservaLimpieza->apartamento->nombre}} - {{$reservaLimpieza->origen}}</div>
+                                                Fecha Salida: {{$reservaLimpieza->fecha_salida}}
                                             </div>
                                         </a>
                                         
