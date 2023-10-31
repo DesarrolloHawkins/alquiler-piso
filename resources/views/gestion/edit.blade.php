@@ -537,8 +537,6 @@
 
         $('input[name="dormitorio"]').on('change', function(){
             var photo = '{{$apartamentoLimpieza->dormitorio_photo}}'
-            console.log(photo)
-            return
             if ($(this).is(':checked')) {
                 console.log('El checkbox está marcado');
                 $('#camaraDormitorio').css('display', 'block')
