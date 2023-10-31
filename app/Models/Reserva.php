@@ -85,7 +85,7 @@ class Reserva extends Model
             foreach($apartamentos as $item){
                 $apartamento = ApartamentoLimpieza::where('reserva_id',$item->id)->first();
                 if($apartamento == null){
-                    $apartamentoLimpieza[] = $apartamento;
+                    $apartamentoLimpieza[] = $item;
                 }
             }
         }

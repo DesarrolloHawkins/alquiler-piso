@@ -18,8 +18,7 @@
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                           <div class="accordion-body">
-                            {{dd($reservasPendientes)}}
-                            @if ($reservasPendientes[0] != null)
+                            @if ($reservasPendientes != null)
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasPendientes as $reservaPendiente)
                                         <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
