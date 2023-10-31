@@ -18,7 +18,7 @@
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                           <div class="accordion-body">
-
+                            {{dd($reservasPendientes)}}
                             @if ($reservasPendientes[0] != null)
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasPendientes as $reservaPendiente)
