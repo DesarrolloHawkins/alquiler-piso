@@ -56,7 +56,7 @@ class GestionApartamentoController extends Controller
             }
         
         // $apartamento = Apartamento::find($id);
-      return view('gestion.create', compact('apartamentoLimpieza'));
+      return view('gestion.edit', compact('apartamentoLimpieza'));
     }
 
     /**
@@ -154,6 +154,26 @@ class GestionApartamentoController extends Controller
         Alert::success('Guardado con Exito', 'Apartamento actualizado correctamente');
         return redirect()->route('gestion.index');
 
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function storeColumn(Request $request)
+    {
+        $apartamento = ApartamentoLimpieza::find($request->id);
+
+        if ($apartamento) {
+            $columna = $request->name;
+            $apartamento->$columna = $request->checked == 'true' ? true : false; 
+            $apartamento->save();
+            Alert::toast('Actualizado', 'success');
+            return true;
+
+        }
+        Alert::toast('Error, intentelo mas tarde', 'error');
+
+        return false;
     }
 
     /**

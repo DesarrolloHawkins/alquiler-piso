@@ -100,6 +100,12 @@ return new class extends Migration
             $table->timestamp('fecha_comienzo')->nullable();
             $table->timestamp('fecha_fin')->nullable();
             $table->text('observacion')->nullable();
+            $table->timestamp('dormitorio_photo')->nullable();
+            $table->timestamp('bano_photo')->nullable();
+            $table->timestamp('armario_photo')->nullable();
+            $table->timestamp('canape_photo')->nullable();
+            $table->timestamp('salon_photo')->nullable();
+            $table->timestamp('cocina_photo')->nullable();
 
             
             $table->timestamps();
