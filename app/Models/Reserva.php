@@ -79,7 +79,17 @@ class Reserva extends Model
     public static function apartamentosPendiente()
     {
         $hoy = Carbon::now();
-        return self::where('fecha_limpieza', null)->whereDate('fecha_salida', $hoy)->get();
+        $apartamentos = self::where('fecha_limpieza', null)->whereDate('fecha_salida', $hoy)->get();
+        $apartamentoLimpieza = [];
+        if (count($apartamentos) > 0) {
+            foreach($apartamentos as $item){
+                $apartamento = ApartamentoLimpieza::where('reserva_id',$item->id)->first();
+                if($apartamento == null){
+                    $apartamentoLimpieza[] = $apartamento;
+                }
+            }
+        }
+        return $apartamentoLimpieza;
     }
     /**
      * Obtener apartamentos ocupados para el dia de hoy
