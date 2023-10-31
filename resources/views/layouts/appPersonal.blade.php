@@ -78,7 +78,7 @@
         <footer class="nav-bar-mobile bg-color-primero p-2">
             <div class="row px-3">
                 <div class="col-3 ">
-                   <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
+                   <a href="{{route('gestion.index')}}" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
                         <div class="icon fs-1 m-0 text-info">
                             <i class="fa-solid fa-house "></i>
                         </div>
