@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApartamentoLimpieza;
 use App\Models\Photo;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -39,7 +40,7 @@ class PhotoController extends Controller
         // ]);
 
         if ($request->image_general) {
-            $imageName = time().'.'.$request->image_general->extension();  
+            $imageName = time().'.'.$request->image_general->getClientOriginalExtension();  
             $request->image_general->move(public_path('images'), $imageName);
 
             $imageUrl = 'images/' . $imageName;
@@ -73,7 +74,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_almohada) {
-            $imageNamesAlmohada = time().'.'.$request->image_almohada->extension();  
+            $imageNamesAlmohada = time().'.'.$request->image_almohada->getClientOriginalExtension();  
             $request->image_almohada->move(public_path('images'), $imageNamesAlmohada);
 
             $imageUrlAlmohada = 'images/' . $imageNamesAlmohada;
@@ -108,7 +109,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_canape) {
-            $imageNamesCanape = time().'.'.$request->image_canape->extension();  
+            $imageNamesCanape = time().'.'.$request->image_canape->getClientOriginalExtension();  
             $request->image_canape->move(public_path('images'), $imageNamesCanape);
 
             $imageUrlCanape = 'images/' . $imageNamesCanape;
@@ -143,7 +144,9 @@ class PhotoController extends Controller
         }
         
         Alert::success('Subida con Exito', 'Imagenes subida correctamente correctamente');
-
+        $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
+        $limpiezaBano->dormitorio_photo = true;
+        $limpiezaBano->save();
         return redirect()->route('gestion.edit', $id);
         /*'limpieza_id',
         'photo_categoria_id',
@@ -179,7 +182,7 @@ class PhotoController extends Controller
         // ]);
 
         if ($request->image_general) {
-            $imageName = time().'.'.$request->image_general->extension();  
+            $imageName = time().'.'.$request->image_general->getClientOriginalExtension();  
             $request->image_general->move(public_path('images'), $imageName);
 
             $imageUrl = 'images/' . $imageName;
@@ -213,7 +216,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_sofa) {
-            $imageNamesSofa = time().'.'.$request->image_sofa->extension();  
+            $imageNamesSofa = time().'.'.$request->image_sofa->getClientOriginalExtension();  
             $request->image_sofa->move(public_path('images'), $imageNamesSofa);
 
             $imageUrlSofa = 'images/' . $imageNamesSofa;
@@ -250,7 +253,9 @@ class PhotoController extends Controller
         
         
         Alert::success('Subida con Exito', 'Imagenes subida correctamente correctamente');
-
+        $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
+        $limpiezaBano->salon_photo = true;
+        $limpiezaBano->save();
         return redirect()->route('gestion.edit', $id);
         /*'limpieza_id',
         'photo_categoria_id',
@@ -291,7 +296,7 @@ class PhotoController extends Controller
         // ]);
 
         if ($request->image_general) {
-            $imageName = time().'.'.$request->image_general->extension();  
+            $imageName = time().'.'.$request->image_general->getClientOriginalExtension();  
             $request->image_general->move(public_path('images'), $imageName);
 
             $imageUrl = 'images/' . $imageName;
@@ -325,7 +330,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_nevera) {
-            $imageNamesNevera = time().'.'.$request->image_nevera->extension();  
+            $imageNamesNevera = time().'.'.$request->image_nevera->getClientOriginalExtension();  
             $request->image_nevera->move(public_path('images'), $imageNamesNevera);
 
             $imageUrlNevera = 'images/' . $imageNamesNevera;
@@ -360,7 +365,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_microondas) {
-            $imageNamesMicroondas = time().'.'.$request->image_microondas->extension();  
+            $imageNamesMicroondas = time().'.'.$request->image_microondas->getClientOriginalExtension();  
             $request->image_microondas->move(public_path('images'), $imageNamesMicroondas);
 
             $imageUrlMicroondas = 'images/' . $imageNamesMicroondas;
@@ -395,7 +400,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_bajos) {
-            $imageNamesBajos = time().'.'.$request->image_bajos->extension();  
+            $imageNamesBajos = time().'.'.$request->image_bajos->getClientOriginalExtension();  
             $request->image_bajos->move(public_path('images'), $imageNamesBajos);
 
             $imageUrlBajos = 'images/' . $imageNamesBajos;
@@ -430,7 +435,9 @@ class PhotoController extends Controller
         }
         
         Alert::success('Subida con Exito', 'Imagenes subida correctamente correctamente');
-
+        $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
+        $limpiezaBano->cocina_photo = true;
+        $limpiezaBano->save();
         return redirect()->route('gestion.edit', $id);
         /*'limpieza_id',
         'photo_categoria_id',
@@ -468,7 +475,7 @@ class PhotoController extends Controller
         // ]);
 
         if ($request->image_general) {
-            $imageName = time().'.'.$request->image_general->extension();  
+            $imageName = time().'.'.$request->image_general->getClientOriginalExtension();  
             $request->image_general->move(public_path('images'), $imageName);
 
             $imageUrl = 'images/' . $imageName;
@@ -502,7 +509,7 @@ class PhotoController extends Controller
         }
 
         if ($request->image_inodoro) {
-            $imageNamesInodoro = time().'.'.$request->image_inodoro->extension();  
+            $imageNamesInodoro = time().'.'.$request->image_inodoro->getClientOriginalExtension();  
             $request->image_inodoro->move(public_path('images'), $imageNamesInodoro);
 
             $imageUrlInodoro = 'images/' . $imageNamesInodoro;
@@ -537,7 +544,8 @@ class PhotoController extends Controller
         }
 
         if ($request->image_desague) {
-            $imageNamesDesague = time().'.'.$request->image_desague->extension();  
+            //dd($request->image_desague);
+            $imageNamesDesague = time().'.'.$request->image_desague->getClientOriginalExtension();  
             $request->image_desague->move(public_path('images'), $imageNamesDesague);
 
             $imageUrlDesague = 'images/' . $imageNamesDesague;
@@ -566,13 +574,16 @@ class PhotoController extends Controller
                 $imagenesDesague->photo_categoria_id = 12;
                 $imagenesDesague->save();
             }
+            
 
             // Mover la nueva imagen al servidor
             //$request->image_almohada->move(public_path('images'), $imageNames2);
         }
         
         Alert::success('Subida con Exito', 'Imagenes subida correctamente correctamente');
-
+        $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
+        $limpiezaBano->bano_photo = true;
+        $limpiezaBano->save();
         return redirect()->route('gestion.edit', $id);
         /*'limpieza_id',
         'photo_categoria_id',

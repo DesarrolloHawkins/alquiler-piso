@@ -31,7 +31,7 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('dormitorio', $apartamentoLimpieza->dormitorio) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="dormitorio" name="dormitorio">
                                             <label class="form-check-label" for="dormitorio"></label>
-                                            <a @if($apartamentoLimpieza->dormitorio_photo == null || $apartamentoLimpieza->dormitorio_photo == false && $apartamentoLimpieza->dormitorio === 1) style="display:block" @else style="display:none" @endif id="camaraDormitorio" href="{{route('fotos.dormitorio', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
+                                            <a @if( $apartamentoLimpieza->dormitorio === 1) style="display:block" @else style="display:none" @endif id="camaraDormitorio" href="{{route('fotos.dormitorio', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
                                         </div>  
                                 </div>
                             </div>
@@ -201,9 +201,7 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('salon', $apartamentoLimpieza->salon) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="salon" name="salon">
                                             <label class="form-check-label" for="salon"></label>
-                                            @if ($apartamentoLimpieza->salon)
-                                                <a href="{{route('fotos.salon', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
-                                            @endif
+                                            <a @if($apartamentoLimpieza->salon === 1) style="display:block" @else style="display:none" @endif id="camaraSalon" href="{{route('fotos.salon', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
                                         </div>
                                     </div>
                                 </div>
@@ -272,9 +270,8 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('cocina', $apartamentoLimpieza->cocina) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="cocina" name="cocina">
                                             <label class="form-check-label" for="cocina"></label>
-                                            @if ($apartamentoLimpieza->cocina)
-                                                <a href="{{route('fotos.cocina', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
-                                            @endif
+                                            {{$apartamentoLimpieza->cocina_photo}}
+                                            <a @if( $apartamentoLimpieza->cocina === 1) style="display:block" @else style="display:none" @endif id="camaraCocina" href="{{route('fotos.cocina', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
                                         </div>
                                     </div>
                                 </div>
@@ -380,9 +377,7 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('bano', $apartamentoLimpieza->bano) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="bano" name="bano">
                                             <label class="form-check-label" for="bano"></label>
-                                            @if ($apartamentoLimpieza->bano)
-                                                <a href="{{route('fotos.banio', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
-                                            @endif
+                                            <a @if($apartamentoLimpieza->bano === 1) style="display:block" @else style="display:none" @endif href="{{route('fotos.banio', $apartamentoLimpieza->id)}}" class="btn btn-foto" id="camaraBano"><i class="fa-solid fa-camera"></i></a>                                                
                                         </div>
                                     </div>
                                 </div>
@@ -554,6 +549,36 @@
                 console.log('El checkbox no está marcado');
                 $('#camaraArmario').css('display', 'none')
 
+            }
+        })
+        $('input[name="bano"]').on('change', function(){
+            if ($(this).is(':checked')) {
+                console.log('El checkbox está marcado');
+                $('#camaraBano').css('display', 'block')
+            } else {
+                console.log('El checkbox no está marcado');
+                $('#camaraBano').css('display', 'none')
+
+            }
+        })
+
+        $('input[name="salon"]').on('change', function(){
+            if ($(this).is(':checked')) {
+                console.log('El checkbox está marcado');
+                $('#camaraSalon').css('display', 'block')
+            } else {
+                console.log('El checkbox no está marcado');
+                $('#camaraSalon').css('display', 'none')
+
+            }
+        })
+        $('input[name="cocina"]').on('change', function(){
+            if ($(this).is(':checked')) {
+                console.log('El checkbox está marcado');
+                $('#camaraCocina').css('display', 'block')
+            } else {
+                console.log('El checkbox no está marcado');
+                $('#camaraCocina').css('display', 'none')
             }
         })
         
