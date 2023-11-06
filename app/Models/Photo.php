@@ -26,7 +26,9 @@ class Photo extends Model
         'limpieza_id',
         'photo_categoria_id',
         'descripcion',
-        'url'
+        'url',
+        'cliente_id',
+        'reserva_id'
         
     ];
 

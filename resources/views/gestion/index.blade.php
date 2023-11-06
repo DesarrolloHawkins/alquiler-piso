@@ -101,26 +101,6 @@
                     </div> 
                 </div>
             </div>
-            {{-- <div class="card mt-4">
-                <div class="card-header text-white bg-danger"><i class="fa-solid fa-hourglass-half"></i><span class="ms-2 text-uppercase fw-bold">{{ __('Apartamentos Ocupados') }}</span></div>
-
-                <div class="card-body">
-                    @if (count($reservasOcupados) > 0)
-                        <ol class="list-group list-group-numbered">
-                            @foreach ($reservasOcupados as $reservaOcupada)
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div class="ms-2 me-auto">
-                                <div class="fw-bold">{{$reservaOcupada->apartamento->nombre}} - {{$reservaOcupada->origen}}</div>
-                                Fecha Salida: {{$reservaOcupada->fecha_salida}}
-                                </div>
-                            </li>
-                            @endforeach
-                        </ol>
-                    @else
-                        <h5>No hay apartamentos ocupados</h5>
-                    @endif
-                </div>
-            </div> --}}
             <div class="card mt-4">
                 <div class="accordion" id="accordionManania">                   
                     <div class="accordion-item ">

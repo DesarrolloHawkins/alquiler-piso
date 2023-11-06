@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        // El usuario está autenticado, redirige a la ruta deseada.
+        return redirect()->route('gestion.index');
+    }
     return view('welcome');
 });
 
@@ -56,3 +60,14 @@ Route::get('/fotos-cocina/{id}', [App\Http\Controllers\PhotoController::class, '
 Route::post('/fotos-cocina-store/{id}', [App\Http\Controllers\PhotoController::class, 'cocinaStore'])->name('fotos.cocinaStore');
 Route::get('/fotos-banio/{id}', [App\Http\Controllers\PhotoController::class, 'indexBanio'])->name('fotos.banio');
 Route::post('/fotos-banio-store/{id}', [App\Http\Controllers\PhotoController::class, 'banioStore'])->name('fotos.banioStore');
+
+// Obtener DNI
+Route::get('/dni-user/{id}', [App\Http\Controllers\DNIController::class, 'index'])->name('dni.index');
+Route::post('/dni-user/store', [App\Http\Controllers\DNIController::class, 'store'])->name('dni.store');
+Route::get('/dni-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'dniUpload'])->name('dni.dniUpload');
+Route::get('/pasaporte-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'pasaporteUpload'])->name('dni.dniUpload');
+Route::get('/dni/{id}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
+Route::get('/pasaporte/{id}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
+
+
+Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
