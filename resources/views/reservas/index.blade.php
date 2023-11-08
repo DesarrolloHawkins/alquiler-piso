@@ -1,7 +1,9 @@
 @extends('layouts.app')
 @section('scriptHead')
-<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/es.js'></script>
+
     <script>
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +22,7 @@
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
+            locale: 'es',
             events: function(fetchInfo, successCallback, failureCallback) {
                 fetch('/get-reservas')
                     .then(response => response.json())
