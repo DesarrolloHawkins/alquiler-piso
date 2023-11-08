@@ -20,6 +20,20 @@ class ReservasController extends Controller
         
     }
 
+    public function getReservas()
+    {
+        $reservas = Reserva::all();
+        foreach($reservas as $reserva){
+            $cliente = Cliente::find($reserva->cliente_id);
+            $reserva['cliente'] = $cliente;
+            $apartamento = Apartamento::find($reserva->apartamento_id);
+            $reserva['apartamento'] = $apartamento;
+
+        }
+        return response()->json($reservas);
+    }
+
+
     /**
      * Show the form for creating a new resource.
      */

@@ -28,6 +28,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
 Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
+Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
 
 // Añadir Reserva
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
