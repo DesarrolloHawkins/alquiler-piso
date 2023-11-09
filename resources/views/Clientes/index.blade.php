@@ -37,8 +37,7 @@
                         </tbody>
                     </table>
                     <!-- Paginación links -->
-                    {{ $clientes->links() }}
-                </div>
+                    {!! $posts->links('pagination::bootstrap-5') !!}                </div>
             </div>
         </div>
     </div>
