@@ -94,25 +94,25 @@
                     7: '#D733FF', --}}
                     <div class="apartamentos my-2">
                         <div class="d-inline px-2" style="background-color: #EC7063; color:white">
-                            Bajo A
+                            Atico
                         </div>
                         <div class="d-inline px-2" style="background-color: #C39BD3; color:white">
-                            Bajo B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #7FB3D5; color:white">
-                            Primero A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #76D7C4; color:white">
-                            Primero B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #F7DC6F; color:white">
                             Segundo A
                         </div>
-                        <div class="d-inline px-2" style="background-color: #BFC9CA; color:white">
+                        <div class="d-inline px-2" style="background-color: #7FB3D5; color:white">
                             Segundo B
                         </div>
+                        <div class="d-inline px-2" style="background-color: #76D7C4; color:white">
+                            Primero A 
+                        </div>
+                        <div class="d-inline px-2" style="background-color: #F7DC6F; color:white">
+                            Primero B
+                        </div>
+                        <div class="d-inline px-2" style="background-color: #BFC9CA; color:white">
+                            Bajo A
+                        </div>
                         <div class="d-inline px-2" style="background-color: #D733FF; color:white">
-                            Atico
+                            Bajo B
                         </div>
                     </div>
                     <div id='calendar'></div>
