@@ -11,13 +11,13 @@
             var calendarEl = document.getElementById('calendar');
             // Mapeo de apartamento_id a colores
             var apartmentColors = {
-                1: '#EC7063', // Color para apartamento_id 1
-                2: '#C39BD3', // Color para apartamento_id 2
-                3: '#7FB3D5', // Color para apartamento_id 3
-                4: '#76D7C4', // Color para apartamento_id 3
-                5: '#F7DC6F', // Color para apartamento_id 3
-                6: '#BFC9CA', // Color para apartamento_id 3
-                7: '#D733FF', // Color para apartamento_id 3
+                1: '#769ECB', // Color para apartamento_id 1
+                2: '#9DBAD5', // Color para apartamento_id 2
+                3: '#FAF3DD', // Color para apartamento_id 3
+                4: '#C8D6B9', // Color para apartamento_id 3
+                5: '#DFD8C0', // Color para apartamento_id 3
+                6: '#8FC1A9', // Color para apartamento_id 3
+                7: '#7CAA98', // Color para apartamento_id 3
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -85,33 +85,35 @@
                             </tr>                 
                         </tbody>
                     </table> --}}
-                    {{-- 1: '#EC7063', // Color para apartamento_id 1
-                    2: '#C39BD3', // Color para apartamento_id 2
-                    3: '#7FB3D5', // Color para apartamento_id 3
-                    4: '#76D7C4', // Color para apartamento_id 3
-                    5: '#F7DC6F', // Color para apartamento_id 3
-                    6: '#BFC9CA', // Color para apartamento_id 3
-                    7: '#D733FF', --}}
+                    {{-- 
+                        1: '#769ECB', // Color para apartamento_id 1
+                        2: '#9DBAD5', // Color para apartamento_id 2
+                        3: '#FAF3DD', // Color para apartamento_id 3
+                        4: '#C8D6B9', // Color para apartamento_id 3
+                        5: '#DFD8C0', // Color para apartamento_id 3
+                        6: '#8FC1A9', // Color para apartamento_id 3
+                        7: '#7CAA98', // Color para apartamento_id 3, 
+                    --}}
                     <div class="apartamentos my-2">
-                        <div class="d-inline px-2" style="background-color: #EC7063; color:white">
+                        <div class="d-inline px-2" style="background-color: #769ECB; color:white">
                             Atico
                         </div>
-                        <div class="d-inline px-2" style="background-color: #C39BD3; color:white">
+                        <div class="d-inline px-2" style="background-color: #9DBAD5; color:white">
                             Segundo A
                         </div>
-                        <div class="d-inline px-2" style="background-color: #7FB3D5; color:white">
+                        <div class="d-inline px-2" style="background-color: #FAF3DD; color:black">
                             Segundo B
                         </div>
-                        <div class="d-inline px-2" style="background-color: #76D7C4; color:white">
+                        <div class="d-inline px-2" style="background-color: #C8D6B9; color:white">
                             Primero A 
                         </div>
-                        <div class="d-inline px-2" style="background-color: #F7DC6F; color:white">
+                        <div class="d-inline px-2" style="background-color: #DFD8C0; color:white">
                             Primero B
                         </div>
-                        <div class="d-inline px-2" style="background-color: #BFC9CA; color:white">
+                        <div class="d-inline px-2" style="background-color: #8FC1A9; color:white">
                             Bajo A
                         </div>
-                        <div class="d-inline px-2" style="background-color: #D733FF; color:white">
+                        <div class="d-inline px-2" style="background-color: #7CAA98; color:white">
                             Bajo B
                         </div>
                     </div>
