@@ -11,13 +11,13 @@
             var calendarEl = document.getElementById('calendar');
             // Mapeo de apartamento_id a colores
             var apartmentColors = {
-                1: '#769ECB', // Color para apartamento_id 1
-                2: '#9DBAD5', // Color para apartamento_id 2
-                3: '#FAF3DD', // Color para apartamento_id 3
-                4: '#C8D6B9', // Color para apartamento_id 3
-                5: '#DFD8C0', // Color para apartamento_id 3
-                6: '#8FC1A9', // Color para apartamento_id 3
-                7: '#7CAA98', // Color para apartamento_id 3
+                1: ['#769ECB', 'white'], // Color para apartamento_id 1
+                2: ['#9DBAD5', 'white'], // Color para apartamento_id 2
+                3: ['#FAF3DD', 'black'], // Color para apartamento_id 3
+                4: ['#C8D6B9', 'black'], // Color para apartamento_id 3
+                5: ['#DFD8C0', 'black'], // Color para apartamento_id 3
+                6: ['#8FC1A9', 'white'], // Color para apartamento_id 3
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 3
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -28,12 +28,14 @@
                     .then(response => response.json())
                     .then(data => {
                         var events = data.map(function(reserva) {
+                            console.log(apartmentColors[reserva.apartamento_id][1])
                             return {
                             title: reserva.cliente.alias, // o cualquier otro campo que quieras usar como título
                             start: reserva.fecha_entrada,
                             end: reserva.fecha_salida,
-                            backgroundColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
-                            borderColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            backgroundColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            borderColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            textColor: apartmentColors[reserva.apartamento_id][1] || '#378006', // Color por defecto si no se encuentra un mapeo
                             ...reserva
                             // Aquí puedes añadir más propiedades según necesites
                             };
