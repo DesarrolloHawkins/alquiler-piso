@@ -26,15 +26,14 @@
                         </thead>
                         <tbody>
                             @foreach ($clientes as $cliente)
-                                
+                                <tr>
+                                    <th scope="row">{{$cliente->id}}</th>
+                                    <td>{{$cliente->alias}}</td>
+                                    <td>{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
+                                    <td>{{$cliente->tipo_documento_str}}</td>
+                                    <td><a href="" class="btn btn-primary">Editar</a></td>
+                                </tr>                 
                             @endforeach
-                            <tr>
-                                <th scope="row">{{$cliente->id}}</th>
-                                <td>{{$cliente->alias}}</td>
-                                <td>{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
-                                <td>{{$cliente->tipo_documento_str}}</td>
-                                <td><a href="" class="btn btn-primary">Editar</a></td>
-                            </tr>                 
                         </tbody>
                     </table>
                 </div>
