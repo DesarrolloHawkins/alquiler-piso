@@ -25,11 +25,14 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @foreach ($clientes as $cliente)
+                                
+                            @endforeach
                             <tr>
-                                <th scope="row">1</th>
-                                <td>Mark</td>
-                                <td>Otto</td>
-                                <td>@mdo</td>
+                                <th scope="row">{{$cliente->id}}</th>
+                                <td>{{$cliente->alias}}</td>
+                                <td>{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
+                                <td>{{$cliente->tipo_documento_str}}</td>
                                 <td><a href="" class="btn btn-primary">Editar</a></td>
                             </tr>                 
                         </tbody>

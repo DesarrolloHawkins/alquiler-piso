@@ -142,10 +142,10 @@
                         <div class="d-inline px-2" style="background-color: #FAF3DD; color:black">
                             Segundo B
                         </div>
-                        <div class="d-inline px-2" style="background-color: #C8D6B9; color:white">
+                        <div class="d-inline px-2" style="background-color: #C8D6B9; color:black">
                             Primero A 
                         </div>
-                        <div class="d-inline px-2" style="background-color: #DFD8C0; color:white">
+                        <div class="d-inline px-2" style="background-color: #DFD8C0; color:black">
                             Primero B
                         </div>
                         <div class="d-inline px-2" style="background-color: #8FC1A9; color:white">
