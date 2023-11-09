@@ -3,7 +3,7 @@
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/es.js'></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -27,21 +27,57 @@
                 fetch('/get-reservas')
                     .then(response => response.json())
                     .then(data => {
-                    var events = data.map(function(reserva) {
-                        return {
-                        title: reserva.cliente.alias, // o cualquier otro campo que quieras usar como título
-                        start: reserva.fecha_entrada,
-                        end: reserva.fecha_salida,
-                        backgroundColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
-
-                        // Aquí puedes añadir más propiedades según necesites
-                        };
-                    });
-                    successCallback(events);
+                        var events = data.map(function(reserva) {
+                            return {
+                            title: reserva.cliente.alias, // o cualquier otro campo que quieras usar como título
+                            start: reserva.fecha_entrada,
+                            end: reserva.fecha_salida,
+                            backgroundColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            borderColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            ...reserva
+                            // Aquí puedes añadir más propiedades según necesites
+                            };
+                        });
+                        successCallback(events);
                     })
                     .catch(error => {
-                    failureCallback(error);
+                        failureCallback(error);
                     });
+            },
+            eventClick: function(info) {
+                // info.event contiene la información del evento clickeado
+                var eventObj = info.event;
+                console.log(eventObj);
+
+                // Función para formatear la fecha en formato YYYY-MM-DD
+                function formatDate(date) {
+                    var d = new Date(date),
+                        month = '' + (d.getMonth() + 1),
+                        day = '' + d.getDate(),
+                        year = d.getFullYear();
+
+                    if (month.length < 2) month = '0' + month;
+                    if (day.length < 2) day = '0' + day;
+
+                    return [day, month, year].join('-');
+                }
+
+                // Llena la información del modal
+                var modal = $('#eventModal');
+                modal.find('.modal-body').html(''); // Limpia el contenido anterior
+                // Agrega la información del evento al cuerpo del modal. Puedes personalizar esto como quieras.
+                modal.find('.modal-body').append('<ul class="list-group">');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Cliente:</strong> ' + eventObj.title + '</li>');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Apartamento:</strong> ' + eventObj.extendedProps.apartamento.nombre + '</li>');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Codigo de la reserva:</strong> ' + eventObj.extendedProps.codigo_reserva + '</li>');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Fecha de Entrada:</strong> ' + formatDate(eventObj.start) + '</li>');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Fecha de Salida:</strong> ' + formatDate(eventObj.end) + '</li>');
+                modal.find('.modal-body').append('<li class="list-group-item"><strong>Origen:</strong> ' + eventObj.extendedProps.origen + '</li>');
+                modal.find('.modal-body').append('</ul>');
+                // ... Agrega más campos como necesites
+
+                // Muestra el modal
+                modal.modal('show');
             }
           });
   
@@ -120,8 +156,27 @@
                     <div id='calendar'></div>
 
                 </div>
+                <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title"  id="eventModalLabel">Detalles de la Reserva</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
             </div>
         </div>
     </div>
 </div>
+
+
+  
+  
 @endsection
