@@ -77,4 +77,4 @@ Route::get('/pasaporte/{id}', [App\Http\Controllers\DNIController::class, 'pasap
 Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
 
 // AI whatsapp
-Route::get('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'index'])->name('whatsapp.index');
+Route::get('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'hookWhatsapp'])->name('whatsapp.hookWhatsapp');
