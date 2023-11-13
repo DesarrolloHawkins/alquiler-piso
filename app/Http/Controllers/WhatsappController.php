@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatGpt;
+use App\Models\Mensaje;
+use App\Models\Whatsapp;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -216,5 +219,196 @@ class WhatsappController extends Controller
         
         // return view('admin.estadisticas.enviar', compact('responseJson'));
     }
+
+    public function obtenerAudio($id) {
+        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/'.$id;
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_POSTFIELDS => '',
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+        
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        $responseJson = json_decode($response);
+        Storage::disk('local')->put('response_Audio'.$id.'.txt', json_encode($response) );
+        return $responseJson->url;
+    }
+
+    public function obtenerAudioMedia($url, $id) {
+
+        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+
+        // $urlMensajes = str_replace('/\/', '/', $url);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 400);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST , "GET");
+        curl_setopt($ch,CURLOPT_ENCODING , "");
+
+        $headers    = [];
+        $headers[]  = "Authorization: Bearer EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD";
+        $headers[]  = "Accept-Language:en-US,en;q=0.5";
+        $headers[]  = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $raw = curl_exec($ch);
+        
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if((int)$httpcode == 200){
+            // here save the $row content of file 
+            Storage::disk('public')->put( $id.'.ogg', $raw );
+            return true;
+        }
+        
+        return false;
+    }
+
+    public function audioToText($audio){
+
+        $token = $this->tokenAzure();
+        Storage::disk('local')->put('AudioFileToken.txt', $token );
+        
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://westeurope.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=es-ES&format=detailed',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => $audio,
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: audio/ogg; codecs=opus',
+            'Authorization: Bearer '.$token
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        
+        curl_close($curl);
+        Storage::disk('local')->put('AudioFile22.txt', $response );
+
+        return json_decode($response);
+    }
+    public function chatGpt($texto) {
+        // Configurar los parámetros de la solicitud
+     $url = 'https://api.openai.com/v1/completions';
+     $headers = array(
+         'Content-Type: application/json',
+         'Authorization: Bearer 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'
+     );
+
+
+     $data = array(
+       "prompt" => $texto .' ->', 
+       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+       "model" => "davinci:ft-personal:apartamentos20octubre-2023-10-20-13-53-04",
+       "temperature" => 0,
+       "max_tokens"=> 200,
+       "top_p"=> 1,
+       "frequency_penalty"=> 0,
+       "presence_penalty"=> 0,
+       "stop"=> ["_END"]
+     );
+
+     // Inicializar cURL y configurar las opciones
+     $curl = curl_init();
+     curl_setopt($curl, CURLOPT_URL, $url);
+     curl_setopt($curl, CURLOPT_POST, true);
+     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+     // Ejecutar la solicitud y obtener la respuesta
+     $response = curl_exec($curl);
+     curl_close($curl);
+
+     // Procesar la respuesta
+     if ($response === false) {
+         $error = [
+           'status' => 'error',
+           'messages' => 'Error al realizar la solicitud'
+         ];
+         return response()->json( $error );
+
+     } else {
+         $response_data = json_decode($response, true);
+         $responseReturn = [
+           'status' => 'ok',
+           'messages' => $response_data['choices'][0]['text']
+         ];
+         return $responseReturn;
+     }
+   }
+   public function contestarWhatsapp($phone, $texto){
+        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+        
+        $mensajePersonalizado = '{
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": "'.str_replace('"','',$phone ).'",
+            "type": "text", 
+            "text": { 
+                "body": "'.str_replace('"','',$texto ).'"
+            }
+        }';
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $mensajePersonalizado,
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+        
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        Storage::disk('local')->put('response000.txt', json_encode($response) );
+        return $response;
+
+    }   
 
 }

@@ -78,3 +78,4 @@ Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])
 
 // AI whatsapp
 Route::get('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'hookWhatsapp'])->name('whatsapp.hookWhatsapp');
+Route::post('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'processHookWhatsapp'])->name('whatsapp.processHookWhatsapp');
