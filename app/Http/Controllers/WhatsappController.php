@@ -77,7 +77,7 @@ class WhatsappController extends Controller
         $data = json_decode($request->getContent(), true);
         
         $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
-        Storage::disk('local')->put('comprobar-'.$id.'.txt', json_encode($data) );
+        // Storage::disk('local')->put('comprobar-'.$id.'.txt', json_encode($data) );
         
         $tipo = $data['entry'][0]['changes'][0]['value']['messages'][0]['type'];
 
@@ -361,6 +361,8 @@ class WhatsappController extends Controller
            'status' => 'error',
            'messages' => 'Error al realizar la solicitud'
          ];
+         Storage::disk('local')->put('errorChapt.txt', $error['messages'] );
+
          return response()->json( $error );
 
      } else {
@@ -369,6 +371,8 @@ class WhatsappController extends Controller
            'status' => 'ok',
            'messages' => $response_data['choices'][0]['text']
          ];
+         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
+
          return $responseReturn;
      }
    }
