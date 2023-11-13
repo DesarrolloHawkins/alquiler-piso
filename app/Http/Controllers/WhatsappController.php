@@ -376,8 +376,8 @@ class WhatsappController extends Controller
 
          return $responseReturn;
      }
-   }
-   public function contestarWhatsapp($phone, $texto){
+    }
+    public function contestarWhatsapp($phone, $texto){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         
         $mensajePersonalizado = '{
@@ -469,11 +469,11 @@ class WhatsappController extends Controller
 
      } else {
          $response_data = json_decode($response, true);
-        //  $responseReturn = [
-        //    'status' => 'ok',
-        //    'messages' => $response_data['choices'][0]['text']
-        //  ];
-        //  Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
+         $responseReturn = [
+           'status' => 'ok',
+           'messages' => $response_data['choices'][0]['text']
+         ];
+         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
 
          return $response_data;
      }
