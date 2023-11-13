@@ -224,7 +224,7 @@ class WhatsappController extends Controller
     }
 
     public function obtenerAudio($id) {
-        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/'.$id;
 
@@ -256,7 +256,7 @@ class WhatsappController extends Controller
 
     public function obtenerAudioMedia($url, $id) {
 
-        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         // $urlMensajes = str_replace('/\/', '/', $url);
 
@@ -270,7 +270,7 @@ class WhatsappController extends Controller
         curl_setopt($ch,CURLOPT_ENCODING , "");
 
         $headers    = [];
-        $headers[]  = "Authorization: Bearer EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD";
+        $headers[]  = "Authorization: Bearer ". $token;
         $headers[]  = "Accept-Language:en-US,en;q=0.5";
         $headers[]  = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -319,11 +319,12 @@ class WhatsappController extends Controller
         return json_decode($response);
     }
     public function chatGpt($texto) {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
      $url = 'https://api.openai.com/v1/completions';
      $headers = array(
          'Content-Type: application/json',
-         'Authorization: Bearer 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'
+         'Authorization: Bearer '. $token
      );
 
 
