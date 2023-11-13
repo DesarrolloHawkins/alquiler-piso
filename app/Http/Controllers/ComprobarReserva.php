@@ -18,19 +18,17 @@ class ComprobarReserva extends Controller
         return response('La reserva no existe', 404);
     }
 
-    public function verificarReserva(Request $request){
+    public function verificarReserva($reserva){
 		//return 'ok';
 
-        // Obtenemos los dato de la Reserva
-        $data = $request->all();
-        // Comprobamos si existe
-        $reserva = Reserva::where('codigo_reserva', $data['codigo_reserva'])->first();
-
-        if ($reserva != null) {
-            return response('La reserva existe', 404);
+        // Comprobamos la reserva
+        $reservaCheck = Reserva::where('codigo_reserva', $reserva)->first();
+        // Si la reserva  existe
+        if($reservaCheck != null){
+            return response('La reserva existe', 200)->json($reservaCheck);
         }
-        
-        return response('No existe la reserva', 200);
+        // Si no existe la reserva
+        return response('La reserva no existe', 404);
     }
 
     public function comprobarReservaWeb($id){
