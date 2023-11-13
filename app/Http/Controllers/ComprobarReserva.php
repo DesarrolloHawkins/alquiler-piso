@@ -12,7 +12,7 @@ class ComprobarReserva extends Controller
         $reserva = Reserva::where('codigo_reserva', $estado)->first();
         // Si la reserva  existe
         if($reserva != null){
-            return response('La reserva existe', 200);
+            return response('La reserva existe', 200)->json($reserva);
         }
         // Si no existe la reserva
         return response('La reserva no existe', 404);
@@ -38,7 +38,7 @@ class ComprobarReserva extends Controller
         $reserva = Reserva::where('codigo_reserva', $id)->first();
         // Si la reserva  existe
         if($reserva != null){
-            return response('La reserva existe', 200);
+            return response('La reserva existe', 200)->json($reserva);
         }
         // Si no existe la reserva
         return response('La reserva no existe', 404);

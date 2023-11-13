@@ -81,6 +81,28 @@ class ReservasController extends Controller
     {
         //
     }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function actualizarBooking($reserva, Request $request)
+    {
+		$reserva = Reserva::where('codigo_reserva', $reserva)->first();
+        $reserva->fecha_salida = $request->fecha_salida;
+        $reserva->save();
+        return response('La reserva de ha actualizado', 200);
+
+    }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function actualizarAirbnb($reserva, Request $request)
+    {
+		$reserva = Reserva::where('codigo_reserva', $reserva)->first();
+        $reserva->fecha_salida = $request->fecha_salida;
+        $reserva->save();
+        return response('La reserva de ha actualizado', 200);
+
+    }
 
     public function agregarReserva(Request $request){
 
