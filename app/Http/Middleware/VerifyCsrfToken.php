@@ -17,5 +17,6 @@ class VerifyCsrfToken extends Middleware
 		'/verificar-reserva/*',
         '/actualizar-booking/*',
         '/actualizar-airbnb/*',
+        '/whatsapp'
     ];
 }
