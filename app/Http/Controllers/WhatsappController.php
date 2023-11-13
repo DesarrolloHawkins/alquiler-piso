@@ -70,9 +70,9 @@ class WhatsappController extends Controller
                                 "body":"Comenabo"
                             },
                             "type":"text"
-                }
-            ]
-            }';
+                        }
+                    ]
+        }';
 
         $data = json_decode($request->getContent(), true);
         $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
