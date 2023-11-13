@@ -370,7 +370,7 @@ class WhatsappController extends Controller
      }
    }
    public function contestarWhatsapp($phone, $texto){
-        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         
         $mensajePersonalizado = '{
             "messaging_product": "whatsapp",
