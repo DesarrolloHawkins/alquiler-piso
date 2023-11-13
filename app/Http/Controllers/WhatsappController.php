@@ -192,12 +192,12 @@ class WhatsappController extends Controller
                         'status' => 1
                     ];
 
-                    $mensajess = Mensaje::create($dataRegistrar);
+                    Mensaje::create($dataRegistrar);
 
-                    
-                    
                     $value = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
+
                     $reponseChatGPT = $this->chatGpt($value);
+
                     Storage::disk('local')->put('response'.$id.'.txt', $reponseChatGPT['messages'] );
 
                     $dataRegistrarChat = [
