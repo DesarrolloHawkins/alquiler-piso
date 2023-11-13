@@ -14,6 +14,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         '/agregar-reserva',
         '/comprobar-reserva/*',
-		'/verificar-reserva',
+		'/verificar-reserva/*',
     ];
 }
