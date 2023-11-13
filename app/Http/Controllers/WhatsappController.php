@@ -417,6 +417,66 @@ class WhatsappController extends Controller
         Storage::disk('local')->put('response000.txt', json_encode($response) );
         return $response;
 
-    }   
+    }  
+    
+    public function chatGptPruebas($texto) {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        // Configurar los parámetros de la solicitud
+     $url = 'https://api.openai.com/v1/completions';
+     $headers = array(
+         'Content-Type: application/json',
+         'Authorization: Bearer '. $token
+     );
+
+
+     $data = array(
+       "prompt" => $texto .' ->', 
+       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+       "model" => "davinci:ft-personal:apartamentos20octubre-2023-10-20-13-53-04",
+       "temperature" => 0,
+       "max_tokens"=> 200,
+       "top_p"=> 1,
+       "frequency_penalty"=> 0,
+       "presence_penalty"=> 0,
+       "stop"=> ["_END"]
+     );
+
+     // Inicializar cURL y configurar las opciones
+     $curl = curl_init();
+     curl_setopt($curl, CURLOPT_URL, $url);
+     curl_setopt($curl, CURLOPT_POST, true);
+     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+     // Ejecutar la solicitud y obtener la respuesta
+     $response = curl_exec($curl);
+     curl_close($curl);
+
+     // Procesar la respuesta
+     if ($response === false) {
+         $error = [
+           'status' => 'error',
+           'messages' => 'Error al realizar la solicitud'
+         ];
+         Storage::disk('local')->put('errorChapt.txt', $error['messages'] );
+
+         return response()->json( $error );
+
+     } else {
+         $response_data = json_decode($response, true);
+         $responseReturn = [
+           'status' => 'ok',
+           'messages' => $response_data['choices'][0]['text']
+         ];
+         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
+
+         return $responseReturn;
+     }
+   }
 
 }
