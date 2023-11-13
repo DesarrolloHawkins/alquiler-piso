@@ -75,8 +75,10 @@ class WhatsappController extends Controller
         }';
 
         $data = json_decode($request->getContent(), true);
+        
         $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
-
+        Storage::disk('local')->put('comprobar-'.$id.'.txt', json_encode($data) );
+        
         $tipo = $data['entry'][0]['changes'][0]['value']['messages'][0]['type'];
 
         if ($tipo == 'audio') {
@@ -165,6 +167,7 @@ class WhatsappController extends Controller
             
 
         } 
+
         else {
 
             // Storage::disk('local')->put('data-'.$id.'.txt', json_encode($data) );
