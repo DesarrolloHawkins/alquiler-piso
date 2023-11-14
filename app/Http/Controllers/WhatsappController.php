@@ -508,7 +508,7 @@ class WhatsappController extends Controller
                     $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
                     $reserva->token = $token;
                     $reserva->save();
-                    $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar ocn la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
+                    $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                     $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                     $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                 }
