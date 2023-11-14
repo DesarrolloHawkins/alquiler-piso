@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatGpt;
 use App\Models\Mensaje;
+use App\Models\MensajeAuto;
+use App\Models\Reserva;
 use App\Models\Whatsapp;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -219,8 +221,6 @@ class WhatsappController extends Controller
             return response(200)->header('Content-Type', 'text/plain');
         }
 
-        
-        // return view('admin.estadisticas.enviar', compact('responseJson'));
     }
 
     public function obtenerAudio($id) {
@@ -253,7 +253,6 @@ class WhatsappController extends Controller
         Storage::disk('local')->put('response_Audio'.$id.'.txt', json_encode($response) );
         return $responseJson->url;
     }
-
     public function obtenerAudioMedia($url, $id) {
 
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
@@ -287,7 +286,6 @@ class WhatsappController extends Controller
         
         return false;
     }
-
     public function audioToText($audio){
 
         $token = $this->tokenAzure();
@@ -379,16 +377,17 @@ class WhatsappController extends Controller
     }
     public function contestarWhatsapp($phone, $texto){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-        
+        // return $texto;
         $mensajePersonalizado = '{
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
-            "to": "'.str_replace('"','',$phone ).'",
+            "to": "'.$phone.'",
             "type": "text", 
             "text": { 
-                "body": "'.str_replace('"','',$texto ).'"
+                "body": "'.$texto.'"
             }
         }';
+        return $mensajePersonalizado;
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
@@ -406,7 +405,7 @@ class WhatsappController extends Controller
             CURLOPT_POSTFIELDS => $mensajePersonalizado,
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json',
-                'Authorization: Bearer '.$token
+                'Authorization: Bearer ' . $token
             ),
         
         ));
@@ -414,11 +413,10 @@ class WhatsappController extends Controller
         $response = curl_exec($curl);
         curl_close($curl);
         // $responseJson = json_decode($response);
-        Storage::disk('local')->put('response000.txt', json_encode($response) );
+        Storage::disk('local')->put('response0001.txt', json_encode($response) );
         return $response;
 
     }  
-    
     public function chatGptPruebas($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
@@ -477,6 +475,353 @@ class WhatsappController extends Controller
 
          return $response_data;
      }
-   }
+    }
 
+    function limpiarNumeroTelefono($numero) {
+        // Eliminar el signo más y cualquier espacio
+        $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
+    
+        return $numeroLimpio;
+    }
+
+    public function cron(){
+
+        // Obtener la fecha de hoy
+        $hoy = Carbon::now();
+        // Obtener la fecha de dos días después
+        $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
+
+        // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
+        $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
+        ->where('estado_id', 1)
+        ->get();
+
+        // Validamos si hay reservas pendiente del DNI
+        if(count($reservasEntrada) != 0){
+            // Recorremos las reservas
+            foreach($reservasEntrada as $reserva){
+
+                // Obtenemos el mensaje del DNI si existe
+                $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
+                // Validamos si existe mensaje de DNI enviado
+                if ($mensajeDNI == null) {
+                    $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
+                    $enviarMensaje = $this->contestarWhatsapp($phoneCliente, 'Prueba de DNI');
+
+                    return $enviarMensaje;
+                }
+            }
+            return 'Hay reservas';
+        } else {
+            return 'No hay reservas';
+        }
+        $reservasSalida = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->get();
+        $fechaHoy = $hoy->format('Y-m-d');
+        return $reservasEntrada;
+
+        foreach($reservasEntrada as $reserva){
+            $mensajeFotos = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 2)->first();
+            $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
+            $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
+            $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
+            $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
+            $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
+
+            // Suponiendo que $fechaHoy es una fecha en formato 'Y-m-d' hay que pensar que es una hora menos
+            $fechaInicio = date_create($fechaHoy . ' 12:41:00'); // Establece los segundos a 00
+            $fechaActualSinSegundos = date_create(date('Y-m-d H:i:00')); // Hora actual sin segundos
+            $diferencia = date_diff($fechaActualSinSegundos, $fechaInicio);
+
+            $diferenciasHoraBienvenida = $diferencia->format('%R%H:%I');
+
+
+            // Comprobamos la diferencia en dias de la reserva Entrada y Salida
+            $dias = date_diff($hoy, date_create($reservasEntrada[0]['fecha_entrada']))->format('%R%a');
+            $diasSalida = date_diff($hoy, date_create($reservasEntrada[0]['fecha_salida']))->format('%R%a');
+
+            if ($diferenciasHoraBienvenida == '+00:00') {
+                return $reserva;
+                // Bienvenida a los apartamentos
+                //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
+                // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                // $actualizarReserva->send_bienvenido = $hoy;
+                // $actualizarReserva->save();
+            }
+
+            if($dias == 0 ){
+                
+
+                // Suponiendo que $fechaHoy es una fecha en formato 'Y-m-d' hay que pensar que es una hora menos
+                $fechaInicio = date_create($fechaHoy . ' 11:22:00'); // Establece los segundos a 00
+                $fechaActualSinSegundos = date_create(date('Y-m-d H:i:00')); // Hora actual sin segundos
+                $diferencia = date_diff($fechaActualSinSegundos, $fechaInicio);
+
+                $diferenciasHoraBienvenida = $diferencia->format('%R%H:%I');
+
+
+                // $diferenciasHoraBienvenida = date_diff($hoy, date_create($fechaHoy .' 12:12:30'))->format('%R%H%I');
+                if ($diferenciasHoraBienvenida == '+00:00') {
+                    return $reserva;
+                    // Bienvenida a los apartamentos
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_bienvenido = $hoy;
+                    // $actualizarReserva->save();
+                }
+                if ($diferenciasHoraBienvenida  == 0 && $reserva->send_bienvenido == null) {
+                    return $reserva;
+                    // Bienvenida a los apartamentos
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_bienvenido = $hoy;
+                    // $actualizarReserva->save();
+                }
+
+                $diferenciasHoraCodigos = date_diff($hoy, date_create($fechaHoy .' 12:09:00'))->format('%R%H%I');
+                if ($diferenciasHoraCodigos  == 0 && $reserva->send_codigos == null) {
+                    return $reserva;
+
+                    // Bienvenida a los apartamentos
+                    //$code = $this->codigoApartamento(strtoupper($reserva->habitacion));
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    // //$data = $this->mensajesAutomaticos('codigos', $reserva->nombre, $reserva->telefono, $reserva->telefono, $idioma, strtoupper($reserva->habitacion), '2191#', $code );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_codigos = $hoy;
+                    // $actualizarReserva->save();
+                }
+                $diferenciasHoraConsulta = date_diff($hoy, date_create($fechaHoy .' 16:01:00'))->format('%R%H%I');
+                if ($diferenciasHoraConsulta  == 0 && $reserva->send_consulta == null) {
+                    return $reserva;
+
+                    // Bienvenida a los apartamentos
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    // $data = $this->mensajesAutomaticos('consulta', $reserva->nombre, $reserva->telefono, $idioma );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_consulta = $hoy;
+                    // $actualizarReserva->save();
+                }
+
+                $diferenciasHoraOcio = date_diff($hoy, date_create($fechaHoy .' 18:01:00'))->format('%R%H%I');
+                if ($diferenciasHoraOcio  == 0 && $reserva->send_ocio == null) {
+                    return $reserva;
+
+                    // Bienvenida a los apartamentos
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    // $data = $this->mensajesAutomaticos('ocio', $reserva->nombre, $reserva->telefono, $idioma );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_ocio = $hoy;
+                    // $actualizarReserva->save();
+                }
+                    
+                // $data = [
+                //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
+                // ];
+
+            }
+            if ($diasSalida == 0 && $reserva->send_despedida == null) {
+
+                $diferenciasHoraDespedida = date_diff($hoy, date_create($fechaHoy .' 12:01:00'))->format('%R%H%I');
+                if ($diferenciasHoraDespedida  == 0 && $reserva->send_despedida == null) {
+                    return $reserva;
+
+                    // Bienvenida a los apartamentos
+                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
+                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+                    // $data = $this->mensajesAutomaticos('despedida', $reserva->nombre, $reserva->telefono, $idioma );
+                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
+                    // $actualizarReserva->send_despedida = $hoy;
+                    // $actualizarReserva->save();
+                }
+
+            }
+        }
+         
+        /*  MENSAJES TEMPLATE:
+                - bienvenido
+                - consulta
+                - ocio
+                - despedida
+
+            IDIOMAS:
+                - es
+                - en
+                - de
+                - fr
+                - it
+                - ar
+                - pt_PT
+
+            MENSAJES:
+
+                - BIENVENIDO (Dia de entrada a las 10:00 h.):
+                Hola {{1}}!
+                Recuerda que puedes entrar al alojamiento a partir de las 14:00h, 
+                pero antes debes de enviarnos  una foto de tu Documento nacional 
+                de identidad o pasaporte y del de todos los ocupantes mayores de edad. 
+                Si ya nos lo has enviado olvida este mensaje.
+                Gracias y Felíz Estancia!
+
+                - CONSULTA (Dia de entrada a las 18:00 h.):
+                Hola {{1}}!
+                Espero que todo sea de tu agrado. 
+                En Hawkins trabajamos mucho para ofrecerte el mejor servicio, 
+                pero ¡Somos humanos! Si ves algo que no está a tu gusto, 
+                no dudes en decírmelo. 
+                Lo que queremos es que pases una estancia genial.
+
+                - OCIO (Dia de entrada a las 16:00 h.):
+                Hola {{1}}!
+                Estás en el lugar mas céntrico de Algeciras! 
+                Te dejo algunos enlaces de interés:
+
+                *SALUD*
+                Farmacia más cercana  - https://goo.gl/maps/UnNd9ZUPXG9bH7cHA
+                Farmacia 24h - https://goo.gl/maps/64WTSYmoVi2YVYx26
+                Centro de salud cercano - https://goo.gl/maps/TDyoPx2qZzb5bknm9
+                Hospital - https://goo.gl/maps/YZ9C66LyNrUjTbzc8
+                Telefono de asistencia - 061
+
+                *OCIO y CULTURA*
+                Bar Restaurante cercano-https://goo.gl/maps/kSjqXLHXfUWX6rgc6
+                Zona de bares - https://goo.gl/maps/bQ1WGSgXERYkLYve9
+                Murallas Merinies https://goo.gl/maps/j5qHXZ2Q9HgANSFNA
+                Teatro florida https://goo.gl/maps/43rrcsiT4kpNarxX9
+                Playa del rinconcillo https://goo.gl/maps/3sHCqFZHRUHDnTiY7
+
+                *COMPRAS*
+                Supermercado más cercano https://goo.gl/maps/d7hrnxxfYUpBhHSVA
+                Centro comercial https://goo.gl/maps/FtRsqgt6bShv4pTLA
+                Taller de automovil https://goo.gl/maps/psnE5D3PdYX2P76C9
+
+                - DESPEDIDA (Dia de salida a las 12:00 h.):
+                Te vamos a echar de menos {{1}}!
+                Para nosotros ha sido un placer que nos hayas elegido para alojarte y esperamos que vuelvas a venir. 
+                Para poder seguir mejorando y que nuestro alojamiento sea cada día mejor, 
+                es muy importante que nos dejes una valoración positiva. 
+                Como agradecimiento, te damos un bono de descuento por si vuelves a alojarte con nosotros.
+                Reserva en www.apartamentoshawkins.com y usa el cupón #SpecialClient
+        */
+        // $dias = 'no';
+
+        // foreach($reservas as $reserva){
+        //     $dias = date_diff($hoy, date_create($reservas[0]['fecha_entrada']))->format('%R%a');
+        //     if($dias == 0){
+        //         $diferenciasHora = date_diff($hoy, date_create($fechaHoy .' 16:00:00'))->format('%R%H%I');
+        //             if ($diferenciasHora  == 0) {
+
+        //                 // Bienvenida a los apartamentos
+        //                 $idioma = $this->idiomaUser($reserva->nacionalidad);
+        //                 // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
+        //                 $data = $this->mensajesAutomaticos('despedida', $reserva->nombre, $reserva->telefono, $idioma );
+        //             }
+               
+        //         // $data = [
+        //         //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
+        //         // ];
+        //     }
+        // }
+
+        // return view('site.cron', compact('reservas','hoy', 'dias','data','hora'));
+    }
+
+    public function idiomaUser($idioma){
+        switch ($idioma) {
+            case 'español':
+                return 'es';
+                break;
+            case 'aleman':
+                return 'de';
+                break;
+            case 'otros':
+                return 'en';
+                break;
+            case 'paisesdeleste':
+                return 'en';
+                break;
+            case 'marroqui':
+                return 'ar';
+                break;
+            case 'frances':
+                return 'fr';
+                break;
+            case 'ingles':
+                return 'en';
+                break;
+            case 'italiano':
+                return 'it';
+                break;
+            case 'hispanos':
+                return 'es';
+                break;
+            case 'nordicos':
+                return 'en';
+                break;
+            case 'portugues':
+                return 'pt_PT';
+                break;
+            default:
+                return 'es';
+                break;
+        }
+    }
+
+    public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'es'){
+        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
+
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefono,
+            "type" => "template",
+            "template" => [
+                "name" => $template,
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $nombre],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+        
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
 }
