@@ -28,7 +28,8 @@ class Reserva extends Model
         'dni_entregado',
         'enviado_webpol',
         'codigo_reserva',
-        'fecha_limpieza'
+        'fecha_limpieza',
+        'token'
         
     ];
 

@@ -387,7 +387,7 @@ class WhatsappController extends Controller
                 "body": "'.$texto.'"
             }
         }';
-        return $mensajePersonalizado;
+        // return $mensajePersonalizado;
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
@@ -505,10 +505,12 @@ class WhatsappController extends Controller
                 $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
                 // Validamos si existe mensaje de DNI enviado
                 if ($mensajeDNI == null) {
+                    $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
+                    $reserva->token = $token;
+                    $reserva->save();
+                    $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar ocn la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentoshawkins.com/dni-user/'.$token;
                     $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                    $enviarMensaje = $this->contestarWhatsapp($phoneCliente, 'Prueba de DNI');
-
-                    return $enviarMensaje;
+                    $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                 }
             }
             return 'Hay reservas';
