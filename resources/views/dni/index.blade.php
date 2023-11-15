@@ -199,10 +199,10 @@
                                 <input type="number" id="numero" value="1" min="1" step="1" class="form-control w-100">
                                 <input type="hidden" name="idReserva" id="idReserva" value="{{$id}}">
                             </div>
-                            <div class="col-2">
+                            <div class="col-3">
                                 <button id="sumar" class="w-100 btn btn-info">+</button>
                             </div>
-                            <div class="col-2">
+                            <div class="col-3">
                                 <button id="restar" class="w-100 btn btn-info">-</button>
                             </div>
 
