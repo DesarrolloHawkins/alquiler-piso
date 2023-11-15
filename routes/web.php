@@ -67,11 +67,13 @@ Route::post('/fotos-banio-store/{id}', [App\Http\Controllers\PhotoController::cl
 
 // Obtener DNI
 Route::get('/dni-user/{token}', [App\Http\Controllers\DNIController::class, 'index'])->name('dni.index');
+
+Route::post('/guardar-numero-personas', [App\Http\Controllers\DNIController::class, 'storeNumeroPersonas'])->name('dni.storeNumeroPersonas');
 Route::post('/dni-user/store', [App\Http\Controllers\DNIController::class, 'store'])->name('dni.store');
 Route::get('/dni-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'dniUpload'])->name('dni.dniUpload');
 Route::get('/pasaporte-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'pasaporteUpload'])->name('dni.dniUpload');
-Route::get('/dni/{id}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
-Route::get('/pasaporte/{id}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
+Route::get('/dni/{token}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
+Route::get('/pasaporte/{token}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
 
 
 Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');

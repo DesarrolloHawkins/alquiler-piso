@@ -14,14 +14,38 @@ class DNIController extends Controller
 {
     public function index($token)
     {
+        // Array de Paises
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
 
-        $reserva = Reserva::where('token',$token)->where('estado_id', 1)->first();
-        if (!$reserva ) {
-            return view('404');
-        }
+        // Obtenemos la Reserva
+        $reserva = Reserva::where('token',$token)->first();
+        // Obtenemos el Cliente
+        $cliente = Cliente::where('id', $reserva->cliente_id)->first();
         $id = $reserva->id;
-        return view('dni.index', compact('id', 'paises'));
+
+        // if ( $cliente->data_dni == null) {
+        //     return view('dni.index', compact('id', 'paises'));
+
+        // }elseif (!$cliente->photo_dni){
+            
+        //     if ($cliente->tipo_documento == 0) {
+        //         return redirect(route('dni.dni', $token));
+        //     }else {
+        //         return redirect(route('dni.pasaporte', $token));
+        //     } 
+        // }
+        //return view('404');
+        return view('dni.index', compact('id', 'paises','reserva'));
+    }
+    public function storeNumeroPersonas(Request $request){
+        $reserva = Reserva::find($request->id);
+        if (!$reserva) {
+            return response(404);
+
+        }
+        $reserva->numero_personas = $request->cantidad;
+        $reserva->save();
+        return redirect(route('dni.index', $reserva->token));
     }
 
     public function store(Request $request)
@@ -58,41 +82,30 @@ class DNIController extends Controller
 
             $cliente = Cliente::where('id', $reserva->cliente_id)->first();
              // Comprobamos si la reserva ya tiene los dni entregados
-            if ($reserva->dni_entregado == false || $reserva->dni_entregado == null) {
-                
-                if ($reserva->verificado == false || $reserva->verificado == null) {
-                    if ($cliente->tipo_documento == 0) {
-                        return redirect(route('dni.dni', $request->id));
-                    }else {
-                        return redirect(route('dni.pasaporte', $request->id));
-                    }                
-                }
-                return view('gracias');
+             $cliente->nombre = $request->nombre;
+             $cliente->apellido1 = $request->apellido1;
+             $cliente->apellido2 = $request->apellido2 ? $request->apellido2 : null;
+             $cliente->nombre = $request->nombre;
+             $cliente->tipo_documento = $request->tipo_documento;
+             $cliente->num_identificacion = $request->num_identificacion;
+             $cliente->fecha_expedicion_doc = $request->fecha_expedicion_doc;
+             $cliente->fecha_nacimiento = $request->fecha_nacimiento;
+             $cliente->sexo = $request->sexo;
+             $cliente->email = $request->email;
+             $cliente->data_dni = true;
+             $cliente->save();
 
-            }else{
 
-                $cliente->nombre = $request->nombre;
-                $cliente->apellido1 = $request->apellido1;
-                $cliente->apellido2 = $request->apellido2 ? $request->apellido2 : null;
-                $cliente->nombre = $request->nombre;
-                $cliente->tipo_documento = $request->tipo_documento;
-                $cliente->num_identificacion = $request->num_identificacion;
-                $cliente->fecha_expedicion_doc = $request->fecha_expedicion_doc;
-                $cliente->fecha_nacimiento = $request->fecha_nacimiento;
-                $cliente->sexo = $request->sexo;
-                $cliente->email = $request->email;
-                $cliente->dni_entregado = true;
-                $cliente->save();
-                $id = $request->id;
-    
-                if ($request->tipo_documento == 0) {
-                    return view('dni.dni', compact('id'));
-                }else {
-                    return view('dni.pasaporte', compact('id'));
-                }
-            }
+            //  $reserva->dni_entregado = true;
+            //  $reserva->estado_id = 2;
+             $reserva->save();
+ 
+            if ($cliente->tipo_documento == 0) {
+                return redirect(route('dni.dni', $reserva->token));
+            }else {
+                return redirect(route('dni.pasaporte', $reserva->token));
+            }   
 
-        }else {
 
         }
 
@@ -188,20 +201,31 @@ class DNIController extends Controller
     public function pasaporteUpload(Request $request){
 
     }
-    public function dni($id){
+    public function dni($token){
+        // Obtenemos la reserva
+        $reserva = Reserva::where('token', $token)->first();
+        // Obtenemos el cliente
+        $cliente = Cliente::where('id', $reserva->cliente_id)->first();
+
+        // Comprobamos si el cliente relleno los datos principales
+        if ($cliente->data_dni) {
+            return redirect(route('dni.index', $token));
+        }
 
         // Cargar la URL de la imagen si existe
-        $imagen = Photo::where('reserva_id', $id)->where('photo_categoria_id', 13)->first();
+        $imagen = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
         $frontal = $imagen ? asset($imagen->url) : null;
 
-        $imagen2 = Photo::where('reserva_id', $id)->where('photo_categoria_id', 14)->first();
+        $imagen2 = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
         $trasera = $imagen2 ? asset($imagen2->url) : null;
+
         return view('dni.dni', compact('id','frontal','trasera'));
 
     }
-    public function pasaporte($id){
-        return view('dni.pasaporte', compact('id'));
 
+    public function pasaporte($id){
+
+        return view('dni.pasaporte', compact('id'));
     }
     
 }

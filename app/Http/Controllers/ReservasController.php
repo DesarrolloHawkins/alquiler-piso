@@ -111,7 +111,7 @@ class ReservasController extends Controller
         // Declaramos Variables
         $cliente;
         $reserva;
-        
+        $num_adultos;
         // Convertimos las Request en la data
         $data = $request->all();
         // Almacenamos la peticion en un archivo
@@ -219,8 +219,8 @@ class ReservasController extends Controller
                     'precio' => $precio,
                     'apartamento_id' => $apartamento->id,
                     'cliente_id' => $cliente->id,
-                    'estado_id' => 1
-    
+                    'estado_id' => 1,
+                    // 'numero_personas' => $data['numero_personas']
                 ]);
                 $reserva = $crearReserva;
                 return response('Registrado', 200);
