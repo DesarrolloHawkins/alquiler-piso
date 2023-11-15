@@ -200,10 +200,10 @@
                                 <input type="hidden" name="idReserva" id="idReserva" value="{{$id}}">
                             </div>
                             <div class="col-3">
-                                <button id="sumar" class="w-100 btn btn-info">+</button>
+                                <button id="sumar" class="w-100 btn btn-secondary">+</button>
                             </div>
                             <div class="col-3">
-                                <button id="restar" class="w-100 btn btn-info">-</button>
+                                <button id="restar" class="w-100 btn btn-secondary">-</button>
                             </div>
 
                         </div>
@@ -502,13 +502,19 @@
 
         $('#sumar').on('click', function(){
             let valor = parseInt($('#numero').val(), 10); // Convierte el valor a un número entero
-            valor += 1; 
-            $('#numero').val(valor);
+            valor += 1;
+            if (valor == 0) {
+                valor =1
+            }            $('#numero').val(valor);
             console.log($('#numero').val())
         })
         $('#restar').on('click', function(){
             let valor = parseInt($('#numero').val(), 10); // Convierte el valor a un número entero
-            valor -= 1; 
+            valor -= 1;
+            if (valor == 0) {
+                valor =1
+            }
+
             $('#numero').val(valor);
             console.log($('#numero').val())
         })
