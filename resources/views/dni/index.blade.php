@@ -232,9 +232,9 @@
                                 @for ($i = 0; $i < $reserva->numero_personas; $i++)
                                     <div class="card-body">
                                         @if ($i == 0)
-                                            <h3>Huesped Principal</h3>
+                                            <h3 class="fw-bold">Huesped Principal</h3>
                                         @else
-                                            <h3>Acompañante {{$i}}</h3>
+                                            <h3 class="fw-bold">Acompañante {{$i}}</h3>
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
@@ -420,7 +420,7 @@
                                                             Correcto!
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            El correo electronico es obligatorio.
+                                                            La foto frontal del DNI es obligatoria.
                                                         </div>
                                                         @error('fontal_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
@@ -436,7 +436,7 @@
                                                             Correcto!
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            El correo electronico es obligatorio.
+                                                            La foto trasera del DNI es obligatoria.
                                                         </div>
                                                         @error('trasera_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
@@ -453,7 +453,7 @@
                                                             Correcto!
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            El correo electronico es obligatorio.
+                                                            La foto frontal del PASAPORTE es obligatoria.
                                                         </div>
                                                         @error('fontal_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
