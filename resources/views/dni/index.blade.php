@@ -194,8 +194,8 @@
                             </div>
                         </form> --}}
                         <div class="row align-items-center">
-                            <div class="col-3"> Numero de Adultos:</div>
-                            <div class="col-4">
+                            <div class="col-12" > Numero de Adultos:</div>
+                            <div class="col-6">
                                 <input type="number" id="numero" value="1" min="1" step="1" class="form-control w-100">
                                 <input type="hidden" name="idReserva" id="idReserva" value="{{$id}}">
                             </div>
@@ -205,7 +205,6 @@
                             <div class="col-2">
                                 <button id="restar" class="w-100 btn btn-info">-</button>
                             </div>
-                            <div class="col-1"></div>
 
                         </div>
                         <button id="enviar" class="btn btn-primary w-100 mt-3">Enviar</button>
