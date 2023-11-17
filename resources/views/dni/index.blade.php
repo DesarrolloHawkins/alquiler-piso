@@ -226,15 +226,15 @@
                     </div>
                     <div class="card-body">
                         <div id="formularios">
-                            <form action="{{route('dni.store')}}" method="POST" class="row g-3 needs-validation" novalidate>
+                            <form action="{{route('dni.store')}}" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="id" value="{{$id}}">
                                 @for ($i = 0; $i < $reserva->numero_personas; $i++)
                                     <div class="card-body">
                                         @if ($i == 0)
-                                            <h3 class="fw-bold">Huesped Principal</h3>
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">Huesped Principal</h3>
                                         @else
-                                            <h3 class="fw-bold">Acompañante {{$i}}</h3>
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">Acompañante {{$i}}</h3>
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
@@ -303,7 +303,7 @@
                                             <div class="form-floating mb-3">
                                                 <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}}" aria-label="Pais" placeholder="Pais">
                                                     @foreach ($paises as $pais)
-                                                    <option value="{{$pais}}"  {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
+                                                        <option value="{{$pais}}" @if($pais == 'España') selected @endif {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
                                                     @endforeach
                                                 </select>
                                                 <label for="nacionalidad_{{$i}}">Seleccione Pais</label>
@@ -413,7 +413,7 @@
                                                 <div id="dniUploaed_{{$i}}" style="display: none">
                                                     <h4>Imagen frontal del DNI</h4>
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)" required>
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
                                                         <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -429,7 +429,7 @@
                                                     <h4>Imagen trasera del DNI</h4>
 
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)" required>
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> TRASERA</button>
                                                         <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -446,7 +446,7 @@
                                                 <div id="pasaporteUpload_{{$i}}" style="display: none">
                                                     <h4>Imagen de la hoja de informacion del Pasaporte</h4>
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)" required>
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="frontal_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -551,11 +551,19 @@
                 if (valor === '0') {
                     // dniUploaed - pasaporteUpload
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
+                    document.getElementById('fontal_'+info).required = true;
+                    document.getElementById('trasera_'+info).required = true;
                     document.getElementById('pasaporteUpload_'+info).style.display = 'none';
+                    document.getElementById('frontal_'+info).required = false;
+
 
                 } else if (valor === '1') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
+                    document.getElementById('fontal_'+info).required = false;
+                    document.getElementById('trasera_'+info).required = false;
+                    document.getElementById('frontal_'+info).required = true;
+
 
                 } else {
 
@@ -574,6 +582,7 @@
     Array.prototype.slice.call(forms)
         .forEach(function (form) {
         form.addEventListener('submit', function (event) {
+            console.log(form.checkValidity())
             if (!form.checkValidity()) {
             event.preventDefault()
             event.stopPropagation()

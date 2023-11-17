@@ -76,7 +76,6 @@ Route::get('/dni/{token}', [App\Http\Controllers\DNIController::class, 'dni'])->
 Route::get('/pasaporte/{token}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
 
 
-Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
 
 // AI whatsapp
 Route::get('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'hookWhatsapp'])->name('whatsapp.hookWhatsapp');
@@ -85,5 +84,9 @@ Route::post('/whatsapp', [App\Http\Controllers\WhatsappController::class, 'proce
 // Route::get('/cron','SiteController@obtenerAudioMedia2')->name('admin.estadisticas.obtenerAudioMedia2');
 Route::get('/chatgpt/{texto}', [App\Http\Controllers\WhatsappController::class, 'chatGptPruebas'])->name('whatsapp.chatGptPruebas');
 Route::get('/cron', [App\Http\Controllers\WhatsappController::class, 'cron'])->name('whatsapp.cron');
+
+// Rutas varias
+Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
+Route::get('/contacto', [App\Http\Controllers\GraciasController::class, 'contacto'])->name('gracias.contacto');
 
 
