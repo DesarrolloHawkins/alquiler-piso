@@ -528,7 +528,8 @@ class WhatsappController extends Controller
                     
                 }
             }
-            return 'Hay reservas';
+            
+            return $reservasEntrada;
         } else {
             return 'No hay reservas';
         }
