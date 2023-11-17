@@ -494,6 +494,7 @@ class WhatsappController extends Controller
         // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
         $reservasEntrada = Reserva::where('dni_entregado', true)
         ->where('estado_id', 1)
+        ->where('cliente_id',133)
         ->get();
         // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
         // ->where('estado_id', 1)
