@@ -514,6 +514,7 @@ class WhatsappController extends Controller
                     $reserva->save();
                     $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                     $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
+                    return $phoneCliente;
                     $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
 
                     // Data para guardar Mensaje enviado
