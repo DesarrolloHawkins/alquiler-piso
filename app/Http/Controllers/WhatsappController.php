@@ -492,7 +492,7 @@ class WhatsappController extends Controller
         $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
 
         // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
-        $reservasEntrada = Reserva::where('dni_entregado', false)
+        $reservasEntrada = Reserva::where('dni_entregado', null)
         ->where('estado_id', 1)
         ->where('cliente_id',133)
         ->get();
