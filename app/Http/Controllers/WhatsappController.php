@@ -492,9 +492,12 @@ class WhatsappController extends Controller
         $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
 
         // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
-        $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
+        $reservasEntrada = Reserva::where('dni_entregado', true)
         ->where('estado_id', 1)
         ->get();
+        // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
+        // ->where('estado_id', 1)
+        // ->get();
 
         // Validamos si hay reservas pendiente del DNI
         if(count($reservasEntrada) != 0){
@@ -511,15 +514,39 @@ class WhatsappController extends Controller
                     $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                     $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                     $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
+
+                    // Data para guardar Mensaje enviado
+                    $dataMensaje = [
+                        'reserva_id' => $reserva->id,
+                        'cliente_id' => $reserva->cliente_id,
+                        'categoria_id' => 1,
+                        'fecha_envio' => Carbon::now()
+                    ];
+
+                    MensajeAuto::create($dataMensaje);                    
+                    
                 }
             }
             return 'Hay reservas';
         } else {
             return 'No hay reservas';
         }
+    }
+
+    public function cron2(){
+
+        // Obtener la fecha de hoy
+        $hoy = Carbon::now();
+        // Obtener la fecha de dos días después
+        $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
+
+        // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
+        $reservasEntrada = Reserva::where('dni_entregado', true)
+        ->where('estado_id', 1)
+        ->get();
         $reservasSalida = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->get();
+
         $fechaHoy = $hoy->format('Y-m-d');
-        return $reservasEntrada;
 
         foreach($reservasEntrada as $reserva){
             $mensajeFotos = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 2)->first();
@@ -734,7 +761,6 @@ class WhatsappController extends Controller
 
         // return view('site.cron', compact('reservas','hoy', 'dias','data','hora'));
     }
-
     public function idiomaUser($idioma){
         switch ($idioma) {
             case 'español':
