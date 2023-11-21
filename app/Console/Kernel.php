@@ -88,6 +88,10 @@ class Kernel extends ConsoleKernel
         //     }
         //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         // })->everyMinute();
+        $schedule->call(function () {
+
+            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        })->everyMinute();
     }
 
     /**
