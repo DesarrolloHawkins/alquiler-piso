@@ -22,70 +22,70 @@ class Kernel extends ConsoleKernel
         $clienteService = app(ClienteService::class);
 
         // // Miramos si el cliente tiene la Nacionalidad e idioma
-        // $schedule->call(function () {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
-        //     // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-        //     $reservasEntrada = Reserva::where('dni_entregado', null)
-        //     ->where('estado_id', 1)
-        //     ->where('fecha_entrada', '>=', $hoy->toDateString())
-        //     ->get();
+        $schedule->call(function ()  use ($clienteService) {
+            // Obtener la fecha de hoy
+            $hoy = Carbon::now();
+            // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
+            $reservasEntrada = Reserva::where('dni_entregado', null)
+            ->where('estado_id', 1)
+            ->where('fecha_entrada', '>=', $hoy->toDateString())
+            ->get();
 
-        //     foreach($reservasEntrada as $reserva){
-        //         $resultado = $this->clienteService->getIdiomaClienteID($reserva->cliente_id);
-        //     }
-        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        // })->everyMinute();
+            foreach($reservasEntrada as $reserva){
+                $resultado = $clienteService->getIdiomaClienteID($reserva->cliente_id);
+            }
+            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        })->everyMinute();
 
         // // Miramos si el cliente tiene la Nacionalidad e idioma
-        // $schedule->call(function () {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
-        //     // Obtener la fecha de dos días después
-        //     $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
+        $schedule->call(function () {
+            // Obtener la fecha de hoy
+            $hoy = Carbon::now();
+            // Obtener la fecha de dos días después
+            $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
 
-        //     // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
-        //     $reservasEntrada = Reserva::where('dni_entregado', null)
-        //     ->where('estado_id', 1)
-        //     ->where('cliente_id',133)
-        //     ->get();
-        //     // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
-        //     // ->where('estado_id', 1)
-        //     // ->get();
+            // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
+            $reservasEntrada = Reserva::where('dni_entregado', null)
+            ->where('estado_id', 1)
+            ->where('cliente_id',133)
+            ->get();
+            // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
+            // ->where('estado_id', 1)
+            // ->get();
 
-        //     // Validamos si hay reservas pendiente del DNI
-        //     if(count($reservasEntrada) != 0){
-        //         // Recorremos las reservas
-        //         foreach($reservasEntrada as $reserva){
+            // Validamos si hay reservas pendiente del DNI
+            if(count($reservasEntrada) != 0){
+                // Recorremos las reservas
+                foreach($reservasEntrada as $reserva){
 
-        //             // Obtenemos el mensaje del DNI si existe
-        //             $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
-        //             // Validamos si existe mensaje de DNI enviado
-        //             if ($mensajeDNI == null) {
-        //                 $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
-        //                 $reserva->token = $token;
-        //                 $reserva->save();
-        //                 $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
-        //                 $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-        //                 $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
-        //                 // return $enviarMensaje;
+                    // Obtenemos el mensaje del DNI si existe
+                    $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
+                    // Validamos si existe mensaje de DNI enviado
+                    if ($mensajeDNI == null) {
+                        $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
+                        $reserva->token = $token;
+                        $reserva->save();
+                        $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
+                        $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
+                        $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
+                        // return $enviarMensaje;
 
-        //                 // Data para guardar Mensaje enviado
-        //                 $dataMensaje = [
-        //                     'reserva_id' => $reserva->id,
-        //                     'cliente_id' => $reserva->cliente_id,
-        //                     'categoria_id' => 1,
-        //                     'fecha_envio' => Carbon::now()
-        //                 ];
+                        // Data para guardar Mensaje enviado
+                        $dataMensaje = [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'categoria_id' => 1,
+                            'fecha_envio' => Carbon::now()
+                        ];
 
-        //                 MensajeAuto::create($dataMensaje);                    
+                        MensajeAuto::create($dataMensaje);                    
                         
-        //             }
-        //         }
+                    }
+                }
                 
-        //     }
-        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        // })->everyMinute();
+            }
+            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        })->everyMinute();
     }
 
     /**
