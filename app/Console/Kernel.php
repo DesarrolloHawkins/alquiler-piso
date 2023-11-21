@@ -5,7 +5,7 @@ namespace App\Console;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use Carbon\Carbon;
-// use App\Services\ClienteService;
+use App\Services\ClienteService;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -24,20 +24,20 @@ class Kernel extends ConsoleKernel
         // $clienteService = app(ClienteService::class);
 
         // // Miramos si el cliente tiene la Nacionalidad e idioma
-        // $schedule->call(function (ClienteService $clienteService) {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
-        //     // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-        //     $reservasEntrada = Reserva::where('dni_entregado', null)
-        //     ->where('estado_id', 1)
-        //     ->where('fecha_entrada', '>=', $hoy->toDateString())
-        //     ->get();
+        $schedule->call(function (ClienteService $clienteService) {
+            // Obtener la fecha de hoy
+            $hoy = Carbon::now();
+            // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
+            $reservasEntrada = Reserva::where('dni_entregado', null)
+            ->where('estado_id', 1)
+            ->where('fecha_entrada', '>=', $hoy->toDateString())
+            ->get();
 
-        //     foreach($reservasEntrada as $reserva){
-        //         $resultado = $clienteService->getIdiomaClienteID($reserva->cliente_id);
-        //     }
-        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        // })->everySecond();
+            foreach($reservasEntrada as $reserva){
+                $resultado = $clienteService->getIdiomaClienteID($reserva->cliente_id);
+            }
+            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        })->everyMinute();
 
         // // // Miramos si el cliente tiene la Nacionalidad e idioma
         // $schedule->call(function () {
