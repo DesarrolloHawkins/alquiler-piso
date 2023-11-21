@@ -3,16 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatGpt;
+use App\Models\Cliente;
 use App\Models\Mensaje;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use App\Models\Whatsapp;
+use App\Services\ClienteService;
 use Carbon\Carbon;
+use CURLFile;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\PhoneNumberToCarrierMapper;
+use libphonenumber\geocoding\PhoneNumberOfflineGeocoder;
+use libphonenumber\PhoneNumberFormat;
 
 class WhatsappController extends Controller
 {
+    protected $clienteService;
+
+    public function __construct(ClienteService $clienteService)
+    {
+        $this->clienteService = $clienteService;
+    }
    
     public function hookWhatsapp(Request $request)
     {
@@ -35,19 +49,11 @@ class WhatsappController extends Controller
         return response($challenge, 200)->header('Content-Type', 'text/plain');
         
     }
-
     
     public function processHookWhatsapp(Request $request)
     {
-        // https://thwork.crmhawkins.com/movil
         // e&[Q/A(fJC:95rF#S)b*V(=zwJ98R[ /%%&Ff;_*AB:T./i9WB!PPSg.nT+D[ jTjr)M,]Gu9iEdpbz)GKZX/)r[Gx/K 8#Y?x3DdLRP#PrzfR]-q}!Cm#}2Dqn @w!jEAy[)DS3//i[j2_RJ;-&_PQ.@T Gp_GB_=fu7YL.4ySCX5hA)9EtAW{m] [wgWzq8z+A!(KCiyfrgGy)avyp5NJj
-        // $responseJson = 'e&[Q/A(fJC:95rF#S)b*V(=zwJ98R[ /%%&Ff;_*AB:T./i9WB!PPSg.nT+D[ jTjr)M,]Gu9iEdpbz)GKZX/)r[Gx/K 8#Y?x3DdLRP#PrzfR]-q}!Cm#}2Dqn @w!jEAy[)DS3//i[j2_RJ;-&_PQ.@T Gp_GB_=fu7YL.4ySCX5hA)9EtAW{m] [wgWzq8z+A!(KCiyfrgGy)avyp5NJj';
 
-        // $query = $request->all();
-        // $mode = $query['hub_mode'];
-        // $token = $query['hub_verify_token'];
-        // $challenge = $query['hub_challenge'];
-        // $challenge = '{"prueba": "Soy tonto"}';
         $ejemplo = '{
             "messaging_product":"whatsapp",
             "metadata":{
@@ -107,9 +113,9 @@ class WhatsappController extends Controller
             // }
             Storage::disk('local')->put('phone-'.$idMedia.'.txt', $phone );
 
-            Storage::disk('local')->put('transcripcion-'.$idMedia.'.txt', $SpeechToText->DisplayText );
+            Storage::disk('local')->put('transcripcion-'.$idMedia.'.txt', $SpeechToText );
 
-            $reponseChatGPT = $this->chatGpt($SpeechToText->DisplayText);
+            $reponseChatGPT = $this->chatGpt($SpeechToText);
             Storage::disk('local')->put('reponseChatGPT-'.$idMedia.'.txt', $reponseChatGPT );
 
             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT['messages']);
@@ -118,7 +124,7 @@ class WhatsappController extends Controller
             $dataRegistrarChat = [
                 'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
                 'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
-                'mensaje' => $SpeechToText->DisplayText,
+                'mensaje' => $SpeechToText,
                 'respuesta' => str_replace('"','',$reponseChatGPT['messages'] ),
                 'status' => 1,
                 'type' => 'audio'
@@ -223,6 +229,7 @@ class WhatsappController extends Controller
 
     }
 
+    // Funcion para obtener el Audio del Whatsapp
     public function obtenerAudio($id) {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -253,6 +260,7 @@ class WhatsappController extends Controller
         Storage::disk('local')->put('response_Audio'.$id.'.txt', json_encode($response) );
         return $responseJson->url;
     }
+
     public function obtenerAudioMedia($url, $id) {
 
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
@@ -286,15 +294,42 @@ class WhatsappController extends Controller
         
         return false;
     }
+
     public function audioToText($audio){
 
-        $token = $this->tokenAzure();
-        Storage::disk('local')->put('AudioFileToken.txt', $token );
+        // $token = $this->tokenAzure();
+        // Storage::disk('local')->put('AudioFileToken.txt', $token );
         
+        // $curl = curl_init();
+
+        // curl_setopt_array($curl, array(
+        // CURLOPT_URL => 'https://westeurope.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=es-ES&format=detailed',
+        // CURLOPT_RETURNTRANSFER => true,
+        // CURLOPT_ENCODING => '',
+        // CURLOPT_MAXREDIRS => 10,
+        // CURLOPT_TIMEOUT => 0,
+        // CURLOPT_FOLLOWLOCATION => true,
+        // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        // CURLOPT_CUSTOMREQUEST => 'POST',
+        // CURLOPT_POSTFIELDS => $audio,
+        // CURLOPT_HTTPHEADER => array(
+        //     'Content-Type: audio/ogg; codecs=opus',
+        //     'Authorization: Bearer '.$token
+        // ),
+        // ));
+
+        // $response = curl_exec($curl);
+        
+        // curl_close($curl);
+        // Storage::disk('local')->put('AudioFile22.txt', $response );
+
+        // return json_decode($response);
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://westeurope.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=es-ES&format=detailed',
+        CURLOPT_URL => 'https://api.openai.com/v1/audio/transcriptions',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -302,20 +337,18 @@ class WhatsappController extends Controller
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS => $audio,
+        CURLOPT_POSTFIELDS => array('file'=> new CURLFile($audio),'model' => 'whisper-1'),
         CURLOPT_HTTPHEADER => array(
-            'Content-Type: audio/ogg; codecs=opus',
-            'Authorization: Bearer '.$token
+            'Authorization: Bearer '. $token
         ),
         ));
 
         $response = curl_exec($curl);
-        
-        curl_close($curl);
-        Storage::disk('local')->put('AudioFile22.txt', $response );
 
-        return json_decode($response);
+        curl_close($curl);
+        return $response['text'];
     }
+
     public function chatGpt($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
@@ -375,6 +408,7 @@ class WhatsappController extends Controller
          return $responseReturn;
      }
     }
+
     public function contestarWhatsapp($phone, $texto){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         // return $texto;
@@ -417,6 +451,7 @@ class WhatsappController extends Controller
         return $response;
 
     }  
+
     public function chatGptPruebas($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
@@ -484,10 +519,32 @@ class WhatsappController extends Controller
         return $numeroLimpio;
     }
 
-    public function cron(){
+    
 
+   
+
+    // Cron 1 minuto
+    public function cron(){
         // Obtener la fecha de hoy
         $hoy = Carbon::now();
+        // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
+        $reservasEntrada = Reserva::where('dni_entregado', null)
+        ->where('estado_id', 1)
+        ->where('fecha_entrada', '>=', $hoy->toDateString())
+        ->get();
+
+        foreach($reservasEntrada as $reserva){
+            $resultado = $this->clienteService->getIdiomaClienteID($reserva->cliente_id);
+
+            // $cliente = Cliente::find($reserva->cliente_id);
+            // $reponseNacionalidad =  $this->getIdiomaClienteID($reserva->cliente_id);
+            // $reserva['return'] = $reponseNacionalidad;
+            // $reserva['cliente'] = $cliente;
+        }
+        dd($reservasEntrada);
+
+
+       
         // Obtener la fecha de dos días después
         $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
 
@@ -535,7 +592,7 @@ class WhatsappController extends Controller
             return 'No hay reservas';
         }
     }
-
+    
     public function cron2(){
 
         // Obtener la fecha de hoy
@@ -764,6 +821,7 @@ class WhatsappController extends Controller
 
         // return view('site.cron', compact('reservas','hoy', 'dias','data','hora'));
     }
+
     public function idiomaUser($idioma){
         switch ($idioma) {
             case 'español':
@@ -854,5 +912,158 @@ class WhatsappController extends Controller
         // $responseJson = json_decode($response);
         return $response;
 
+    }
+
+    // Añadir idioma del cliente por coleccion
+    public function getIdiomaCliente(){
+        // Obtener la fecha de hoy
+        $hoy = Carbon::now();
+
+        // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
+        $reservasEntrada = Reserva::where('dni_entregado', null)
+        ->where('estado_id', 1)
+        ->where('fecha_entrada', '>=', $hoy->toDateString())
+        ->get();
+
+        // Recorremos el array obtenido
+        foreach($reservasEntrada as $reserva){
+            // Obtenemos los datos de cliente de su modelo
+            $cliente = Cliente::find($reserva->cliente_id);
+
+            // Validamos si la nacionalidad de cliente es NULL
+            if ($cliente->nacionalidad == null) {
+                // Generamos la instancia del Package de Phone
+                $phoneUtil = PhoneNumberUtil::getInstance();
+                // Hacemos la conversion con el codigo del telefono a codigo ISO del Pais
+                try {
+
+                    $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
+                    $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
+
+                } catch (\libphonenumber\NumberParseException $e) {
+                // Devolvemos la operacion con un status 500 con el mensaje de error.
+                    return [
+                        'status' => '500',
+                        'mensaje' => $e
+                    ];
+                }
+
+                // Luego, realizas una solicitud a una API para obtener el idioma
+                // Por ejemplo, usando REST Countries API
+                $url = "https://restcountries.com/v3.1/alpha/".$codigoPaisISO;
+                $datosPais = file_get_contents($url);
+                $infoPais = json_decode($datosPais, true);
+
+                // Obtienes del array de idioma el codigo del pais y se lo enviamos a ChatGPT para que nos devuelva el idioma.
+                $reponseNacionalidad =  $this->addIdiomaCliente($infoPais[0]['cioc']);
+                // Establecemos la nacionalidad y guardamos el cliente
+                $cliente->nacionalidad = $reponseNacionalidad;
+                $cliente->save();
+                // Devolvemos la operacion con un status 200 todo fue correctamente.
+                return [
+                    'status' => '200',
+                ];
+            }
+        }
+    }
+
+    // Añadir idioma del cliente por ID
+    public function getIdiomaClienteID($id){
+        // Obtener la fecha de hoy
+        $hoy = Carbon::now();
+
+        // Obtenemos el cliente por el ID
+        $cliente = Cliente::find($id);
+         
+        // Validamos si la nacionalidad del cliente es NULL
+        if ($cliente->nacionalidad == null) {
+            // Generamos la instancia del Package de Phone
+            $phoneUtil = PhoneNumberUtil::getInstance();
+            // Hacemos la conversion con el codigo del telefono a codigo ISO del Pais
+            try {
+                $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
+                $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
+            } catch (\libphonenumber\NumberParseException $e) {
+                // Devolvemos la operacion con un status 500 con el mensaje de error.
+                return [
+                    'status' => '500',
+                    'mensaje' => $e
+                ];
+            }
+
+            // Luego, realizas una solicitud a una API para obtener el idioma
+            // Por ejemplo, usando REST Countries API
+            $url = "https://restcountries.com/v3.1/alpha/".$codigoPaisISO;
+            $datosPais = file_get_contents($url);
+            $infoPais = json_decode($datosPais, true);
+
+            // Obtienes del array de idioma el codigo del pais y se lo enviamos a ChatGPT para que nos devuelva el idioma.
+            $reponseNacionalidad =  $this->addIdiomaCliente($infoPais[0]['cioc']);
+            // Establecemos la nacionalidad y guardamos el cliente
+            $cliente->nacionalidad = $reponseNacionalidad;
+            $cliente->save();
+
+            // Devolvemos la operacion con un status 200 todo fue correctamente.
+            return [
+                'status' => '200',
+            ];
+        }
+    }
+
+    function addIdiomaCliente($codigo){
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        // Configurar los parámetros de la solicitud
+        $url = 'https://api.openai.com/v1/chat/completions';
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token
+        );
+
+        // $cliente = Cliente::find($id);
+        $data = array(
+        "messages" => [
+            ["role" => "user", "content" => 'podrias decirme en una palabra el idioma de este codigo de pais, no me digas nada mas que el idioma y no pongas punto final: '. $codigo,]
+        ],
+        // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+        // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+        // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+        // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+        // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+        "model" => "gpt-4",
+        "temperature" => 0,
+        "max_tokens"=> 200,
+        "top_p"=> 1,
+        "frequency_penalty"=> 0,
+        "presence_penalty"=> 0,
+        "stop"=> ["_END"]
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+
+        if ($response === false) {
+            $error = curl_error($curl);
+            curl_close($curl);
+            throw new Exception("Error en la solicitud cURL: " . $error);
+        }
+
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            return $response;
+        } else {
+            $response_data = json_decode($response, true);            
+            return $response_data['choices'][0]['message']['content'];
+        }
     }
 }

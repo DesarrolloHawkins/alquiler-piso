@@ -170,6 +170,8 @@ return [
         App\Providers\RouteServiceProvider::class,
         // leifermendez\police\PoliceProvider::class,
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
+        App\Providers\ClienteServiceProvider::class,
+
 
     ])->toArray(),
 
