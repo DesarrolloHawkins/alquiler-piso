@@ -4,7 +4,7 @@ namespace App\Console;
 
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
-// use App\Services\ClienteService;
+use App\Services\ClienteService;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Storage;
 
 class Kernel extends ConsoleKernel
 {
-    // protected $clienteService;
+    protected $clienteService;
 
-    // public function __construct(ClienteService $clienteService)
-    // {
-    //     $this->clienteService = $clienteService;
-    // }
+    public function __construct(ClienteService $clienteService)
+    {
+        $this->clienteService = $clienteService;
+    }
     /**
      * Define the application's command schedule.
      */
