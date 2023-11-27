@@ -214,6 +214,7 @@
         </div> 
     @endif
     @if ($reserva->numero_personas != 0 || $reserva->numero_personas != null)
+
         <div class="row">
             <div class="col-sm-12 text-center">
                 <img src="https://apartamentosalgeciras.com/wp-content/uploads/2022/09/Logo-Hawkins-Suites.svg" alt="" class="img-fluid mb-3 w-50 m-auto">
@@ -225,6 +226,11 @@
                         Debes rellenar los datos para verificar el numero de personas que ya añadiste.
                     </div>
                     <div class="card-body">
+                        @if (session('alerta'))
+                            <div class="alert alert-warning">
+                                {{ session('alerta') }}
+                            </div>
+                        @endif
                         <div id="formularios">
                             <form action="{{route('dni.store')}}" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
                                 @csrf
