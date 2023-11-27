@@ -89,4 +89,5 @@ Route::get('/cron', [App\Http\Controllers\WhatsappController::class, 'cron'])->n
 Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
 Route::get('/contacto', [App\Http\Controllers\GraciasController::class, 'contacto'])->name('gracias.contacto');
 
+Route::get('/mensajes-whatsapp', [App\Http\Controllers\WhatsappController::class, 'whatsapp'])->name('whatsapp.mensajes');
 

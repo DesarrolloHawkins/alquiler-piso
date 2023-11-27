@@ -96,6 +96,7 @@ class DNIController extends Controller
                 $cliente->email = $request->input('email_'.$i);
                 $cliente->data_dni = true;
                 $cliente->save();
+
                 if ($request->input('tipo_documento_'.$i) == 0) {
                     if($request->hasFile('fontal_'.$i)){
                         // Imagen Frontal DNI
@@ -136,7 +137,6 @@ class DNIController extends Controller
                         }
                     }else{
                         return redirect(route('dni.dni', $reserva->token));
-
                     }
 
                     if($request->hasFile('trasera_'.$i)){
@@ -177,7 +177,7 @@ class DNIController extends Controller
 
                         }
                         $reserva->dni_entregado = true;
-                        return 'llego hasta aqui';
+                        // return 'llego hasta aqui';
                     }else {
                         return redirect(route('dni.dni', $reserva->token));
                     }
@@ -225,6 +225,8 @@ class DNIController extends Controller
                     }
                     return redirect(route('dni.pasaporte', $reserva->token));
                 }
+            } else {
+                
             }
         }
             

@@ -1066,4 +1066,21 @@ class WhatsappController extends Controller
             return $response_data['choices'][0]['message']['content'];
         }
     }
+
+    public function whatsapp()
+    {    
+        // $mensajes = Mensaje::all();      
+        $mensajes = ChatGpt::orderBy('created_at', 'desc')->get();      
+        $resultado = [];
+        foreach ($mensajes as $elemento) {
+            $resultado[$elemento['remitente']][] = $elemento;
+
+
+        }
+        // dd($resultado);
+
+        // var_dump(var_export($result, true));
+        return view('admin.whatsapp.index', compact('resultado'));
+    }
+
 }
