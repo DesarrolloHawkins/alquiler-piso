@@ -81,7 +81,6 @@ class Kernel extends ConsoleKernel
                         ];
 
                         MensajeAuto::create($dataMensaje);                    
-                        
                     }
                 }
                 

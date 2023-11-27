@@ -237,7 +237,7 @@ class DNIController extends Controller
         $reserva = Reserva::where('token', $token)->first();
         // Obtenemos el cliente
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
-        $id = $reserva->id;
+        $id = $reserva->id; 
         // Comprobamos si el cliente relleno los datos principales
         if ($cliente->data_dni) {
             return redirect(route('dni.index', $token));
