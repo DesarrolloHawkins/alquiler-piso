@@ -8,13 +8,18 @@ use App\Models\Huesped;
 use App\Models\Photo;
 use App\Models\Reserva;
 use Faker\Core\File;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class DNIController extends Controller
 {
     public function index($token)
     {
+        // Guardar el idioma en la sesión
+ 
         // Array de Paises
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
 
@@ -22,6 +27,9 @@ class DNIController extends Controller
         $reserva = Reserva::where('token',$token)->first();
         // Obtenemos el Cliente
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
+        Session::put('idioma', $cliente->nacionalidad);
+        // Cambiar el idioma de la aplicación
+        App::setLocale($cliente->nacionalidad);
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
             if($reserva->dni_entregado == true){
@@ -76,8 +84,95 @@ class DNIController extends Controller
         //     } 
         // }
         //return view('404');
-        return view('dni.index', compact('id', 'paises', 'reserva', 'data'));
+
+
+        $textos = [
+            'Inicio' => 'Debes rellenar los datos para verificar el numero de personas que ya añadiste.',
+            'Huesped.Principal' => 'Huesped Principal',
+            'Acompañante' => 'Acompañante',
+            'Nombre' => 'Nombre',
+            'Primer.Apellido' => 'Primer Apellido',
+            'Segundo.Apellido' => 'Segun Apellido',
+            'Fecha.Nacimiento' => 'Fecha de Nacimiento',
+            'Tipo.Documento' => 'Seleccione tipo de documento',
+            'Numero.Identificacion' => 'Numero de Identificacion',
+            'Fecha.Expedicion' => 'Fecha de Expedición',
+            'Sexo' => 'Sexo',
+            'Correo.Electronico' => 'Correo electronico',
+            'Imagen.Frontal' => 'Imagen frontal del DNI',
+            'Imagen.Trasera' => 'Imagen trasera del DNI',
+            'Imagen.Pasaporte' => 'Imagen de la hoja de información del Pasaporte',
+            'Enviar' => 'Enviar',
+
+        ];
+        $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. no me conteste solo con el array traducido, te adjunto el array: ' . json_encode($textos));
+        dd($traduccion);
+
+        return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
     }
+
+
+    public function chatGpt($texto) {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        // Configurar los parámetros de la solicitud
+     $url = 'https://api.openai.com/v1/completions';
+     $headers = array(
+         'Content-Type: application/json',
+         'Authorization: Bearer '. $token
+     );
+
+
+     $data = array(
+       "prompt" => $texto .' ->', 
+       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+       "model" => "gpt-4-1106-preview",
+       "temperature" => 0,
+       "max_tokens"=> 200,
+       "top_p"=> 1,
+       "frequency_penalty"=> 0,
+       "presence_penalty"=> 0,
+       "stop"=> ["_END"]
+     );
+
+     // Inicializar cURL y configurar las opciones
+     $curl = curl_init();
+     curl_setopt($curl, CURLOPT_URL, $url);
+     curl_setopt($curl, CURLOPT_POST, true);
+     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+     // Ejecutar la solicitud y obtener la respuesta
+     $response = curl_exec($curl);
+     curl_close($curl);
+
+     // Procesar la respuesta
+     if ($response === false) {
+         $error = [
+           'status' => 'error',
+           'messages' => 'Error al realizar la solicitud'
+         ];
+         Storage::disk('local')->put('errorChapt.txt', $error['messages'] );
+
+         return response()->json( $error );
+
+     } else {
+         $response_data = json_decode($response, true);
+         $responseReturn = [
+           'status' => 'ok',
+           'messages' => $response_data['choices'][0]['text']
+         ];
+         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
+
+         return $responseReturn;
+     }
+    }
+
+
     public function storeNumeroPersonas(Request $request){
         $reserva = Reserva::find($request->id);
         if (!$reserva) {

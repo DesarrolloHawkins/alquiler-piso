@@ -223,7 +223,8 @@
                 
                 <div class="card">
                     <div class="card-header bg-color-primero">
-                        Debes rellenar los datos para verificar el numero de personas que ya añadiste.
+                        {{-- <p>{{ __('messages.welcome') }}</p> --}}
+                        {{$textos['Inicio']}}
                     </div>
                     <div class="card-body">
                         @if (session('alerta'))
