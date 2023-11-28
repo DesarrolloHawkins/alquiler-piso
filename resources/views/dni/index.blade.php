@@ -244,7 +244,7 @@
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="Escriba su nombre" required>
+                                                <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="Escriba su nombre" value="{{$data[$i]->nombre}}" required>
                                                 <label for="nombre_{{$i}}">Nombre</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -259,7 +259,7 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" placeholder="Escriba su primer apellido" required>
+                                                <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" value="{{$data[$i]->apellido1}}" placeholder="Escriba su primer apellido" required>
                                                 <label for="apellido1_{{$i}}">Primer Apellido</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -275,7 +275,7 @@
                                         
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" placeholder="Escriba su segundo apellido">
+                                                <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" value="{{$data[$i]->apellido2}}" placeholder="Escriba su segundo apellido">
                                                 <label for="apellido2_{{$i}}">Segundo Apellido</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -291,7 +291,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" placeholder="Fecha de Nacimiento" aria-label="Fecha de Nacimiento" required>
+                                                <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" value="{{$data[$i]->fecha_nacimiento}}" placeholder="Fecha de Nacimiento" aria-label="Fecha de Nacimiento" required>
                                                 <label for="fecha_nacimiento_{{$i}}">Fecha de Nacimiento</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -309,7 +309,7 @@
                                             <div class="form-floating mb-3">
                                                 <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}}" aria-label="Pais" placeholder="Pais">
                                                     @foreach ($paises as $pais)
-                                                        <option value="{{$pais}}" @if($pais == 'España') selected @endif {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
+                                                        <option value="{{$pais}}" @if($data[$i]->nacionalidad == $pais) selected @elseif ($pais == 'España') selected @endif {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
                                                     @endforeach
                                                 </select>
                                                 <label for="nacionalidad_{{$i}}">Seleccione Pais</label>
@@ -329,9 +329,9 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="DNI o Pasaporte">
-                                                    <option value="{{null}}">Seleccion el tipo</option>
-                                                    <option value="0"  {{ (old('tipo_documento') == '0' ? 'selected' : '') }}>DNI</option>
-                                                    <option value="1" {{ (old('tipo_documento') == '1' ? 'selected' : '') }}>Pasaporte</option>
+                                                    <option value="{{null}}" disabled>Seleccion el tipo</option>
+                                                    <option value="1" @if($data[$i]->tipo_documento == '1') selected @endif {{ (old('tipo_documento') == '1' ? 'selected' : '') }}>DNI</option>
+                                                    <option value="2" @if($data[$i]->tipo_documento == '2') selected @endif {{ (old('tipo_documento') == '2' ? 'selected' : '') }}>Pasaporte</option>
                                                 </select>
                                                 <label for="tipo_documento_{{$i}}">Seleccione tipo de documento</label>
 
@@ -348,7 +348,7 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" placeholder="Numero Identificación" aria-label="Numero Identificación" required>
+                                                <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" value="{{$data[$i]->num_identificacion}}" placeholder="Numero Identificación" aria-label="Numero Identificación" required>
                                                 <label for="num_identificacion_{{$i}}">Numero de Identificación</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -364,7 +364,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" placeholder="Fecha de Expedición" aria-label="Fecha de Expedición" required>
+                                                <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" value="{{$data[$i]->fecha_expedicion_doc}}" placeholder="Fecha de Expedición" aria-label="Fecha de Expedición" required>
                                                 <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -381,9 +381,9 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="Sexo" required>
-                                                    <option value="Masculino" {{ (old('sexo_'.$i) == 'Masculino' ? 'selected' : '') }}>Masculino</option>
-                                                    <option value="Femenino" {{ (old('sexo_'.$i) == 'Femenino' ? 'selected' : '') }}>Femenino</option>
-                                                    <option value="Binario" {{ (old('sexo_'.$i) == 'Binario' ? 'selected' : '') }}>No Binario</option>
+                                                    <option value="Masculino" @if($data[$i]->sexo == 'Masculino') selected @endif {{ (old('sexo_'.$i) == 'Masculino' ? 'selected' : '') }}>Masculino</option>
+                                                    <option value="Femenino" @if($data[$i]->sexo == 'Femenino') selected @endif {{ (old('sexo_'.$i) == 'Femenino' ? 'selected' : '') }}>Femenino</option>
+                                                    <option value="Binario" @if($data[$i]->sexo == 'Binario') selected @endif {{ (old('sexo_'.$i) == 'Binario' ? 'selected' : '') }}>No Binario</option>
                                                 </select>
                                                 <label for="sexo_{{$i}}">Seleccione Sexo</label>
 
@@ -401,7 +401,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="email_{{$i}}" type="text" class="form-control" id="email_{{$i}}" placeholder="Correo Electronico" aria-label="Correo Electronico" required>
+                                                <input name="email_{{$i}}" type="text" class="form-control" id="email_{{$i}}" value="{{$data[$i]->email}}" placeholder="Correo Electronico" aria-label="Correo Electronico" required>
                                                 <label for="email_{{$i}}">Correo Electronico</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -452,7 +452,7 @@
                                                 <div id="pasaporteUpload_{{$i}}" style="display: none">
                                                     <h4>Imagen de la hoja de informacion del Pasaporte</h4>
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="frontal_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -554,7 +554,7 @@
                 var info = this.getAttribute('data-info')
                 console.log(valor)
                 console.log(info)
-                if (valor === '0') {
+                if (valor === '1') {
                     // dniUploaed - pasaporteUpload
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = true;
@@ -563,7 +563,7 @@
                     document.getElementById('frontal_'+info).required = false;
 
 
-                } else if (valor === '1') {
+                } else if (valor === '2') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = false;
@@ -628,29 +628,47 @@
     }
     // Si ya existe una URL de imagen, mostrar la vista previa al cargar la página
     window.onload = function() {
+
+        var reserva = @json($reserva);
+        var data = @json($data)
+
+        for (let i = 0; i < reserva.numero_personas; i++) {
+            if (data[i].tipo_documento == 1) {
+                
+                var divPhotos = document.getElementById('dniUploaed_'+i);
+                divPhotos.style.display = 'block';
+                var imageUrl = data[i].frontal.url;
+
+                if (imageUrl) {
+                    console.log(imageUrl)
+                    var output = document.getElementById('image-preview_frontal_'+i);
+                    output.src = '/'+imageUrl;
+                    output.style.display = 'block';
+                }
+
+                var imageUrl2 = data[i].trasera.url;
+
+                if (imageUrl2) {
+                    console.log(imageUrl2)
+
+                    var output = document.getElementById('image-preview_trasera_'+i);
+                    output.src = '/'+imageUrl2;
+                    output.style.display = 'block';
+                }
+            } else {
+                var divPhotos = document.getElementById('pasaporteUpload_'+i);
+                divPhotos.style.display = 'block';
+                var imageUrl3 = data[i].pasaporte.url;
+            
+                if (imageUrl3) {
+                    var output = document.getElementById('image-preview_pasaporte_'+i);
+                    output.src = '/'+imageUrl3;
+                    output.style.display = 'block';
+                }
+            }
+        }
         
-        var imageUrl = false;
-
-        if (imageUrl) {
-            var output = document.getElementById('image-preview');
-            output.src = imageUrl;
-            output.style.display = 'block';
-        }
-
-        var imageUrl2 = false;
-
-        if (imageUrl2) {
-            var output = document.getElementById('image-preview2');
-            output.src = imageUrl2;
-            output.style.display = 'block';
-        }
-        var imageUrl3 = false;
         
-        if (imageUrl3) {
-            var output = document.getElementById('image-preview3');
-            output.src = imageUrl3;
-            output.style.display = 'block';
-        }
     };
 
 </script>

@@ -28,6 +28,40 @@ class DNIController extends Controller
                 return view('gracias');
             }
         }
+        $data = [];
+        if($cliente != null){
+
+            if ($cliente->tipo_documento == 1) {
+                $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
+                $cliente['frontal'] = $photoFrontal;
+                $photoTrasera = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
+                $cliente['trasera'] = $photoTrasera;
+                array_push($data, $cliente);
+            } else {
+                $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 15)->first();
+                $cliente['pasaporte'] = $photoFrontal;
+                array_push($data, $cliente);
+            }
+            
+        }
+        
+        $huespedes = Huesped::where('reserva_id', $reserva->id)->get();
+
+        if (count($huespedes)>0) {
+            foreach($huespedes as $huesped){
+                if ($huesped->tipo_documento == 1) {
+                    $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 13)->first();
+                    $huesped['frontal'] = $photoFrontal;
+                    $photoTrasera = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 14)->first();
+                    $huesped['trasera'] = $photoTrasera;
+                    array_push($data, $huesped);
+                } else {
+                    $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 15)->first();
+                    $huesped['pasaporte'] = $photoFrontal;
+                    array_push($data, $huesped);
+                }
+            }
+        }
 
         // if ( $cliente->data_dni == null) {
         //     return view('dni.index', compact('id', 'paises'));
@@ -41,7 +75,7 @@ class DNIController extends Controller
         //     } 
         // }
         //return view('404');
-        return view('dni.index', compact('id', 'paises','reserva'));
+        return view('dni.index', compact('id', 'paises', 'reserva', 'data'));
     }
     public function storeNumeroPersonas(Request $request){
         $reserva = Reserva::find($request->id);
@@ -195,9 +229,9 @@ class DNIController extends Controller
                     }
 
                 }else {
-                    if($request->hasFile('frontal_'.$i)){
+                    if($request->hasFile('pasaporte_'.$i)){
                         // Imagen Frontal DNI
-                        $file = $request->file('frontal_'.$i);
+                        $file = $request->file('pasaporte_'.$i);
 
                         $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 15, 'Pasaporte');
                         if (!$reponseImage) {
@@ -239,8 +273,10 @@ class DNIController extends Controller
                         //     $imagenes->save();
 
                         // }
+                    } else {
+                        
+                        return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
                     }
-                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
                 }
             } else {
 
