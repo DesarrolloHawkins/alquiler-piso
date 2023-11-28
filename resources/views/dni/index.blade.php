@@ -244,7 +244,14 @@
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="Escriba su nombre" value="{{$data[$i]->nombre}}" required>
+                                                <input 
+                                                name="nombre_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="nombre_{{$i}}" 
+                                                placeholder="Escriba su nombre" 
+                                                value="{{ $i == 0 || isset($data[$i]) ? $data[$i]->nombre : '' }}" 
+                                                required>
                                                 <label for="nombre_{{$i}}">Nombre</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -259,7 +266,13 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" value="{{$data[$i]->apellido1}}" placeholder="Escriba su primer apellido" required>
+                                                <input 
+                                                name="apellido1_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="apellido1_{{$i}}"  
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->primer_apellido : (isset($data[$i]->apellido1) ? $data[$i]->apellido1 : '') }}" 
+                                                placeholder="Escriba su primer apellido" required>
                                                 <label for="apellido1_{{$i}}">Primer Apellido</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -275,7 +288,13 @@
                                         
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" value="{{$data[$i]->apellido2}}" placeholder="Escriba su segundo apellido">
+                                                <input 
+                                                name="apellido2_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="apellido2_{{$i}}"
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->segundo_apellido : (isset($data[$i]->apellido2) ? $data[$i]->apellido2 : '') }}"                                                 
+                                                placeholder="Escriba su segundo apellido">
                                                 <label for="apellido2_{{$i}}">Segundo Apellido</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -291,7 +310,15 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" value="{{$data[$i]->fecha_nacimiento}}" placeholder="Fecha de Nacimiento" aria-label="Fecha de Nacimiento" required>
+                                                <input 
+                                                name="fecha_nacimiento_{{$i}}" 
+                                                type="date" 
+                                                class="form-control" 
+                                                id="fecha_nacimiento_{{$i}}" 
+                                                value="{{ isset($data[$i]) ? $data[$i]->fecha_nacimiento : '' }}"
+                                                placeholder="Fecha de Nacimiento" 
+                                                aria-label="Fecha de Nacimiento" 
+                                                required>
                                                 <label for="fecha_nacimiento_{{$i}}">Fecha de Nacimiento</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -307,9 +334,19 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}}" aria-label="Pais" placeholder="Pais">
+                                                <select 
+                                                name="nacionalidad_{{$i}}" 
+                                                id="nacionalidad_{{$i}}" 
+                                                class="form-select js-example-basic-single{{$i}}" 
+                                                aria-label="Pais" 
+                                                placeholder="Pais">
                                                     @foreach ($paises as $pais)
-                                                        <option value="{{$pais}}" @if($data[$i]->nacionalidad == $pais) selected @elseif ($pais == 'España') selected @endif {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
+                                                        <option 
+                                                        value="{{$pais}}"
+                                                        {{ (isset($data[$i]) && $data[$i]->nacionalidad ? $data[$i]->nacionalidad == $pais : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
+                                                        >
+                                                        {{$pais}}
+                                                    </option>
                                                     @endforeach
                                                 </select>
                                                 <label for="nacionalidad_{{$i}}">Seleccione Pais</label>
@@ -330,8 +367,14 @@
                                             <div class="form-floating mb-3">
                                                 <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="DNI o Pasaporte">
                                                     <option value="{{null}}" disabled>Seleccion el tipo</option>
-                                                    <option value="1" @if($data[$i]->tipo_documento == '1') selected @endif {{ (old('tipo_documento') == '1' ? 'selected' : '') }}>DNI</option>
-                                                    <option value="2" @if($data[$i]->tipo_documento == '2') selected @endif {{ (old('tipo_documento') == '2' ? 'selected' : '') }}>Pasaporte</option>
+                                                    <option 
+                                                    value="1"
+                                                    {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
+                                                     >DNI</option>
+                                                    <option 
+                                                    value="2"
+                                                    {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
+                                                     >Pasaporte</option>
                                                 </select>
                                                 <label for="tipo_documento_{{$i}}">Seleccione tipo de documento</label>
 
@@ -348,7 +391,15 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" value="{{$data[$i]->num_identificacion}}" placeholder="Numero Identificación" aria-label="Numero Identificación" required>
+                                                <input 
+                                                name="num_identificacion_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="num_identificacion_{{$i}}"
+                                                value="{{ isset($data[$i]) ? $data[$i]->num_identificacion : '' }}"
+                                                placeholder="Numero Identificación" 
+                                                aria-label="Numero Identificación" 
+                                                required>
                                                 <label for="num_identificacion_{{$i}}">Numero de Identificación</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -364,7 +415,15 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" value="{{$data[$i]->fecha_expedicion_doc}}" placeholder="Fecha de Expedición" aria-label="Fecha de Expedición" required>
+                                                <input 
+                                                name="fecha_expedicion_doc_{{$i}}" 
+                                                type="date" 
+                                                class="form-control" 
+                                                id="fecha_expedicion_doc_{{$i}}" 
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->fecha_expedicion : (isset($data[$i]->fecha_expedicion_doc) ? $data[$i]->fecha_expedicion_doc : '') }}"
+                                                placeholder="Fecha de Expedición" 
+                                                aria-label="Fecha de Expedición" 
+                                                required>
                                                 <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -381,9 +440,23 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="Sexo" required>
-                                                    <option value="Masculino" @if($data[$i]->sexo == 'Masculino') selected @endif {{ (old('sexo_'.$i) == 'Masculino' ? 'selected' : '') }}>Masculino</option>
-                                                    <option value="Femenino" @if($data[$i]->sexo == 'Femenino') selected @endif {{ (old('sexo_'.$i) == 'Femenino' ? 'selected' : '') }}>Femenino</option>
-                                                    <option value="Binario" @if($data[$i]->sexo == 'Binario') selected @endif {{ (old('sexo_'.$i) == 'Binario' ? 'selected' : '') }}>No Binario</option>
+                                                    <option 
+                                                    value="Masculino" 
+                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Masculino') || old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}
+                                                    >Masculino
+                                                    </option>
+                                                    <option 
+                                                    value="Femenino" 
+                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Femenino') || old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}
+                                                    >
+                                                    Femenino
+                                                    </option>
+                                                    <option 
+                                                    value="Binario" 
+                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Binario') || old('sexo_'.$i) == 'Binario' ? 'selected' : '' }}
+                                                    >
+                                                    No Binario
+                                                    </option>
                                                 </select>
                                                 <label for="sexo_{{$i}}">Seleccione Sexo</label>
 
@@ -401,7 +474,15 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="email_{{$i}}" type="text" class="form-control" id="email_{{$i}}" value="{{$data[$i]->email}}" placeholder="Correo Electronico" aria-label="Correo Electronico" required>
+                                                <input 
+                                                name="email_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="email_{{$i}}"
+                                                value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
+                                                placeholder="Correo Electronico" 
+                                                aria-label="Correo Electronico" 
+                                                required>
                                                 <label for="email_{{$i}}">Correo Electronico</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -630,9 +711,9 @@
     window.onload = function() {
 
         var reserva = @json($reserva);
-        var data = @json($data)
+        var data = @json($data);
 
-        for (let i = 0; i < reserva.numero_personas; i++) {
+        for (let i = 0; i < data.length; i++) {
             if (data[i].tipo_documento == 1) {
                 
                 var divPhotos = document.getElementById('dniUploaed_'+i);
@@ -659,8 +740,10 @@
                 var divPhotos = document.getElementById('pasaporteUpload_'+i);
                 divPhotos.style.display = 'block';
                 var imageUrl3 = data[i].pasaporte.url;
-            
+
                 if (imageUrl3) {
+                    console.log(imageUrl3)
+
                     var output = document.getElementById('image-preview_pasaporte_'+i);
                     output.src = '/'+imageUrl3;
                     output.style.display = 'block';
