@@ -344,7 +344,6 @@
                                                         <option 
                                                         value="{{$pais}}"
                                                         {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
-
                                                         >
                                                         {{$pais}}
                                                     </option>
