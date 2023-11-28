@@ -24,7 +24,7 @@ class DNIController extends Controller
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
-            if($cliente->data_dni == true){
+            if($reserva->dni_entregado == true){
                 return view('gracias');
             }
         }
@@ -134,18 +134,19 @@ class DNIController extends Controller
                 // $cliente->data_dni = true;
                 $cliente->save();
 
-                if ($request->input('tipo_documento_'.$i) == 0) {
+                if ($request->input('tipo_documento_'.$i) == 1) {
                     // Si tenemos imagen Frontal DNI
                     if($request->hasFile('fontal_'.$i)){
                         // Imagen Frontal DNI
                         $file = $request->file('fontal_'.$i);
                         // Guardamos la imagen
-                        $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 13, 'FrontalDNI');
+                        $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 13, 'FrontalDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
-                    }else{
+                    }
+                    if ($request->input('tipo_documento_'.$i) == 1) {
                         // Si no obtenemos imagen Frontal del DNI
                         $frontal = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 13)
@@ -159,12 +160,13 @@ class DNIController extends Controller
                         // Imagen Frontal DNI
                         $fileTrasera = $request->file('trasera_'.$i);
                         // Guardamos la imagen
-                        $reponseImage = $this->guardarImagen($fileTrasera, $cliente, $reserva, 14, 'TraseraDNI');
+                        $reponseImage = $this->guardarImagen($fileTrasera, $cliente, $reserva, 14, 'TraseraDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
-                    }else {
+                    }
+                    if ($request->input('tipo_documento_'.$i) == 1) {
                         $trasera = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 14)
                         ->first();
@@ -179,12 +181,13 @@ class DNIController extends Controller
                         // Imagen Frontal DNI
                         $file = $request->file('pasaporte_'.$i);
                         // Guardamos la imagen
-                        $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 15, 'Pasaporte');
+                        $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 15, 'Pasaporte', null);
                         // Si devuelve error
                         if (!$reponseImage) {
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
-                    } else {
+                    } 
+                    if ($request->input('tipo_documento_'.$i) == 2) {
                         $pasaporte = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 15)
                         ->first();
@@ -196,6 +199,7 @@ class DNIController extends Controller
             } else {
 
                 $huesped = Huesped::where('reserva_id', $reserva->id)->where('contador', $i)->first();
+                // dd($huesped);
                 if ($huesped != null) {
                     // Comprobamos si la reserva ya tiene los dni entregados
                     $huesped->nombre = $request->input('nombre_'.$i);
@@ -210,46 +214,53 @@ class DNIController extends Controller
                     $huesped->email = $request->input('email_'.$i);
                     $huesped->contador = $i;
                     $huesped->save();
+                    // dd($huesped);
 
-                    if ($request->input('tipo_documento_'.$i) == 0) {
+                    if ($request->input('tipo_documento_'.$i) == 1) {
                         // Si tenemos imagen Frontal DNI
                         if($request->hasFile('fontal_'.$i)){
                             // Imagen Frontal DNI
                             $file = $request->file('fontal_'.$i);
                             // Guardamos la imagen
-                            $reponseImage = $this->guardarImagen($file, $huesped, $reserva, 13, 'FrontalDNI');
+                            $reponseImage = $this->guardarImagen($file, $huesped, $reserva, 13, 'FrontalDNI', true);
                             // Si devuelve error
                             if (!$reponseImage) {
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
-                        }else{
-                            $frontal = Photo::where('huespedes_id', $huesped->id)
-                            ->where('photo_categoria_id', 13)
-                            ->first();
-                            if (!$frontal) {
-                                return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
+                        } else {
+                            if ($request->input('tipo_documento_'.$i) == 1) {
+                                $frontal = Photo::where('huespedes_id', $huesped->id)
+                                ->where('photo_categoria_id', 13)
+                                ->first();
+                                if (!$frontal) {
+                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
+                                }
+        
                             }
-    
                         }
+                        
                         // Si tenemos imagen Trasera DNI
                         if($request->hasFile('trasera_'.$i)){
                             // Imagen Frontal DNI
                             $fileTrasera = $request->file('trasera_'.$i);
                             // Guardamos la imagen
-                            $reponseImage = $this->guardarImagen($fileTrasera, $huesped, $reserva, 14, 'TraseraDNI');
+                            $reponseImage = $this->guardarImagen($fileTrasera, $huesped, $reserva, 14, 'TraseraDNI', true);
                             // Si devuelve error
                             if (!$reponseImage) {
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
                             $reserva->dni_entregado = true;
-                        }else {
-                            $trasera = Photo::where('huespedes_id', $huesped->id)
-                            ->where('photo_categoria_id', 14)
-                            ->first();
-                            if (!$trasera) {
-                                return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
+                        } else {
+                            if ($request->input('tipo_documento_'.$i) == 1) {
+                                $trasera = Photo::where('huespedes_id', $huesped->id)
+                                ->where('photo_categoria_id', 14)
+                                ->first();
+                                if (!$trasera) {
+                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
+                                }
                             }
                         }
+                        
     
                     }else {
                         // Si tenemos imagen Pasaporte
@@ -257,20 +268,23 @@ class DNIController extends Controller
                             // Imagen Pasaporte
                             $file = $request->file('frontal_'.$i);
                             // Guardamos la imagen
-                            $reponseImage = $this->guardarImagen($file, $huesped, $reserva, 15, 'Pasaporte');
+                            $reponseImage = $this->guardarImagen($file, $huesped, $reserva, 15, 'Pasaporte', true);
                             // Si devuelve error
                             if (!$reponseImage) {
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
                             $reserva->dni_entregado = true;
-                        }else{
-                            $pasaporte = Photo::where('huespedes_id', $huesped->id)
-                            ->where('photo_categoria_id', 15)
-                            ->first();
-                            if (!$pasaporte) {
-                                return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
+                        } else {
+                            if ($request->input('tipo_documento_'.$i) == 2) {
+                                $pasaporte = Photo::where('huespedes_id', $huesped->id)
+                                ->where('photo_categoria_id', 15)
+                                ->first();
+                                if (!$pasaporte) {
+                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
+                                }
                             }
                         }
+                        
                         
                     }
                 }else{
@@ -287,12 +301,14 @@ class DNIController extends Controller
                         'sexo' => $request->input('sexo_'.$i),
                         'pais' => $request->input('pais'.$i),
                         'email'  => $request->input('email_'.$i),
-                        'contador' => $i
+                        'contador' => $i,
+                        'reserva_id' => $reserva->id
+
                     ];
                     $huespedFinal = Huesped::create($huespedNew);
+                    // dd($huespedNew);
 
-
-                    if ($request->input('tipo_documento_'.$i) == 0) {
+                    if ($request->input('tipo_documento_'.$i) == 1) {
                         // Si tenemos imagen Frontal DNI
                         if($request->hasFile('fontal_'.$i)){
                             // Imagen Frontal DNI
@@ -304,8 +320,9 @@ class DNIController extends Controller
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
 
-                        }else{
-                            $frontal = Photo::where('huespedes_id', $huesped->id)
+                        }
+                        if ($request->input('tipo_documento_'.$i) == 1) {
+                            $frontal = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 13)
                             ->first();
                             if (!$frontal) {
@@ -323,8 +340,9 @@ class DNIController extends Controller
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
                             $reserva->dni_entregado = true;
-                        }else {
-                            $trasera = Photo::where('huespedes_id', $huesped->id)
+                        }
+                        if ($request->input('tipo_documento_'.$i) == 1) {
+                            $trasera = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 14)
                             ->first();
                             if (!$trasera) {
@@ -344,8 +362,9 @@ class DNIController extends Controller
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                             }
                             $reserva->dni_entregado = true;
-                        }else{
-                            $pasaporte = Photo::where('huespedes_id', $huesped->id)
+                        }
+                        if ($request->input('tipo_documento_'.$i) == 2) {
+                            $pasaporte = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 15)
                             ->first();
                             if (!$pasaporte) {
@@ -357,6 +376,8 @@ class DNIController extends Controller
             }
         }
         $reserva->dni_entregado = true;
+        $reserva->save();
+
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
         $cliente->data_dni = true;
         $cliente->save();
@@ -391,20 +412,29 @@ class DNIController extends Controller
         return view('dni.pasaporte', compact('id'));
     }
 
-    public function guardarImagen($file, $cliente, $reserva, $categoria, $name, $huesped = false)
+    public function guardarImagen($file, $cliente, $reserva, $categoria, $name, $huesped)
     {
         // Imagen Frontal DNI
-        
+        // dd($cliente);
         // $file = $file->file('fontal_'.$i);
         $imageName = time().'_'.$cliente->id.'_'.$name.'.'.$file->getClientOriginalExtension();
         $file->move(public_path('imagesCliente'), $imageName);
 
         $imageUrl = 'imagesCliente/' . $imageName;
 
+        if($huesped == true){
+            $imagenExistente = Photo::where('reserva_id', $reserva->id)
+            ->where('photo_categoria_id', $categoria)
+            ->where('huespedes_id', $cliente->id)
+            ->first();
+        }else {
+            $imagenExistente = Photo::where('reserva_id', $reserva->id)
+            ->where('photo_categoria_id', $categoria)
+            ->where('cliente_id', $cliente->id)
+            ->first();
+        }
         // Verificar si ya existe una imagen para ese limpieza_id y photo_categoria_id
-        $imagenExistente = Photo::where('reserva_id', $reserva->id)
-        ->where('photo_categoria_id', $categoria)
-        ->first();
+        
 
         if ($imagenExistente) {
             // Si existe, borrar la imagen antigua del servidor
@@ -420,13 +450,16 @@ class DNIController extends Controller
             return true;
         } else {
 
-            $cliente = Cliente::where('id', $reserva->cliente_id)->first();
+            // $cliente = Cliente::where('id', $reserva->cliente_id)->first();
             // Si no existe, guardar la nueva imagen
             $imagenes = new Photo;
             $imagenes->url = $imageUrl;
             $imagenes->photo_categoria_id = $categoria;
             $imagenes->reserva_id = $reserva->id;
+            // dd($huesped == null);
+
             if ($huesped == true) {
+                // dd($cliente);
                 $imagenes->huespedes_id = $cliente->id;
             }else {
                 $imagenes->cliente_id = $cliente->id;

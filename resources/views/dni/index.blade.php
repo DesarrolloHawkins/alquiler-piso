@@ -396,7 +396,7 @@
                                                 type="text" 
                                                 class="form-control" 
                                                 id="num_identificacion_{{$i}}"
-                                                value="{{ isset($data[$i]) ? $data[$i]->num_identificacion : '' }}"
+                                                value="{{ isset($data[$i]) ? ($i == 0 ? $data[$i]->num_identificacion : $data[$i]->numero_identificacion) : '' }}"
                                                 placeholder="Numero Identificación" 
                                                 aria-label="Numero Identificación" 
                                                 required>
