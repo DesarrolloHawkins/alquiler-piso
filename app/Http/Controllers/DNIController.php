@@ -167,7 +167,8 @@ class DNIController extends Controller
          $response_data = json_decode($response, true);
          $responseReturn = [
            'status' => 'ok',
-           'messages' => $response_data['choices'][0]['text']
+        //    'messages' => $response_data['choices'][0]['text']
+           'messages' => $response_data
          ];
          Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
 
