@@ -106,7 +106,7 @@ class DNIController extends Controller
 
         ];
         $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));
-        $textos = json_decode($traduccion['messages']['choices'][0]['message']['content']);
+        $textos = json_decode($traduccion['messages']['choices'][0]['message']['content'] ,true);
         // Limpiar el string para eliminar las comillas triples y la palabra 'json'
         // $cleanJsonString = trim($textoss, "' ");
         // $cleanJsonString = str_replace("json ", "", $cleanJsonString);
