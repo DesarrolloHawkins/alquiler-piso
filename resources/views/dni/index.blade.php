@@ -460,7 +460,7 @@
                                                     No Binario
                                                     </option>
                                                 </select>
-                                                <label for="sexo_{{$i}}">{{$textos['sexo']}}</label>
+                                                <label for="sexo_{{$i}}">{{$textos['Sexo']}}</label>
 
                                                 <div class="valid-feedback">
                                                     Correcto!
