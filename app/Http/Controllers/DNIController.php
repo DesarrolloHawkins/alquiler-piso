@@ -115,7 +115,7 @@ class DNIController extends Controller
     public function chatGpt($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
-     $url = 'https://api.openai.com/v1/completions';
+     $url = 'https://api.openai.com/v1/chat/completions';
      $headers = array(
          'Content-Type: application/json',
          'Authorization: Bearer '. $token
@@ -123,7 +123,10 @@ class DNIController extends Controller
 
 
      $data = array(
-       "prompt" => $texto .' ->', 
+       "message" => [
+            "role" => "user",
+            'content' => $texto
+       ], 
        // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
        // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
        // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
