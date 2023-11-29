@@ -239,9 +239,9 @@
                                 @for ($i = 0; $i < $reserva->numero_personas; $i++)
                                     <div class="card-body">
                                         @if ($i == 0)
-                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">Huesped Principal</h3>
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Huesped.Principal']}}</h3>
                                         @else
-                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">Acompañante {{$i}}</h3>
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Acompañante']}} {{$i}}</h3>
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
@@ -250,10 +250,10 @@
                                                 type="text" 
                                                 class="form-control" 
                                                 id="nombre_{{$i}}" 
-                                                placeholder="Escriba su nombre" 
+                                                placeholder="{{$textos['Nombre']}}" 
                                                 value="{{ $i == 0 || isset($data[$i]) ? $data[$i]->nombre : '' }}" 
                                                 required>
-                                                <label for="nombre_{{$i}}">Nombre</label>
+                                                <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -273,8 +273,8 @@
                                                 class="form-control" 
                                                 id="apellido1_{{$i}}"  
                                                 value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->primer_apellido : (isset($data[$i]->apellido1) ? $data[$i]->apellido1 : '') }}" 
-                                                placeholder="Escriba su primer apellido" required>
-                                                <label for="apellido1_{{$i}}">Primer Apellido</label>
+                                                placeholder="{{$textos['Primer.Apellido']}}" required>
+                                                <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
