@@ -115,9 +115,9 @@ class DNIController extends Controller
         $array = json_decode($cleanJsonString, true);
 
         // Imprimir el array para verificar
-        print_r($array);
+        // print_r($array);
 
-        return json_encode($textoss);
+        return json_encode($array);
 
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
     }
