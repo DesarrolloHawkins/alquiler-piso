@@ -106,7 +106,8 @@ class DNIController extends Controller
 
         ];
         $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el array para poder utilizarlo en php, te adjunto el array: ' . json_encode($textos));
-        return $traduccion['messages']['choices'][0]['message']['content'];
+        $textoss = $traduccion['messages']['choices'][0]['message']['content'];
+        return json_encode($textoss);
 
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
     }
