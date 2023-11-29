@@ -341,7 +341,7 @@
                                                 id="nacionalidad_{{$i}}" 
                                                 class="form-select js-example-basic-single{{$i}}" 
                                                 aria-label="Pais" 
-                                                placeholder="Pais">
+                                                placeholder="{{$textos['Pais']}}">
                                                     @foreach ($paises as $pais)
                                                         <option 
                                                         value="{{$pais}}"
@@ -351,7 +351,7 @@
                                                     </option>
                                                     @endforeach
                                                 </select>
-                                                <label for="nacionalidad_{{$i}}">Seleccione Pais</label>
+                                                <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
 
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -503,7 +503,7 @@
                                                     <h4>{{$textos['Imagen.Frontal']}}</h4>
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
-                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
                                                             Correcto!
@@ -519,7 +519,7 @@
 
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
-                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> TRASERA</button>
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Trasera']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
                                                             Correcto!
@@ -536,7 +536,7 @@
                                                     <h4>{{$textos['Imagen.Pasaporte']}}</h4>
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)">
-                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
                                                             Correcto!

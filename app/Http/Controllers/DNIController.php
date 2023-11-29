@@ -103,6 +103,9 @@ class DNIController extends Controller
             'Imagen.Trasera' => 'Imagen trasera del DNI',
             'Imagen.Pasaporte' => 'Imagen de la hoja de información del Pasaporte',
             'Enviar' => 'Enviar',
+            'Frontal' => 'Frontal',
+            'Trasera' => 'Trasera',
+            'Pais' => 'Selecciona Pais',
 
         ];
         $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));
