@@ -296,8 +296,8 @@
                                                 class="form-control" 
                                                 id="apellido2_{{$i}}"
                                                 value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->segundo_apellido : (isset($data[$i]->apellido2) ? $data[$i]->apellido2 : '') }}"                                                 
-                                                placeholder="Escriba su segundo apellido">
-                                                <label for="apellido2_{{$i}}">Segundo Apellido</label>
+                                                placeholder="{{$textos['Segundo.Apellido']}}">
+                                                <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -318,10 +318,10 @@
                                                 class="form-control" 
                                                 id="fecha_nacimiento_{{$i}}" 
                                                 value="{{ isset($data[$i]) ? $data[$i]->fecha_nacimiento : '' }}"
-                                                placeholder="Fecha de Nacimiento" 
+                                                placeholder="{{$textos['Fecha.Nacimiento']}}" 
                                                 aria-label="Fecha de Nacimiento" 
                                                 required>
-                                                <label for="fecha_nacimiento_{{$i}}">Fecha de Nacimiento</label>
+                                                <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -367,7 +367,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="DNI o Pasaporte">
+                                                <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
                                                     <option value="{{null}}" disabled>Seleccion el tipo</option>
                                                     <option 
                                                     value="1"
@@ -378,7 +378,7 @@
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
                                                      >Pasaporte</option>
                                                 </select>
-                                                <label for="tipo_documento_{{$i}}">Seleccione tipo de documento</label>
+                                                <label for="tipo_documento_{{$i}}">{{$textos['Tipo.Documento']}}</label>
 
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -399,10 +399,10 @@
                                                 class="form-control" 
                                                 id="num_identificacion_{{$i}}"
                                                 value="{{ isset($data[$i]) ? ($i == 0 ? $data[$i]->num_identificacion : $data[$i]->numero_identificacion) : '' }}"
-                                                placeholder="Numero Identificación" 
+                                                placeholder="{{$textos['Numero.Identificacion']}}" 
                                                 aria-label="Numero Identificación" 
                                                 required>
-                                                <label for="num_identificacion_{{$i}}">Numero de Identificación</label>
+                                                <label for="num_identificacion_{{$i}}">{{$textos['Numero.Identificacion']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -423,10 +423,10 @@
                                                 class="form-control" 
                                                 id="fecha_expedicion_doc_{{$i}}" 
                                                 value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->fecha_expedicion : (isset($data[$i]->fecha_expedicion_doc) ? $data[$i]->fecha_expedicion_doc : '') }}"
-                                                placeholder="Fecha de Expedición" 
+                                                placeholder="{{$textos['Fecha.Expedicion']}}" 
                                                 aria-label="Fecha de Expedición" 
                                                 required>
-                                                <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
+                                                <label for="fecha_expedicion_doc_{{$i}}">{{$textos['Fecha.Expedicion']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -441,7 +441,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="Sexo" required>
+                                                <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="{{$textos['Sexo']}}" required>
                                                     <option 
                                                     value="Masculino" 
                                                     {{ (isset($data[$i]) && $data[$i]->sexo == 'Masculino') || old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}
@@ -460,7 +460,7 @@
                                                     No Binario
                                                     </option>
                                                 </select>
-                                                <label for="sexo_{{$i}}">Seleccione Sexo</label>
+                                                <label for="sexo_{{$i}}">{{$textos['Correo.Electronico']}}</label>
 
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -482,10 +482,10 @@
                                                 class="form-control" 
                                                 id="email_{{$i}}"
                                                 value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
-                                                placeholder="Correo Electronico" 
+                                                placeholder="{{$textos['Sexo']}}" 
                                                 aria-label="Correo Electronico" 
                                                 required>
-                                                <label for="email_{{$i}}">Correo Electronico</label>
+                                                <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
                                                 <div class="valid-feedback">
                                                     Correcto!
                                                 </div>
@@ -500,7 +500,7 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <div id="dniUploaed_{{$i}}" style="display: none">
-                                                    <h4>Imagen frontal del DNI</h4>
+                                                    <h4>{{$textos['Imagen.Frontal']}}</h4>
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
@@ -515,7 +515,7 @@
                                                             <div class="alert alert-danger">{{ $message }}</div>
                                                         @enderror
                                                     </div>
-                                                    <h4>Imagen trasera del DNI</h4>
+                                                    <h4>{{$textos['Imagen.Trasera']}}</h4>
 
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
@@ -533,7 +533,7 @@
                                                     </div>
                                                 </div>
                                                 <div id="pasaporteUpload_{{$i}}" style="display: none">
-                                                    <h4>Imagen de la hoja de informacion del Pasaporte</h4>
+                                                    <h4>{{$textos['Imagen.Pasaporte']}}</h4>
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="frontal_{{$i}}" onchange="previewImage3({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> FRONTAL</button>
@@ -554,7 +554,7 @@
                                     </div>
                                 @endfor  
                                 <div class="mb-3">
-                                    <button class="btn btn-terminar w-100">Enviar</button>
+                                    <button class="btn btn-terminar w-100">{{$textos['Enviar']}}</button>
                                 </div>  
                             </form>    
                         </div>    
