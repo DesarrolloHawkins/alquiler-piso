@@ -123,23 +123,20 @@ class DNIController extends Controller
 
 
      $data = array(
-       "message" => [
-            "role" => "user",
-            'content' => $texto
-       ], 
-       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
-       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
-       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
-       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
-       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
-       "model" => "gpt-4-1106-preview",
-       "temperature" => 0,
-       "max_tokens"=> 200,
-       "top_p"=> 1,
-       "frequency_penalty"=> 0,
-       "presence_penalty"=> 0,
-       "stop"=> ["_END"]
-     );
+        "messages" => [
+            [
+                "role" => "user",
+                'content' => $texto
+            ]
+        ], 
+        "model" => "gpt-4-1106-preview",
+        "temperature" => 0,
+        "max_tokens" => 200,
+        "top_p" => 1,
+        "frequency_penalty" => 0,
+        "presence_penalty" => 0,
+        "stop" => ["_END"]
+    );
 
      // Inicializar cURL y configurar las opciones
      $curl = curl_init();
