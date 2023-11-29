@@ -460,7 +460,7 @@
                                                     No Binario
                                                     </option>
                                                 </select>
-                                                <label for="sexo_{{$i}}">{{$textos['Correo.Electronico']}}</label>
+                                                <label for="sexo_{{$i}}">{{$textos['sexo']}}</label>
 
                                                 <div class="valid-feedback">
                                                     Correcto!
@@ -482,7 +482,7 @@
                                                 class="form-control" 
                                                 id="email_{{$i}}"
                                                 value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
-                                                placeholder="{{$textos['Sexo']}}" 
+                                                placeholder="{{$textos['Correo.Electronico']}}" 
                                                 aria-label="Correo Electronico" 
                                                 required>
                                                 <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
