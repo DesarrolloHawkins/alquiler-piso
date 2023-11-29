@@ -117,7 +117,7 @@ class DNIController extends Controller
 		// $respuestaLimpia2 = trim($respuestaLimpia);
         // // Convertir el string limpio en un array
         // $array = json_decode($cleanJsonString, true);
-        dd($textoss);
+        dd(json_decode($textoss));
         // Imprimir el array para verificar
         // print_r($array);
 
