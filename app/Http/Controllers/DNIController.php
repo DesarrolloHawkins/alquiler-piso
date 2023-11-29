@@ -170,7 +170,7 @@ class DNIController extends Controller
         //    'messages' => $response_data['choices'][0]['text']
            'messages' => $response_data
          ];
-         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
+        //  Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn );
 
          return $responseReturn;
      }
