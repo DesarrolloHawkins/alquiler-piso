@@ -223,7 +223,7 @@
                 
                 <div class="card">
                     <div class="card-header bg-color-primero">
-                        {{dd($textos)}}
+                        {{-- {{dd($textos)}} --}}
                         {{-- <p>{{ __('messages.welcome') }}</p> --}}
                         {{$textos['Inicio']}}
                     </div>
