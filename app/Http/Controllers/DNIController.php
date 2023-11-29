@@ -106,6 +106,23 @@ class DNIController extends Controller
             'Frontal' => 'Frontal',
             'Trasera' => 'Trasera',
             'Pais' => 'Selecciona Pais',
+            'Dni' => 'Documento Nacional de Identidad',
+            'Pasaporte' => 'Pasaporte',
+            'Masculino' => 'Masculino',
+            'Femenino' => 'Femenino',
+            'Selecciona_tipo' => 'Seleccion el tipo',
+            'nombre_obli' => 'El nombre es obligatorio.',
+            'apellido_obli' => 'El primer apellido es obligatorio.',
+            'fecha_naci_obli' => 'La fecha de nacimiento es obligatoria.',
+            'pais_obli' => 'El pais obligatorio.',
+            'tipo_obli' => 'El primer tipo de documento es obligatorio.',
+            'numero_obli' => 'El numero de identificación es obligatorio.',
+            'fecha_obli' => 'La fecha de expedición es obligatoria.',
+            'email_obli' => 'El correo electronico es obligatorio.',
+            'dni_front_obli' => 'La foto frontal del DNI es obligatoria.',
+            'pasaporte_obli' => 'La foto frontal del PASAPORTE es obligatoria.',
+            'sexo_obli' => 'El sexo es obligatorio.',
+            'Correcto' => 'Correcto!',
 
         ];
         $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));

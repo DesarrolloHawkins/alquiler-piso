@@ -124,7 +124,7 @@
                                     <input type="text" class="form-control" id="nombre" placeholder="Escriba su nombre..." required>
                                     <label for="nombre">Nombre</label>
                                     <div class="valid-feedback">
-                                        Correcto!
+                                        {{$textos['Correcto']}}
                                     </div>
                                     <div class="invalid-feedback">
                                         Por favor el nombre es obligatorio.
@@ -256,10 +256,10 @@
                                                 required>
                                                 <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El nombre es obligatorio.
+                                                    {{$textos['nombre_obli']}}
                                                 </div>
                                                 @error('nombre_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -277,10 +277,10 @@
                                                 placeholder="{{$textos['Primer.Apellido']}}" required>
                                                 <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El primer apellido es obligatorio.
+                                                    {{$textos['apellido_obli']}}
                                                 </div>
                                                 @error('apellido1_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -299,7 +299,7 @@
                                                 placeholder="{{$textos['Segundo.Apellido']}}">
                                                 <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
                                                     El primer apellido es obligatorio.
@@ -323,10 +323,10 @@
                                                 required>
                                                 <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    La fecha de nacimiento es obligatoria.
+                                                    {{$textos['fecha_naci_obli']}}
                                                 </div>
                                                 @error('fecha_nacimiento_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -354,10 +354,10 @@
                                                 <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
 
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El pais obligatorio.
+                                                    {{$textos['pais_obli']}}
                                                 </div>
                                                 @error('nacionalidad_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -381,10 +381,10 @@
                                                 <label for="tipo_documento_{{$i}}">{{$textos['Tipo.Documento']}}</label>
 
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El primer tipo de documento es obligatorio.
+                                                    {{$textos['tipo_obli']}}
                                                 </div>
                                                 @error('tipo_documento_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -404,10 +404,10 @@
                                                 required>
                                                 <label for="num_identificacion_{{$i}}">{{$textos['Numero.Identificacion']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El numero de identificación es obligatorio.
+                                                    {{$textos['numero_obli']}}
                                                 </div>
                                                 @error('num_identificacion_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -428,10 +428,10 @@
                                                 required>
                                                 <label for="fecha_expedicion_doc_{{$i}}">{{$textos['Fecha.Expedicion']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    La fecha de expedición es obligatoria.
+                                                    {{$textos['fecha_obli']}}
                                                 </div>
                                                 @error('fecha_expedicion_doc_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -463,10 +463,11 @@
                                                 <label for="sexo_{{$i}}">{{$textos['Sexo']}}</label>
 
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El sexo es obligatorio.
+                                                    {{$textos['sexo_obli']}}
+                                                    
                                                 </div>
                                                 @error('sexo_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -487,10 +488,10 @@
                                                 required>
                                                 <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
                                                 <div class="valid-feedback">
-                                                    Correcto!
+                                                    {{$textos['Correcto']}}
                                                 </div>
                                                 <div class="invalid-feedback">
-                                                    El correo electronico es obligatorio.
+                                                    {{$textos['email_obli']}}
                                                 </div>
                                                 @error('email_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
@@ -506,10 +507,10 @@
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
-                                                            Correcto!
+                                                            {{$textos['Correcto']}}
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            La foto frontal del DNI es obligatoria.
+                                                            {{$textos['dni_front_obli']}}
                                                         </div>
                                                         @error('fontal_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
@@ -522,10 +523,10 @@
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Trasera']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
-                                                            Correcto!
+                                                            {{$textos['Correcto']}}
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            La foto trasera del DNI es obligatoria.
+                                                            {{$textos['dni_front_obli']}}
                                                         </div>
                                                         @error('trasera_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
@@ -539,10 +540,10 @@
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
-                                                            Correcto!
+                                                            {{$textos['Correcto']}}
                                                         </div>
                                                         <div class="invalid-feedback">
-                                                            La foto frontal del PASAPORTE es obligatoria.
+                                                            {{$textos['pasaporte_obli']}}
                                                         </div>
                                                         @error('fontal_{{$i}}')
                                                             <div class="alert alert-danger">{{ $message }}</div>
