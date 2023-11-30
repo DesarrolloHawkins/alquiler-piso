@@ -40,7 +40,7 @@ class DNIController extends Controller
             $textosTraducidos = json_decode(file_get_contents($path_paises), true);
         } else {
             // Si no existe el archivo, hacer la petición a chatGpt
-            $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($paises));
+            $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . $paises);
             $textosTraducidos = json_decode($traducciones['messages']['choices'][0]['message']['content'], true);
 
             // Guardar la traducción en un nuevo archivo
@@ -48,6 +48,7 @@ class DNIController extends Controller
         }
 
         $paises = $textosTraducidos;
+
 
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
