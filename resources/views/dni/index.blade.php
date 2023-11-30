@@ -345,7 +345,7 @@
                                                     @foreach ($paises as $pais)
                                                         <option 
                                                         value="{{$pais}}"
-                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($paisCliente) ? $paisCliented == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
+                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($paisCliente) ? $paisCliente == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
                                                         >
                                                         {{$pais}}
                                                     </option>
