@@ -333,7 +333,7 @@
                                                 @enderror
                                             </div> 
                                         </div>
-                                        {{$paisCliente}}
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select 
@@ -345,7 +345,7 @@
                                                     @foreach ($paises as $pais)
                                                         <option 
                                                         value="{{$pais}}"
-                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($paisCliente) ? $paisCliente == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
+                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
                                                         >
                                                         {{$pais}}
                                                     </option>
