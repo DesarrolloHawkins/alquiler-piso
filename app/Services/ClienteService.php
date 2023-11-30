@@ -138,7 +138,7 @@ class ClienteService
 
         $data = [
             "messages" => [
-                ["role" => "user", "content" => 'podrias decirme en una palabra el pais de este array '. json_encode($paises) .', de este codigo de pais, no me digas nada mas que el string donde coincida el codigo con el pais del array que te envie y no pongas punto final: ' . $codigo,]
+                ["role" => "user", "content" => 'podrias decirme en una palabra el pais de este array '. json_encode($paises) .', de este codigo de pais, no me digas nada mas que el string donde coincida el codigo con el pais del array que te envie, no me pongas el resultado entre comillas ni nada solo el valor y no pongas punto final: ' . $codigo,]
             ],
             "model" => "gpt-4",
             "temperature" => 0,
