@@ -333,7 +333,7 @@
                                                 @enderror
                                             </div> 
                                         </div>
-
+                                        {{$paisCliente}}
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select 
