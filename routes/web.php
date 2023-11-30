@@ -86,7 +86,7 @@ Route::get('/chatgpt/{texto}', [App\Http\Controllers\WhatsappController::class, 
 Route::get('/cron', [App\Http\Controllers\WhatsappController::class, 'cron'])->name('whatsapp.cron');
 
 // Rutas varias
-Route::get('/gracias', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
+Route::get('/gracias/{idioma}', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
 Route::get('/contacto', [App\Http\Controllers\GraciasController::class, 'contacto'])->name('gracias.contacto');
 
 Route::get('/mensajes-whatsapp', [App\Http\Controllers\WhatsappController::class, 'whatsapp'])->name('whatsapp.mensajes');
