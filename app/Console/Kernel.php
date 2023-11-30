@@ -71,6 +71,7 @@ class Kernel extends ConsoleKernel
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
+                        Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
 
                         // Data para guardar Mensaje enviado
                         $dataMensaje = [
