@@ -41,7 +41,6 @@ class DNIController extends Controller
         } else {
             // Si no existe el archivo, hacer la petición a chatGpt
             $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($paises));
-            dd($traducciones);
             $textosTraducidos = json_decode($traducciones['messages']['choices'][0]['message']['content'], true);
 
             // Guardar la traducción en un nuevo archivo
@@ -174,7 +173,7 @@ class DNIController extends Controller
         ], 
         "model" => "gpt-4-1106-preview",
         "temperature" => 0,
-        "max_tokens" => 500,
+        "max_tokens" => 1000,
         "top_p" => 1,
         "frequency_penalty" => 0,
         "presence_penalty" => 0,
