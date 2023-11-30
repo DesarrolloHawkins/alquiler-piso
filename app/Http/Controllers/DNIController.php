@@ -30,12 +30,32 @@ class DNIController extends Controller
         Session::put('idioma', $cliente->nacionalidad);
         // Cambiar el idioma de la aplicación
         App::setLocale($cliente->nacionalidad);
+
+        $idiomaClientePaises = $cliente->nacionalidad;
+        $nombreArchivoPaises = 'traducciones_paises_' . $idiomaClientePaises . '.json';
+        $path_paises = storage_path('app/public/' . $nombreArchivoPaises);
+
+        if (file_exists($path_paises)) {
+            // Leer el contenido del archivo si ya existe
+            $textosTraducidos = json_decode(file_get_contents($path_paises), true);
+        } else {
+            // Si no existe el archivo, hacer la petición a chatGpt
+            $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($paises));
+            $textosTraducidos = json_decode($traducciones['messages']['choices'][0]['message']['content'], true);
+
+            // Guardar la traducción en un nuevo archivo
+            file_put_contents($path_paises, json_encode($textosTraducidos));
+        }
+
+        $paises = $textosTraducidos;
+
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
             if($reserva->dni_entregado == true){
                 return view('gracias');
             }
         }
+
         $data = [];
         if($cliente != null){
 
@@ -111,7 +131,6 @@ class DNIController extends Controller
 
         ];
 
-
         $idiomaCliente = $cliente->nacionalidad;
         $nombreArchivo = 'traducciones_' . $idiomaCliente . '.json';
         $path = storage_path('app/public/' . $nombreArchivo);
@@ -129,9 +148,7 @@ class DNIController extends Controller
         }
 
         $textos = $textosTraducidos;
-        // $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));
-        // $textos = json_decode($traduccion['messages']['choices'][0]['message']['content'] ,true);
-
+        
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
     }
 
