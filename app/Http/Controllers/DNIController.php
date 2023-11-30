@@ -70,21 +70,6 @@ class DNIController extends Controller
                 }
             }
         }
-        // dd($data);
-
-        // if ( $cliente->data_dni == null) {
-        //     return view('dni.index', compact('id', 'paises'));
-
-        // }elseif (!$cliente->photo_dni){
-            
-        //     if ($cliente->tipo_documento == 0) {
-        //         return redirect(route('dni.dni', $token));
-        //     }else {
-        //         return redirect(route('dni.pasaporte', $token));
-        //     } 
-        // }
-        //return view('404');
-
 
         $textos = [
             'Inicio' => 'Debes rellenar los datos para verificar el numero de personas que ya añadiste.',
@@ -125,23 +110,27 @@ class DNIController extends Controller
             'Correcto' => 'Correcto!',
 
         ];
-        $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));
-        $textos = json_decode($traduccion['messages']['choices'][0]['message']['content'] ,true);
-        // Limpiar el string para eliminar las comillas triples y la palabra 'json'
-        // $cleanJsonString = trim($textoss, "' ");
-        // $cleanJsonString = str_replace("json ", "", $cleanJsonString);
 
 
-        // $respuestaLimpia = str_replace("json", "", $textoss);
-		// $respuestaLimpia = str_replace("", "", $respuestaLimpia);
-		// $respuestaLimpia2 = trim($respuestaLimpia);
-        // // Convertir el string limpio en un array
-        // $array = json_decode($cleanJsonString, true);
-        // dd(json_decode($textos));
-        // Imprimir el array para verificar
-        // print_r($array);
+        $idiomaCliente = $cliente->nacionalidad;
+        $nombreArchivo = 'traducciones_' . $idiomaCliente . '.json';
+        $path = storage_path('app/public/' . $nombreArchivo);
 
-        // return $array;
+        if (file_exists($path)) {
+            // Leer el contenido del archivo si ya existe
+            $textosTraducidos = json_decode(file_get_contents($path), true);
+        } else {
+            // Si no existe el archivo, hacer la petición a chatGpt
+            $traduccion = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaCliente.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($textos));
+            $textosTraducidos = json_decode($traduccion['messages']['choices'][0]['message']['content'], true);
+
+            // Guardar la traducción en un nuevo archivo
+            file_put_contents($path, json_encode($textosTraducidos));
+        }
+
+        $textos = $textosTraducidos;
+        // $traduccion = $this->chatGpt('Puedes traducirme este array al idioma'. $cliente->nacionalidad.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code , te adjunto el array: ' . json_encode($textos));
+        // $textos = json_decode($traduccion['messages']['choices'][0]['message']['content'] ,true);
 
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
     }
