@@ -31,7 +31,7 @@ class Cliente extends Model
         'telefono',
         'email',
         'identificador',
-        'idiomas',
+        'idioma',
     ];
 
     /**

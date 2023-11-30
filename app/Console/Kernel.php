@@ -30,7 +30,7 @@ class Kernel extends ConsoleKernel
             // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
             $reservasEntrada = Reserva::where('dni_entregado', null)
             ->where('estado_id', 1)
-            ->where('fecha_entrada', '>=', $hoy->toDateString())
+            // ->where('fecha_entrada', '>=', $hoy->toDateString())
             ->get();
 
             foreach($reservasEntrada as $reserva){
