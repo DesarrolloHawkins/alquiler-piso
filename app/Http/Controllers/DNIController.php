@@ -23,6 +23,204 @@ class DNIController extends Controller
         // Array de Paises
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
 
+        $idiomaAPais = [
+            "Afganistán" => "Pastún",
+            "Albania" => "Albanés",
+            "Alemania" => "Alemán",
+            "Andorra" => "Catalán",
+            "Angola" => "Portugués",
+            "Antigua y Barbuda" => "Inglés",
+            "Arabia Saudita" => "Árabe",
+            "Argelia" => "Árabe",
+            "Argentina" => "Español",
+            "Armenia" => "Armenio",
+            "Australia" => "Inglés",
+            "Austria" => "Alemán",
+            "Azerbaiyán" => "Azerí",
+            "Bahamas" => "Inglés",
+            "Bangladés" => "Bengalí",
+            "Barbados" => "Inglés",
+            "Baréin" => "Árabe",
+            "Bélgica" => "Neerlandés",
+            "Belice" => "Inglés",
+            "Benín" => "Francés",
+            "Bielorrusia" => "Bielorruso",
+            "Birmania" => "Birmano",
+            "Bolivia" => "Español",
+            "Bosnia y Herzegovina" => "Bosnio",
+            "Botsuana" => "Inglés",
+            "Brasil" => "Portugués",
+            "Brunéi" => "Malayo",
+            "Bulgaria" => "Búlgaro",
+            "Burkina Faso" => "Francés",
+            "Burundi" => "Kirundi",
+            "Bután" => "Dzongkha",
+            "Cabo Verde" => "Portugués",
+            "Camboya" => "Jemer",
+            "Camerún" => "Francés",
+            "Canadá" => "Inglés",
+            "Catar" => "Árabe",
+            "Chad" => "Francés",
+            "Chile" => "Español",
+            "China" => "Mandarín",
+            "Chipre" => "Griego",
+            "Ciudad del Vaticano" => "Italiano",
+            "Colombia" => "Español",
+            "Comoras" => "Comorense",
+            "Corea del Norte" => "Coreano",
+            "Corea del Sur" => "Coreano",
+            "Costa de Marfil" => "Francés",
+            "Costa Rica" => "Español",
+            "Croacia" => "Croata",
+            "Cuba" => "Español",
+            "Dinamarca" => "Danés",
+            "Dominica" => "Inglés",
+            "Ecuador" => "Español",
+            "Egipto" => "Árabe",
+            "El Salvador" => "Español",
+            "Emiratos Árabes Unidos" => "Árabe",
+            "Eritrea" => "Tigriña",
+            "Eslovaquia" => "Eslovaco",
+            "Eslovenia" => "Esloveno",
+            "España" => "Español",
+            "Estados Unidos" => "Inglés",
+            "Estonia" => "Estonio",
+            "Etiopía" => "Amárico",
+            "Filipinas" => "Filipino",
+            "Finlandia" => "Finés",
+            "Fiyi" => "Fiyiano",
+            "Francia" => "Francés",
+            "Gabón" => "Francés",
+            "Gambia" => "Inglés",
+            "Georgia" => "Georgiano",
+            "Ghana" => "Inglés",
+            "Granada" => "Inglés",
+            "Grecia" => "Griego",
+            "Guatemala" => "Español",
+            "Guyana" => "Inglés",
+            "Guinea" => "Francés",
+            "Guinea ecuatorial" => "Español",
+            "Guinea-Bisáu" => "Portugués",
+            "Haití" => "Francés",
+            "Honduras" => "Español",
+            "Hungría" => "Húngaro",
+            "India" => "Hindi",
+            "Indonesia" => "Indonesio",
+            "Irak" => "Árabe",
+            "Irán" => "Persa",
+            "Irlanda" => "Inglés",
+            "Islandia" => "Islandés",
+            "Islas Marshall" => "Marshalés",
+            "Islas Salomón" => "Inglés",
+            "Israel" => "Hebreo",
+            "Italia" => "Italiano",
+            "Jamaica" => "Inglés",
+            "Japón" => "Japonés",
+            "Jordania" => "Árabe",
+            "Kazajistán" => "Kazajo",
+            "Kenia" => "Suajili",
+            "Kirguistán" => "Kirguís",
+            "Kiribati" => "Inglés",
+            "Kuwait" => "Árabe",
+            "Laos" => "Lao",
+            "Lesoto" => "Sesotho",
+            "Letonia" => "Letón",
+            "Líbano" => "Árabe",
+            "Liberia" => "Inglés",
+            "Libia" => "Árabe",
+            "Liechtenstein" => "Alemán",
+            "Lituania" => "Lituano",
+            "Luxemburgo" => "Luxemburgués",
+            "Madagascar" => "Malgache",
+            "Malasia" => "Malayo",
+            "Malaui" => "Chichewa",
+            "Maldivas" => "Divehi",
+            "Malí" => "Francés",
+            "Malta" => "Maltés",
+            "Marruecos" => "Árabe",
+            "Mauricio" => "Inglés",
+            "Mauritania" => "Árabe",
+            "México" => "Español",
+            "Micronesia" => "Inglés",
+            "Moldavia" => "Rumano",
+            "Mónaco" => "Francés",
+            "Mongolia" => "Mongol",
+            "Montenegro" => "Montenegrino",
+            "Mozambique" => "Portugués",
+            "Namibia" => "Inglés",
+            "Nauru" => "Nauruano",
+            "Nepal" => "Nepalí",
+            "Nicaragua" => "Español",
+            "Níger" => "Francés",
+            "Nigeria" => "Inglés",
+            "Noruega" => "Noruego",
+            "Nueva Zelanda" => "Inglés",
+            "Omán" => "Árabe",
+            "Países Bajos" => "Neerlandés",
+            "Pakistán" => "Urdu",
+            "Palaos" => "Palauano",
+            "Palestina" => "Árabe",
+            "Panamá" => "Español",
+            "Papúa Nueva Guinea" => "Tok Pisin",
+            "Paraguay" => "Guaraní",
+            "Perú" => "Español",
+            "Polonia" => "Polaco",
+            "Portugal" => "Portugués",
+            "Reino Unido" => "Inglés",
+            "República Centroafricana" => "Sango",
+            "República Checa" => "Checo",
+            "República de Macedonia" => "Macedonio",
+            "República del Congo" => "Francés",
+            "República Democrática del Congo" => "Francés",
+            "República Dominicana" => "Español",
+            "República Sudafricana" => "Zulú",
+            "Ruanda" => "Kinyarwanda",
+            "Rumanía" => "Rumano",
+            "Rusia" => "Ruso",
+            "Samoa" => "Samoano",
+            "San Cristóbal y Nieves" => "Inglés",
+            "San Marino" => "Italiano",
+            "San Vicente y las Granadinas" => "Inglés",
+            "Santa Lucía" => "Inglés",
+            "Santo Tomé y Príncipe" => "Portugués",
+            "Senegal" => "Francés",
+            "Serbia" => "Serbio",
+            "Seychelles" => "Seychellense",
+            "Sierra Leona" => "Inglés",
+            "Singapur" => "Inglés",
+            "Siria" => "Árabe",
+            "Somalia" => "Somalí",
+            "Sri Lanka" => "Cingalés",
+            "Suazilandia" => "Swazi",
+            "Sudán" => "Árabe",
+            "Sudán del Sur" => "Inglés",
+            "Suecia" => "Sueco",
+            "Suiza" => "Alemán",
+            "Surinam" => "Neerlandés",
+            "Tailandia" => "Tailandés",
+            "Tanzania" => "Suajili",
+            "Tayikistán" => "Tayiko",
+            "Timor Oriental" => "Tetún",
+            "Togo" => "Francés",
+            "Tonga" => "Tongano",
+            "Trinidad y Tobago" => "Inglés",
+            "Túnez" => "Árabe",
+            "Turkmenistán" => "Turcomano",
+            "Turquía" => "Turco",
+            "Tuvalu" => "Tuvaluano",
+            "Ucrania" => "Ucraniano",
+            "Uganda" => "Inglés",
+            "Uruguay" => "Español",
+            "Uzbekistán" => "Uzbeko",
+            "Vanuatu" => "Bislama",
+            "Venezuela" => "Español",
+            "Vietnam" => "Vietnamita",
+            "Yemen" => "Árabe",
+            "Yibuti" => "Árabe",
+            "Zambia" => "Inglés",
+            "Zimbabue" => "Inglés"
+        ];
+
         // Obtenemos la Reserva
         $reserva = Reserva::where('token',$token)->first();
         // Obtenemos el Cliente
@@ -31,23 +229,33 @@ class DNIController extends Controller
         // Cambiar el idioma de la aplicación
         App::setLocale($cliente->nacionalidad);
 
-        $idiomaClientePaises = $cliente->nacionalidad;
-        $nombreArchivoPaises = 'traducciones_paises_' . $idiomaClientePaises . '.json';
-        $path_paises = storage_path('app/public/' . $nombreArchivoPaises);
+        $idiomaCliente = $cliente->nacionalidad; // Esto contiene el idioma del cliente
+        $paisCliente = "";
 
-        if (file_exists($path_paises)) {
-            // Leer el contenido del archivo si ya existe
-            $textosTraducidos = json_decode(file_get_contents($path_paises), true);
+        // Comprobamos si el idioma del cliente está en el array mapeado
+        if (array_key_exists($idiomaCliente, $idiomaAPais)) {
+            $paisCliente = $idiomaAPais[$idiomaCliente];
         } else {
-            // Si no existe el archivo, hacer la petición a chatGpt
-            $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($paises));
-            $textosTraducidos = json_decode($traducciones['messages']['choices'][0]['message']['content'], true);
-
-            // Guardar la traducción en un nuevo archivo
-            file_put_contents($path_paises, json_encode($textosTraducidos));
+            $paisCliente = "No disponible"; // o cualquier valor por defecto que prefieras
         }
+        
+        // $idiomaClientePaises = $cliente->nacionalidad;
+        // $nombreArchivoPaises = 'traducciones_paises_' . $idiomaClientePaises . '.json';
+        // $path_paises = storage_path('app/public/' . $nombreArchivoPaises);
 
-        $paises = $textosTraducidos;
+        // if (file_exists($path_paises)) {
+        //     // Leer el contenido del archivo si ya existe
+        //     $textosTraducidos = json_decode(file_get_contents($path_paises), true);
+        // } else {
+        //     // Si no existe el archivo, hacer la petición a chatGpt
+        //     $traducciones = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaClientePaises.', no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($paises));
+        //     $textosTraducidos = json_decode($traducciones['messages']['choices'][0]['message']['content'], true);
+
+        //     // Guardar la traducción en un nuevo archivo
+        //     file_put_contents($path_paises, json_encode($textosTraducidos));
+        // }
+
+        // $paises = $textosTraducidos;
 
 
         $id = $reserva->id;
@@ -150,7 +358,7 @@ class DNIController extends Controller
 
         $textos = $textosTraducidos;
         
-        return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos'));
+        return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos','paisCliente'));
     }
 
 

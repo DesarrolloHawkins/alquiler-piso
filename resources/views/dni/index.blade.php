@@ -345,7 +345,7 @@
                                                     @foreach ($paises as $pais)
                                                         <option 
                                                         value="{{$pais}}"
-                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
+                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($paisCliente) ? $paisCliented == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
                                                         >
                                                         {{$pais}}
                                                     </option>
@@ -372,11 +372,11 @@
                                                     <option 
                                                     value="1"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
-                                                     >DNI</option>
+                                                     >{{$textos['Dni']}}</option>
                                                     <option 
                                                     value="2"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
-                                                     >Pasaporte</option>
+                                                     >{{$textos['Pasaporte']}}</option>
                                                 </select>
                                                 <label for="tipo_documento_{{$i}}">{{$textos['Tipo.Documento']}}</label>
 
@@ -445,19 +445,13 @@
                                                     <option 
                                                     value="Masculino" 
                                                     {{ (isset($data[$i]) && $data[$i]->sexo == 'Masculino') || old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}
-                                                    >Masculino
+                                                    >{{$textos['Masculino']}}
                                                     </option>
                                                     <option 
                                                     value="Femenino" 
                                                     {{ (isset($data[$i]) && $data[$i]->sexo == 'Femenino') || old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}
                                                     >
-                                                    Femenino
-                                                    </option>
-                                                    <option 
-                                                    value="Binario" 
-                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Binario') || old('sexo_'.$i) == 'Binario' ? 'selected' : '' }}
-                                                    >
-                                                    No Binario
+                                                    {{$textos['Femenino']}}
                                                     </option>
                                                 </select>
                                                 <label for="sexo_{{$i}}">{{$textos['Sexo']}}</label>
