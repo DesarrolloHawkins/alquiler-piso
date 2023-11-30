@@ -39,6 +39,7 @@ class GraciasController extends Controller
         }
 
         $textos = $textosTraducidos;
+        dd($textos);
 
         return view('gracias', compact('textos'));
     }
