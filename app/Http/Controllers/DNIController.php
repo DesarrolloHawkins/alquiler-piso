@@ -261,7 +261,7 @@ class DNIController extends Controller
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
             if($reserva->dni_entregado == true){
-                return view('gracias', $cliente->idioma);
+                return view('gracias',  ['idioma' => $cliente->idioma]);
             }
         }
 
