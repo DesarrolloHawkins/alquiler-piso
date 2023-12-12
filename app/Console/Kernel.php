@@ -184,7 +184,6 @@ class Kernel extends ConsoleKernel
                         "sub_type" => "url",
                         "index" => 0,
                         "parameters" => [
-                            ["type" => "text", "text" => "Visita nuestra página"],
                             ["type" => "text", "text" => "https://example.com"]
                         ]
                     ],
