@@ -67,9 +67,12 @@ class Kernel extends ConsoleKernel
                         $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
                         $reserva->token = $token;
                         $reserva->save();
-                        $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
+                        $mensaje = 'https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                        $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
+
+                        $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $reserva->telefono, 'es' );
+
+                       // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
                         Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
 
@@ -151,5 +154,56 @@ class Kernel extends ConsoleKernel
         return $response;
 
     }  
+
+    public function mensajesAutomaticos($template, $token, $telefono, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefono,
+            "type" => "template",
+            "template" => [
+                "name" => $template,
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $token],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+        
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
 
 }
