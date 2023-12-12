@@ -169,18 +169,17 @@ class Kernel extends ConsoleKernel
                 "language" => ["code" => $idioma],
                 "components" => [
                     [
-                        "type" => "interactive",
-                        "interactive" => [
-                            "type" => "button",
-                            "button" => [
-                                "type" => "text",
-                                "text" => $token
-                            ]
+                        "type" => "button",
+                        "sub_type" => "quick_reply", // o otro sub_type según sea necesario
+                        "index" => 0, // índice del botón
+                        "parameters" => [
+                            ["type" => "payload", "payload" => $token]
                         ]
                     ],
                 ],
             ],
         ];
+        
         
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
