@@ -162,7 +162,7 @@ class Kernel extends ConsoleKernel
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
-            "to" => $telefono,
+            "to" => '34622440984',
             "type" => "template",
             "template" => [
                 "name" => $template,
@@ -171,9 +171,12 @@ class Kernel extends ConsoleKernel
                     [
                         "type" => "button",
                         "sub_type" => "quick_reply", // o otro sub_type según sea necesario
-                        "index" => 0, // índice del botón
+                        "index" => '0', // índice del botón
                         "parameters" => [
-                            ["type" => "payload", "payload" => $token]
+                            [
+                                "type" => "payload", 
+                                "payload" => $token
+                            ]
                         ]
                     ],
                 ],
