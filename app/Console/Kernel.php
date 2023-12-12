@@ -64,9 +64,12 @@ class Kernel extends ConsoleKernel
                     $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
                     // Validamos si existe mensaje de DNI enviado
                     if ($mensajeDNI == null) {
+
                         $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
                         $reserva->token = $token;
                         $reserva->save();
+                        Storage::disk('local')->put('reserva.txt', $reserva );
+
                         $mensaje = 'https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
 
@@ -168,17 +171,6 @@ class Kernel extends ConsoleKernel
                 "name" => $template,
                 "language" => ["code" => $idioma],
                 "components" => [
-                    // [
-                    //     "type" => "button",
-                    //     "sub_type" => "quick_reply", // o otro sub_type según sea necesario
-                    //     "index" => '0', // índice del botón
-                    //     "parameters" => [
-                    //         [
-                    //             "type" => "payload", 
-                    //             "payload" => $token
-                    //         ]
-                    //     ]
-                    // ],
                     [
                         "type" => "button",
                         "sub_type" => "url",
