@@ -168,15 +168,24 @@ class Kernel extends ConsoleKernel
                 "name" => $template,
                 "language" => ["code" => $idioma],
                 "components" => [
+                    // [
+                    //     "type" => "button",
+                    //     "sub_type" => "quick_reply", // o otro sub_type según sea necesario
+                    //     "index" => '0', // índice del botón
+                    //     "parameters" => [
+                    //         [
+                    //             "type" => "payload", 
+                    //             "payload" => $token
+                    //         ]
+                    //     ]
+                    // ],
                     [
                         "type" => "button",
-                        "sub_type" => "quick_reply", // o otro sub_type según sea necesario
-                        "index" => '0', // índice del botón
+                        "sub_type" => "url",
+                        "index" => 0,
                         "parameters" => [
-                            [
-                                "type" => "payload", 
-                                "payload" => $token
-                            ]
+                            ["type" => "text", "text" => "Visita nuestra página"],
+                            ["type" => "text", "text" => "https://example.com"]
                         ]
                     ],
                 ],
