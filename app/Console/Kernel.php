@@ -156,13 +156,13 @@ class Kernel extends ConsoleKernel
     }  
 
     public function mensajesAutomaticos($template, $token, $telefono, $idioma = 'es'){
-        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+        $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
-            "to" => '34622440984',
+            "to" => $telefono,
             "type" => "template",
             "template" => [
                 "name" => $template,
@@ -209,7 +209,7 @@ class Kernel extends ConsoleKernel
             CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
             CURLOPT_HTTPHEADER => array(
                 'Content-Type: application/json',
-                'Authorization: Bearer '.$token
+                'Authorization: Bearer '.$tokenEnv
             ),
         
         ));
