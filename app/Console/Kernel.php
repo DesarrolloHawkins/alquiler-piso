@@ -39,12 +39,13 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
-        // Miramos si el cliente tiene la Nacionalidad e idioma
+        // Tarea par enviar el mensaje del Dni
         $schedule->call(function () {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
             // Obtener la fecha de dos días después
             $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
+            $hoyFormateado = Carbon::now()->format('Y-m-d');
 
             // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
             $reservasEntrada = Reserva::where('dni_entregado', null)
@@ -55,6 +56,23 @@ class Kernel extends ConsoleKernel
             // ->where('estado_id', 1)
             // ->get();
 
+
+            /*  MENSAJES TEMPLATE:
+                    - dni
+                    - bienvenido
+                    - consulta
+                    - ocio
+                    - despedida
+
+                IDIOMAS:
+                    - es
+                    - en
+                    - de
+                    - fr
+                    - it
+                    - ar
+                    - pt_PT
+            */
             // Validamos si hay reservas pendiente del DNI
             if(count($reservasEntrada) != 0){
                 // Recorremos las reservas
@@ -88,6 +106,24 @@ class Kernel extends ConsoleKernel
                         ];
 
                         MensajeAuto::create($dataMensaje);                    
+                    } else {
+                        if ($reserva->fecha_entrada == $hoyFormateado) {
+                            // Obtenemos el token ya creado
+                            $token = $reserva->token;
+                            // Limpiamos el numero de telefono
+                            $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
+                            // Enviamos el mensaje
+                            $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, 'es' );
+                            // Data para guardar Mensaje enviado
+                            $dataMensaje = [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'categoria_id' => 1,
+                                'fecha_envio' => Carbon::now()
+                            ];
+
+                            MensajeAuto::create($dataMensaje);
+                        }
                     }
                 }
                 

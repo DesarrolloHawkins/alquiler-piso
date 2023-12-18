@@ -173,4 +173,46 @@ class ClienteService
         $response_data = json_decode($response, true);
         return $response_data['choices'][0]['message']['content'];
     }
+
+    public function idiomaCodigo($idioma){
+
+        // IDIOMAS:
+        //         - es
+        //         - en
+        //         - de
+        //         - fr
+        //         - it
+        //         - ar
+        //         - pt_PT
+
+        switch ($idioma) {
+            case 'España':
+                return 'es';
+                break;
+
+            case 'Francia':
+                return 'fr';
+                break;
+                
+            case 'Marruecos':
+                return 'ar';
+                break;
+            
+            case 'Alemania':
+                return 'de';
+                break;
+
+            case 'Portugal':
+                return 'pt_PT';
+                break;
+            
+            case 'Italia':
+                return 'ir';
+                break;
+
+            default:
+                return 'en';
+                break;
+        }
+    }
 }
