@@ -135,8 +135,7 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
-
-         // Tarea par enviar el mensaje del Dni
+         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
          $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
@@ -300,12 +299,14 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
     function limpiarNumeroTelefono($numero) {
         // Eliminar el signo más y cualquier espacio
         $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
     
         return $numeroLimpio;
     }
+
     public function contestarWhatsapp($phone, $texto){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         // return $texto;
@@ -349,7 +350,7 @@ class Kernel extends ConsoleKernel
 
     }  
 
-    public function mensajesAutomaticosBoton($template, $token, $telefono, $idioma = 'es'){
+    public function mensajesAutomaticosBoton($template, $token, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         $mensajePersonalizado = [
@@ -464,7 +465,7 @@ class Kernel extends ConsoleKernel
         }
     }
 
-    public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'es'){
+    public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         $mensajePersonalizado = [
