@@ -93,7 +93,7 @@ class Kernel extends ConsoleKernel
                         $mensaje = 'https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
-                        $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
+                        $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
 
                        // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
@@ -351,7 +351,6 @@ class Kernel extends ConsoleKernel
 
     public function mensajesAutomaticosBoton($template, $token, $telefono, $idioma = 'es'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
