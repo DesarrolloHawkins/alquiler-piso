@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
 use App\Models\Cliente;
+use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,9 +15,21 @@ class ReservasController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('reservas.index');
+        $orderBy = $request->get('order_by', 'fecha_entrada');
+        $direction = $request->get('direction', 'asc');
+
+        $reservas = Reserva::orderBy($orderBy, $direction)->paginate(10);
+        return view('reservas.index', compact('reservas'));
+        
+    }
+    /**
+     * Display a listing of the resource.
+     */
+    public function calendar()
+    {
+        return view('reservas.calendar');
         
     }
 
@@ -32,7 +45,6 @@ class ReservasController extends Controller
         }
         return response()->json($reservas);
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -53,9 +65,11 @@ class ReservasController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Reserva $reserva)
     {
-        //
+        $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
+        return view('reservas.show', compact('reserva', 'mensajes'));
+        
     }
 
     /**

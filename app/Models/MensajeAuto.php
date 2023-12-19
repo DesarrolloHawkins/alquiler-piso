@@ -34,4 +34,14 @@ class MensajeAuto extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at', 
     ];
+
+    /**
+     * Obtener el usuario
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function categoria()
+    {
+        return $this->belongsTo(\App\Models\MensajeAutoCategoria::class,'categoria_id');
+    }
 }

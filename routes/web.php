@@ -28,7 +28,11 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');
 Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
 Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
+
+// Reservas
+Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
+Route::get('/reservas/{reserva}', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
 Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
 
 // Añadir Reserva

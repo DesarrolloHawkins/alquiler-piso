@@ -95,9 +95,11 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">{{ __('Nuestros Clientes') }}</div>
-
+                @php
+                    $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
+                @endphp
                 <div class="card-body">
-                    {{-- @if (session('status'))
+                    @if (session('status'))
                         <div class="alert alert-success" role="alert">
                             {{ session('status') }}
                         </div>
@@ -106,79 +108,118 @@
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th scope="col">ID</th>
-                                <th scope="col">Nombre</th>
-                                <th scope="col">Apellidos</th>
-                                <th scope="col">DNI</th>
-                                <th scope="col">Accion</th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc')]) }}">
+                                        ID
+                                        @if(request()->get('order_by') == 'id')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc')]) }}">
+                                        Nombre
+                                        @if(request()->get('order_by') == 'cliente_id')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc')]) }}">
+                                        DNI Entregado
+                                        @if(request()->get('order_by') == 'dni_entregado')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc')]) }}">
+                                        Fecha de Entrada
+                                        @if(request()->get('order_by') == 'fecha_entrada')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc')]) }}">
+                                        Fecha de Salida
+                                        @if(request()->get('order_by') == 'fecha_salida')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc')]) }}">
+                                        Origen
+                                        @if(request()->get('order_by') == 'origen')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc')]) }}">
+                                        Codigo de Reserva
+                                        @if(request()->get('order_by') == 'codigo_reserva')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                        Accion
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <th scope="row">1</th>
-                                <td>Mark</td>
-                                <td>Otto</td>
-                                <td>@mdo</td>
-                                <td><a href="" class="btn btn-primary">Editar</a></td>
-                            </tr>                 
+                            @foreach ($reservas as $reserva)
+                                <tr>
+                                    <th scope="row">{{$reserva->id}}</th>
+                                    <td>{{$reserva->cliente->alias}}</td>
+                                    <td>@if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
+                                    <td>{{$reserva->fecha_entrada}}</td>
+                                    <td>{{$reserva->fecha_salida}}</td>
+                                    <td>{{$reserva->origen}}</td>
+                                    <td>{{$reserva->codigo_reserva}}</td>
+                                    <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn btn-primary">Ver</a></td>
+                                </tr>                 
+                            @endforeach
                         </tbody>
-                    </table> --}}
-                    {{-- 
-                        1: '#769ECB', // Color para apartamento_id 1
-                        2: '#9DBAD5', // Color para apartamento_id 2
-                        3: '#FAF3DD', // Color para apartamento_id 3
-                        4: '#C8D6B9', // Color para apartamento_id 3
-                        5: '#DFD8C0', // Color para apartamento_id 3
-                        6: '#8FC1A9', // Color para apartamento_id 3
-                        7: '#7CAA98', // Color para apartamento_id 3, 
-                    --}}
-                    <div class="apartamentos my-2">
-                        <div class="d-inline px-2" style="background-color: #769ECB; color:white">
-                            Atico
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #9DBAD5; color:white">
-                            Segundo A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #FAF3DD; color:black">
-                            Segundo B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #C8D6B9; color:black">
-                            Primero A 
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #DFD8C0; color:black">
-                            Primero B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #8FC1A9; color:white">
-                            Bajo A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #7CAA98; color:white">
-                            Bajo B
-                        </div>
-                    </div>
-                    <div id='calendar'></div>
+                    </table>
+                    <!-- Paginación links -->
+                    {{-- {!! $reservas->links('pagination::bootstrap-5') !!}                 --}}
+                    {{ $reservas->appends(['order_by' => request()->get('order_by'), 'direction' => request()->get('direction')])->links() }}
 
                 </div>
-                <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title"  id="eventModalLabel">Detalles de la Reserva</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
             </div>
         </div>
     </div>
 </div>
-
-
-  
   
 @endsection
