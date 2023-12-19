@@ -256,7 +256,7 @@ class Kernel extends ConsoleKernel
 
                 // Crea un nuevo objeto DateTime para las 11:00 del día actual
                 $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 11:00:00');
-                
+
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
 
                 $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
@@ -279,11 +279,15 @@ class Kernel extends ConsoleKernel
                     MensajeAuto::create($dataMensaje);
                 }
 
+                // Crea un nuevo objeto DateTime para las 11:00 del día actual
+                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
+                
+                $diferenciasHoraCodigos = $hoy->diff($horaObjetivoCodigo)->format('%R%H%I');
+
                 $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
 
-                $diferenciasHoraCodigos = date_diff($hoy, date_create($fechaHoy .' 12:01:00'))->format('%R%H%I');
 
-                if ($diferenciasHoraCodigos  == 0 && $mensajeClaves == null) {
+                if ($diferenciasHoraCodigos >= 0 && $mensajeClaves == null) {
 
                     // Bienvenida a los apartamentos
                     $code = $this->codigoApartamento($reserva->apartamento_id);
@@ -302,11 +306,14 @@ class Kernel extends ConsoleKernel
 
                     MensajeAuto::create($dataMensaje);
                 }
+                // Crea un nuevo objeto DateTime para las 11:00 del día actual
+                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 16:00:00');
+                                
+                $diferenciasHoraConsulta = $hoy->diff($horaObjetivoConsulta)->format('%R%H%I');
 
                 $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
 
-                $diferenciasHoraConsulta = date_diff($hoy, date_create($fechaHoy .' 16:01:00'))->format('%R%H%I');
-                if ($diferenciasHoraConsulta  == 0 && $mensajeConsulta == null) {
+                if ($diferenciasHoraConsulta >= 0 && $mensajeConsulta == null) {
 
                     // Bienvenida a los apartamentos
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -323,11 +330,13 @@ class Kernel extends ConsoleKernel
                     MensajeAuto::create($dataMensaje);
                 }
                 
+                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 18:00:00');
+                                
+                $diferenciasHoraOcio = $hoy->diff($horaObjetivoOcio)->format('%R%H%I');
                 $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
 
-                $diferenciasHoraOcio = date_diff($hoy, date_create($fechaHoy .' 18:01:00'))->format('%R%H%I');
 
-                if ($diferenciasHoraOcio  == 0 && $mensajeOcio == null) {
+                if ($diferenciasHoraOcio >= 0 && $mensajeOcio == null) {
 
                     // Bienvenida a los apartamentos
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -344,14 +353,15 @@ class Kernel extends ConsoleKernel
 
                     MensajeAuto::create($dataMensaje);
                 }
-
+                
                 $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
                 // if ($diasSalida == 0 && $mensajeDespedida == null) {
                 if ($mensajeDespedida == null) {
+                    $horaObjetivoDespedida = new \DateTime($fechaHoyStr . ' 18:00:00');
+                                
+                    $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
 
-                    $diferenciasHoraDespedida = date_diff($hoy, date_create($fechaHoy .' 12:01:00'))->format('%R%H%I');
-
-                    if ($diferenciasHoraDespedida  == 0 && $mensajeDespedida == null) {
+                    if ($diferenciasHoraDespedida >= 0 && $mensajeDespedida == null) {
 
                         // Bienvenida a los apartamentos
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
