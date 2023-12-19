@@ -138,7 +138,6 @@ class HomeController extends Controller
              //     }
              // }
          //$dias = 'no';
-         dd($reservas);
          foreach($reservas as $reserva){
 
              $FechaHoy = new \DateTime();
@@ -149,7 +148,7 @@ class HomeController extends Controller
              $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
 
              if ($diferenciasHoraBienvenida >= 0 && $mensajeBienvenida == null) {
-
+                dd($reserva);
                  // Bienvenida a los apartamentos
                  $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
 
