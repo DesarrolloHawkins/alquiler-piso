@@ -178,18 +178,6 @@ class Kernel extends ConsoleKernel
                 // Tiempos de los mensajes
                 $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
 
-                if ($diferenciasHoraBienvenida <= 0) {
-                    dd('Bienvenida: ',$diferenciasHoraBienvenida, $FechaHoy );
-                }
-
-                if ($diferenciasHoraCodigos <= 0) {
-                    dd('Claves: ',$diferenciasHoraCodigos, $FechaHoy );
-                }
-
-                if ($diferenciasHoraConsulta <= 0) {
-                    dd('Consulta: ',$diferenciasHoraConsulta, $FechaHoy );
-                }
-
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
                     // Obtenemos codigo de idioma
