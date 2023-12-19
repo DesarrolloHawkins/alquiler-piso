@@ -248,12 +248,10 @@ class Kernel extends ConsoleKernel
                 // }
             //$dias = 'no';
             foreach($reservas as $reserva){
-                
 
                 $FechaHoy = new \DateTime();
 
                 $horaObjetivoBienvenida = new DateTime($FechaHoy .' 11:00:00');
-
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
 
                 $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
