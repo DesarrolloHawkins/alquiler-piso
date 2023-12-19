@@ -92,7 +92,7 @@ class Kernel extends ConsoleKernel
 
                         $mensaje = 'https://crm.apartamentosalgeciras.com/dni-user/'.$token;
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
 
                        // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
