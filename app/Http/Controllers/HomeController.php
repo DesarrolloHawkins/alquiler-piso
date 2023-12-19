@@ -65,13 +65,24 @@ class HomeController extends Controller
             $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
             $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
 
-            dd(
-                $diferenciasHoraBienvenida,
-                $diferenciasHoraCodigos,
-                $diferenciasHoraConsulta,
-                $diferenciasHoraOcio,
-                $diferenciasHoraDespedida
-            );
+            // dd(
+            //     $diferenciasHoraBienvenida,
+            //     $diferenciasHoraCodigos,
+            //     $diferenciasHoraConsulta,
+            //     $diferenciasHoraOcio,
+            //     $diferenciasHoraDespedida
+            // );
+            if ($diferenciasHoraBienvenida >= 0) {
+                dd($diferenciasHoraBienvenida);
+            }
+
+            if ($diferenciasHoraCodigos >= 0) {
+                dd($diferenciasHoraCodigos);
+            }
+
+            if ($diferenciasHoraConsulta >= 0) {
+                dd($diferenciasHoraConsulta);
+            }
 
             if ($diferenciasHoraBienvenida >= 0 && $mensajeBienvenida == null) {
 
