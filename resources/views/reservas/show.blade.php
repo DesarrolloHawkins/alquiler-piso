@@ -70,10 +70,10 @@
                         <hr>    
                         <div class="row">
                             <div class="col-6">
-                                <img src="{{storage_path($photos->url[0])}}" alt="">  
+                                <img src="{{storage_path($photos[0]->url)}}" alt="">  
                             </div>
                             <div class="col-6">
-                                <img src="{{storage_path($photos->url[1])}}" alt="">  
+                                <img src="{{storage_path($photos[1]->url)}}" alt="">  
                             </div>
                         </div>
                     @elseif (count($photos) == 1)
