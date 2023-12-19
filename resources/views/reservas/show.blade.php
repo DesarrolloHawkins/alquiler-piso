@@ -70,17 +70,17 @@
                         <hr>    
                         <div class="row">
                             <div class="col-6">
-                                <img src="{{asset($photos[0]->url)}}" alt="">  
+                                <img src="{{asset($photos[0]->url)}}" alt="" style="width: 100%">  
                             </div>
                             <div class="col-6">
-                                <img src="{{asset($photos[1]->url)}}" alt="">  
+                                <img src="{{asset($photos[1]->url)}}" alt="" style="width: 100%">  
                             </div>
                         </div>
                     @elseif (count($photos) == 1)
                         <h4>Pasaporte</h4>
                         <hr>
                         
-                        <img src="{{asset($photos->url)}}" alt="">  
+                        <img src="{{asset($photos->url)}}" alt="" style="width: 100%">  
                     @else
                         <h4>DNI o Pasaporte</h4>
                         <hr>
