@@ -67,7 +67,6 @@ class HomeController extends Controller
 
 
             // Tiempos de los mensajes
-            $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
 
             if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
                 dd('entro para enviar mensaje Bienvenida');
