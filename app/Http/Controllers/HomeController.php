@@ -73,15 +73,15 @@ class HomeController extends Controller
             //     $diferenciasHoraDespedida
             // );
             if ($diferenciasHoraBienvenida >= 0) {
-                dd($diferenciasHoraBienvenida, $FechaHoy );
+                dd('Bienvenida: ',$diferenciasHoraBienvenida, $FechaHoy );
             }
 
             if ($diferenciasHoraCodigos >= 0) {
-                dd($diferenciasHoraCodigos, $FechaHoy );
+                dd('Claves: ',$diferenciasHoraCodigos, $FechaHoy );
             }
 
             if ($diferenciasHoraConsulta >= 0) {
-                dd($diferenciasHoraConsulta, $FechaHoy );
+                dd('Consulta: ',$diferenciasHoraConsulta, $FechaHoy );
             }
 
             if ($diferenciasHoraBienvenida >= 0 && $mensajeBienvenida == null) {
