@@ -52,7 +52,7 @@
                           </tr>
                         </thead>
                         <tbody>
-                            @if ($mensajes->count() > 0)
+                            @if (count($mensajes) > 0)
                                 @foreach ($mensajes as $mensaje)
                                 <tr>
                                     <th scope="row">{{$mensaje->fecha_envio}}</th>
