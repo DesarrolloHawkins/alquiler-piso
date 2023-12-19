@@ -357,7 +357,7 @@ class Kernel extends ConsoleKernel
                 $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
                 // if ($diasSalida == 0 && $mensajeDespedida == null) {
                 if ($mensajeDespedida == null) {
-                    $horaObjetivoDespedida = new \DateTime($fechaHoyStr . ' 18:00:00');
+                    $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '12:00:00');
                                 
                     $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
 
