@@ -65,26 +65,23 @@ class HomeController extends Controller
             $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
             $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
 
-            // dd(
-            //     $diferenciasHoraBienvenida,
-            //     $diferenciasHoraCodigos,
-            //     $diferenciasHoraConsulta,
-            //     $diferenciasHoraOcio,
-            //     $diferenciasHoraDespedida
-            // );
+
+            // Tiempos de los mensajes
+            $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
+
             if ($diferenciasHoraBienvenida <= 0) {
                 dd('Bienvenida: ',$diferenciasHoraBienvenida, $FechaHoy );
             }
 
-            if ($diferenciasHoraCodigos >= 0) {
+            if ($diferenciasHoraCodigos <= 0) {
                 dd('Claves: ',$diferenciasHoraCodigos, $FechaHoy );
             }
 
-            if ($diferenciasHoraConsulta >= 0) {
+            if ($diferenciasHoraConsulta <= 0) {
                 dd('Consulta: ',$diferenciasHoraConsulta, $FechaHoy );
             }
 
-            if ($diferenciasHoraBienvenida >= 0 && $mensajeBienvenida == null) {
+            if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
                 // Obtenemos codigo de idioma
                 $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -102,81 +99,89 @@ class HomeController extends Controller
                 MensajeAuto::create($dataMensaje);
             }
 
-            if ($diferenciasHoraCodigos >= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
-
-                // Obtenemos el codigo de entrada del apartamento
-                $code = $this->codigoApartamento($reserva->apartamento_id);
-                // Obtenemos codigo de idioma
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                // Enviamos el mensaje
-                $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
-
-                // Creamos la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 3,
-                    'fecha_envio' => Carbon::now()
-                ];
-                // Creamos el mensaje
-                MensajeAuto::create($dataMensaje);
-            }
-
-            if ($diferenciasHoraConsulta >= 0 && $mensajeConsulta == null) {
-
-                // Obtenemos codigo de idioma
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                // Enviamos el mensaje
-                $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
-
-                // Creamos la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 5,
-                    'fecha_envio' => Carbon::now()
-                ];
-                // Creamos el mensaje
-                MensajeAuto::create($dataMensaje);
-            }
-
-            if ($diferenciasHoraOcio >= 0 && $mensajeOcio == null) {
-
-                // Obtenemos codigo de idioma
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                // Enviamos el mensaje
-                $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
-
-                // Creamos la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 6,
-                    'fecha_envio' => Carbon::now()
-                ];
-                // Creamos el mensaje
-                MensajeAuto::create($dataMensaje);
-            }
-            
-            if ($mensajeDespedida == null) {
-                if ($diferenciasHoraDespedida >= 0 && $mensajeDespedida == null) {
-
+            if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
+                $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
+                if ($tiempoDesdeBienvenida >= 1) {
+                    // Obtenemos el codigo de entrada del apartamento
+                    $code = $this->codigoApartamento($reserva->apartamento_id);
                     // Obtenemos codigo de idioma
-                    $idiomaCliente = $this->clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                     // Enviamos el mensaje
-                    $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+                    $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
 
                     // Creamos la data para guardar el mensaje
                     $dataMensaje = [
                         'reserva_id' => $reserva->id,
                         'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 7,
+                        'categoria_id' => 3,
+                        'fecha_envio' => Carbon::now()
+                    ];
+                    // Creamos el mensaje
+                    MensajeAuto::create($dataMensaje);
+                }   
+            }
+
+            if ($diferenciasHoraConsulta <= 0 && $mensajeClaves != null && $mensajeConsulta == null) {
+                $tiempoDesdeClaves = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
+                if ($tiempoDesdeClaves >= 1) {
+                    // Obtenemos codigo de idioma
+                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                    // Enviamos el mensaje
+                    $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
+    
+                    // Creamos la data para guardar el mensaje
+                    $dataMensaje = [
+                        'reserva_id' => $reserva->id,
+                        'cliente_id' => $reserva->cliente_id,
+                        'categoria_id' => 5,
                         'fecha_envio' => Carbon::now()
                     ];
                     // Creamos el mensaje
                     MensajeAuto::create($dataMensaje);
                 }
             }
+
+            if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
+                $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
+                if ($tiempoDesdeConsulta >= 1) {
+                    // Obtenemos codigo de idioma
+                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                    // Enviamos el mensaje
+                    $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+    
+                    // Creamos la data para guardar el mensaje
+                    $dataMensaje = [
+                        'reserva_id' => $reserva->id,
+                        'cliente_id' => $reserva->cliente_id,
+                        'categoria_id' => 6,
+                        'fecha_envio' => Carbon::now()
+                    ];
+                    // Creamos el mensaje
+                    MensajeAuto::create($dataMensaje);
+                }
+            }
+            
+            if ($diferenciasHoraDespedida >= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
+                $tiempoDesdeBienvenida = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
+                if ($tiempoDesdeBienvenida >= 1) {
+                    // ... [tu lógica de envío de mensaje de códigos] ...
+                }
+                // Obtenemos codigo de idioma
+                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                // Enviamos el mensaje
+                $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+
+                // Creamos la data para guardar el mensaje
+                $dataMensaje = [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $reserva->cliente_id,
+                    'categoria_id' => 7,
+                    'fecha_envio' => Carbon::now()
+                ];
+                // Creamos el mensaje
+                MensajeAuto::create($dataMensaje);
+            }
+
         }
     }
 }
