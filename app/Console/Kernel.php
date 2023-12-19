@@ -12,6 +12,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use DateTime;
 
 class Kernel extends ConsoleKernel
 {
@@ -159,15 +160,23 @@ class Kernel extends ConsoleKernel
                     - ar
                     - pt_PT
             */
+
             $codigoPuertaPrincipal = '0404';
+
+
             $dias = 'no';
             foreach($reservas as $reserva){
                 $dias = date_diff($hoy, date_create($reservas[0]['fecha_entrada']))->format('%R%a');
+
                 $diasSalida = date_diff($hoy, date_create($reservas[0]['fecha_salida']))->format('%R%a');
 
                 if($dias == 0 ){
+                    $FechaHoy = new \DateTime();
 
-                    $diferenciasHoraBienvenida = date_diff($hoy, date_create($fechaHoy .' 11:01:00'))->format('%R%H%I');
+                    $horaObjetivoBienvenida = new DateTime($FechaHoy .' 11:00:00');
+
+                    $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
+
 
                     $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
 
