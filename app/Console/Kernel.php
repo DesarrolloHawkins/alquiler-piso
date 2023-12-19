@@ -115,7 +115,7 @@ class Kernel extends ConsoleKernel
                             // Limpiamos el numero de telefono
                             $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                             // Enviamos el mensaje
-                            $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                            $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
 
                             $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
                                 // Data para guardar Mensaje enviado
@@ -174,7 +174,7 @@ class Kernel extends ConsoleKernel
                     if ($diferenciasHoraBienvenida  == 0 && $mensajeBienvenida == null) {
 
                         // Bienvenida a los apartamentos
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
 
                         // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
                         $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
@@ -199,7 +199,7 @@ class Kernel extends ConsoleKernel
                         $code = $this->codigoApartamento($reserva->apartamento_id);
 
 
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
                         $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
 
@@ -219,7 +219,7 @@ class Kernel extends ConsoleKernel
                     if ($diferenciasHoraConsulta  == 0 && $mensajeConsulta == null) {
 
                         // Bienvenida a los apartamentos
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
                         $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
 
@@ -240,7 +240,7 @@ class Kernel extends ConsoleKernel
                     if ($diferenciasHoraOcio  == 0 && $mensajeOcio == null) {
 
                         // Bienvenida a los apartamentos
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
 
                         $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
@@ -265,7 +265,7 @@ class Kernel extends ConsoleKernel
                     if ($diferenciasHoraDespedida  == 0 && $mensajeDespedida == null) {
 
                         // Bienvenida a los apartamentos
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente_id);
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
                         $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
 
