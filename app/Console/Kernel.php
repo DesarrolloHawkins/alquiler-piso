@@ -174,10 +174,6 @@ class Kernel extends ConsoleKernel
                 $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
                 $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
 
-
-                // Tiempos de los mensajes
-                $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
-
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
                     // Obtenemos codigo de idioma

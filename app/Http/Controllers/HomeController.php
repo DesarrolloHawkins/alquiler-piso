@@ -70,7 +70,7 @@ class HomeController extends Controller
             $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
 
             if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
-
+                dd('entro para enviar mensaje Bienvenida');
                 // Obtenemos codigo de idioma
                 $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                 // Enviamos el mensaje
@@ -90,6 +90,8 @@ class HomeController extends Controller
             if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                 $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
                 if ($tiempoDesdeBienvenida >= 1) {
+                    dd('entro para enviar mensaje claves');
+
                     // Obtenemos el codigo de entrada del apartamento
                     $code = $this->codigoApartamento($reserva->apartamento_id);
                     // Obtenemos codigo de idioma
@@ -112,6 +114,8 @@ class HomeController extends Controller
             if ($diferenciasHoraConsulta <= 0 && $mensajeClaves != null && $mensajeConsulta == null) {
                 $tiempoDesdeClaves = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
                 if ($tiempoDesdeClaves >= 1) {
+                    dd('entro para enviar mensaje consulta');
+
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                     // Enviamos el mensaje
@@ -132,6 +136,8 @@ class HomeController extends Controller
             if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
                 $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
                 if ($tiempoDesdeConsulta >= 1) {
+                    dd('entro para enviar mensaje ocio');
+
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                     // Enviamos el mensaje
