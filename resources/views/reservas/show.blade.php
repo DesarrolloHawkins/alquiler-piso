@@ -68,9 +68,6 @@
                     @if (count($photos) > 1)
                         <h4>DNI</h4>
                         <hr>    
-                    @elseif (count($photos) == 1)
-                        <h4>Pasaporte</h4>
-                        <hr>
                         <div class="row">
                             <div class="col-6">
                                 <img src="{{storage_path($photos->url[0])}}" alt="">  
@@ -79,6 +76,10 @@
                                 <img src="{{storage_path($photos->url[1])}}" alt="">  
                             </div>
                         </div>
+                    @elseif (count($photos) == 1)
+                        <h4>Pasaporte</h4>
+                        <hr>
+                        
                         <img src="{{storage_path($photos->url)}}" alt="">  
                     @else
                         <h4>DNI o Pasaporte</h4>
