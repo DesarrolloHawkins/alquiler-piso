@@ -29,7 +29,8 @@
                           </tr>
                           <tr>
                             <th style="width: 140px" scope="row">Dni Entregado</th>
-                            <td>@if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
+                            <td>{{$reserva->dni_entregado}}
+                                @if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
                           </tr>
                           <tr>
                             <th style="width: 140px" scope="row">Cliente</th>
