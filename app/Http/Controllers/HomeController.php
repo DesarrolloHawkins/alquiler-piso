@@ -72,7 +72,7 @@ class HomeController extends Controller
             //     $diferenciasHoraOcio,
             //     $diferenciasHoraDespedida
             // );
-            if ($diferenciasHoraBienvenida >= 0) {
+            if ($diferenciasHoraBienvenida <= 0) {
                 dd('Bienvenida: ',$diferenciasHoraBienvenida, $FechaHoy );
             }
 
