@@ -251,7 +251,12 @@ class Kernel extends ConsoleKernel
 
                 $FechaHoy = new \DateTime();
 
-                $horaObjetivoBienvenida = new DateTime($FechaHoy .' 11:00:00');
+                // Formatea la fecha actual a una cadena 'Y-m-d'
+                $fechaHoyStr = $FechaHoy->format('Y-m-d');
+
+                // Crea un nuevo objeto DateTime para las 11:00 del día actual
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 11:00:00');
+                
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
 
                 $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
