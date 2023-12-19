@@ -29,7 +29,7 @@
                           </tr>
                           <tr>
                             <th style="width: 140px" scope="row">Dni Entregado</th>
-                            <td>{{$reserva->dni_entregado}}
+                            <td>
                                 @if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
                           </tr>
                           <tr>
@@ -39,6 +39,10 @@
                           <tr>
                             <th style="width: 140px" scope="row">Fecha Limpieza</th>
                             <td>{{$reserva->fecha_limpieza}}</td>
+                          </tr>
+                          <tr>
+                            <th style="width: 140px" scope="row">Numero de Adultos</th>
+                            <td>{{$reserva->numero_personas}}</td>
                           </tr>
                           
                         </tbody>
