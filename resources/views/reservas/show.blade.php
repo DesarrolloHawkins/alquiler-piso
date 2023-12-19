@@ -65,6 +65,27 @@
                           
                         </tbody>
                       </table>
+                    @if (count($photos) > 1)
+                        <h4>DNI</h4>
+                        <hr>    
+                    @elseif (count($photos) == 1)
+                        <h4>Pasaporte</h4>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <img src="{{storage_path($photos->url[0])}}" alt="">  
+                            </div>
+                            <div class="col-6">
+                                <img src="{{storage_path($photos->url[1])}}" alt="">  
+                            </div>
+                        </div>
+                        <img src="{{storage_path($photos->url)}}" alt="">  
+                    @else
+                        <h4>DNI o Pasaporte</h4>
+                        <hr>
+                        <p>No se subieron ninguna fotos.</p>
+                    @endif
+                    
                 </div>
             </div>
         </div>

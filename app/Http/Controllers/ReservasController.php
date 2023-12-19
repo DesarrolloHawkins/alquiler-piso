@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apartamento;
 use App\Models\Cliente;
 use App\Models\MensajeAuto;
+use App\Models\Photo;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -68,7 +69,8 @@ class ReservasController extends Controller
     public function show(Reserva $reserva)
     {
         $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
-        return view('reservas.show', compact('reserva', 'mensajes'));
+        $photos = Photo::where('reserva_id', $reserva->id)->get();
+        return view('reservas.show', compact('reserva', 'mensajes', 'photos'));
         
     }
 
