@@ -42,9 +42,18 @@
                                 <li><a class="dropdown-item" href="#">Something else here</a></li>
                             </ul>
                         </li>
-
-                        <li class="nav-item"><a class="nav-link" href="{{route('clientes.index')}}">Clientes</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{route('reservas.index')}}">Reservas</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                               Reservas
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{route('reservas.index')}}">Ver reservas</a></li>
+                                <li><a class="dropdown-item" href="{{route('reservas.calendar')}}">Ver calendario</a></li>
+                                <li><a class="dropdown-item" href="{{route('reservas.create')}}">Crear reserva</a></li>
+                            </ul>
+                        </li>
+                        {{-- <li class="nav-item"><a class="nav-link" href="{{route('clientes.index')}}">Clientes</a></li> --}}
+                        {{-- <li class="nav-item"><a class="nav-link" href="{{route('reservas.index')}}">Reservas</a></li> --}}
                     </ul>
 
                     <!-- Right Side Of Navbar -->

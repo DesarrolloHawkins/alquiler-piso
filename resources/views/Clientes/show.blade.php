@@ -121,7 +121,7 @@
                                         <th scope="row">{{$mensaje->reserva_id}}</th>
                                         <td>{{$mensaje->fecha_envio}}</td>
                                         <td>{{$mensaje->categoria->nombre}}</td>
-                                        <td><a href="{{route('reservas.show', $mensaje->reserva_id)}}" class="btn btn-pimary"><i class="fa-regular fa-eye"></i></a></td>
+                                        <td><a href="{{route('reservas.show', $mensaje->reserva_id)}}" class="btn btn-primary"><i class="fa-regular fa-eye"></i></a></td>
                                     </tr>
                                     @endforeach
                                 @endif

@@ -4,13 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
-use Illuminate\Http\Request;
 use App\Services\ClienteService;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 use DateTime;
+// use leifermendez\police\PoliceHotelFacade;
 
 class HomeController extends Controller
 {
+    private $endpoint, $cookie, $user, $pass, $_csrf, $headers, $fpdi;
+
+    protected $pkgoptions = array(
+        'countries' => array(),
+        'user' => array(),
+        'pdf' => array(),
+    );
+
+
     /**
      * Create a new controller instance.
      *
@@ -19,6 +29,25 @@ class HomeController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->headers = []; // Initialize as an empty array
+        // try {
+
+        //     $this->user = 'H11070GEV04';
+        //     $this->pass =  'H4Kins4p4rtamento2024';
+        //     $this->endpoint = 'https://webpol.policia.es/e-hotel';
+        //     $this->headers = [
+        //         'User-Agent: PostmanRuntime/7.16.3',
+        //     ];
+
+        //     // if (!$user or !$pass) {
+        //     //     throw new \Exception('error.login.users');
+        //     // }
+
+        //     return $this;
+
+        // } catch (\Exception $e) {
+        //     return $e->getMessage();
+        // }
     }
 
     /**
@@ -32,149 +61,244 @@ class HomeController extends Controller
     }
 
     public function test(ClienteService $clienteService){
-        // Obtener la fecha de hoy
-        $hoy = Carbon::now();
-           
-        $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
-        $codigoPuertaPrincipal = '0404';
+        $credentials = array(
+            'user' => 'H11070GEV04',
+            'pass' => 'H4Kins4p4rtamento2024'
+        ); 
 
-        foreach($reservas as $reserva){
-            // Fecha de Hoy
-            $FechaHoy = new \DateTime();
-            // Formatea la fecha actual a una cadena 'Y-m-d'
-            $fechaHoyStr = $FechaHoy->format('Y-m-d');
+        // $response = PoliceHotelFacade::to($credentials)
+        // ->getCountries();
+        // $parse_cookies = array();
 
-            // Horas objetivo para lanzar mensajes
-            $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 11:00:00');
-            $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
-            $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 16:00:00');
-            $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 18:00:00');
-            $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '12:00:00');
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'PostmanRuntime/7.16.3');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_HEADER, 1);
+        curl_setopt($ch, CURLOPT_URL, 'https://webpol.policia.es/e-hotel/login');
+        ob_start();
+        $response = curl_exec($ch);
 
-            // Diferencias horarias para las horas objetivos
-            $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
-            $diferenciasHoraCodigos = $hoy->diff($horaObjetivoCodigo)->format('%R%H%I');
-            $diferenciasHoraConsulta = $hoy->diff($horaObjetivoConsulta)->format('%R%H%I');
-            $diferenciasHoraOcio = $hoy->diff($horaObjetivoOcio)->format('%R%H%I');
-            $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
-
-            // Comprobacion de los mensajes enviados automaticamente
-            $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
-            $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
-            $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
-            $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
-            $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
+        dd($response);
+        $response = $this->csr();
+        // $response = '$this->csr()';
+        return $response;
+    }
 
 
-            // Tiempos de los mensajes
+    private function csr()
+    {
 
-            if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
-                dd('entro para enviar mensaje Bienvenida');
-                // Obtenemos codigo de idioma
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                // Enviamos el mensaje
-                $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
+        $parse_cookies = array();
 
-                // Creamos la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 4,
-                    'fecha_envio' => Carbon::now()
-                ];
-                // Creamos el mensaje
-                MensajeAuto::create($dataMensaje);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'PostmanRuntime/7.16.3');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_HEADER, 1);
+        curl_setopt($ch, CURLOPT_URL, 'https://webpol.policia.es/e-hotel/login');
+        ob_start();
+        $response = curl_exec($ch);
+
+        dd($response);
+
+        preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
+        $cookies = array();
+        foreach ($matches[1] as $item) {
+            parse_str($item, $cookie);
+            $cookies = array_merge($cookies, $cookie);
+        }
+
+        $cookies = array_reverse($cookies);
+        foreach ($cookies as $key_cookie => $value_cookie) {
+            $parse_cookies[] = $key_cookie . '=' . $value_cookie;
+        }
+        $parse_cookies = implode('; ', $parse_cookies);
+        ob_end_clean();
+        curl_close($ch);
+
+        $response = str_replace(["\r\n", "\n", " "], "", $response);
+
+        preg_match('/<metaname="_csrf"content="(.{36})"\/>/',
+            $response, $matches, PREG_OFFSET_CAPTURE);
+        if (count($matches)) {
+            $matches = array_reverse($matches);
+        }
+        $matches = array_shift($matches);
+        $csr = $matches[0];
+        $this->_csrf = $csr;
+        $this->cookie = $parse_cookies;
+        return array('_csrf' => $csr, 'cookie' => $parse_cookies);
+
+    }
+
+    private function login()
+    {
+        $data_csr = $this->csr();
+        dd($data_csr);
+
+        try {
+
+            $data_csr = $this->csr();
+            dd($data_csr);
+            $credentials = array(
+                'user' => 'H11070GEV04',
+                'pass' => 'H4Kins4p4rtamento2024'
+            ); 
+
+            $this->user = $credentials['user'];
+            $this->pass = $credentials['pass'];
+
+            $data = [
+                'username' => $this->user,
+                'password' => $this->pass,
+                '_csrf' => $data_csr['_csrf']
+            ];
+
+            $headers = $this->headers;
+            $headers = array_merge(
+                $headers,
+                [
+                    'Cookie: ' . $this->cookie,
+                    'Content-Type: application/x-www-form-urlencoded',
+                ]
+            );
+
+            $curl_response = $this->curl(
+                $this->endpoint . '/execute_login',
+                'POST',
+                $data,
+                $headers
+            );
+
+            if (strpos($curl_response['content'], '/e-hotel/inicio') !== false) {
+                $this->cookie = $data_csr['cookie'];
+                $response_home = $this->home();
+
+                return $response_home;
+            } else {
+                throw new \Exception('error.login.police');
             }
 
-            if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
-                $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
-                if ($tiempoDesdeBienvenida >= 1) {
-                    dd('entro para enviar mensaje claves');
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
 
-                    // Obtenemos el codigo de entrada del apartamento
-                    $code = $this->codigoApartamento($reserva->apartamento_id);
-                    // Obtenemos codigo de idioma
-                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
+    }
 
-                    // Creamos la data para guardar el mensaje
-                    $dataMensaje = [
-                        'reserva_id' => $reserva->id,
-                        'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 3,
-                        'fecha_envio' => Carbon::now()
+    public function getCountries()
+    {
+        try {
+            $this->login();
+            // dd($login2);
+
+            $headers = array_merge(
+                is_array($this->headers) ? $this->headers : [],
+                [
+                    'Cookie: ' . $this->cookie,
+                    'X-CSRF-TOKEN: ' . $this->_csrf,
+                    'X-Requested-With: XMLHttpRequest'
+                ]
+            );
+
+            $response = $this->curl(
+                $this->endpoint . '/hospederia/manual/vista/grabadorManual',
+                'GET',
+                [],
+                $headers
+            );
+
+            dd($response);
+
+            $pattern = '/<selectid="nacionalidad"(.*?)<\/select>/i';
+            $pattern_options = '@<optionvalue=\"(.*)\">(.*)</option>@';
+
+            preg_match($pattern, $response['content'], $matches);
+            $raw_countries = $matches[1];
+
+            preg_match($pattern_options, $raw_countries, $matches_options);
+
+            $countries = explode('optionvalue=', $matches_options[1]);
+            $new_countries = array();
+
+
+            foreach ($countries as $country) {
+                preg_match_all('/[A-Za-z0-9]+/i', $country, $tmp);
+                if ($tmp && count($tmp) && (count($tmp[0]) > 1)) {
+                    $new_countries[] = [
+                        'id' => $tmp[0][0],
+                        'name' => $tmp[0][1]
                     ];
-                    // Creamos el mensaje
-                    MensajeAuto::create($dataMensaje);
-                }   
-            }
-
-            if ($diferenciasHoraConsulta <= 0 && $mensajeClaves != null && $mensajeConsulta == null) {
-                $tiempoDesdeClaves = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
-                if ($tiempoDesdeClaves >= 1) {
-                    dd('entro para enviar mensaje consulta');
-
-                    // Obtenemos codigo de idioma
-                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
-    
-                    // Creamos la data para guardar el mensaje
-                    $dataMensaje = [
-                        'reserva_id' => $reserva->id,
-                        'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 5,
-                        'fecha_envio' => Carbon::now()
-                    ];
-                    // Creamos el mensaje
-                    MensajeAuto::create($dataMensaje);
                 }
             }
 
-            if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
-                $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
-                if ($tiempoDesdeConsulta >= 1) {
-                    dd('entro para enviar mensaje ocio');
+            $this->pkgoptions['countries'] = $new_countries;
+            return $this->pkgoptions['countries'];
 
-                    // Obtenemos codigo de idioma
-                    $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
-    
-                    // Creamos la data para guardar el mensaje
-                    $dataMensaje = [
-                        'reserva_id' => $reserva->id,
-                        'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 6,
-                        'fecha_envio' => Carbon::now()
-                    ];
-                    // Creamos el mensaje
-                    MensajeAuto::create($dataMensaje);
-                }
+
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    private function curl($url = null, $method = 'GET', $data = array(), $headers = array())
+    {
+        try {
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_HEADER, 1);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            if ($method === 'POST') curl_setopt($ch, CURLOPT_POST, TRUE);
+            if ($method === 'POST') curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            ob_start();
+
+            $response = curl_exec($ch);
+            $raw_response = $response;
+
+            /** cookies ** */
+            dd($response);
+
+            preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
+            $cookies = array();
+            foreach ($matches[1] as $item) {
+                parse_str($item, $cookie);
+                $cookies = array_merge($cookies, $cookie);
             }
-            
-            if ($diferenciasHoraDespedida >= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
-                $tiempoDesdeBienvenida = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
-                if ($tiempoDesdeBienvenida >= 1) {
-                    // ... [tu lógica de envío de mensaje de códigos] ...
-                }
-                // Obtenemos codigo de idioma
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                // Enviamos el mensaje
-                $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+            $parse_cookies = array();
 
-                // Creamos la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 7,
-                    'fecha_envio' => Carbon::now()
-                ];
-                // Creamos el mensaje
-                MensajeAuto::create($dataMensaje);
+            $cookies = array_reverse($cookies);
+            foreach ($cookies as $key_cookie => $value_cookie) {
+                $parse_cookies[] = $key_cookie . '=' . $value_cookie;
             }
+            $parse_cookies = implode('; ', $parse_cookies);
 
+            $raw_response = str_replace(["\r\n", "\n", " "], "", $raw_response);
+
+            ob_end_clean();
+            curl_close($ch);
+
+            preg_match('/<metaname="_csrf"content="(.{36})"\/>/',
+                $raw_response, $matches, PREG_OFFSET_CAPTURE);
+            if (count($matches)) {
+                $matches = array_reverse($matches);
+            }
+            $matches = array_shift($matches);
+            $csr = $matches[0];
+
+            return array(
+                'content' => $raw_response,
+                'cookies' => $parse_cookies,
+                '_csrf' => $csr
+            );
+
+        } catch (\Exception $e) {
+            return $e->getMessage();
         }
     }
 }
