@@ -26,8 +26,11 @@ Auth::routes();
 // Vistas
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');
+
+// Clientes
 Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
 Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
+Route::get('/clientes/{cliente}', [App\Http\Controllers\ClientesController::class, 'show'])->name('clientes.show');
 
 // Reservas
 Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');

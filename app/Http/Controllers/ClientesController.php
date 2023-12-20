@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\MensajeAuto;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 
 class ClientesController extends Controller
@@ -36,8 +38,11 @@ class ClientesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Cliente $cliente)
     {
+        $mensajes = MensajeAuto::where('cliente_id', $cliente->id)->get();
+        $photos = Photo::where('cliente_id', $cliente->id)->get();
+        return view('Clientes.show', compact('cliente'));
         //
     }
 
