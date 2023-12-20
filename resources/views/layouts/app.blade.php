@@ -52,7 +52,7 @@
                                 <li><a class="dropdown-item" href="{{route('reservas.create')}}">Crear reserva</a></li>
                             </ul>
                         </li>
-                        {{-- <li class="nav-item"><a class="nav-link" href="{{route('clientes.index')}}">Clientes</a></li> --}}
+                        <li class="nav-item"><a class="nav-link" href="{{route('whatsapp.mensajes')}}">Conversacion AI</a></li>
                         {{-- <li class="nav-item"><a class="nav-link" href="{{route('reservas.index')}}">Reservas</a></li> --}}
                     </ul>
 

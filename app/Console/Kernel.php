@@ -280,7 +280,7 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
 
-        // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
+        // Tarea par enviar los mensajes despedida cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
