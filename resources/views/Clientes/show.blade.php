@@ -108,6 +108,7 @@
                     <table class="table">
                         <thead>
                             <tr>
+                            <th scope="col">Reserva</th>
                             <th scope="col">Fecha de Envio</th>
                             <th scope="col">Categoria del Mensaje</th>
                             </tr>
@@ -117,9 +118,11 @@
                                 @if (count($mensajes) > 0)
                                     @foreach ($mensajes as $mensaje)
                                     <tr>
-                                        <th scope="row">{{$mensaje->fecha_envio}}</th>
+                                        <th scope="row">{{$mensaje->reserva_id}}</th>
+                                        <td>{{$mensaje->fecha_envio}}</td>
                                         <td>{{$mensaje->categoria->nombre}}</td>
-                                        </tr>
+                                        <td><a href="{{route('reservas.show', $mensaje->reserva_id)}}" class="btn btn-pimary"><i class="fa-regular fa-eye"></i></a></td>
+                                    </tr>
                                     @endforeach
                                 @endif
                             @endisset
