@@ -73,27 +73,57 @@
                             
                         </tbody>
                     </table>
+                    <h4><i class="fa-regular fa-address-book"></i> Reservas realizadas</h4>
+                    <hr>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                            <th scope="col">Apartamento</th>
+                            <th scope="col">Fecha de entrada</th>
+                            <th scope="col">Fecha de salida</th>
+                            <th scope="col">Origen</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">Codigo de reserva</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @isset($reservas)
+                                @if (count($reservas) > 0)
+                                    @foreach ($reservas as $reserva)
+                                    <tr>
+                                        <th scope="row">{{$reserva->apartamento->nombre}}</th>
+                                        <td>{{$reserva->fecha_entrada}}</td>
+                                        <td>{{$reserva->fecha_salida}}</td>
+                                        <td>{{$reserva->origen}}</td>
+                                        <td>{{$reserva->precio}} €</td>
+                                        <td>{{$reserva->codigo_reserva}}</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @endisset
+                        </tbody>
+                    </table>
                     <h4><i class="fa-regular fa-comment"></i> Mensajes enviado</h4>
                     <hr>
                     <table class="table">
-                    <thead>
-                        <tr>
-                        <th scope="col">Fecha de Envio</th>
-                        <th scope="col">Categoria del Mensaje</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @isset($mensajes)
-                            @if (count($mensajes) > 0)
-                                @foreach ($mensajes as $mensaje)
-                                <tr>
-                                    <th scope="row">{{$mensaje->fecha_envio}}</th>
-                                    <td>{{$mensaje->categoria->nombre}}</td>
-                                    </tr>
-                                @endforeach
-                            @endif
-                        @endisset
-                    </tbody>
+                        <thead>
+                            <tr>
+                            <th scope="col">Fecha de Envio</th>
+                            <th scope="col">Categoria del Mensaje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @isset($mensajes)
+                                @if (count($mensajes) > 0)
+                                    @foreach ($mensajes as $mensaje)
+                                    <tr>
+                                        <th scope="row">{{$mensaje->fecha_envio}}</th>
+                                        <td>{{$mensaje->categoria->nombre}}</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @endisset
+                        </tbody>
                     </table>
                     @isset($photos)
                         @if (count($photos) > 1)

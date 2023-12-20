@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use App\Models\MensajeAuto;
 use App\Models\Photo;
+use App\Models\Reserva;
 use Illuminate\Http\Request;
 
 class ClientesController extends Controller
@@ -40,9 +41,10 @@ class ClientesController extends Controller
      */
     public function show(Cliente $cliente)
     {
+        $reservas = Reserva::where('cliente_id', $cliente->id)->get();
         $mensajes = MensajeAuto::where('cliente_id', $cliente->id)->get();
         $photos = Photo::where('cliente_id', $cliente->id)->get();
-        return view('Clientes.show', compact('cliente', 'mensajes', 'photos'));
+        return view('Clientes.show', compact('cliente', 'mensajes', 'photos', 'reservas'));
         //
     }
 
