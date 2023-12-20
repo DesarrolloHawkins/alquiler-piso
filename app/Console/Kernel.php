@@ -278,6 +278,54 @@ class Kernel extends ConsoleKernel
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
+
+
+        // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
+        $schedule->call(function (ClienteService $clienteService) {
+            // Obtener la fecha de hoy
+            $hoy = Carbon::now();
+            
+            $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
+
+            foreach($reservas as $reserva){
+                // Fecha de Hoy
+                $FechaHoy = new \DateTime();
+                // Formatea la fecha actual a una cadena 'Y-m-d'
+                $fechaHoyStr = $FechaHoy->format('Y-m-d');
+
+                // Horas objetivo para lanzar mensajes
+
+                $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '12:00:00');
+
+                // Diferencias horarias para las horas objetivos
+
+                $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
+
+                // Comprobacion de los mensajes enviados automaticamente
+
+                $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
+                
+                if ($diferenciasHoraDespedida <= 0 && $mensajeDespedida == null) {
+                        // Obtenemos codigo de idioma
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                        // Enviamos el mensaje
+                        $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+
+                        // Creamos la data para guardar el mensaje
+                        $dataMensaje = [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'categoria_id' => 7,
+                            'fecha_envio' => Carbon::now()
+                        ];
+                        // Creamos el mensaje
+                        MensajeAuto::create($dataMensaje);
+                    
+                }
+            }
+        
+            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        })->everyMinute();
         // $schedule->call(function () {
 
         //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
