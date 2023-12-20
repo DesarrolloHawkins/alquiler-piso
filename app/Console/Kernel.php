@@ -254,26 +254,26 @@ class Kernel extends ConsoleKernel
                     }
                 }
                 
-                if ($diferenciasHoraDespedida <= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
-                    $tiempoDesdeOcio = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
-                    if ($tiempoDesdeOcio >= 1) {
-                       // Obtenemos codigo de idioma
-                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                        // Enviamos el mensaje
-                        $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+                // if ($diferenciasHoraDespedida <= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
+                //     $tiempoDesdeOcio = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
+                //     if ($tiempoDesdeOcio >= 1) {
+                //        // Obtenemos codigo de idioma
+                //         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                //         // Enviamos el mensaje
+                //         $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
 
-                        // Creamos la data para guardar el mensaje
-                        $dataMensaje = [
-                            'reserva_id' => $reserva->id,
-                            'cliente_id' => $reserva->cliente_id,
-                            'categoria_id' => 7,
-                            'fecha_envio' => Carbon::now()
-                        ];
-                        // Creamos el mensaje
-                        MensajeAuto::create($dataMensaje);
-                    }
+                //         // Creamos la data para guardar el mensaje
+                //         $dataMensaje = [
+                //             'reserva_id' => $reserva->id,
+                //             'cliente_id' => $reserva->cliente_id,
+                //             'categoria_id' => 7,
+                //             'fecha_envio' => Carbon::now()
+                //         ];
+                //         // Creamos el mensaje
+                //         MensajeAuto::create($dataMensaje);
+                //     }
                     
-                }
+                // }
             }
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
