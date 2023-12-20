@@ -42,7 +42,7 @@ class ClientesController extends Controller
     {
         $mensajes = MensajeAuto::where('cliente_id', $cliente->id)->get();
         $photos = Photo::where('cliente_id', $cliente->id)->get();
-        return view('Clientes.show', compact('cliente'));
+        return view('Clientes.show', compact('cliente', 'mensajes', 'photos'));
         //
     }
 
