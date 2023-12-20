@@ -104,12 +104,52 @@
                             {{ session('status') }}
                         </div>
                     @endif
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <form action="{{ route('reservas.index') }}" method="GET">
+                                    <div class="form-group">
+                                         <!-- Otros parámetros como campos ocultos -->
+                                        <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
+                                        <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
+                                        <input type="hidden" name="search" value="{{ request()->get('search') }}">
+                                        <label for="perPage">Registros por página:</label>
+                                        <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
+                                            <option value="5" {{ request()->get('perPage') == 5 ? 'selected' : '' }}>5</option>
+                                            <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
+                                            <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
+                                            <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
+                                            <option value="100" {{ request()->get('perPage') == 100 ? 'selected' : '' }}>100</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <form action="{{ route('reservas.index') }}" method="GET">
+                                    <div class="input-group">
+                                        <label for="search" style="width: 100%">Busqueda</label>
 
+                                        <input type="text" class="form-control" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
+                                        <!-- Campos ocultos para mantener el orden y la dirección -->
+                                        <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
+                                        <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
+                                        <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+
+                                        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         ID
                                         @if(request()->get('order_by') == 'id')
                                             @if(request()->get('direction') == 'asc')
@@ -121,7 +161,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         Nombre
                                         @if(request()->get('order_by') == 'cliente_id')
                                             @if(request()->get('direction') == 'asc')
@@ -133,7 +173,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         DNI Entregado
                                         @if(request()->get('order_by') == 'dni_entregado')
                                             @if(request()->get('direction') == 'asc')
@@ -145,7 +185,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         Fecha de Entrada
                                         @if(request()->get('order_by') == 'fecha_entrada')
                                             @if(request()->get('direction') == 'asc')
@@ -157,7 +197,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         Fecha de Salida
                                         @if(request()->get('order_by') == 'fecha_salida')
                                             @if(request()->get('direction') == 'asc')
@@ -169,7 +209,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         Origen
                                         @if(request()->get('order_by') == 'origen')
                                             @if(request()->get('direction') == 'asc')
@@ -181,7 +221,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         Codigo de Reserva
                                         @if(request()->get('order_by') == 'codigo_reserva')
                                             @if(request()->get('direction') == 'asc')
@@ -214,8 +254,9 @@
                     </table>
                     <!-- Paginación links -->
                     {{-- {!! $reservas->links('pagination::bootstrap-5') !!}                 --}}
-                    {{ $reservas->appends(['order_by' => request()->get('order_by'), 'direction' => request()->get('direction')])->links() }}
+                    {{ $reservas->appends(request()->except('page'))->links() }}
 
+                    
                 </div>
             </div>
         </div>

@@ -20,10 +20,36 @@ class ReservasController extends Controller
     {
         $orderBy = $request->get('order_by', 'fecha_entrada');
         $direction = $request->get('direction', 'asc');
+        $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
+        $searchTerm = $request->get('search', '');
 
-        $reservas = Reserva::orderBy($orderBy, $direction)->paginate(10);
-        return view('reservas.index', compact('reservas'));
+        $perPage == '' ? $perPage = 10: $perPage; 
+        $direction == '' ? $direction = 'asc': $direction;
+        $orderBy == '' ? $orderBy = 'fecha_entrada': $orderBy;
         
+        $query = Reserva::with('cliente'); // Asegúrate de que 'cliente' sea el nombre de la relación en el modelo Reserva
+
+        if (!empty($searchTerm)) {
+            $query->where(function($subQuery) use ($searchTerm) {
+                $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
+                    $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
+                })
+                ->orWhere('codigo_reserva', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('fecha_entrada', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('fecha_salida', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('origen', 'LIKE', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Utiliza el valor de $perPage en la función paginate()
+        $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
+            'order_by' => $orderBy,
+            'direction' => $direction,
+            'search' => $searchTerm,
+            'perPage' => $perPage // Asegúrate de adjuntar 'perPage' para mantenerlo durante la paginación
+        ]);
+
+        return view('reservas.index', compact('reservas'));
     }
     /**
      * Display a listing of the resource.
