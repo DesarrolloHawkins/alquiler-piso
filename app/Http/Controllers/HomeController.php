@@ -63,25 +63,25 @@ class HomeController extends Controller
     public function test(ClienteService $clienteService){
         $credentials = array(
             'user' => 'H11070GEV04',
-            'pass' => 'H4Kins4p4rtamento2024'
+            'pass' => 'H4Kins4p4rtamento2023'
         ); 
 
         // $response = PoliceHotelFacade::to($credentials)
         // ->getCountries();
         // $parse_cookies = array();
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'PostmanRuntime/7.16.3');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_HEADER, 1);
-        curl_setopt($ch, CURLOPT_URL, 'https://webpol.policia.es/e-hotel/login');
-        ob_start();
-        $response = curl_exec($ch);
+        // $ch = curl_init();
+        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        // curl_setopt($ch, CURLOPT_USERAGENT, 'PostmanRuntime/7.16.3');
+        // curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        // curl_setopt($ch, CURLOPT_HEADER, 1);
+        // curl_setopt($ch, CURLOPT_URL, 'https://webpol.policia.es/e-hotel/login');
+        // ob_start();
+        // $response = curl_exec($ch);
 
-        dd($response);
-        $response = $this->csr();
+        // dd($response);
+        $response = $this->getCountries();
         // $response = '$this->csr()';
         return $response;
     }
@@ -102,7 +102,7 @@ class HomeController extends Controller
         ob_start();
         $response = curl_exec($ch);
 
-        dd($response);
+        // dd($response);
 
         preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
         $cookies = array();
@@ -130,57 +130,82 @@ class HomeController extends Controller
         $csr = $matches[0];
         $this->_csrf = $csr;
         $this->cookie = $parse_cookies;
+
+        // dd($parse_cookies, $this->_csrf);
         return array('_csrf' => $csr, 'cookie' => $parse_cookies);
 
     }
 
     private function login()
     {
-        $data_csr = $this->csr();
-        dd($data_csr);
+        // $data_csr = $this->csr();
+        // dd($data_csr);
 
         try {
 
             $data_csr = $this->csr();
-            dd($data_csr);
-            $credentials = array(
-                'user' => 'H11070GEV04',
-                'pass' => 'H4Kins4p4rtamento2024'
-            ); 
+            // dd($data_csr);
+            // $credentials = array(
+            //     'user' => 'H11070GEV04',
+            //     'pass' => 'H4Kins4p4rtamento2023'
+            // ); 
 
-            $this->user = $credentials['user'];
-            $this->pass = $credentials['pass'];
+            // $this->user = $credentials['user'];
+            // $this->pass = $credentials['pass'];
 
             $data = [
-                'username' => $this->user,
-                'password' => $this->pass,
+                'username' => 'H11070GEV04',
+                'password' => 'H4Kins4p4rtamento2023',
                 '_csrf' => $data_csr['_csrf']
             ];
 
-            $headers = $this->headers;
-            $headers = array_merge(
-                $headers,
-                [
-                    'Cookie: ' . $this->cookie,
-                    'Content-Type: application/x-www-form-urlencoded',
-                ]
-            );
+            // $headers = $this->headers;
+            // $headers = array_merge(
+            //     $headers,
+            //     [
+            //         'Cookie: ' . $data_csr['cookie'],
+            //         'Content-Type: application/x-www-form-urlencoded',
+            //     ]
+            // );
 
-            $curl_response = $this->curl(
-                $this->endpoint . '/execute_login',
-                'POST',
-                $data,
-                $headers
-            );
+            // $curl_response = $this->curl(
+            //     'https://webpol.policia.es/e-hotel/execute_login',
+            //     'POST',
+            //     $data,
+            //     $headers
+            // );
 
-            if (strpos($curl_response['content'], '/e-hotel/inicio') !== false) {
-                $this->cookie = $data_csr['cookie'];
-                $response_home = $this->home();
+            $curl = curl_init();
 
-                return $response_home;
-            } else {
-                throw new \Exception('error.login.police');
-            }
+            curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://webpol.policia.es/e-hotel/execute_login',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $data,
+            CURLOPT_HTTPHEADER => array(
+                'Cookie: '.$data_csr['cookie'],
+                'Content-Type: application/x-www-form-urlencoded'
+            ),
+            ));
+
+            $response434 = curl_exec($curl);
+            dd($data,$data_csr['cookie'], $response434);
+
+            curl_close($curl);
+
+            // if (strpos($curl_response['content'], '/e-hotel/inicio') !== false) {
+            //     $this->cookie = $data_csr['cookie'];
+            //     $response_home = $this->home();
+
+            //     return $response_home;
+            // } else {
+            //     throw new \Exception('error.login.police');
+            // }
 
         } catch (\Exception $e) {
             return $e->getMessage();
@@ -192,6 +217,7 @@ class HomeController extends Controller
     {
         try {
             $this->login();
+            // dd($te);
             // dd($login2);
 
             $headers = array_merge(
@@ -204,13 +230,26 @@ class HomeController extends Controller
             );
 
             $response = $this->curl(
-                $this->endpoint . '/hospederia/manual/vista/grabadorManual',
+                'https://webpol.policia.es/e-hotel/hospederia/manual/vista/grabadorManual',
                 'GET',
                 [],
                 $headers
             );
 
-            dd($response);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_HEADER, 1);
+            curl_setopt($ch, CURLOPT_URL, 'https://webpol.policia.es/e-hotel/hospederia/manual/vista/grabadorManual');
+
+            ob_start();
+
+            $response = curl_exec($ch);
+            $raw_response = $response;
+
+            dd($raw_response);
 
             $pattern = '/<selectid="nacionalidad"(.*?)<\/select>/i';
             $pattern_options = '@<optionvalue=\"(.*)\">(.*)</option>@';
@@ -246,6 +285,7 @@ class HomeController extends Controller
     private function curl($url = null, $method = 'GET', $data = array(), $headers = array())
     {
         try {
+            // dd($headers, $url, $data, $method);
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
@@ -262,7 +302,7 @@ class HomeController extends Controller
             $raw_response = $response;
 
             /** cookies ** */
-            dd($response);
+            dd($raw_response);
 
             preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
             $cookies = array();
