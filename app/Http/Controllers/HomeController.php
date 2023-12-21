@@ -306,7 +306,7 @@ class HomeController extends Controller
             $raw_response = $response;
 
             /** cookies ** */
-            dd($raw_response);
+            // dd($raw_response);
 
             preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $response, $matches);
             $cookies = array();
