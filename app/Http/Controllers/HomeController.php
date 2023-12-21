@@ -183,7 +183,7 @@ class HomeController extends Controller
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
                 CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => 'username=H11070GEV04&password=H4Kins4p4rtamento2023&_csrf=49614a9a-efc7-4c36-9063-b1cd6824aa9a',
