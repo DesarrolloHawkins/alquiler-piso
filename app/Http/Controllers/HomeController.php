@@ -253,7 +253,7 @@ class HomeController extends Controller
             $response = curl_exec($ch);
             $raw_response = $response;
 
-            dd($response);
+            // dd($response);
 
             $pattern = '/<select id="nacionalidad"(.*?)<\/select>/is';
             $pattern_options = '/<option value="(.*?)">(.*?)<\/option>/is';
