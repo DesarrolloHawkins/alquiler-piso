@@ -255,31 +255,29 @@ class HomeController extends Controller
 
             dd($response);
 
-            $pattern = '/<selectid="nacionalidad"(.*?)<\/select>/i';
-            $pattern_options = '@<optionvalue=\"(.*)\">(.*)</option>@';
-
+            $pattern = '/<select id="nacionalidad"(.*?)<\/select>/is';
+            $pattern_options = '/<option value="(.*?)">(.*?)<\/option>/is';
+            
             preg_match($pattern, $response, $matches);
-            $raw_countries = $matches[1];
-
-            preg_match($pattern_options, $raw_countries, $matches_options);
-
-            $countries = explode('optionvalue=', $matches_options[1]);
-            $new_countries = array();
-
-
-            foreach ($countries as $country) {
-                preg_match_all('/[A-Za-z0-9]+/i', $country, $tmp);
-                if ($tmp && count($tmp) && (count($tmp[0]) > 1)) {
+            if (!empty($matches)) {
+                $raw_countries = $matches[1];
+            
+                preg_match_all($pattern_options, $raw_countries, $matches_options, PREG_SET_ORDER);
+            
+                $new_countries = array();
+                foreach ($matches_options as $match) {
+                    $id = $match[1];
+                    $name = $match[2]; // Considera usar html_entity_decode($name) si es necesario
+            
                     $new_countries[] = [
-                        'id' => $tmp[0][0],
-                        'name' => $tmp[0][1]
+                        'id' => $id,
+                        'name' => $name
                     ];
                 }
+            
+                $this->pkgoptions['countries'] = $new_countries;
+                return $this->pkgoptions['countries'];
             }
-
-            $this->pkgoptions['countries'] = $new_countries;
-            return $this->pkgoptions['countries'];
-
 
         } catch (\Exception $e) {
             return $e->getMessage();
