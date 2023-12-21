@@ -198,7 +198,7 @@ class HomeController extends Controller
             if ($response434 === false) {
                 $error = curl_error($curl);
                 // Puedes registrar o imprimir este error para depuración
-                dd($error);
+                // dd($error);
             }
             curl_close($curl);
 
@@ -253,7 +253,7 @@ class HomeController extends Controller
             $response = curl_exec($ch);
             $raw_response = $response;
 
-            dd($raw_response);
+            // dd($raw_response);
 
             $pattern = '/<selectid="nacionalidad"(.*?)<\/select>/i';
             $pattern_options = '@<optionvalue=\"(.*)\">(.*)</option>@';
