@@ -258,7 +258,7 @@ class HomeController extends Controller
             $pattern = '/<selectid="nacionalidad"(.*?)<\/select>/i';
             $pattern_options = '@<optionvalue=\"(.*)\">(.*)</option>@';
 
-            preg_match($pattern, $response['content'], $matches);
+            preg_match($pattern, $raw_response, $matches);
             $raw_countries = $matches[1];
 
             preg_match($pattern_options, $raw_countries, $matches_options);
