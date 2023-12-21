@@ -255,26 +255,28 @@ class HomeController extends Controller
 
             // dd($response);
 
-            $pattern = '/<select id="nacionalidad"(.*?)<\/select>/is';
+            $pattern = '/<select id="nacionalidad".*?>(.*?)<\/select>/is';
             $pattern_options = '/<option value="(.*?)">(.*?)<\/option>/is';
-            
+
             preg_match($pattern, $response, $matches);
             if (!empty($matches)) {
                 $raw_countries = $matches[1];
-            
+
                 preg_match_all($pattern_options, $raw_countries, $matches_options, PREG_SET_ORDER);
-            
+
                 $new_countries = array();
                 foreach ($matches_options as $match) {
                     $id = $match[1];
                     $name = $match[2]; // Considera usar html_entity_decode($name) si es necesario
-            
-                    $new_countries[] = [
-                        'id' => $id,
-                        'name' => $name
-                    ];
+
+                    if (!empty($id)) { // Ignorar opciones vacías
+                        $new_countries[] = [
+                            'id' => $id,
+                            'name' => $name
+                        ];
+                    }
                 }
-            
+
                 $this->pkgoptions['countries'] = $new_countries;
                 return $this->pkgoptions['countries'];
             }
