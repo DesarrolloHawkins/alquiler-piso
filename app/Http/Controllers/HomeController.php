@@ -95,7 +95,7 @@ class HomeController extends Controller
         // Envía el formulario
         $crawler = $browser->submit($form);
 
-        $crawler = $browser->request('GET', 'https://webpol.policia.es/hospederia/manual/insertar/huesped');
+        // $crawler = $browser->request('GET', 'https://webpol.policia.es/hospederia/manual/insertar/huesped');
 
         $htmlContent = $crawler->html();
         
