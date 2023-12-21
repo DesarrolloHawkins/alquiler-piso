@@ -156,7 +156,7 @@ class HomeController extends Controller
             $data = [
                 'username' => 'H11070GEV04',
                 'password' => 'H4Kins4p4rtamento2023',
-                '_csrf' => $data_csr['_csrf']
+                '_csrf' => '49614a9a-efc7-4c36-9063-b1cd6824aa9a'
             ];
 
             // $headers = $this->headers;
@@ -178,24 +178,28 @@ class HomeController extends Controller
             $curl = curl_init();
 
             curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://webpol.policia.es/e-hotel/execute_login',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $data,
-            CURLOPT_HTTPHEADER => array(
-                'Cookie: '.$data_csr['cookie'],
-                'Content-Type: application/x-www-form-urlencoded'
-            ),
-            ));
+                CURLOPT_URL => 'https://webpol.policia.es/e-hotel/execute_login',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => 'username=H11070GEV04&password=H4Kins4p4rtamento2023&_csrf=49614a9a-efc7-4c36-9063-b1cd6824aa9a',
+                CURLOPT_HTTPHEADER => array(
+                    'Cookie: cookiesession1=678B289DA6FB78671035995D37B87DFE; UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_=v1DNo0JbgW4rv; FRONTAL_JSESSIONID=paaLfwHnFYsU8ScIG8kaM4Z2IHBQpBTZ1-3uzxfzceAL9YiqqHvI!-293553294',
+                    'Content-Type: application/x-www-form-urlencoded'
+                  ),
+                ));
 
             $response434 = curl_exec($curl);
-            dd($data,$data_csr['cookie'], $response434);
-
+            // dd($data,$data_csr['cookie'], $response434);
+            if ($response434 === false) {
+                $error = curl_error($curl);
+                // Puedes registrar o imprimir este error para depuración
+                dd($error);
+            }
             curl_close($curl);
 
             // if (strpos($curl_response['content'], '/e-hotel/inicio') !== false) {
