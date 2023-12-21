@@ -255,8 +255,8 @@ class HomeController extends Controller
 
             // dd($response);
 
-            $pattern = '/<select id="nacionalidad".*?>(.*?)<\/select>/is';
-            $pattern_options = '/<option value="(.*?)">(.*?)<\/option>/is';
+            $pattern = '/<select id="nacionalidad"[^>]*>(.*?)<\/select>/is';
+            $pattern_options = '/<option value="([^"]*)">(.*?)<\/option>/is';
 
             preg_match($pattern, $response, $matches);
             if (!empty($matches)) {
@@ -267,9 +267,10 @@ class HomeController extends Controller
                 $new_countries = array();
                 foreach ($matches_options as $match) {
                     $id = $match[1];
-                    $name = $match[2]; // Considera usar html_entity_decode($name) si es necesario
+                    $name = $match[2];
 
-                    if (!empty($id)) { // Ignorar opciones vacías
+                    // Omitir opciones vacías o placeholders
+                    if (!empty($id) && $name != "SELECCIONAR...") {
                         $new_countries[] = [
                             'id' => $id,
                             'name' => $name
@@ -279,7 +280,12 @@ class HomeController extends Controller
 
                 $this->pkgoptions['countries'] = $new_countries;
                 return $this->pkgoptions['countries'];
+            } else {
+                // Si no hay coincidencias, devolver este mensaje para depuración
+                return "No se encontraron coincidencias con el patrón para <select>";
             }
+
+
 
         } catch (\Exception $e) {
             return $e->getMessage();
