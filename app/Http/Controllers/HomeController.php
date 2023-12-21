@@ -82,7 +82,11 @@ class HomeController extends Controller
 
         $browser = new HttpBrowser(HttpClient::create());
         $crawler = $browser->request('GET', 'https://webpol.policia.es/e-hotel/login');
-
+        $cookies = $browser->getCookieJar()->all();
+        foreach ($cookies as $cookie) {
+            echo $cookie->getName() . ': ' . $cookie->getValue() . "\n";
+        }
+        return;
        // Obtiene el HTML de la página y lo convierte en una cadena
         $csrfToken = $crawler->filter('meta[name="_csrf"]')->attr('content');
         $form = $crawler->filter('#loginForm')->form();
