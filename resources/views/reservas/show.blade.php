@@ -98,7 +98,7 @@
                         <h4><i class="fa-regular fa-address-card"></i> Pasaporte</h4>
                         <hr>
                         
-                        <img src="{{asset($photos->url)}}" alt="" style="width: 100%">  
+                        <img src="{{asset($photos[0]->url)}}" alt="" style="width: 100%">  
                     @else
                         <h4><i class="fa-regular fa-address-card"></i> DNI o Pasaporte</h4>
                         <hr>
