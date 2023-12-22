@@ -52,7 +52,7 @@ class Kernel extends ConsoleKernel
             // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
             $reservasEntrada = Reserva::where('dni_entregado', null)
             ->where('estado_id', 1)
-            ->where('cliente_id',133)
+            ->whereDate('fecha_entrada', '>=', now())
             ->get();
             
             // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
@@ -145,7 +145,7 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
            
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
-            $codigoPuertaPrincipal = '0404';
+            $codigoPuertaPrincipal = '1314#';
 
             foreach($reservas as $reserva){
                 // Fecha de Hoy
@@ -326,7 +326,21 @@ class Kernel extends ConsoleKernel
         
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
-        // $schedule->call(function () {
+
+        // Tarea añadir a webpol
+        $schedule->call(function () {
+            $reservas = Reserva::where('dni_entregado', true)->where('enviado_webpol', null)->get();
+            if (count($reservas) > 0) {
+                foreach($reservas as $reserva){
+
+                }
+            }
+            
+
+            Log::info("Tarea programada de webpol del cliente ejecutada con éxito.");
+        })->everyMinute();
+
+         // $schedule->call(function () {
 
         //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         // })->everyMinute();
@@ -443,58 +457,56 @@ class Kernel extends ConsoleKernel
         curl_close($curl);
         // $responseJson = json_decode($response);
         return $response;
-
     }
-
 
     public function codigoApartamento($habitacion){
         switch ($habitacion) {
             case 1:
                 return [
                         'nombre' => 'ATICO',
-                        'codigo' => '0407'
+                        'codigo' => '0807'
                     ];
                 break;
     
             case 2:
                 return [
                     'nombre' => '2A',
-                    'codigo' => '0407'
+                    'codigo' => '5032'
                 ];
                 break;
     
             case 3:
                 return [
                     'nombre' => '2B',
-                    'codigo' => '0407'
+                    'codigo' => '6032'
                 ];
                 break;
     
             case 4:
                 return [
                     'nombre' => '1A',
-                    'codigo' => '0407'
+                    'codigo' => '3032'
                 ];
                 break;
     
             case 5:
                 return [
                     'nombre' => '1B',
-                    'codigo' => '0407'
+                    'codigo' => '4032'
                 ];
                 break;
     
             case 6:
                 return [
                     'nombre' => 'BA',
-                    'codigo' => '0407'
+                    'codigo' => '1032'
                 ];
                 break;
     
             case 7:
                 return [
                     'nombre' => 'BB',
-                    'codigo' => '0407'
+                    'codigo' => '2032'
                 ];
                 break;
             
