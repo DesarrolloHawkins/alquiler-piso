@@ -368,7 +368,7 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
-                                                    <option value="{{null}}" disabled>Seleccion el tipo</option>
+                                                    <option value="{{null}}" selected>Seleccion el tipo</option>
                                                     <option 
                                                     value="1"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
@@ -624,6 +624,7 @@
                 }
             });
         });
+
         var tipoDocumento = document.querySelectorAll('.tiposDocumentos')
         console.log(tipoDocumento)
         tipoDocumento.forEach( function(tipo){
@@ -671,6 +672,7 @@
             event.preventDefault()
             event.stopPropagation()
             }
+            var tipoDocumento = 
 
             form.classList.add('was-validated')
         }, false)
