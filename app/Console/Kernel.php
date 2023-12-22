@@ -154,11 +154,11 @@ class Kernel extends ConsoleKernel
                 $fechaHoyStr = $FechaHoy->format('Y-m-d');
 
                 // Horas objetivo para lanzar mensajes
-                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 11:00:00');
-                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
-                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 16:00:00');
-                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 18:00:00');
-                $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '12:00:00');
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
+                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 11:00:00');
+                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
+                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
+                $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '11:00:00');
 
                 // Diferencias horarias para las horas objetivos
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');

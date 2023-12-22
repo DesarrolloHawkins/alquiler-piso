@@ -549,6 +549,7 @@ class DNIController extends Controller
                 // dd($huesped);
                 if ($huesped != null) {
                     // Comprobamos si la reserva ya tiene los dni entregados
+                    $huesped->reserva_id = $reserva->id;
                     $huesped->nombre = $request->input('nombre_'.$i);
                     $huesped->primer_apellido = $request->input('apellido1_'.$i);
                     $huesped->segundo_apellido = $request->input('apellido2_'.$i) ? $request->input('apellido2_'.$i) : null;
@@ -638,6 +639,7 @@ class DNIController extends Controller
 
                     // Comprobamos si la reserva ya tiene los dni entregados
                     $huespedNew = [
+                        'reserva_id' => $reserva->id,
                         'nombre' => $request->input('nombre_'.$i),
                         'primer_apellido' => $request->input('apellido1_'.$i),
                         'segundo_apellido' => $request->input('apellido2_'.$i) ? $request->input('apellido2_'.$i) : null,
