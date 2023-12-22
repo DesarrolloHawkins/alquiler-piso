@@ -110,27 +110,27 @@ class Kernel extends ConsoleKernel
 
                         MensajeAuto::create($dataMensaje);                    
                     } else {
-                        if ($reserva->dni_entregado == null) {
-                            if ($reserva->fecha_entrada == $hoyFormateado) {
-                                // Obtenemos el token ya creado
-                                $token = $reserva->token;
-                                // Limpiamos el numero de telefono
-                                $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                                // Enviamos el mensaje
-                                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                        // if ($reserva->dni_entregado == null) {
+                        //     if ($reserva->fecha_entrada == $hoyFormateado) {
+                        //         // Obtenemos el token ya creado
+                        //         $token = $reserva->token;
+                        //         // Limpiamos el numero de telefono
+                        //         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
+                        //         // Enviamos el mensaje
+                        //         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
     
-                                $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
-                                    // Data para guardar Mensaje enviado
-                                $dataMensaje = [
-                                    'reserva_id' => $reserva->id,
-                                    'cliente_id' => $reserva->cliente_id,
-                                    'categoria_id' => 1,
-                                    'fecha_envio' => Carbon::now()
-                                ];
+                        //         $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
+                        //             // Data para guardar Mensaje enviado
+                        //         $dataMensaje = [
+                        //             'reserva_id' => $reserva->id,
+                        //             'cliente_id' => $reserva->cliente_id,
+                        //             'categoria_id' => 1,
+                        //             'fecha_envio' => Carbon::now()
+                        //         ];
     
-                                MensajeAuto::create($dataMensaje);
-                            }
-                        }
+                        //         MensajeAuto::create($dataMensaje);
+                        //     }
+                        // }
                         
                     }
                 }
