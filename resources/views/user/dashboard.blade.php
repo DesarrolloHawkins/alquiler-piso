@@ -23,12 +23,14 @@
                 </a>
             </div>
             <div class="text-center">
-                <div class="icon-container2">
-                    <div class="icon2">
-                        <i class="fa-solid fa-building"></i>
+                <a href="{{route('apartamentos.index')}}">
+                    <div class="icon-container2">
+                        <div class="icon2">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="icon-text mt-2">Pisos</div>
+                    <div class="icon-text mt-2">Pisos</div>
+                </a>
             </div>
             <div class="text-center">
                 <div class="icon-container2">

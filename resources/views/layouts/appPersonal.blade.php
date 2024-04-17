@@ -21,18 +21,18 @@
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-light bg-color-primero shadow-sm"
              style="
-                    height: 78px;
+                    height: 52px;
                     border-radius: 0 0 45px 45px;
                     box-shadow: 1px 1px 1px black;
         ">
             <div class="container">
                 @yield('volver')
-                <a class="navbar-brand text-white text-center" href="{{ url('/') }}">
-                    {{-- {{ config('app.name', 'Hawkins Suite') }} --}}
-                {{-- <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" class="img-fluid m-auto" style="width: 60%"> --}}
+                {{-- <a class="navbar-brand text-white text-center" href="{{ url('/') }}">
+                    {{ config('app.name', 'Hawkins Suite') }}
+                <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" class="img-fluid m-auto" style="width: 60%">
 
-                </a>
-                <div class="pt-3 w-100 text-light">
+                </a> --}}
+                <div class="pt-1 w-100 text-light">
                     @yield('bienvenido')
                     <h5 class="navbar-brand mb-0 text-center text-light w-100">Bienvenid@ <span class="text-uppercase">{{Auth::user()->name}}</span></h5>
                 </div>
@@ -89,7 +89,7 @@
             <div class="row px-3">
                 <div class="col-3 ">
                    <a href="{{route('dashboard.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                        <div class="icon fs-1 m-0 text-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
+                        <div class="icon fs-1 m-0 text-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-house "></i>
                         </div>
                         {{-- <div class="texto fs-6 p-0 text-muted">
@@ -99,7 +99,7 @@
                 </div>
                 <div class="col-3">
                     <a href="#" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                          </div>
                          {{-- <div class="texto fs-6 p-0 text-muted">
@@ -109,7 +109,7 @@
                 </div>
                 <div class="col-3">
                     <a href="#" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-question"></i>
                          </div>
                          {{-- <div class="texto fs-6 p-0 text-muted">
@@ -121,7 +121,7 @@
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                         document.getElementById('logout-form').submit();" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color:#b8c2d7 !important">
                             <i class="fa-solid fa-right-from-bracket"></i>
                          </div>
                          {{-- <div class="texto fs-6 p-0 text-muted">
