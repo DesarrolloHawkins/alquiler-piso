@@ -16,7 +16,7 @@ use DateTime;
 
 class Kernel extends ConsoleKernel
 {
-   
+
     /**
      * Define the application's command schedule.
      */
@@ -54,7 +54,7 @@ class Kernel extends ConsoleKernel
             ->where('estado_id', 1)
             ->whereDate('fecha_entrada', '>=', now())
             ->get();
-            
+
             // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
             // ->where('estado_id', 1)
             // ->get();
@@ -108,7 +108,7 @@ class Kernel extends ConsoleKernel
                             'fecha_envio' => Carbon::now()
                         ];
 
-                        MensajeAuto::create($dataMensaje);                    
+                        MensajeAuto::create($dataMensaje);
                     } else {
                         // if ($reserva->dni_entregado == null) {
                         //     if ($reserva->fecha_entrada == $hoyFormateado) {
@@ -118,7 +118,7 @@ class Kernel extends ConsoleKernel
                         //         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         //         // Enviamos el mensaje
                         //         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-    
+
                         //         $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
                         //             // Data para guardar Mensaje enviado
                         //         $dataMensaje = [
@@ -127,14 +127,14 @@ class Kernel extends ConsoleKernel
                         //             'categoria_id' => 1,
                         //             'fecha_envio' => Carbon::now()
                         //         ];
-    
+
                         //         MensajeAuto::create($dataMensaje);
                         //     }
                         // }
-                        
+
                     }
                 }
-                
+
             }
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
@@ -143,7 +143,7 @@ class Kernel extends ConsoleKernel
          $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
-           
+
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
             $codigoPuertaPrincipal = '1314#';
 
@@ -211,7 +211,7 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
-                    }   
+                    }
                 }
 
                 if ($diferenciasHoraConsulta <= 0 && $mensajeClaves != null && $mensajeConsulta == null) {
@@ -221,7 +221,7 @@ class Kernel extends ConsoleKernel
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
                         $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
-        
+
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
@@ -241,7 +241,7 @@ class Kernel extends ConsoleKernel
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
                         $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
-        
+
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
@@ -253,7 +253,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
                     }
                 }
-                
+
                 // if ($diferenciasHoraDespedida <= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
                 //     $tiempoDesdeOcio = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
                 //     if ($tiempoDesdeOcio >= 1) {
@@ -272,7 +272,7 @@ class Kernel extends ConsoleKernel
                 //         // Creamos el mensaje
                 //         MensajeAuto::create($dataMensaje);
                 //     }
-                    
+
                 // }
             }
 
@@ -284,7 +284,7 @@ class Kernel extends ConsoleKernel
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
-            
+
             $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
 
             foreach($reservas as $reserva){
@@ -304,7 +304,7 @@ class Kernel extends ConsoleKernel
                 // Comprobacion de los mensajes enviados automaticamente
 
                 $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
-                
+
                 if ($diferenciasHoraDespedida <= 0 && $mensajeDespedida == null) {
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -320,10 +320,10 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
-                    
+
                 }
             }
-        
+
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
@@ -335,7 +335,7 @@ class Kernel extends ConsoleKernel
 
                 }
             }
-            
+
 
             Log::info("Tarea programada de webpol del cliente ejecutada con éxito.");
         })->everyMinute();
@@ -359,7 +359,7 @@ class Kernel extends ConsoleKernel
     function limpiarNumeroTelefono($numero) {
         // Eliminar el signo más y cualquier espacio
         $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
-    
+
         return $numeroLimpio;
     }
 
@@ -370,8 +370,8 @@ class Kernel extends ConsoleKernel
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": "'.$phone.'",
-            "type": "text", 
-            "text": { 
+            "type": "text",
+            "text": {
                 "body": "'.$texto.'"
             }
         }';
@@ -395,7 +395,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $token
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -404,7 +404,7 @@ class Kernel extends ConsoleKernel
         Storage::disk('local')->put('response0001.txt', json_encode($response) . json_encode($mensajePersonalizado) );
         return $response;
 
-    }  
+    }
 
     public function mensajesAutomaticosBoton($template, $token, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
@@ -429,8 +429,8 @@ class Kernel extends ConsoleKernel
                 ],
             ],
         ];
-        
-        
+
+
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
@@ -450,7 +450,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -467,49 +467,49 @@ class Kernel extends ConsoleKernel
                         'codigo' => '0807'
                     ];
                 break;
-    
+
             case 2:
                 return [
                     'nombre' => '2A',
                     'codigo' => '5032'
                 ];
                 break;
-    
+
             case 3:
                 return [
                     'nombre' => '2B',
                     'codigo' => '6032'
                 ];
                 break;
-    
+
             case 4:
                 return [
                     'nombre' => '1A',
                     'codigo' => '3032'
                 ];
                 break;
-    
+
             case 5:
                 return [
                     'nombre' => '1B',
                     'codigo' => '4032'
                 ];
                 break;
-    
+
             case 6:
                 return [
                     'nombre' => 'BA',
                     'codigo' => '1032'
                 ];
                 break;
-    
+
             case 7:
                 return [
                     'nombre' => 'BB',
                     'codigo' => '2032'
                 ];
                 break;
-            
+
             default:
             return [
                 'nombre' => 'Error',
@@ -559,7 +559,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -568,7 +568,7 @@ class Kernel extends ConsoleKernel
         return $response;
 
     }
-    
+
 
     public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
@@ -610,7 +610,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -662,7 +662,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -711,7 +711,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -760,7 +760,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
@@ -809,7 +809,7 @@ class Kernel extends ConsoleKernel
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$tokenEnv
             ),
-        
+
         ));
 
         $response = curl_exec($curl);
