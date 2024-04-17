@@ -36,7 +36,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
 // Rutas de usuarios logueados
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('home');
+    Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
 
     Route::get('/configuracion', function () {
         return view('configuracion');
