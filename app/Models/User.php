@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Reserva;
 
 class User extends Authenticatable
 {
@@ -58,13 +59,17 @@ class User extends Authenticatable
     //     return $this->belongsToMany(Role::class);
     // }
 
-    public function redirectToDashboard( $reservasPendientes )
+    public function redirectToDashboard()
     {
         switch ($this->role) {
             case 'ADMIN':
-                return view('admin.dashboard', compact('reservasPendientes'));
+                $reservasPendientes = Reserva::apartamentosPendiente();
+                $reservasSalida = Reserva::apartamentosSalida();
+                return view('admin.dashboard', compact('reservasPendientes', 'reservasSalida'));
             case 'USER':
-                return view('user.dashboard', compact('reservasPendientes'));
+                $reservasPendientes = Reserva::apartamentosPendiente();
+                $reservasSalida = Reserva::apartamentosSalida();
+                return view('user.dashboard', compact('reservasPendientes', 'reservasSalida'));
             default:
                 abort(403, 'No tienes permiso para acceder a esta página.');
         }

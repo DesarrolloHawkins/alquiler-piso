@@ -88,7 +88,7 @@
         <footer class="nav-bar-mobile p-2" style="background-color: white">
             <div class="row px-3">
                 <div class="col-3 ">
-                   <a href="{{route('dashboard.index')}}" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
+                   <a href="{{route('dashboard.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                         <div class="icon fs-1 m-0 text-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-house "></i>
                         </div>
@@ -98,7 +98,7 @@
                    </a>
                 </div>
                 <div class="col-3">
-                    <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
+                    <a href="#" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                          <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                          </div>
@@ -108,7 +108,7 @@
                     </a>
                 </div>
                 <div class="col-3">
-                    <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
+                    <a href="#" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                          <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-question"></i>
                          </div>
@@ -120,7 +120,7 @@
                 <div class="col-3">
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault();
-                        document.getElementById('logout-form').submit();" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
+                        document.getElementById('logout-form').submit();" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                          <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-right-from-bracket"></i>
                          </div>
