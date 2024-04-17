@@ -51,7 +51,7 @@
     <h4 class="mt-5">Apartamentos para Hoy</h4>
 
     <div class="row mb-4">
-        @if (count($reservasPendientes) >= 0)
+        @if (count($reservasPendientes) > 0)
             @foreach ($reservasPendientes as $reserva)
                 <div class="col-12 mb-2">
                     <div class="card bg-color-cuarto border-0">
@@ -61,12 +61,14 @@
                     </div>
                 </div>
             @endforeach
+        @else
+            <p class="">No hay apartamentos pendientes.</p>
         @endif
     </div>
-    <h4 style="@if(count($reservasSalida) < 1) display:none @endif" class="mt-5">Apartamentos para Mañana</h4>
+    <h4 class="mt-5">Apartamentos para Mañana</h4>
 
     <div class="row mb-4">
-        @if (count($reservasSalida) >= 0)
+        @if (count($reservasSalida) > 0)
             @foreach ($reservasSalida as $reserva_salida)
                 <div class="col-12 mb-2">
                     <div class="card bg-color-cuarto border-0">
@@ -76,6 +78,8 @@
                     </div>
                 </div>
             @endforeach
+        @else
+            <p class="">No hay apartamentos pendientes.</p>
         @endif
     </div>
 
