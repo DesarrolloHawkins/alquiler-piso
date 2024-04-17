@@ -11,7 +11,7 @@
     </div>
     <div class="mt-5">
         <h4 class="mb-3">Acceso directos</h4>
-        <div class="d-flex justify-content-between">
+        <div class=" row d-flex justify-content-between">
             @if (count($pisos) > 0)
                 @foreach ($pisos as $piso)
                     <div class="col-12 mb-2">

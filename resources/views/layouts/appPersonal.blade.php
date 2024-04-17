@@ -121,7 +121,7 @@
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                         document.getElementById('logout-form').submit();" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 ext-secondary" style="color:#b8c2d7 !important">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7  !important">
                             <i class="fa-solid fa-right-from-bracket"></i>
                          </div>
                          {{-- <div class="texto fs-6 p-0 text-muted">

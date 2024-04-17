@@ -23,7 +23,7 @@
                 </a>
             </div>
             <div class="text-center">
-                <a href="{{route('apartamentos.index')}}">
+                <a href="{{route('apartamentos.index')}}" class="text-decoration-none primer-color">
                     <div class="icon-container2">
                         <div class="icon2">
                             <i class="fa-solid fa-building"></i>
