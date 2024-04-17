@@ -27,10 +27,11 @@ class WhatsappController extends Controller
     {
         $this->clienteService = $clienteService;
     }
-
+   
     public function hookWhatsapp(Request $request)
     {
-        $responseJson = env('WHATSAPP_KEY', 'valorPorDefecto');
+        
+        $responseJson = 'e&[Q/A(fJC:95rF#S)b*V(=zwJ98R[ /%%&Ff;_*AB:T./i9WB!PPSg.nT+D[ jTjr)M,]Gu9iEdpbz)GKZX/)r[Gx/K 8#Y?x3DdLRP#PrzfR]-q}!Cm#}2Dqn @w!jEAy[)DS3//i[j2_RJ;-&_PQ.@T Gp_GB_=fu7YL.4ySCX5hA)9EtAW{m] [wgWzq8z+A!(KCiyfrgGy)avyp5NJj';
 
         $query = $request->all();
         $mode = $query['hub_mode'];
@@ -46,471 +47,380 @@ class WhatsappController extends Controller
         Storage::disk('local')->put($filename, json_encode($request->all()));
 
         return response($challenge, 200)->header('Content-Type', 'text/plain');
-
+        
     }
-
+    
     public function processHookWhatsapp(Request $request)
     {
+        // e&[Q/A(fJC:95rF#S)b*V(=zwJ98R[ /%%&Ff;_*AB:T./i9WB!PPSg.nT+D[ jTjr)M,]Gu9iEdpbz)GKZX/)r[Gx/K 8#Y?x3DdLRP#PrzfR]-q}!Cm#}2Dqn @w!jEAy[)DS3//i[j2_RJ;-&_PQ.@T Gp_GB_=fu7YL.4ySCX5hA)9EtAW{m] [wgWzq8z+A!(KCiyfrgGy)avyp5NJj
+
+        $ejemplo = '{
+            "messaging_product":"whatsapp",
+            "metadata":{
+                "display_phone_number":"34605379329",
+                "phone_number_id":"102360642838173"
+            },
+            "contacts":[
+                {
+                    "profile":
+                    {
+                        "name":"Ivan Hawkins"
+                    },
+                    "wa_id":"34605621704"
+                }
+            ],
+                    "messages":[
+                        {
+                            "from":"34605621704",
+                            "id":"wamid.HBgLMzQ2MDU2MjE3MDQVAgASGBQzQTg2RkUxRjM0QzMyNTBERkRCMAA=",
+                            "timestamp":"1681401419",
+                            "text":{
+                                "body":"Comenabo"
+                            },
+                            "type":"text"
+                        }
+                    ]
+        }';
+
         $data = json_decode($request->getContent(), true);
+        
+        $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
+        // Storage::disk('local')->put('comprobar-'.$id.'.txt', json_encode($data) );
+        
         $tipo = $data['entry'][0]['changes'][0]['value']['messages'][0]['type'];
 
         if ($tipo == 'audio') {
-            $this->audioMensaje($data);
-        }elseif($tipo == 'image') {
-            $this->imageMensaje($data);
-        }else {
-            $this->textMensaje($data);
-        }
 
-        return response(200)->header('Content-Type', 'text/plain');
+            $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['audio']['id'];
+            $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
 
-    }
+            Storage::disk('local')->put('audio-'.$idMedia.'.txt', json_encode($data) );
 
-    public function audioMensaje( $data ){
-        $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['audio']['id'];
-        $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
+            $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
 
-        Storage::disk('local')->put('audio-'.$idMedia.'.txt', json_encode($data) );
+            Storage::disk('local')->put('url-'.$idMedia.'.txt', $url );
 
-        $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
+            $fileAudio = $this->obtenerAudioMedia($url,$idMedia);
 
-        Storage::disk('local')->put('url-'.$idMedia.'.txt', $url );
+            // Storage::disk('local')->put('Conversion-'.$idMedia.'.txt', $fileAudio  );
+            $file = Storage::disk('public')->get( $idMedia.'.ogg');
 
-        $fileAudio = $this->obtenerAudioMedia($url,$idMedia);
-
-        // Storage::disk('local')->put('Conversion-'.$idMedia.'.txt', $fileAudio  );
-        $file = Storage::disk('public')->get( $idMedia.'.ogg');
-
-        $SpeechToText = $this->audioToText($file);
+            $SpeechToText = $this->audioToText($file);
 
 
-        // if (isset(json_decode($SpeechToText)[0]['DisplayText'])) {
-        //     # code...
-        // }
-        Storage::disk('local')->put('phone-'.$idMedia.'.txt', $phone );
+            // if (isset(json_decode($SpeechToText)[0]['DisplayText'])) {
+            //     # code...
+            // }
+            Storage::disk('local')->put('phone-'.$idMedia.'.txt', $phone );
 
-        Storage::disk('local')->put('transcripcion-'.$idMedia.'.txt', $SpeechToText );
+            Storage::disk('local')->put('transcripcion-'.$idMedia.'.txt', $SpeechToText );
 
-        $reponseChatGPT = $this->chatGpt($SpeechToText);
-        Storage::disk('local')->put('reponseChatGPT-'.$idMedia.'.txt', $reponseChatGPT );
+            $reponseChatGPT = $this->chatGpt($SpeechToText);
+            Storage::disk('local')->put('reponseChatGPT-'.$idMedia.'.txt', $reponseChatGPT );
 
-        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT['messages']);
-        Storage::disk('local')->put('respuestaWhatsapp-'.$idMedia.'.txt', $respuestaWhatsapp );
-
-        $dataRegistrarChat = [
-            'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
-            'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
-            'mensaje' => $SpeechToText,
-            'respuesta' => str_replace('"','',$reponseChatGPT['messages'] ),
-            'status' => 1,
-            'type' => 'audio'
-        ];
-        ChatGpt::create( $dataRegistrarChat );
-    }
-
-    public function imageMensaje( $data )
-    {
-        $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
-        $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
-
-        if ($mensajeExiste == null) {
-
-            $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
-
-            Storage::disk('local')->put('image-'.$idMedia.'.txt', json_encode($data) );
-
-            $url = $this->obtenerImage($idMedia);
-
-            $urlMedia = str_replace('\/', '/', $url );
-
-            Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
-            // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
-
-            $descargarImage = $this->descargarImage($urlMedia,$idMedia );
-
-            if ($descargarImage == true) {
-
-            }
-
-            $responseImage = 'Gracias!! recuerda que soy una inteligencia artificial y que no puedo ver lo que me has enviado pero mi supervisora María lo verá en el horario de 09:00 a 18:00 de Lunes a viernes. Si es tu DNI o Pasaporte es suficiente con enviármelo a mi. Mi supervisora lo recibirá. Muchas gracias!!';
-
-            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $responseImage);
+            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT['messages']);
+            Storage::disk('local')->put('respuestaWhatsapp-'.$idMedia.'.txt', $respuestaWhatsapp );
 
             $dataRegistrarChat = [
                 'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
                 'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
-                'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
-                'respuesta' => $responseImage,
+                'mensaje' => $SpeechToText,
+                'respuesta' => str_replace('"','',$reponseChatGPT['messages'] ),
                 'status' => 1,
-                'type' => 'image'
+                'type' => 'audio'
             ];
             ChatGpt::create( $dataRegistrarChat );
 
-        }
-    }
-
-    public function textMensaje( $data )
-    {
-        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
-
-        Storage::disk('local')->put('Mensaje_Texto_Reicibido-'.$fecha.'.txt', json_encode($data) );
-
-        // Whatsapp::create(['mensaje' => json_encode($data)]);
-        $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
-        $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
-        $mensaje = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
-
-        $mensajeExiste = ChatGpt::where( 'id_mensaje', $id )->get();
-        if (count($mensajeExiste) > 0) {
-
-        }else {
-            $dataRegistrar = [
-                'id_mensaje' => $id,
-                'id_three' => null,
-                'remitente' => $phone,
-                'mensaje' => $mensaje,
-                'respuesta' => null,
-                'status' => 1,
-                'status_mensaje' => 0,
-                'type' => 'text',
-                'date' => Carbon::now()
-            ];
-            $mensajeCreado = ChatGpt::create($dataRegistrar);
-
-            $reponseChatGPT = $this->chatGpt($mensaje,$id);
-
-            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-
-            if(isset($respuestaWhatsapp['error'])){
-                dd($respuestaWhatsapp);
-            };
-
-            $mensajeCreado->update([
-                'respuesta'=> $reponseChatGPT
-            ]);
-
-            return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-
-        }
-    }
-    public function chatGpt($mensaje, $id)
-    {
-        $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
-
-        if ($mensajeExiste->id_three === null) {
-            // Crear un nuevo hilo si no existe
-            $three_id = $this->crearHilo();
-            $mensajeExiste->id_three = $three_id['id'];
-            $mensajeExiste->save();
+            return response('ok', 200);
         }
 
-        // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
-        $hilo = $this->mensajeHilo($mensajeExiste->id_three, $mensaje);
-        $ejecuccion = $this->ejecutarHilo($three_id['id']);
-        $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
-        //dd($ejecuccionStatus);
-        // Inicia un bucle para esperar hasta que el hilo se complete
-        while (true) {
-            //$ejecuccion = $this->ejecutarHilo($three_id['id']);
+        else if ($tipo == 'image') {
+            $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
+            $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
 
-            if ($ejecuccionStatus['status'] === 'in_progress') {
-                // Espera activa antes de verificar el estado nuevamente
-                sleep(2); // Ajusta este valor según sea necesario
+            if ($mensajeExiste == null) {
 
-                // Verifica el estado del paso actual del hilo
-                $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
-                if ($pasosHilo['data'][0]['status'] === 'completed') {
-                    // Si el paso se completó, verifica el estado general del hilo
-                    $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
+                $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
+
+                Storage::disk('local')->put('image-'.$idMedia.'.txt', json_encode($data) );
+
+                $url = $this->obtenerImage($idMedia);
+                
+                $urlMedia = str_replace('\/', '/', $url );
+
+                Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
+                // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
+
+                $descargarImage = $this->descargarImage($urlMedia,$idMedia );
+
+                if ($descargarImage == true) {
+                    
                 }
-            } elseif ($ejecuccionStatus['status'] === 'completed') {
-                // El hilo ha completado su ejecución, obtiene la respuesta final
-                $mensajes = $this->listarMensajes($three_id['id']);
-				//dd($mensajes);
-                if(count($mensajes['data']) > 0){
-                    return $mensajes['data'][0]['content'][0]['text']['value'];
-                }
-            } else {
-                // Maneja otros estados, por ejemplo, errores
-				dd($ejecuccionStatus);
-                break; // Sale del bucle si se encuentra un estado inesperado
+
+                $responseImage = 'Gracias!! recuerda que soy una inteligencia artificial y que no puedo ver lo que me has enviado pero mi supervisora María lo verá en el horario de 09:00 a 18:00 de Lunes a viernes. Si es tu DNI o Pasaporte es suficiente con enviármelo a mi. Mi supervisora lo recibirá. Muchas gracias!!';
+
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $responseImage);
+
+                $dataRegistrarChat = [
+                    'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                    'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                    'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
+                    'respuesta' => $responseImage,
+                    'status' => 1,
+                    'type' => 'image'
+                ];
+                ChatGpt::create( $dataRegistrarChat );
+                
             }
+            
+
+        } 
+
+        else {
+
+            // Storage::disk('local')->put('data-'.$id.'.txt', json_encode($data) );
+
+            Whatsapp::create(['mensaje' => json_encode($data)]);
+            $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
+            $mensaje = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
+            Storage::disk('local')->put('comprobar-'.$id.'.txt', json_encode($data) );
+            
+            if (str_word_count($data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']) > 1) {
+                Storage::disk('local')->put('example-'.$id.'.txt', json_encode($data) );
+
+                $mensajeExiste = Mensaje::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'] )->get();
+
+                if (count($mensajeExiste) > 0) {
+                    # code...
+                }else{
+                    $dataRegistrar = [
+                        'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                        'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                        'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'],
+                        'status' => 1
+                    ];
+
+                    Mensaje::create($dataRegistrar);
+
+                    $value = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
+
+                    $reponseChatGPT = $this->chatGpt($value);
+
+                    Storage::disk('local')->put('response'.$id.'.txt', $reponseChatGPT['messages'] );
+
+                    $dataRegistrarChat = [
+                        'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                        'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                        'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'],
+                        'respuesta' => str_replace('"','',$reponseChatGPT['messages'] ),
+                        'status' => 1
+                    ];
+                    ChatGpt::create( $dataRegistrarChat );
+
+                    $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT['messages']);
+
+                    return response(200)->header('Content-Type', 'text/plain');
+
+                }
+            }
+
+            return response(200)->header('Content-Type', 'text/plain');
         }
+
     }
 
-    public function crearHilo()
-    {
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads';
+    // Funcion para obtener el Audio del Whatsapp
+    public function obtenerAudio($id) {
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
-        $headers = array(
-            'Content-Type: application/json',
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
+        $urlMensajes = 'https://graph.facebook.com/v16.0/'.$id;
 
-        // Inicializar cURL y configurar las opciones
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-        // Ejecutar la solicitud y obtener la respuesta
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_POSTFIELDS => '',
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+        
+        ));
+
         $response = curl_exec($curl);
         curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            $response_data = json_decode($response, true);
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud: '.$response_data
-            ];
-            return $error;
-
-        } else {
-            $response_data = json_decode($response, true);
-            //Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
-            return $response_data;
-        }
+        $responseJson = json_decode($response);
+        Storage::disk('local')->put('response_Audio'.$id.'.txt', json_encode($response) );
+        return $responseJson->url;
     }
-    public function recuperarHilo($id_thread)
-    {
+
+    public function obtenerAudioMedia($url, $id) {
+
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        // $urlMensajes = str_replace('/\/', '/', $url);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 400);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST , "GET");
+        curl_setopt($ch,CURLOPT_ENCODING , "");
+
+        $headers    = [];
+        $headers[]  = "Authorization: Bearer ". $token;
+        $headers[]  = "Accept-Language:en-US,en;q=0.5";
+        $headers[]  = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $raw = curl_exec($ch);
+        
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if((int)$httpcode == 200){
+            // here save the $row content of file 
+            Storage::disk('public')->put( $id.'.ogg', $raw );
+            return true;
+        }
+        
+        return false;
+    }
+
+    public function audioToText($audio){
+
+        // $token = $this->tokenAzure();
+        // Storage::disk('local')->put('AudioFileToken.txt', $token );
+        
+        // $curl = curl_init();
+
+        // curl_setopt_array($curl, array(
+        // CURLOPT_URL => 'https://westeurope.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=es-ES&format=detailed',
+        // CURLOPT_RETURNTRANSFER => true,
+        // CURLOPT_ENCODING => '',
+        // CURLOPT_MAXREDIRS => 10,
+        // CURLOPT_TIMEOUT => 0,
+        // CURLOPT_FOLLOWLOCATION => true,
+        // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        // CURLOPT_CUSTOMREQUEST => 'POST',
+        // CURLOPT_POSTFIELDS => $audio,
+        // CURLOPT_HTTPHEADER => array(
+        //     'Content-Type: audio/ogg; codecs=opus',
+        //     'Authorization: Bearer '.$token
+        // ),
+        // ));
+
+        // $response = curl_exec($curl);
+        
+        // curl_close($curl);
+        // Storage::disk('local')->put('AudioFile22.txt', $response );
+
+        // return json_decode($response);
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'.$id_thread;
 
-        $headers = array(
-            'Content-Type: application/json',
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
-
-        // Inicializar cURL y configurar las opciones
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-        // Ejecutar la solicitud y obtener la respuesta
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.openai.com/v1/audio/transcriptions',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => array('file'=> new CURLFile($audio),'model' => 'whisper-1'),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer '. $token
+        ),
+        ));
+
         $response = curl_exec($curl);
+
         curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud'
-            ];
-
-        } else {
-            $response_data = json_decode($response, true);
-            // Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
-            return $response_data;
-        }
+        return $response['text'];
     }
-    public function ejecutarHilo($id_thread){
+
+    public function chatGpt($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/runs';
-
-        $headers = array(
-            'Content-Type: application/json',
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
-
-        $body = [
-            "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
-        ];
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS,json_encode($body));
-
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud'
-            ];
-
-        } else {
-            $response_data = json_decode($response, true);
-            return $response_data;
-        }
-    }
-    public function mensajeHilo($id_thread, $pregunta){
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/messages';
-
-        $headers = array(
-            'Content-Type: application/json',
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
-        $body = [
-            "role" => "user",
-            "content" => $pregunta
-        ];
-
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS,json_encode($body));
+        // Configurar los parámetros de la solicitud
+     $url = 'https://api.openai.com/v1/completions';
+     $headers = array(
+         'Content-Type: application/json',
+         'Authorization: Bearer '. $token
+     );
 
 
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
+     $data = array(
+       "prompt" => $texto .' ->', 
+       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+       "model" => "davinci:ft-personal:apartamentos20octubre-2023-10-20-13-53-04",
+       "temperature" => 0,
+       "max_tokens"=> 200,
+       "top_p"=> 1,
+       "frequency_penalty"=> 0,
+       "presence_penalty"=> 0,
+       "stop"=> ["_END"]
+     );
 
-        // Procesar la respuesta
-        if ($response === false) {
-            $response_data = json_decode($response, true);
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud: '.$response_data
-            ];
-            return $error;
+     // Inicializar cURL y configurar las opciones
+     $curl = curl_init();
+     curl_setopt($curl, CURLOPT_URL, $url);
+     curl_setopt($curl, CURLOPT_POST, true);
+     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-        } else {
-            $response_data = json_decode($response, true);
-            //Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
-            return $response_data;
-        }
-    }
-    public function ejecutarHiloStatus($id_thread, $id_runs){
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/runs/'.$id_runs;
+     // Ejecutar la solicitud y obtener la respuesta
+     $response = curl_exec($curl);
+     curl_close($curl);
 
-        $headers = array(
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
+     // Procesar la respuesta
+     if ($response === false) {
+         $error = [
+           'status' => 'error',
+           'messages' => 'Error al realizar la solicitud'
+         ];
+         Storage::disk('local')->put('errorChapt.txt', $error['messages'] );
 
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, false);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+         return response()->json( $error );
 
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
+     } else {
+         $response_data = json_decode($response, true);
+         $responseReturn = [
+           'status' => 'ok',
+           'messages' => $response_data['choices'][0]['text']
+         ];
+         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
 
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud'
-            ];
-
-        } else {
-            $response_data = json_decode($response, true);
-            return $response_data;
-        }
+         return $responseReturn;
+     }
     }
 
-    public function ejecutarHiloISteeps($id_thread, $id_runs){
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'.$id_thread. '/runs/' .$id_runs. '/steps';
-
-        $headers = array(
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
-
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, false);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud'
-            ];
-
-        } else {
-            $response_data = json_decode($response, true);
-            return $response_data;
-        }
-    }
-
-    public function listarMensajes($id_thread){
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/messages';
-
-        $headers = array(
-            'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
-        );
-
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, false);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-            'status' => 'error',
-            'messages' => 'Error al realizar la solicitud'
-            ];
-
-        } else {
-            $response_data = json_decode($response, true);
-            return $response_data;
-        }
-    }
-
-
-	function asegurarSignoInterrogacion($string) {
-		// Comprueba si el último carácter es ?
-		if (substr($string, -1) !== '?') {
-			// Si no lo es, añade ? al final
-			$string .= '?';
-		}
-		return $string;
-	}
     public function contestarWhatsapp($phone, $texto){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         // return $texto;
-
         $mensajePersonalizado = '{
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": "'.$phone.'",
-            "type": "text",
-            "text": {
+            "type": "text", 
+            "text": { 
                 "body": "'.$texto.'"
             }
         }';
-
         // return $mensajePersonalizado;
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
@@ -531,17 +441,16 @@ class WhatsappController extends Controller
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $token
             ),
-
+        
         ));
 
         $response = curl_exec($curl);
         curl_close($curl);
         // $responseJson = json_decode($response);
-        // Storage::disk('local')->put('response0001.txt', json_encode($response) . json_encode($mensajePersonalizado) );
+        Storage::disk('local')->put('response0001.txt', json_encode($response) . json_encode($mensajePersonalizado) );
         return $response;
 
-    }
-
+    }  
 
     public function chatGptPruebas($texto) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -554,7 +463,7 @@ class WhatsappController extends Controller
 
 
      $data = array(
-       "prompt" => $texto .' ->',
+       "prompt" => $texto .' ->', 
        // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
        // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
        // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
@@ -606,11 +515,13 @@ class WhatsappController extends Controller
     function limpiarNumeroTelefono($numero) {
         // Eliminar el signo más y cualquier espacio
         $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
-
+    
         return $numeroLimpio;
     }
 
+    
 
+   
 
     // Cron 1 minuto
     public function cron(){
@@ -633,7 +544,7 @@ class WhatsappController extends Controller
         dd($reservasEntrada);
 
 
-
+       
         // Obtener la fecha de dos días después
         $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
 
@@ -671,17 +582,17 @@ class WhatsappController extends Controller
                         'fecha_envio' => Carbon::now()
                     ];
 
-                    MensajeAuto::create($dataMensaje);
-
+                    MensajeAuto::create($dataMensaje);                    
+                    
                 }
             }
-
+            
             return $reservasEntrada;
         } else {
             return 'No hay reservas';
         }
     }
-
+    
     public function cron2(){
 
         // Obtener la fecha de hoy
@@ -729,7 +640,7 @@ class WhatsappController extends Controller
             }
 
             if($dias == 0 ){
-
+                
 
                 // Suponiendo que $fechaHoy es una fecha en formato 'Y-m-d' hay que pensar que es una hora menos
                 $fechaInicio = date_create($fechaHoy . ' 11:22:00'); // Establece los segundos a 00
@@ -799,7 +710,7 @@ class WhatsappController extends Controller
                     // $actualizarReserva->send_ocio = $hoy;
                     // $actualizarReserva->save();
                 }
-
+                    
                 // $data = [
                 //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
                 // ];
@@ -822,7 +733,7 @@ class WhatsappController extends Controller
 
             }
         }
-
+         
         /*  MENSAJES TEMPLATE:
                 - bienvenido
                 - consulta
@@ -842,23 +753,23 @@ class WhatsappController extends Controller
 
                 - BIENVENIDO (Dia de entrada a las 10:00 h.):
                 Hola {{1}}!
-                Recuerda que puedes entrar al alojamiento a partir de las 14:00h,
-                pero antes debes de enviarnos  una foto de tu Documento nacional
-                de identidad o pasaporte y del de todos los ocupantes mayores de edad.
+                Recuerda que puedes entrar al alojamiento a partir de las 14:00h, 
+                pero antes debes de enviarnos  una foto de tu Documento nacional 
+                de identidad o pasaporte y del de todos los ocupantes mayores de edad. 
                 Si ya nos lo has enviado olvida este mensaje.
                 Gracias y Felíz Estancia!
 
                 - CONSULTA (Dia de entrada a las 18:00 h.):
                 Hola {{1}}!
-                Espero que todo sea de tu agrado.
-                En Hawkins trabajamos mucho para ofrecerte el mejor servicio,
-                pero ¡Somos humanos! Si ves algo que no está a tu gusto,
-                no dudes en decírmelo.
+                Espero que todo sea de tu agrado. 
+                En Hawkins trabajamos mucho para ofrecerte el mejor servicio, 
+                pero ¡Somos humanos! Si ves algo que no está a tu gusto, 
+                no dudes en decírmelo. 
                 Lo que queremos es que pases una estancia genial.
 
                 - OCIO (Dia de entrada a las 16:00 h.):
                 Hola {{1}}!
-                Estás en el lugar mas céntrico de Algeciras!
+                Estás en el lugar mas céntrico de Algeciras! 
                 Te dejo algunos enlaces de interés:
 
                 *SALUD*
@@ -882,9 +793,9 @@ class WhatsappController extends Controller
 
                 - DESPEDIDA (Dia de salida a las 12:00 h.):
                 Te vamos a echar de menos {{1}}!
-                Para nosotros ha sido un placer que nos hayas elegido para alojarte y esperamos que vuelvas a venir.
-                Para poder seguir mejorando y que nuestro alojamiento sea cada día mejor,
-                es muy importante que nos dejes una valoración positiva.
+                Para nosotros ha sido un placer que nos hayas elegido para alojarte y esperamos que vuelvas a venir. 
+                Para poder seguir mejorando y que nuestro alojamiento sea cada día mejor, 
+                es muy importante que nos dejes una valoración positiva. 
                 Como agradecimiento, te damos un bono de descuento por si vuelves a alojarte con nosotros.
                 Reserva en www.apartamentoshawkins.com y usa el cupón #SpecialClient
         */
@@ -901,7 +812,7 @@ class WhatsappController extends Controller
         //                 // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
         //                 $data = $this->mensajesAutomaticos('despedida', $reserva->nombre, $reserva->telefono, $idioma );
         //             }
-
+               
         //         // $data = [
         //         //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
         //         // ];
@@ -993,7 +904,7 @@ class WhatsappController extends Controller
                 'Content-Type: application/json',
                 'Authorization: Bearer '.$token
             ),
-
+        
         ));
 
         $response = curl_exec($curl);
@@ -1063,7 +974,7 @@ class WhatsappController extends Controller
 
         // Obtenemos el cliente por el ID
         $cliente = Cliente::find($id);
-
+         
         // Validamos si la nacionalidad del cliente es NULL
         if ($cliente->nacionalidad == null) {
             // Generamos la instancia del Package de Phone
@@ -1151,39 +1062,17 @@ class WhatsappController extends Controller
         if ($response === false) {
             return $response;
         } else {
-            $response_data = json_decode($response, true);
+            $response_data = json_decode($response, true);            
             return $response_data['choices'][0]['message']['content'];
         }
     }
 
-
-
-    // Vista de los mensajes
     public function whatsapp()
-    {
-        // $mensajes = ChatGpt::all();
-        $mensajes = ChatGpt::orderBy('created_at', 'desc')->get();
+    {    
+        // $mensajes = Mensaje::all();      
+        $mensajes = ChatGpt::orderBy('created_at', 'desc')->get();      
         $resultado = [];
         foreach ($mensajes as $elemento) {
-
-            //$remitenteSinPrefijo = (substr($elemento['remitente'], 0, 2) == "34") ? substr($elemento['remitente'], 2) : $elemento['remitente'];
-
-			$remitenteSinPrefijo =$elemento['remitente'];
-            // Busca el cliente cuyo teléfono coincide con el remitente del mensaje.
-            $cliente = Cliente::where('telefono', '+'.$remitenteSinPrefijo)->first();
-
-            // Si se encontró un cliente, añade su nombre al elemento del mensaje.
-            if ($cliente) {
-				if($cliente->nombre != ''){
-                $elemento['nombre_remitente'] = $cliente->nombre . ' ' . $cliente->apellido1;
-				}else {
-					$elemento['nombre_remitente'] = $cliente->alias;
-				}
-            } else {
-                // Si no se encuentra el cliente, puedes optar por dejar el campo vacío o asignar un valor predeterminado.
-                $elemento['nombre_remitente'] = 'Desconocido';
-            }
-
             $resultado[$elemento['remitente']][] = $elemento;
 
 

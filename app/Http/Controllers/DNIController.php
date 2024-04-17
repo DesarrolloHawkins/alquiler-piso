@@ -19,7 +19,7 @@ class DNIController extends Controller
     public function index($token)
     {
         // Guardar el idioma en la sesión
- 
+
         // Array de Paises
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
 
@@ -238,7 +238,7 @@ class DNIController extends Controller
         } else {
             $paisCliente = "No disponible"; // o cualquier valor por defecto que prefieras
         }
-        
+
         // $idiomaClientePaises = $cliente->nacionalidad;
         // $nombreArchivoPaises = 'traducciones_paises_' . $idiomaClientePaises . '.json';
         // $path_paises = storage_path('app/public/' . $nombreArchivoPaises);
@@ -279,9 +279,9 @@ class DNIController extends Controller
                 $cliente['pasaporte'] = $photoFrontal;
                 array_push($data, $cliente);
             }
-            
+
         }
-        
+
         $huespedes = Huesped::where('reserva_id', $reserva->id)->get();
 
         if (count($huespedes)>0) {
@@ -357,12 +357,268 @@ class DNIController extends Controller
         }
 
         $textos = $textosTraducidos;
-        
+        dd($data);
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos','paisCliente'));
     }
 
+    public function listadoPaises(){
+        $paisesEuropeos = [
+            "ALBANIA", "ALEMANIA", "ANDORRA", "AUSTRIA", "BELGICA", "BULGARIA",
+            "CHIPRE", "CROACIA", "DINAMARCA", "ESLOVAQUIA", "ESLOVENIA", "ESPAÑA",
+            "ESTONIA", "FINLANDIA", "FRANCIA", "GRECIA", "HUNGRIA", "IRLANDA",
+            "ISLANDIA", "ITALIA", "LETONIA", "LIECHTENSTEIN", "LITUANIA", "LUXEMBURGO",
+            "MALTA", "MONACO", "MONTENEGRO", "NORUEGA", "PAISES BAJOS", "POLONIA",
+            "PORTUGAL", "REINO UNIDO", "REPUBLICA CHECA", "RUMANIA", "RUSIA", "SAN MARINO",
+            "SERBIA", "SUECIA", "SUIZA", "UCRANIA"
+        ];
 
-    public function chatGpt($texto) 
+        $paises = [
+            "AFGANISTAN" => ["value" => "A9401AAAAA", "isEuropean" => in_array("AFGANISTAN", $paisesEuropeos)],
+            "AFRICA" => ["value" => "A9399AAAAA", "isEuropean" => in_array("AFRICA", $paisesEuropeos)],
+            "ALBANIA" => ["value" => "A9102AAAAA", "isEuropean" => in_array("ALBANIA", $paisesEuropeos)],
+            "ALEMANIA" => ["value" => "A9103AAAAA", "isEuropean" => in_array("ALEMANIA", $paisesEuropeos)],
+            "AMERICA" => ["value" => "A9299AAAAA", "isEuropean" => in_array("AMERICA", $paisesEuropeos)],
+            "ANDORRA" => ["value" => "A9133AAAAA", "isEuropean" => in_array("ANDORRA", $paisesEuropeos)],
+            "ANGOLA" => ["value" => "A9301AAAAA", "isEuropean" => in_array("ANGOLA", $paisesEuropeos)],
+            "ANTIGUA BARBUDA" => ["value" => "A9255AAAAA", "isEuropean" => in_array("ANTIGUA BARBUDA", $paisesEuropeos)],
+            "ANTILLAS NEERLANDESAS" => ["value" => "A9200AAAAA", "isEuropean" => in_array("ANTILLAS NEERLANDESAS", $paisesEuropeos)],
+            "APATRIDA" => ["value" => "A9600AAAAA", "isEuropean" => in_array("APATRIDA", $paisesEuropeos)],
+            "ARABIA SAUDITA" => ["value" => "A9403AAA1A", "isEuropean" => in_array("ARABIA SAUDITA", $paisesEuropeos)],
+            "ARGELIA" => ["value" => "A9304AAAAA", "isEuropean" => in_array("ARGELIA", $paisesEuropeos)],
+            "ARGENTINA" => ["value" => "A9202AAAAA", "isEuropean" => in_array("ARGENTINA", $paisesEuropeos)],
+            "ARMENIA" => ["value" => "A9142AAAAA", "isEuropean" => in_array("ARMENIA", $paisesEuropeos)],
+            "ARUBA" => ["value" => "A9257AAAAA", "isEuropean" => in_array("ARUBA", $paisesEuropeos)],
+            "ASIA" => ["value" => "A9499AAAAA", "isEuropean" => in_array("ASIA", $paisesEuropeos)],
+            "AUSTRALIA" => ["value" => "A9500AAAAA", "isEuropean" => in_array("AUSTRALIA", $paisesEuropeos)],
+            "AUSTRIA" => ["value" => "A9104AAAAA", "isEuropean" => in_array("AUSTRIA", $paisesEuropeos)],
+            "AZERBAYAN" => ["value" => "A9143AAA2A", "isEuropean" => in_array("AZERBAYAN", $paisesEuropeos)],
+            "BAHAMAS" => ["value" => "A9203AAAAA", "isEuropean" => in_array("BAHAMAS", $paisesEuropeos)],
+            "BAHREIN" => ["value" => "A9405AAAAA", "isEuropean" => in_array("BAHREIN", $paisesEuropeos)],
+            "BANGLADESH" => ["value" => "A9432AAAAA", "isEuropean" => in_array("BANGLADESH", $paisesEuropeos)],
+            "BARBADOS" => ["value" => "A9205AAAAA", "isEuropean" => in_array("BARBADOS", $paisesEuropeos)],
+            "BELGICA" => ["value" => "A9105AAAAA", "isEuropean" => in_array("BELGICA", $paisesEuropeos)],
+            "BELICE" => ["value" => "A9207AAAAA", "isEuropean" => in_array("BELICE", $paisesEuropeos)],
+            "BHUTAN" => ["value" => "A9407AAAAA", "isEuropean" => in_array("BHUTAN", $paisesEuropeos)],
+            "BIELORRUSIA" => ["value" => "A9144AAAAA", "isEuropean" => in_array("BIELORRUSIA", $paisesEuropeos)],
+            "BOLIVIA" => ["value" => "A9204AAAAA", "isEuropean" => in_array("BOLIVIA", $paisesEuropeos)],
+            "BOSNIA HERZEGOVINA" => ["value" => "A9156AAAAA", "isEuropean" => in_array("BOSNIA HERZEGOVINA", $paisesEuropeos)],
+            "BOTSWANA" => ["value" => "A9305AAAAA", "isEuropean" => in_array("BOTSWANA", $paisesEuropeos)],
+            "BRASIL" => ["value" => "A9206AAAAA", "isEuropean" => in_array("BRASIL", $paisesEuropeos)],
+            "BRUNEI" => ["value" => "A9409AAAAA", "isEuropean" => in_array("BRUNEI", $paisesEuropeos)],
+            "BULGARIA" => ["value" => "A9134AAAAA", "isEuropean" => in_array("BULGARIA", $paisesEuropeos)],
+            "BURKINA FASO" => ["value" => "A9303AAAAA", "isEuropean" => in_array("BURKINA FASO", $paisesEuropeos)],
+            "BURUNDI" => ["value" => "A9302AAAAA", "isEuropean" => in_array("BURUNDI", $paisesEuropeos)],
+            "BUTAN" => ["value" => "A9442AAAAA", "isEuropean" => in_array("BUTAN", $paisesEuropeos)],
+            "CABO VERDE" => ["value" => "A9308AAAAA", "isEuropean" => in_array("CABO VERDE", $paisesEuropeos)],
+            "CAMERUN" => ["value" => "A9307AAAAA", "isEuropean" => in_array("CAMERUN", $paisesEuropeos)],
+            "CANADA" => ["value" => "A9259AAAAA", "isEuropean" => in_array("CANADA", $paisesEuropeos)],
+            "CATAR" => ["value" => "A9408AAAAA", "isEuropean" => in_array("CATAR", $paisesEuropeos)],
+            "CENTROAMERICA" => ["value" => "A9201AAAAA", "isEuropean" => in_array("CENTROAMERICA", $paisesEuropeos)],
+            "CHAD" => ["value" => "A9306AAAAA", "isEuropean" => in_array("CHAD", $paisesEuropeos)],
+            "CHECOSLOVAQUIA" => ["value" => "A9114AAAAA", "isEuropean" => in_array("CHECOSLOVAQUIA", $paisesEuropeos)],
+            "CHILE" => ["value" => "A9212AAAAA", "isEuropean" => in_array("CHILE", $paisesEuropeos)],
+            "CHINA" => ["value" => "A9433AAAAA", "isEuropean" => in_array("CHINA", $paisesEuropeos)],
+            "CHIPRE" => ["value" => "A9135AAAAA", "isEuropean" => in_array("CHIPRE", $paisesEuropeos)],
+            "COLOMBIA" => ["value" => "A9213AAAAA", "isEuropean" => in_array("COLOMBIA", $paisesEuropeos)],
+            "COMORAS" => ["value" => "A9309AAAAA", "isEuropean" => in_array("COMORAS", $paisesEuropeos)],
+            "CONGO" => ["value" => "A9311AAAAA", "isEuropean" => in_array("CONGO", $paisesEuropeos)],
+            "COREA" => ["value" => "A9450AAAAA", "isEuropean" => in_array("COREA", $paisesEuropeos)],
+            "COREA NORTE" => ["value" => "A9451AAAAA", "isEuropean" => in_array("COREA NORTE", $paisesEuropeos)],
+            "COREA SUR" => ["value" => "A9452AAAAA", "isEuropean" => in_array("COREA SUR", $paisesEuropeos)],
+            "COSTA DE MARFIL" => ["value" => "A9310AAAAA", "isEuropean" => in_array("COSTA DE MARFIL", $paisesEuropeos)],
+            "COSTA RICA" => ["value" => "A9214AAAAA", "isEuropean" => in_array("COSTA RICA", $paisesEuropeos)],
+            "CROACIA" => ["value" => "A9136AAAAA", "isEuropean" => in_array("CROACIA", $paisesEuropeos)],
+            "CUBA" => ["value" => "A9250AAAAA", "isEuropean" => in_array("CUBA", $paisesEuropeos)],
+            "DINAMARCA" => ["value" => "A9106AAAAA", "isEuropean" => in_array("DINAMARCA", $paisesEuropeos)],
+            "DJIBOUTI" => ["value" => "A9312AAAAA", "isEuropean" => in_array("DJIBOUTI", $paisesEuropeos)],
+            "DOMINICA" => ["value" => "A9260AAAAA", "isEuropean" => in_array("DOMINICA", $paisesEuropeos)],
+            "ECUADOR" => ["value" => "A9215AAAAA", "isEuropean" => in_array("ECUADOR", $paisesEuropeos)],
+            "EGIPTO" => ["value" => "A9313AAAAA", "isEuropean" => in_array("EGIPTO", $paisesEuropeos)],
+            "EL SALVADOR" => ["value" => "A9216AAAAA", "isEuropean" => in_array("EL SALVADOR", $paisesEuropeos)],
+            "EMIRATOS ARABES UNIDOS" => ["value" => "A9411AAAAA", "isEuropean" => in_array("EMIRATOS ARABES UNIDOS", $paisesEuropeos)],
+            "ERITREA" => ["value" => "A9314AAAAA", "isEuropean" => in_array("ERITREA", $paisesEuropeos)],
+            "ESLOVAQUIA" => ["value" => "A9137AAAAA", "isEuropean" => in_array("ESLOVAQUIA", $paisesEuropeos)],
+            "ESLOVENIA" => ["value" => "A9138AAAAA", "isEuropean" => in_array("ESLOVENIA", $paisesEuropeos)],
+            "ESPAÑA" => ["value" => "A9107AAAAA", "isEuropean" => in_array("ESPAÑA", $paisesEuropeos)],
+            "ESTADOS UNIDOS" => ["value" => "A9261AAAAA", "isEuropean" => in_array("ESTADOS UNIDOS", $paisesEuropeos)],
+            "ESTONIA" => ["value" => "A9139AAAAA", "isEuropean" => in_array("ESTONIA", $paisesEuropeos)],
+            "ETIOPIA" => ["value" => "A9315AAAAA", "isEuropean" => in_array("ETIOPIA", $paisesEuropeos)],
+            "EUROPA" => ["value" => "A9398AAAAA", "isEuropean" => in_array("EUROPA", $paisesEuropeos)],
+            "FIJI" => ["value" => "A9503AAAAA", "isEuropean" => in_array("FIJI", $paisesEuropeos)],
+            "FILIPINAS" => ["value" => "A9444AAAAA", "isEuropean" => in_array("FILIPINAS", $paisesEuropeos)],
+            "FINLANDIA" => ["value" => "A9108AAAAA", "isEuropean" => in_array("FINLANDIA", $paisesEuropeos)],
+            "FRANCIA" => ["value" => "A9109AAAAA", "isEuropean" => in_array("FRANCIA", $paisesEuropeos)],
+            "GABON" => ["value" => "A9316AAAAA", "isEuropean" => in_array("GABON", $paisesEuropeos)],
+            "GAMBIA" => ["value" => "A9323AAAAA", "isEuropean" => in_array("GAMBIA", $paisesEuropeos)],
+            "GEORGIA" => ["value" => "A9145AAAAA", "isEuropean" => in_array("GEORGIA", $paisesEuropeos)],
+            "GHANA" => ["value" => "A9322AAAAA", "isEuropean" => in_array("GHANA", $paisesEuropeos)],
+            "GRECIA" => ["value" => "A9113AAAAA", "isEuropean" => in_array("GRECIA", $paisesEuropeos)],
+            "GUATEMALA" => ["value" => "A9228AAAAA", "isEuropean" => in_array("GUATEMALA", $paisesEuropeos)],
+            "GUINEA" => ["value" => "A9325AAA3A", "isEuropean" => in_array("GUINEA", $paisesEuropeos)],
+            "GUINEA BISSAU" => ["value" => "A9328AAA1A", "isEuropean" => in_array("GUINEA BISSAU", $paisesEuropeos)],
+            "GUINEA ECUATORIAL" => ["value" => "A9324AAAAA", "isEuropean" => in_array("GUINEA ECUATORIAL", $paisesEuropeos)],
+            "GUYANA" => ["value" => "A9225AAAAA", "isEuropean" => in_array("GUYANA", $paisesEuropeos)],
+            "HAITI" => ["value" => "A9230AAAAA", "isEuropean" => in_array("HAITI", $paisesEuropeos)],
+            "HONDURAS" => ["value" => "A9232AAAAA", "isEuropean" => in_array("HONDURAS", $paisesEuropeos)],
+            "HONG KONG CHINO" => ["value" => "A9462AAAAA", "isEuropean" => in_array("HONG KONG CHINO", $paisesEuropeos)],
+            "HUNGRIA" => ["value" => "A9114AAAAA", "isEuropean" => in_array("HUNGRIA", $paisesEuropeos)],
+            "IFNI" => ["value" => "A9395AAAAA", "isEuropean" => in_array("IFNI", $paisesEuropeos)],
+            "INDIA" => ["value" => "A9412AAAAA", "isEuropean" => in_array("INDIA", $paisesEuropeos)],
+            "INDONESIA" => ["value" => "A9414AAAAA", "isEuropean" => in_array("INDONESIA", $paisesEuropeos)],
+            "IRAK" => ["value" => "A9413AAAAA", "isEuropean" => in_array("IRAK", $paisesEuropeos)],
+            "IRAN" => ["value" => "A9415AAAAA", "isEuropean" => in_array("IRAN", $paisesEuropeos)],
+            "IRLANDA" => ["value" => "A9115AAAAA", "isEuropean" => in_array("IRLANDA", $paisesEuropeos)],
+            "ISLANDIA" => ["value" => "A9116AAAAA", "isEuropean" => in_array("ISLANDIA", $paisesEuropeos)],
+            "ISLAS MARIANAS NORTE" => ["value" => "A9518AAAAA", "isEuropean" => in_array("ISLAS MARIANAS NORTE", $paisesEuropeos)],
+            "ISLAS MARSHALL" => ["value" => "A9520AAAAA", "isEuropean" => in_array("ISLAS MARSHALL", $paisesEuropeos)],
+            "ISLAS SALOMON" => ["value" => "A9551AAA1A", "isEuropean" => in_array("ISLAS SALOMON", $paisesEuropeos)],
+            "ISRAEL" => ["value" => "A9417AAAAA", "isEuropean" => in_array("ISRAEL", $paisesEuropeos)],
+            "ITALIA" => ["value" => "A9117AAAAA", "isEuropean" => in_array("ITALIA", $paisesEuropeos)],
+            "JAMAICA" => ["value" => "A9233AAAAA", "isEuropean" => in_array("JAMAICA", $paisesEuropeos)],
+            "JAPON" => ["value" => "A9416AAAAA", "isEuropean" => in_array("JAPON", $paisesEuropeos)],
+            "JORDANIA" => ["value" => "A9419AAAAA", "isEuropean" => in_array("JORDANIA", $paisesEuropeos)],
+            "KAZAJSTAN" => ["value" => "A9465AAAAA", "isEuropean" => in_array("KAZAJSTAN", $paisesEuropeos)],
+            "KENIA" => ["value" => "A9336AAAAA", "isEuropean" => in_array("KENIA", $paisesEuropeos)],
+            "KIRIBATI" => ["value" => "A9501AAAAA", "isEuropean" => in_array("KIRIBATI", $paisesEuropeos)],
+            "KUWAIT" => ["value" => "A9421AAAAA", "isEuropean" => in_array("KUWAIT", $paisesEuropeos)],
+            "LAOS" => ["value" => "A9418AAAAA", "isEuropean" => in_array("LAOS", $paisesEuropeos)],
+            "LESOTHO" => ["value" => "A9337AAAAA", "isEuropean" => in_array("LESOTHO", $paisesEuropeos)],
+            "LETONIA" => ["value" => "A9138AAAAA", "isEuropean" => in_array("LETONIA", $paisesEuropeos)],
+            "LIBANO" => ["value" => "A9423AAAAA", "isEuropean" => in_array("LIBANO", $paisesEuropeos)],
+            "LIBERIA" => ["value" => "A9342AAAAA", "isEuropean" => in_array("LIBERIA", $paisesEuropeos)],
+            "LIBIA" => ["value" => "A9344AAAAA", "isEuropean" => in_array("LIBIA", $paisesEuropeos)],
+            "LIECHTENSTEIN" => ["value" => "A9118AAAAA", "isEuropean" => in_array("LIECHTENSTEIN", $paisesEuropeos)],
+            "LITUANIA" => ["value" => "A9139AAAAA", "isEuropean" => in_array("LITUANIA", $paisesEuropeos)],
+            "LUXEMBURGO" => ["value" => "A9119AAAAA", "isEuropean" => in_array("LUXEMBURGO", $paisesEuropeos)],
+            "MACAO" => ["value" => "A9463AAAAA", "isEuropean" => in_array("MACAO", $paisesEuropeos)],
+            "MACEDONIA" => ["value" => "A9159AAAAA", "isEuropean" => in_array("MACEDONIA", $paisesEuropeos)],
+            "MADAGASCAR" => ["value" => "A9354AAAAA", "isEuropean" => in_array("MADAGASCAR", $paisesEuropeos)],
+            "MALASIA" => ["value" => "A9425AAAAA", "isEuropean" => in_array("MALASIA", $paisesEuropeos)],
+            "MALAWI" => ["value" => "A9346AAAAA", "isEuropean" => in_array("MALAWI", $paisesEuropeos)],
+            "MALDIVAS" => ["value" => "A9436AAAAA", "isEuropean" => in_array("MALDIVAS", $paisesEuropeos)],
+            "MALI" => ["value" => "A9347AAAAA", "isEuropean" => in_array("MALI", $paisesEuropeos)],
+            "MALTA" => ["value" => "A9120AAAAA", "isEuropean" => in_array("MALTA", $paisesEuropeos)],
+            "MARRUECOS" => ["value" => "A9348AAAAA", "isEuropean" => in_array("MARRUECOS", $paisesEuropeos)],
+            "MAURICIO" => ["value" => "A9349AAAAA", "isEuropean" => in_array("MAURICIO", $paisesEuropeos)],
+            "MAURITANIA" => ["value" => "A9350AAAAA", "isEuropean" => in_array("MAURITANIA", $paisesEuropeos)],
+            "MEXICO" => ["value" => "A9234AAA1A", "isEuropean" => in_array("MEXICO", $paisesEuropeos)],
+            "MOLDAVIA" => ["value" => "A9148AAAAA", "isEuropean" => in_array("MOLDAVIA", $paisesEuropeos)],
+            "MONACO" => ["value" => "A9121AAAAA", "isEuropean" => in_array("MONACO", $paisesEuropeos)],
+            "MONGOLIA" => ["value" => "A9427AAAAA", "isEuropean" => in_array("MONGOLIA", $paisesEuropeos)],
+            "MONTENEGRO" => ["value" => "A9160AAAAA", "isEuropean" => in_array("MONTENEGRO", $paisesEuropeos)],
+            "MOZAMBIQUE" => ["value" => "A9351AAAAA", "isEuropean" => in_array("MOZAMBIQUE", $paisesEuropeos)],
+            "MYANMAR" => ["value" => "A9400AAAAA", "isEuropean" => in_array("MYANMAR", $paisesEuropeos)],
+            "NAMIBIA" => ["value" => "A9353AAAAA", "isEuropean" => in_array("NAMIBIA", $paisesEuropeos)],
+            "NAURU" => ["value" => "A9541AAAAA", "isEuropean" => in_array("NAURU", $paisesEuropeos)],
+            "NEPAL" => ["value" => "A9541AAAAA", "isEuropean" => in_array("NEPAL", $paisesEuropeos)],
+            "NICARAGUA" => ["value" => "A9236AAAAA", "isEuropean" => in_array("NICARAGUA", $paisesEuropeos)],
+            "NIGER" => ["value" => "A9360AAAAA", "isEuropean" => in_array("NIGER", $paisesEuropeos)],
+            "NIGERIA" => ["value" => "A9352AAAAA", "isEuropean" => in_array("NIGERIA", $paisesEuropeos)],
+            "NORUEGA" => ["value" => "A9122AAAAA", "isEuropean" => in_array("NORUEGA", $paisesEuropeos)],
+            "NUEVA ZELANDA" => ["value" => "A9540AAAAA", "isEuropean" => in_array("NUEVA ZELANDA", $paisesEuropeos)],
+            "OCEANIA" => ["value" => "A9599AAAAA", "isEuropean" => in_array("OCEANIA", $paisesEuropeos)],
+            "OMAN" => ["value" => "A9444AAAAA", "isEuropean" => in_array("OMAN", $paisesEuropeos)],
+            "PAISES BAJOS" => ["value" => "A9123AAA1A", "isEuropean" => in_array("PAISES BAJOS", $paisesEuropeos)],
+            "PAKISTAN" => ["value" => "A9424AAA1A", "isEuropean" => in_array("PAKISTAN", $paisesEuropeos)],
+            "PALESTINA" => ["value" => "A9440AAAAA", "isEuropean" => in_array("PALESTINA", $paisesEuropeos)],
+            "PANAMA" => ["value" => "A9238AAAAA", "isEuropean" => in_array("PANAMA", $paisesEuropeos)],
+            "PAPUA NUEVA GUINEA" => ["value" => "A9542AAAAA", "isEuropean" => in_array("PAPUA NUEVA GUINEA", $paisesEuropeos)],
+            "PARAGUAY" => ["value" => "A9240AAAAA", "isEuropean" => in_array("PARAGUAY", $paisesEuropeos)],
+            "PERU" => ["value" => "A9242AAAAA", "isEuropean" => in_array("PERU", $paisesEuropeos)],
+            "POLONIA" => ["value" => "A9124AAAAA", "isEuropean" => in_array("POLONIA", $paisesEuropeos)],
+            "PORTUGAL" => ["value" => "A9125AAAAA", "isEuropean" => in_array("PORTUGAL", $paisesEuropeos)],
+            "PUERTO RICO" => ["value" => "A9244AAAAA", "isEuropean" => in_array("PUERTO RICO", $paisesEuropeos)],
+            "QATAR" => ["value" => "A9431AAAAA", "isEuropean" => in_array("QATAR", $paisesEuropeos)],
+            "REINO UNIDO" => ["value" => "A9112AAA1A", "isEuropean" => in_array("REINO UNIDO", $paisesEuropeos)],
+            "REPUBLICA BENIN" => ["value" => "A9302AAA1A", "isEuropean" => in_array("REPUBLICA BENIN", $paisesEuropeos)],
+            "REPUBLICA CENTROAFRICANA" => ["value" => "A9310AAA1A", "isEuropean" => in_array("REPUBLICA CENTROAFRICANA", $paisesEuropeos)],
+            "REPUBLICA CHECA" => ["value" => "A9157AAAAA", "isEuropean" => in_array("REPUBLICA CHECA", $paisesEuropeos)],
+            "REPUBLICA CONGO" => ["value" => "A9312AAA1A", "isEuropean" => in_array("REPUBLICA CONGO", $paisesEuropeos)],
+            "REPUBLICA DEMOCRATICA CONGO" => ["value" => "A9380AAAAA", "isEuropean" => in_array("REPUBLICA DEMOCRATICA CONGO", $paisesEuropeos)],
+            "REPUBLICA DOMINICANA" => ["value" => "A9218AAA1A", "isEuropean" => in_array("REPUBLICA DOMINICANA", $paisesEuropeos)],
+            "REPUBLICA GRANADA" => ["value" => "A9229AAAAA", "isEuropean" => in_array("REPUBLICA GRANADA", $paisesEuropeos)],
+            "REPUBLICA KIRGUISTAN" => ["value" => "A9466AAA1A", "isEuropean" => in_array("REPUBLICA KIRGUISTAN", $paisesEuropeos)],
+            "REPUBLICA SUDAN SUR" => ["value" => "A9369AAAAA", "isEuropean" => in_array("REPUBLICA SUDAN SUR", $paisesEuropeos)],
+            "RIO MUNI" => ["value" => "A9397AAAAA", "isEuropean" => in_array("RIO MUNI", $paisesEuropeos)],
+            "RUANDA" => ["value" => "A9306AAAAA", "isEuropean" => in_array("RUANDA", $paisesEuropeos)],
+            "RUMANIA" => ["value" => "A9127AAAAA", "isEuropean" => in_array("RUMANIA", $paisesEuropeos)],
+            "RUSIA" => ["value" => "A9149AAAAA", "isEuropean" => in_array("RUSIA", $paisesEuropeos)],
+            "SAHARA" => ["value" => "A9398AAAAA", "isEuropean" => in_array("SAHARA", $paisesEuropeos)],
+            "SAINT KITTS NEVIS" => ["value" => "A9256AAA1A", "isEuropean" => in_array("SAINT KITTS NEVIS", $paisesEuropeos)],
+            "SALVADOR" => ["value" => "A9220AAAAA", "isEuropean" => in_array("SALVADOR", $paisesEuropeos)],
+            "SAMOA OCCIDENTAL" => ["value" => "A9552AAAAA", "isEuropean" => in_array("SAMOA OCCIDENTAL", $paisesEuropeos)],
+            "SAN MARINO" => ["value" => "A9135AAAAA", "isEuropean" => in_array("SAN MARINO", $paisesEuropeos)],
+            "SAN MARTIN" => ["value" => "A9259AAAAA", "isEuropean" => in_array("SAN MARTIN", $paisesEuropeos)],
+            "SAN VICENTE GRANADINAS" => ["value" => "A9254AAA1A", "isEuropean" => in_array("SAN VICENTE GRANADINAS", $paisesEuropeos)],
+            "SANTA LUCIA" => ["value" => "A9253AAAAA", "isEuropean" => in_array("SANTA LUCIA", $paisesEuropeos)],
+            "SANTA SEDE" => ["value" => "A9136AAA2A", "isEuropean" => in_array("SANTA SEDE", $paisesEuropeos)],
+            "SANTO TOME PRINCIPE" => ["value" => "A9361AAAAA", "isEuropean" => in_array("SANTO TOME PRINCIPE", $paisesEuropeos)],
+            "SENEGAL" => ["value" => "A9362AAAAA", "isEuropean" => in_array("SENEGAL", $paisesEuropeos)],
+            "SERBIA" => ["value" => "A9155AAAAA", "isEuropean" => in_array("SERBIA", $paisesEuropeos)],
+            "SEYCHELLES" => ["value" => "A9363AAAAA", "isEuropean" => in_array("SEYCHELLES", $paisesEuropeos)],
+            "SIERRA LEONA" => ["value" => "A9364AAAAA", "isEuropean" => in_array("SIERRA LEONA", $paisesEuropeos)],
+            "SINGAPUR" => ["value" => "A9426AAAAA", "isEuropean" => in_array("SINGAPUR", $paisesEuropeos)],
+            "SIRIA" => ["value" => "A9433AAAAA", "isEuropean" => in_array("SIRIA", $paisesEuropeos)],
+            "SOMALIA" => ["value" => "A9365AAAAA", "isEuropean" => in_array("SOMALIA", $paisesEuropeos)],
+            "SRI LANKA" => ["value" => "A9404AAAAA", "isEuropean" => in_array("SRI LANKA", $paisesEuropeos)],
+            "SUDAFRICA" => ["value" => "A9367AAAAA", "isEuropean" => in_array("SUDAFRICA", $paisesEuropeos)],
+            "SUDAN" => ["value" => "A9368AAAAA", "isEuropean" => in_array("SUDAN", $paisesEuropeos)],
+            "SUDAN SUR" => ["value" => "A9369AAA1A", "isEuropean" => in_array("SUDAN SUR", $paisesEuropeos)],
+            "SUECIA" => ["value" => "A9128AAAAA", "isEuropean" => in_array("SUECIA", $paisesEuropeos)],
+            "SUIZA" => ["value" => "A9129AAAAA", "isEuropean" => in_array("SUIZA", $paisesEuropeos)],
+            "SURINAM" => ["value" => "A9250AAAAA", "isEuropean" => in_array("SURINAM", $paisesEuropeos)],
+            "SWAZILANDIA" => ["value" => "A9371AAAAA", "isEuropean" => in_array("SWAZILANDIA", $paisesEuropeos)],
+            "TADJIKISTAN" => ["value" => "A9469AAAAA", "isEuropean" => in_array("TADJIKISTAN", $paisesEuropeos)],
+            "TAILANDIA" => ["value" => "A9428AAA1A", "isEuropean" => in_array("TAILANDIA", $paisesEuropeos)],
+            "TAIWAN TAIPEI" => ["value" => "A9408AAA3A", "isEuropean" => in_array("TAIWAN TAIPEI", $paisesEuropeos)],
+            "TANZANIA" => ["value" => "A9370AAAAA", "isEuropean" => in_array("TANZANIA", $paisesEuropeos)],
+            "TIMOR ORIENTAL" => ["value" => "A9464AAAAA", "isEuropean" => in_array("TIMOR ORIENTAL", $paisesEuropeos)],
+            "TOGO" => ["value" => "A9374AAAAA", "isEuropean" => in_array("TOGO", $paisesEuropeos)],
+            "TONGA" => ["value" => "A9554AAAAA", "isEuropean" => in_array("TONGA", $paisesEuropeos)],
+            "TRINIDAD TOBAGO" => ["value" => "A9245AAAAA", "isEuropean" => in_array("TRINIDAD TOBAGO", $paisesEuropeos)],
+            "TUNEZ" => ["value" => "A9378AAAAA", "isEuropean" => in_array("TUNEZ", $paisesEuropeos)],
+            "TURKMENISTAN" => ["value" => "A9467AAA1A", "isEuropean" => in_array("TURKMENISTAN", $paisesEuropeos)],
+            "TURQUIA" => ["value" => "A9130AAAAA", "isEuropean" => in_array("TURQUIA", $paisesEuropeos)],
+            "TUVALU" => ["value" => "A9560AAAAA", "isEuropean" => in_array("TUVALU", $paisesEuropeos)],
+            "UCRANIA" => ["value" => "A9152AAAAA", "isEuropean" => in_array("UCRANIA", $paisesEuropeos)],
+            "UGANDA" => ["value" => "A9358AAAAA", "isEuropean" => in_array("UGANDA", $paisesEuropeos)],
+            "UNION EUROPEA" => ["value" => "A9190AAA1A", "isEuropean" => in_array("UNION EUROPEA", $paisesEuropeos)],
+            "URUGUAY" => ["value" => "A9246AAAAA", "isEuropean" => in_array("URUGUAY", $paisesEuropeos)],
+            "UZBEKISTAN" => ["value" => "A9468AAAAA", "isEuropean" => in_array("UZBEKISTAN", $paisesEuropeos)],
+            "VANUATU" => ["value" => "A9565AAAAA", "isEuropean" => in_array("VANUATU", $paisesEuropeos)],
+            "VENEZUELA" => ["value" => "A9248AAAAA", "isEuropean" => in_array("VENEZUELA", $paisesEuropeos)],
+            "VIETNAM" => ["value" => "A9430AAAAA", "isEuropean" => in_array("VIETNAM", $paisesEuropeos)],
+            "YEMEN" => ["value" => "A9434AAAAA", "isEuropean" => in_array("YEMEN", $paisesEuropeos)],
+            "ZAMBIA" => ["value" => "A9382AAAAA", "isEuropean" => in_array("ZAMBIA", $paisesEuropeos)],
+            "ZIMBABWE" => ["value" => "A9357AAAAA", "isEuropean" => in_array("ZIMBABWE", $paisesEuropeos)]
+        ];
+
+        $optiones = [
+            [
+                "codigo" => "P",
+                "descripcion" => "PASAPORTE",
+            ],
+            [
+                "codigo" => "I",
+                "descripcion" => "CARTA DE IDENTIDAD EXTRANJERA",
+            ],
+            [
+                "codigo" => "N",
+                "descripcion" => "NIE O TARJETA ESPAÑOLA DE EXTRANJEROS",
+            ],
+            [
+                "codigo" => "X",
+                "descripcion" => "PERMISO DE RESIDENCIA DE ESTADO MIEMBRO DE LA UE",
+            ],
+            [
+                "codigo" => "D",
+                "descripcion" => "DNI",
+            ]
+        ];
+    }
+
+
+    public function chatGpt($texto)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
@@ -379,7 +635,7 @@ class DNIController extends Controller
                     "role" => "user",
                     'content' => $texto
                 ]
-            ], 
+            ],
             "model" => "gpt-4-1106-preview",
             "temperature" => 0,
             "max_tokens" => 1000,
@@ -464,7 +720,7 @@ class DNIController extends Controller
         // }
         $reserva = Reserva:: find($request->id);
 
-        for ($i=0; $i < $reserva->numero_personas; $i++) { 
+        for ($i=0; $i < $reserva->numero_personas; $i++) {
             if ($i == 0 ) {
                 $cliente = Cliente::where('id', $reserva->cliente_id)->first();
                 // Comprobamos si la reserva ya tiene los dni entregados
@@ -533,7 +789,7 @@ class DNIController extends Controller
                         if (!$reponseImage) {
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
-                    } 
+                    }
                     if ($request->input('tipo_documento_'.$i) == 2) {
                         $pasaporte = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 15)
@@ -583,10 +839,10 @@ class DNIController extends Controller
                                 if (!$frontal) {
                                     return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
                                 }
-        
+
                             }
                         }
-                        
+
                         // Si tenemos imagen Trasera DNI
                         if($request->hasFile('trasera_'.$i)){
                             // Imagen Frontal DNI
@@ -608,8 +864,8 @@ class DNIController extends Controller
                                 }
                             }
                         }
-                        
-    
+
+
                     }else {
                         // Si tenemos imagen Pasaporte
                         if($request->hasFile('frontal_'.$i)){
@@ -632,8 +888,8 @@ class DNIController extends Controller
                                 }
                             }
                         }
-                        
-                        
+
+
                     }
                 }else{
 
@@ -698,7 +954,7 @@ class DNIController extends Controller
                                 return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
                             }
                         }
-    
+
                     }else {
                         // Si tenemos imagen Pasaporte
                         if($request->hasFile('frontal_'.$i)){
@@ -739,7 +995,7 @@ class DNIController extends Controller
         $reserva = Reserva::where('token', $token)->first();
         // Obtenemos el cliente
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
-        $id = $reserva->id; 
+        $id = $reserva->id;
         // Comprobamos si el cliente relleno los datos principales
         if ($cliente->data_dni) {
             return redirect(route('dni.index', $token));
@@ -783,12 +1039,12 @@ class DNIController extends Controller
             ->first();
         }
         // Verificar si ya existe una imagen para ese limpieza_id y photo_categoria_id
-        
+
 
         if ($imagenExistente) {
             // Si existe, borrar la imagen antigua del servidor
             $rutaImagenAntigua = public_path($imagenExistente->url);
-            
+
             if (file_exists($rutaImagenAntigua)) {
                 unlink($rutaImagenAntigua);
             }
@@ -819,5 +1075,5 @@ class DNIController extends Controller
 
         return false;
     }
-    
+
 }
