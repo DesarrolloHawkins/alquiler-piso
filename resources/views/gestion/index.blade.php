@@ -1,7 +1,7 @@
 @extends('layouts.appPersonal')
 
 @section('bienvenido')
-    <h5 class="navbar-brand mb-0 w-auto text-center">Bienvenid@ {{Auth::user()->name}}</h5>
+    {{-- <h5 class="navbar-brand mb-0 w-auto text-center">Bienvenid@ {{Auth::user()->name}}</h5> --}}
 @endsection
 
 @section('content')
@@ -9,7 +9,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="accordion" id="accordionExample">                   
+                <div class="accordion" id="accordionExample">
                     <div class="accordion-item ">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
@@ -27,7 +27,7 @@
                                                 Fecha Salida: {{$reservaPendiente->fecha_salida}}
                                             </div>
                                         </a>
-                                        
+
                                         {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                     @endforeach
                                 </ol>
@@ -36,11 +36,11 @@
                             @endif
                           </div>
                         </div>
-                    </div> 
+                    </div>
                 </div>
             </div>
             <div class="card mt-4">
-                <div class="accordion" id="accordionLimpio">                   
+                <div class="accordion" id="accordionLimpio">
                     <div class="accordion-item ">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
@@ -58,7 +58,7 @@
                                                 Fecha Comienzo: {{$reservaEnLimpieza->fecha_comienzo}}
                                             </div>
                                         </a>
-                                        
+
                                         {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                     @endforeach
                                 </ol>
@@ -67,11 +67,11 @@
                             @endif
                           </div>
                         </div>
-                    </div> 
+                    </div>
                 </div>
             </div>
             <div class="card mt-4">
-                <div class="accordion" id="accordionLimpio">                   
+                <div class="accordion" id="accordionLimpio">
                     <div class="accordion-item ">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
@@ -89,7 +89,7 @@
                                                 Fecha Salida: {{$reservaLimpieza->fecha_salida}}
                                             </div>
                                         </a>
-                                        
+
                                         {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                     @endforeach
                                 </ol>
@@ -98,11 +98,11 @@
                             @endif
                           </div>
                         </div>
-                    </div> 
+                    </div>
                 </div>
             </div>
             <div class="card mt-4">
-                <div class="accordion" id="accordionManania">                   
+                <div class="accordion" id="accordionManania">
                     <div class="accordion-item ">
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManania" aria-expanded="true" aria-controls="collapseManania">
@@ -121,7 +121,7 @@
                                                 Fecha Salida: {{$reservaSalida->fecha_salida}}
                                             </div>
                                         </a>
-                                        
+
                                         {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                     @endforeach
                                 </ol>
@@ -130,10 +130,10 @@
                             @endif
                           </div>
                         </div>
-                    </div> 
+                    </div>
                 </div>
             </div>
-            
+
         </div>
     </div>
 </div>

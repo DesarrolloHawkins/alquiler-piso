@@ -12,3 +12,49 @@
 @import 'reservas';
 @import 'dni';
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito';
+}
+.icon-container2 {
+    width: 62px; /* Tamaño del contenedor */
+    height: 62px; /* Tamaño del contenedor */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Hace el círculo perfecto */
+    background-color: #fff; /* Color de fondo del círculo */
+    margin: auto; /* Centrado horizontal */
+    position: relative; /* Para el posicionamiento absoluto del borde */
+}
+
+.icon-container2::before {
+    content: ''; /* Necesario para que se muestre */
+    position: absolute; /* Posicionamiento absoluto respecto al contenedor */
+    top: -2px; /* Espacio entre el borde exterior y el círculo */
+    left: -2px; /* Espacio entre el borde exterior y el círculo */
+    right: -2px; /* Espacio entre el borde exterior y el círculo */
+    bottom: -2px; /* Espacio entre el borde exterior y el círculo */
+    border: 3px solid #0F1739; /* El borde propiamente dicho */
+    border-radius: 50%; /* Hace que el borde sea redondo */
+    z-index: 0; /* Para que quede detrás del contenido */
+}
+
+.icon2 {
+    width: 51px; /* Tamaño del icono */
+    height: 52px; /* Tamaño del icono */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Hace el círculo perfecto */
+    background-color: #0F1739; /* Color de fondo del icono */
+    z-index: 1; /* Asegura que el contenido esté por encima del borde */
+}
+
+.icon2 i {
+    font-size: 1.2rem;
+    color: white;
+}
+
+.primer-color {
+    color: #0F1739;
+}

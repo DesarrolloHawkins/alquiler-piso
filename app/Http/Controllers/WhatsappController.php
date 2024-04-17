@@ -347,7 +347,8 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
-    public function mensajeHilo($id_thread, $pregunta){
+    public function mensajeHilo($id_thread, $pregunta)
+    {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/messages';
 
@@ -422,7 +423,8 @@ class WhatsappController extends Controller
         }
     }
 
-    public function ejecutarHiloISteeps($id_thread, $id_runs){
+    public function ejecutarHiloISteeps($id_thread, $id_runs)
+    {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/threads/'.$id_thread. '/runs/' .$id_runs. '/steps';
 
@@ -455,7 +457,8 @@ class WhatsappController extends Controller
         }
     }
 
-    public function listarMensajes($id_thread){
+    public function listarMensajes($id_thread)
+    {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/messages';
 
@@ -476,28 +479,28 @@ class WhatsappController extends Controller
         curl_close($curl);
 
         // Procesar la respuesta
-        if ($response === false) {
+        if( $response === false ){
             $error = [
             'status' => 'error',
             'messages' => 'Error al realizar la solicitud'
             ];
 
         } else {
-            $response_data = json_decode($response, true);
+            $response_data = json_decode( $response, true );
             return $response_data;
         }
     }
 
 
-	function asegurarSignoInterrogacion($string) {
+	function asegurarSignoInterrogacion( $string ) {
 		// Comprueba si el último carácter es ?
-		if (substr($string, -1) !== '?') {
+		if ( substr( $string, -1 ) !== '?' ) {
 			// Si no lo es, añade ? al final
 			$string .= '?';
 		}
 		return $string;
 	}
-    public function contestarWhatsapp($phone, $texto){
+    public function contestarWhatsapp( $phone, $texto ){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         // return $texto;
 
@@ -543,7 +546,7 @@ class WhatsappController extends Controller
     }
 
 
-    public function chatGptPruebas($texto) {
+    public function chatGptPruebas( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
      $url = 'https://api.openai.com/v1/completions';
@@ -603,7 +606,7 @@ class WhatsappController extends Controller
      }
     }
 
-    function limpiarNumeroTelefono($numero) {
+    function limpiarNumeroTelefono( $numero ) {
         // Eliminar el signo más y cualquier espacio
         $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
 

@@ -895,7 +895,6 @@ class DNIController extends Controller
 
                     // Comprobamos si la reserva ya tiene los dni entregados
                     $huespedNew = [
-                        'reserva_id' => $reserva->id,
                         'nombre' => $request->input('nombre_'.$i),
                         'primer_apellido' => $request->input('apellido1_'.$i),
                         'segundo_apellido' => $request->input('apellido2_'.$i) ? $request->input('apellido2_'.$i) : null,

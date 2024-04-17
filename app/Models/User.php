@@ -49,13 +49,25 @@ class User extends Authenticatable
         return $this->roles()->where('name', $role)->exists();
     }
 
-    /**
-     * The roles that belong to the user.
-     */
-    public function roles()
+    // /**
+    //  * The roles that belong to the user.
+    //  */
+    // public function roles()
+    // {
+    //     // Asumiendo que existe una tabla 'roles' y la relación es muchos-a-muchos
+    //     return $this->belongsToMany(Role::class);
+    // }
+
+    public function redirectToDashboard( $reservasPendientes )
     {
-        // Asumiendo que existe una tabla 'roles' y la relación es muchos-a-muchos
-        return $this->belongsToMany(Role::class);
+        switch ($this->role) {
+            case 'ADMIN':
+                return view('admin.dashboard', compact('reservasPendientes'));
+            case 'USER':
+                return view('user.dashboard', compact('reservasPendientes'));
+            default:
+                abort(403, 'No tienes permiso para acceder a esta página.');
+        }
     }
 
 }

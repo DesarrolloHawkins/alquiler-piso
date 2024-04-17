@@ -23,6 +23,30 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Rutas de admin
+Route::middleware(['auth', 'role:ADMIN'])->group(function () {
+    Route::get('/admin', function () {
+        return view('admin.dashboard');
+    });
+
+    Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
+
+    // Otras rutas de admin
+});
+
+// Rutas de usuarios logueados
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('home');
+
+    Route::get('/configuracion', function () {
+        return view('configuracion');
+    });
+
+    // Más rutas que solo deben ser accesibles
+});
+
+
+
 // Vistas
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');

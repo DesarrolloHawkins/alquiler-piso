@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
-    
+
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
@@ -19,13 +19,23 @@
 </head>
 <body>
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-color-primero shadow-sm">
+        <nav class="navbar navbar-expand-md navbar-light bg-color-primero shadow-sm"
+             style="
+                    height: 78px;
+                    border-radius: 0 0 45px 45px;
+                    box-shadow: 1px 1px 1px black;
+        ">
             <div class="container">
                 @yield('volver')
-                <a class="navbar-brand text-white" href="{{ url('/') }}">
-                    {{ config('app.name', 'Hawkins Suite') }}
+                <a class="navbar-brand text-white text-center" href="{{ url('/') }}">
+                    {{-- {{ config('app.name', 'Hawkins Suite') }} --}}
+                {{-- <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" class="img-fluid m-auto" style="width: 60%"> --}}
+
                 </a>
-                @yield('bienvenido')
+                <div class="pt-3 w-100 text-light">
+                    @yield('bienvenido')
+                    <h5 class="navbar-brand mb-0 text-center text-light w-100">Bienvenid@ <span class="text-uppercase">{{Auth::user()->name}}</span></h5>
+                </div>
 
                 {{-- <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
                     <span class="navbar-toggler-icon"></span>
@@ -75,48 +85,48 @@
         <main class="py-4 contendor">
             @yield('content')
         </main>
-        <footer class="nav-bar-mobile bg-color-primero p-2">
+        <footer class="nav-bar-mobile bg-color-white p-2">
             <div class="row px-3">
                 <div class="col-3 ">
                    <a href="{{route('gestion.index')}}" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
-                        <div class="icon fs-1 m-0 text-info">
+                        <div class="icon fs-1 m-0 text-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-house "></i>
                         </div>
-                        <div class="texto fs-6 p-0 text-muted">
+                        {{-- <div class="texto fs-6 p-0 text-muted">
                             Inicio
-                        </div>
+                        </div> --}}
                    </a>
                 </div>
                 <div class="col-3">
                     <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 text-success">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                          </div>
-                         <div class="texto fs-6 p-0 text-muted">
+                         {{-- <div class="texto fs-6 p-0 text-muted">
                             Historial
-                         </div>
+                         </div> --}}
                     </a>
                 </div>
                 <div class="col-3">
                     <a href="#" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 text-warning">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-question"></i>
                          </div>
-                         <div class="texto fs-6 p-0 text-muted">
+                         {{-- <div class="texto fs-6 p-0 text-muted">
                             Faq
-                         </div>
+                         </div> --}}
                     </a>
                 </div>
                 <div class="col-3">
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                         document.getElementById('logout-form').submit();" class="text-decoration-none text-center boton rounded bg-body-tertiary d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 text-danger">
+                         <div class="icon fs-1 m-0 ext-secondary" style="color: rgba(189, 189, 189, 0.75) !important">
                             <i class="fa-solid fa-right-from-bracket"></i>
                          </div>
-                         <div class="texto fs-6 p-0 text-muted">
+                         {{-- <div class="texto fs-6 p-0 text-muted">
                             Salir
-                         </div>
+                         </div> --}}
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                         @csrf
@@ -132,7 +142,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @include('sweetalert::alert')
-   
+
     @yield('scripts')
 </body>
 </html>

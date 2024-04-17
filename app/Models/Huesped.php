@@ -18,6 +18,7 @@ class Huesped extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'reserva_id',
         'nombre',
         'primer_apellido',
         'segundo_apellido',
@@ -37,6 +38,6 @@ class Huesped extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 
+        'created_at', 'updated_at', 'deleted_at',
     ];
 }
