@@ -43,7 +43,7 @@ class GestionApartamentoController extends Controller
     {
         $idApartamento = Reserva::find($id);
         $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $idApartamento->apartamento_id)->first();
-        
+
             if ($apartamentoLimpio == null) {
                 $apartamentoLimpieza = ApartamentoLimpieza::create([
                     'apartamento_id' => $idApartamento->apartamento_id,
@@ -54,9 +54,9 @@ class GestionApartamentoController extends Controller
             } else {
                 $apartamentoLimpieza = $apartamentoLimpio;
             }
-        
+
         // $apartamento = Apartamento::find($id);
-      return view('gestion.edit', compact('apartamentoLimpieza'));
+      return view('gestion.edit', compact('apartamentoLimpieza','id'));
     }
 
     /**
@@ -165,7 +165,7 @@ class GestionApartamentoController extends Controller
 
         if ($apartamento) {
             $columna = $request->name;
-            $apartamento->$columna = $request->checked == 'true' ? true : false; 
+            $apartamento->$columna = $request->checked == 'true' ? true : false;
             $apartamento->save();
             Alert::toast('Actualizado', 'success');
             return true;
@@ -188,7 +188,7 @@ class GestionApartamentoController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(ApartamentoLimpieza $apartamentoLimpieza)
-    {        
+    {
         ApartamentoLimpieza::find($apartamentoLimpieza);
         // dd($apartamentoLimpieza->apartamento);
         return view('gestion.edit', compact('apartamentoLimpieza'));
@@ -286,7 +286,7 @@ class GestionApartamentoController extends Controller
 
         Alert::success('Actualizado con Exito', 'Apartamento actualizado correctamente');
         return redirect()->route('gestion.edit', $apartamentoLimpieza)->with('apartamentoLimpieza');
-    }   
+    }
 
     /**
      * Remove the specified resource from storage.
@@ -294,10 +294,12 @@ class GestionApartamentoController extends Controller
     public function finalizar(ApartamentoLimpieza $apartamentoLimpieza)
     {
         $apartamentoLimpieza->status_id = 3;
+        $apartamentoLimpieza->fecha_fin = Carbon::now();
         $apartamentoLimpieza->save();
         $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
         $reserva->fecha_limpieza = Carbon::now();
         $reserva->save();
+        // dd($reserva);
         Alert::success('Fizalizado con Exito', 'Apartamento Fizalizado correctamente');
 
         return redirect()->route('gestion.index');

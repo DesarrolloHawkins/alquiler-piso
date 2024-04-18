@@ -21,6 +21,7 @@
                     <form action="{{route('gestion.store')}}" method="POST">
                         @csrf
                         <input type="hidden" name="id" value="{{$apartamentoLimpieza->id}}">
+                        <input type="hidden" name="idReserva" value="{{$id}}">
                         <div class="fila">
                             <div class="header_sub mb-3">
                                 <div class="row bg-color-quinto m-1 text-white align-items-center">
@@ -35,7 +36,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="dormitorio_sabanas" name="dormitorio_sabanas">
@@ -45,7 +46,7 @@
                                     <input class="form-check-input" type="checkbox" id="dormitorio_cojines" name="dormitorio_cojines">
                                     <label class="form-check-label" for="dormitorio_cojines">Cojines (4 uds)</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="dormitorio_edredon" name="dormitorio_edredon">
                                     <label class="form-check-label" for="dormitorio_edredon">Edredrón</label>
@@ -91,7 +92,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="armario_perchas" name="armario_perchas">
@@ -101,7 +102,7 @@
                                     <input class="form-check-input" type="checkbox" id="armario_almohada_repuesto_sofa" name="armario_almohada_repuesto_sofa">
                                     <label class="form-check-label" for="armario_almohada_repuesto_sofa">Almohada de repuesto sofá</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="armario_edredon_repuesto_sofa" name="armario_edredon_repuesto_sofa">
                                     <label class="form-check-label" for="armario_edredon_repuesto_sofa">Edredón de respuesto sofá</label>
@@ -144,7 +145,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="canape_almohada" name="canape_almohada">
@@ -154,7 +155,7 @@
                                     <input class="form-check-input" type="checkbox" id="canape_gel" name="canape_gel">
                                     <label class="form-check-label" for="canape_gel">Gel</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="canape_sabanas" name="canape_sabanas">
                                     <label class="form-check-label" for="canape_sabanas">Sabanas</label>
@@ -201,7 +202,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="salon_cojines" name="salon_cojines">
@@ -211,7 +212,7 @@
                                     <input class="form-check-input" type="checkbox" id="salon_sofa_cama" name="salon_sofa_cama">
                                     <label class="form-check-label" for="salon_sofa_cama">Sofá cama daño o sucio</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="salon_planta_cesta" name="salon_planta_cesta">
                                     <label class="form-check-label" for="salon_planta_cesta">Planta con cesta</label>
@@ -270,7 +271,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="cocina_vitroceramica" name="cocina_vitroceramica">
@@ -280,7 +281,7 @@
                                     <input class="form-check-input" type="checkbox" id="cocina_vajilla" name="cocina_vajilla">
                                     <label class="form-check-label" for="cocina_vajilla">Vajilla</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="cocina_vasos" name="cocina_vasos">
                                     <label class="form-check-label" for="cocina_vasos">Vasos (4 uds)</label>
@@ -375,7 +376,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="bano_toallas_aseos" name="bano_toallas_aseos">
@@ -385,7 +386,7 @@
                                     <input class="form-check-input" type="checkbox" id="bano_toallas_mano" name="bano_toallas_mano">
                                     <label class="form-check-label" for="bano_toallas_mano">Toallas mano (1 ud)</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="bano_alfombra" name="bano_alfombra">
                                     <label class="form-check-label" for="bano_alfombra">Alfombra (1 ud)</label>
@@ -436,7 +437,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="content-check mx-2">
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="amenities_nota_agradecimiento" name="amenities_nota_agradecimiento">
@@ -446,7 +447,7 @@
                                     <input class="form-check-input" type="checkbox" id="amenities_magdalenas" name="amenities_magdalenas">
                                     <label class="form-check-label" for="amenities_magdalenas">3 magdalenas</label>
                                 </div>
-            
+
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="amenities_caramelos" name="amenities_caramelos">
                                     <label class="form-check-label" for="amenities_caramelos">Caramelos</label>
@@ -454,9 +455,9 @@
                             </div>
                         </div>
                         <hr>
-                        <div class="fila">                         
+                        <div class="fila">
                             <div class="content-check mx-2">
-                                <textarea name="observacion" id="observacion" cols="30" rows="6" placeholder="Escriba alguna observacion..." style="width: 100%"></textarea>    
+                                <textarea name="observacion" id="observacion" cols="30" rows="6" placeholder="Escriba alguna observacion..." style="width: 100%"></textarea>
                             </div>
                         </div>
                         <div class="fila mt-2">
@@ -465,8 +466,8 @@
                         </div>
                     </form>
                 </div>
-            </div>     
-                
+            </div>
+
         </div>
     </div>
 </div>
