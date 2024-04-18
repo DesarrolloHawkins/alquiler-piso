@@ -21,7 +21,7 @@
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
+            initialView: 'listWeek',
             locale: 'es',
             events: function(fetchInfo, successCallback, failureCallback) {
                 fetch('/get-reservas')
