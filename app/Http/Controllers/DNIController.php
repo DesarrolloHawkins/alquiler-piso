@@ -357,7 +357,7 @@ class DNIController extends Controller
         }
 
         $textos = $textosTraducidos;
-        dd($data);
+        //dd($data);
         return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos','paisCliente'));
     }
 

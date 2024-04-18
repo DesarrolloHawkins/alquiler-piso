@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.appPersonal')
 @section('scriptHead')
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
@@ -82,57 +82,31 @@
                 modal.modal('show');
             }
           });
-  
+
           calendar.render();
         });
-  
+
       </script>
 @endsection
+@section('title', 'Calendario')
 @section('content')
 
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Nuestros Clientes') }}</div>
-
-                <div class="card-body">
-                    {{-- @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th scope="col">ID</th>
-                                <th scope="col">Nombre</th>
-                                <th scope="col">Apellidos</th>
-                                <th scope="col">DNI</th>
-                                <th scope="col">Accion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="row">1</th>
-                                <td>Mark</td>
-                                <td>Otto</td>
-                                <td>@mdo</td>
-                                <td><a href="" class="btn btn-primary">Editar</a></td>
-                            </tr>                 
-                        </tbody>
-                    </table> --}}
-                    {{-- 
+                {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
+                <div class="card-body" style="display: flex;flex-direction: column;">
+                    {{--
                         1: '#769ECB', // Color para apartamento_id 1
                         2: '#9DBAD5', // Color para apartamento_id 2
                         3: '#FAF3DD', // Color para apartamento_id 3
                         4: '#C8D6B9', // Color para apartamento_id 3
                         5: '#DFD8C0', // Color para apartamento_id 3
                         6: '#8FC1A9', // Color para apartamento_id 3
-                        7: '#7CAA98', // Color para apartamento_id 3, 
+                        7: '#7CAA98', // Color para apartamento_id 3,
                     --}}
-                    <div class="apartamentos my-2">
+                    <div class="apartamentos my-2" style="order: 1;">
                         <div class="d-inline px-2" style="background-color: #769ECB; color:white">
                             Atico
                         </div>
@@ -143,7 +117,7 @@
                             Segundo B
                         </div>
                         <div class="d-inline px-2" style="background-color: #C8D6B9; color:black">
-                            Primero A 
+                            Primero A
                         </div>
                         <div class="d-inline px-2" style="background-color: #DFD8C0; color:black">
                             Primero B
@@ -155,7 +129,7 @@
                             Bajo B
                         </div>
                     </div>
-                    <div id='calendar'></div>
+                    <div id='calendar' style="order: 0;"></div>
 
                 </div>
                 <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
@@ -179,6 +153,6 @@
 </div>
 
 
-  
-  
+
+
 @endsection

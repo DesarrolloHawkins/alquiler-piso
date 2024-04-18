@@ -41,12 +41,15 @@
                 <div class="icon-text mt-2">Reservas</div>
             </div>
             <div class="text-center">
-                <div class="icon-container2">
-                    <div class="icon2">
-                        <i class="fa-solid fa-calendar-days"></i>
+                <a href="{{route('reservas.calendar')}}" class="text-decoration-none primer-color">
+                    <div class="icon-container2">
+                        <div class="icon2">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="icon-text mt-2">Calendario</div>
+                    <div class="icon-text mt-2">Calendario</div>
+                </a>
+
             </div>
         </div>
     </div>

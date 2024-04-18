@@ -10,7 +10,7 @@
         <h5 class="text-center mb-3 mt-3 fs-2"><strong>CRM</strong> de los Apartamentos <img src="{{asset('logo_small_azul.png')}}" alt="" style="max-width: 230px" class="img-fluid d-block m-auto mt-1"></h5>
     </div>
     <div class="mt-5">
-        <h4 class="mb-3">Acceso directos</h4>
+        <h4 class="mb-3">Apartamentos</h4>
         <div class=" row d-flex justify-content-between">
             @if (count($pisos) > 0)
                 @foreach ($pisos as $piso)
