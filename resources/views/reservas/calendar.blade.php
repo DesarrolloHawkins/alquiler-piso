@@ -95,10 +95,23 @@
 @section('content')
 <style>
     .fc .fc-view-harness{
-        height: 65vh !important;
+        height: 60vh !important;
     }
     .fc .fc-toolbar-title {
         font-size: 1.2em !important;
+    }
+    .fc-theme-standard .fc-list-day-cushion {
+        background-color: #0F1739;
+    }
+    .fc-list-day-text{
+        color: white;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+    .fc-list-day-side-text {
+        color: white;
+        text-decoration: none;
+        text-transform: uppercase;
     }
 </style>
 <div class="container-fluid">

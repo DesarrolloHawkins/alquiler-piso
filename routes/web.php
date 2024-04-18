@@ -41,7 +41,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/configuracion', function () {
         return view('configuracion');
+
+
     });
+
+
+    Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
+
 
     // Más rutas que solo deben ser accesibles
 });
@@ -58,7 +64,6 @@ Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 
 Route::get('/clientes/{cliente}', [App\Http\Controllers\ClientesController::class, 'show'])->name('clientes.show');
 
 // Reservas
-Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 Route::get('/reservas/{reserva}', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
 Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
