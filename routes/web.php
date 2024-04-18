@@ -19,7 +19,7 @@ Route::get('/', function () {
         return redirect()->route('gestion.index');
     }
     return view('welcome');
-});
+})->name('inicio');
 
 Auth::routes();
 
@@ -27,7 +27,7 @@ Auth::routes();
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/admin', function () {
         return view('admin.dashboard');
-    });
+    })->name('inicio');
 
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 

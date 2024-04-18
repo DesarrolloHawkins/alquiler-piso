@@ -1,4 +1,5 @@
 @extends('layouts.appPersonal')
+
 @section('scriptHead')
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js"></script>
@@ -92,6 +93,9 @@
       </script>
 @endsection
 @section('title', 'Calendario')
+
+
+
 @section('content')
 <style>
     .fc .fc-view-harness{

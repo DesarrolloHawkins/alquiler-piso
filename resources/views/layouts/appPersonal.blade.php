@@ -50,8 +50,11 @@
                 <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" class="img-fluid m-auto" style="width: 60%">
 
                 </a> --}}
-                <div class="pt-1 w-100 text-light">
-                    @yield('bienvenido')
+                <div class="pt-1 w-100 text-light d-flex flex-row">
+                    @if(!in_array(Route::currentRouteName(), ['dashboard.index', 'inicio']))
+                        <a href="{{ url()->previous() }}" class="" style="font-size:1.5rem; margin-left:1rem; color:white !important"><i class="fa-solid fa-arrow-left" style="color:white !important"></i></a>
+                    @endif
+                    {{-- @yield('bienvenido') --}}
                     <h5 class="navbar-brand mb-0 text-center text-light w-100">Bienvenid@ <span class="text-uppercase">{{Auth::user()->name}}</span></h5>
                 </div>
 
