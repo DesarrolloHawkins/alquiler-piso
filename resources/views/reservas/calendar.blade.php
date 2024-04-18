@@ -33,7 +33,7 @@
                             console.log(reserva)
                             console.log(apartmentColors[reserva.apartamento_id][1])
                             return {
-                            title: reserva.cliente.alias + ' - ' + reserva.apartamento.nombre, // o cualquier otro campo que quieras usar como título
+                            title: reserva.cliente.alias + ' - ' + reserva.apartamento.titulo, // o cualquier otro campo que quieras usar como título
                             start: reserva.fecha_entrada,
                             end: reserva.fecha_salida,
                             backgroundColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
