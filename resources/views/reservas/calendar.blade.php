@@ -1,8 +1,10 @@
 @extends('layouts.appPersonal')
 @section('scriptHead')
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/es.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/locales/es.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
 
@@ -14,10 +16,10 @@
                 1: ['#769ECB', 'white'], // Color para apartamento_id 1
                 2: ['#9DBAD5', 'white'], // Color para apartamento_id 2
                 3: ['#FAF3DD', 'black'], // Color para apartamento_id 3
-                4: ['#C8D6B9', 'black'], // Color para apartamento_id 3
-                5: ['#DFD8C0', 'black'], // Color para apartamento_id 3
-                6: ['#8FC1A9', 'white'], // Color para apartamento_id 3
-                7: ['#7CAA98', 'white'], // Color para apartamento_id 3
+                4: ['#C8D6B9', 'black'], // Color para apartamento_id 4
+                5: ['#DFD8C0', 'black'], // Color para apartamento_id 5
+                6: ['#8FC1A9', 'white'], // Color para apartamento_id 6
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -28,9 +30,10 @@
                     .then(response => response.json())
                     .then(data => {
                         var events = data.map(function(reserva) {
+                            console.log(reserva)
                             console.log(apartmentColors[reserva.apartamento_id][1])
                             return {
-                            title: reserva.cliente.alias, // o cualquier otro campo que quieras usar como título
+                            title: reserva.cliente.alias + ' - ' + reserva.apartamento.nombre, // o cualquier otro campo que quieras usar como título
                             start: reserva.fecha_entrada,
                             end: reserva.fecha_salida,
                             backgroundColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
