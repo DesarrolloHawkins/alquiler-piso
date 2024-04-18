@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EnvioClavesEmail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class EstadoController extends Controller
 {
@@ -11,7 +13,11 @@ class EstadoController extends Controller
      */
     public function index()
     {
-        //
+        $emailAddress = 'p.ragel@hawkins.es'; // Dirección del destinatario
+
+        Mail::to($emailAddress)->send(new EnvioClavesEmail());
+
+        return 'Correo enviado';
     }
 
     /**

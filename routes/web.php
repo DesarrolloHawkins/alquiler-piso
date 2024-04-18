@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function () {
 // Vistas
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');
+Route::get('/email', [App\Http\Controllers\EstadoController::class, 'index'])->name('email.index');
 
 // Clientes
 Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
