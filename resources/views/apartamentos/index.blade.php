@@ -17,7 +17,7 @@
                     <div class="col-12 mb-2">
                         <div class="card bg-color-cuarto border-0">
                             <div class="card-body">
-                                <h5 class="primer-color">{{$piso->nombre}}</h5>
+                                <h5 class="primer-color">{{$piso->titulo}}</h5>
                             </div>
                         </div>
                     </div>
