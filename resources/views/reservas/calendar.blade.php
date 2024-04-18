@@ -93,7 +93,11 @@
 @endsection
 @section('title', 'Calendario')
 @section('content')
-
+<style>
+    .fc .fc-view-harness{
+        height: 500px !important;
+    }
+</style>
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -109,7 +113,7 @@
                         6: '#8FC1A9', // Color para apartamento_id 3
                         7: '#7CAA98', // Color para apartamento_id 3,
                     --}}
-                    <div class="apartamentos my-2" style="order: 1;">
+                    {{-- <div class="apartamentos my-2" style="order: 1;">
                         <div class="d-inline px-2" style="background-color: #769ECB; color:white">
                             Atico
                         </div>
@@ -131,7 +135,7 @@
                         <div class="d-inline px-2" style="background-color: #7CAA98; color:white">
                             Bajo B
                         </div>
-                    </div>
+                    </div> --}}
                     <div id='calendar' style="order: 0;"></div>
 
                 </div>
