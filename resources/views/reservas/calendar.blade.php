@@ -95,7 +95,10 @@
 @section('content')
 <style>
     .fc .fc-view-harness{
-        height: 500px !important;
+        height: 65vh !important;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.2em !important;
     }
 </style>
 <div class="container-fluid">
