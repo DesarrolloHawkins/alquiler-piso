@@ -30,7 +30,8 @@ class GestionApartamentoController extends Controller
         $reservasPendientes = Reserva::apartamentosPendiente();
         $reservasOcupados = Reserva::apartamentosOcupados();
         $reservasSalida = Reserva::apartamentosSalida();
-        $reservasLimpieza = Reserva::apartamentosLimpiados();
+        // $reservasLimpieza = Reserva::apartamentosLimpiados();
+        $reservasLimpieza = ApartamentoLimpieza::apartamentosLimpiados();
         $reservasEnLimpieza = ApartamentoLimpieza::apartamentosEnLimpiados();
 
         return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza','reservasEnLimpieza'));
@@ -41,12 +42,12 @@ class GestionApartamentoController extends Controller
      */
     public function create($id)
     {
-        $idApartamento = Reserva::find($id);
-        $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $idApartamento->apartamento_id)->first();
+        $reserva = Reserva::find($id);
+        $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $reserva->apartamento_id)->first();
 
             if ($apartamentoLimpio == null) {
                 $apartamentoLimpieza = ApartamentoLimpieza::create([
-                    'apartamento_id' => $idApartamento->apartamento_id,
+                    'apartamento_id' => $reserva->apartamento_id,
                     'fecha_comienzo' => Carbon::now(),
                     'status_id' => 2,
                     'reserva_id' => $id

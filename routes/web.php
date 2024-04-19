@@ -19,7 +19,7 @@ Route::get('/', function () {
         return redirect()->route('gestion.index');
     }
     return view('welcome');
-})->name('inicio');
+})->name('inicio.welcome');
 
 Auth::routes();
 

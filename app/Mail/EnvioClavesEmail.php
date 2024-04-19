@@ -21,20 +21,14 @@ class EnvioClavesEmail extends Mailable
         //
     }
 
-    public function build()
-    {
-        return $this->view('emails.envioClavesEmail')
-                    ->subject('Asunto del correo')
-                    ->cc('david@hawkins.es'); // Añadir CC aquí
-
-    }
     /**
      * Get the message envelope.
      */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Envio Claves Email',
+            subject: 'Asunto del correo',
+            cc: ['david@hawkins.es']
         );
     }
 
@@ -44,7 +38,7 @@ class EnvioClavesEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.envioClavesEmail',
         );
     }
 

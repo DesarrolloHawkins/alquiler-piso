@@ -118,12 +118,12 @@ class ApartamentoLimpieza extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 
+        'created_at', 'updated_at', 'deleted_at',
     ];
 
     /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function apartamento()
@@ -133,7 +133,7 @@ class ApartamentoLimpieza extends Model
 
     /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function estado()
@@ -142,11 +142,20 @@ class ApartamentoLimpieza extends Model
     }
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public static function apartamentosEnLimpiados()
     {
         return self::where('status_id', 2)->get();
+    }
+    /**
+     * Obtener apartamentos fechas salida para el dia de mañana
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public static function apartamentosLimpiados()
+    {
+        return self::where('status_id', 3)->get();
     }
 }

@@ -17,7 +17,7 @@ class EstadoController extends Controller
 
         Mail::to($emailAddress)->send(new EnvioClavesEmail());
 
-        return view('inicio');
+        return view('welcome');
     }
 
     /**
