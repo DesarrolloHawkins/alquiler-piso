@@ -43,11 +43,11 @@
                 <div class="accordion" id="accordionLimpio">
                     <div class="accordion-item ">
                         <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTerminar" aria-expanded="true" aria-controls="collapseTerminar">
                                 {{ __('Apartamentos por Terminar') }}
                             </button>
                         </h2>
-                        <div id="collapseLimpios" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
+                        <div id="collapseTerminar" class="accordion-collapse collapse @if(count($reservasEnLimpieza) > 0) show @endif" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
                           <div class="accordion-body">
                             @if (count($reservasEnLimpieza) > 0)
                                 <ol class="list-group list-group-numbered">
@@ -78,7 +78,7 @@
                                 {{ __('Apartamentos Limpiados HOY') }}
                             </button>
                         </h2>
-                        <div id="collapseLimpios" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
+                        <div id="collapseLimpios" class="accordion-collapse collapse @if(count($reservasLimpieza) > 0) show @endif" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
                           <div class="accordion-body">
                             @if (count($reservasLimpieza) > 0)
                                 <ol class="list-group list-group-numbered">
@@ -111,7 +111,7 @@
                                 {{-- <span class="badge bg-primary rounded-pill">{{count($reservasSalida)}}</span>  --}}
                             </button>
                         </h2>
-                        <div id="collapseManania" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionManania">
+                        <div id="collapseManania" class="accordion-collapse collapse @if(count($reservasSalida) > 0) {{'show'}} @endif" aria-labelledby="headingOne" data-bs-parent="#accordionManania">
                           <div class="accordion-body">
                             @if (count($reservasSalida) > 0)
                                 <ol class="list-group list-group-numbered">
