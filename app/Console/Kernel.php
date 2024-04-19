@@ -112,8 +112,8 @@ class Kernel extends ConsoleKernel
 
                         MensajeAuto::create($dataMensaje);
 
-                        $mensaje = $this->dniEmail($idiomaCliente, $token);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - DNI', $token);
+                        $mensajeEmail = $this->dniEmail($idiomaCliente, $token);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
                     } else {
                         // if ($reserva->dni_entregado == null) {
                         //     if ($reserva->fecha_entrada == $hoyFormateado) {
