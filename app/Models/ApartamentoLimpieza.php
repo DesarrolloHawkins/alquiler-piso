@@ -150,7 +150,7 @@ class ApartamentoLimpieza extends Model
         // Obtener la fecha y hora actual en el formato deseado
         $fechaActual = now()->format('Y-m-d');
         return self::where('status_id', 2)
-                ->where('fecha_comienzo', $fechaActual)
+                ->whereDate('fecha_comienzo', $fechaActual)
                 ->get();
     }
     /**
@@ -163,7 +163,7 @@ class ApartamentoLimpieza extends Model
         $fechaActual = now()->format('Y-m-d');
 
         return self::where('status_id', 3)
-                ->where('fecha_fin', $fechaActual)
+                ->whereDate('fecha_fin', $fechaActual)
                 ->get();
     }
 }
