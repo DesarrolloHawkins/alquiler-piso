@@ -131,6 +131,10 @@ class ApartamentoLimpieza extends Model
     {
         return $this->belongsTo(\App\Models\Apartamento::class,'apartamento_id');
     }
+    public function origenReserva()
+    {
+        return $this->belongsTo(\App\Models\Reserva::class,'reserva_id');
+    }
 
     /**
      * Obtener el usuario

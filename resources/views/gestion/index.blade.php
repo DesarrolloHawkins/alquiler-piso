@@ -83,10 +83,11 @@
                             @if (count($reservasLimpieza) > 0)
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasLimpieza as $reservaLimpieza)
-                                        <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaLimpieza->id)}}">
+                                    {{-- href="{{route('gestion.create', $reservaLimpieza->id)}}" --}}
+                                        <a data-id="{{$reservaLimpieza->id}}" class=" list-group-item d-flex justify-content-between align-items-start">
                                             <div class="ms-2 me-auto">
-                                                <div class="fw-bold">{{$reservaLimpieza->apartamento->nombre}} - {{$reservaLimpieza->origen}}</div>
-                                                Fecha Salida: {{$reservaLimpieza->fecha_salida}}
+                                                <div class="fw-bold">{{$reservaLimpieza->apartamento->nombre}} - {{$reservaLimpieza->origenReserva->origen}}</div>
+                                                Fecha Salida: {{$reservaLimpieza->origenReserva->fecha_salida}}
                                             </div>
                                         </a>
 
