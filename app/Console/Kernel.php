@@ -97,8 +97,7 @@ class Kernel extends ConsoleKernel
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
-                        $mensaje = $this->dniEmail($idiomaCliente, $token);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - DNI', $token);
+
                        // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
                         Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
@@ -112,6 +111,9 @@ class Kernel extends ConsoleKernel
                         ];
 
                         MensajeAuto::create($dataMensaje);
+
+                        $mensaje = $this->dniEmail($idiomaCliente, $token);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - DNI', $token);
                     } else {
                         // if ($reserva->dni_entregado == null) {
                         //     if ($reserva->fecha_entrada == $hoyFormateado) {
@@ -204,8 +206,7 @@ class Kernel extends ConsoleKernel
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
                         $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
-                        $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
+
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
@@ -215,6 +216,8 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+                        $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                     }
                 }
 
