@@ -145,7 +145,7 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
 
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
-            $codigoPuertaPrincipal = '1314#';
+            $codigoPuertaPrincipal = '2404#';
 
             foreach($reservas as $reserva){
                 // Fecha de Hoy
@@ -478,35 +478,35 @@ class Kernel extends ConsoleKernel
             case 3:
                 return [
                     'nombre' => '2B',
-                    'codigo' => '6032'
+                    'codigo' => '2306'
                 ];
                 break;
 
             case 4:
                 return [
                     'nombre' => '1A',
-                    'codigo' => '3032'
+                    'codigo' => '4243'
                 ];
                 break;
 
             case 5:
                 return [
                     'nombre' => '1B',
-                    'codigo' => '4032'
+                    'codigo' => '2304'
                 ];
                 break;
 
             case 6:
                 return [
                     'nombre' => 'BA',
-                    'codigo' => '1032'
+                    'codigo' => '4241'
                 ];
                 break;
 
             case 7:
                 return [
                     'nombre' => 'BB',
-                    'codigo' => '2032'
+                    'codigo' => '2302'
                 ];
                 break;
 
