@@ -13,12 +13,22 @@ class EnvioClavesEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    protected $vista;
+    protected $data;
+    protected $asunto;
+    // protected $titulo;
+    protected $token = null;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($vista, $data, $asunto, $token = null,)
     {
-        //
+        $this->vista = $vista;
+        $this->data = $data;
+        $this->asunto = $asunto;
+        // $this->titulo = $titulo;
+        $token != null ? $this->token = $token : $this->token = null;
     }
 
     /**
@@ -27,7 +37,7 @@ class EnvioClavesEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Asunto del correo',
+            subject: $this->asunto,
             cc: ['david@hawkins.es']
         );
     }
@@ -38,7 +48,8 @@ class EnvioClavesEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.envioClavesEmail',
+            view: $this->vista,
+            with: ['data' => $this->data]
         );
     }
 

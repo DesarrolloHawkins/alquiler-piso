@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Mail\EnvioClavesEmail;
 use App\Models\Cliente;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use DateTime;
+use Illuminate\Support\Facades\Mail;
 
 class Kernel extends ConsoleKernel
 {
@@ -95,7 +97,8 @@ class Kernel extends ConsoleKernel
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
-
+                        $mensaje = $this->dniEmail($idiomaCliente, $token);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - DNI', $token);
                        // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
                         Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
@@ -201,7 +204,8 @@ class Kernel extends ConsoleKernel
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
                         $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
-
+                        $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
@@ -406,6 +410,7 @@ class Kernel extends ConsoleKernel
 
     }
 
+    // Mensaje DNI
     public function mensajesAutomaticosBoton($template, $token, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -816,5 +821,345 @@ class Kernel extends ConsoleKernel
         curl_close($curl);
         // $responseJson = json_decode($response);
         return $response;
+    }
+
+    public function dniEmail($idioma, $token){
+
+        switch ($idioma) {
+            case 'es':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Gracias por reservar en los apartamentos Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                La legislación Española Nos obliga a solicitarle si Documento Nacional de Identidad o su pasaporte. Es obligatorio que nos lo facilite o no podrá alojarse en el apartamento.
+                </p>
+                <p style="margin: 0 !important">
+                    Le dejamos un enlace para que rellene sus datos y nos lo facilite la copia del DNI o Pasaporte:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                    Las claves de acceso al apartamento se las enviamos el dia de su llegada por whatsapp y correo electronico, asegurese de tener la informacion de contacto correctamente.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Gracias por utilizar nuestra aplicación!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'fr':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Merci de réserver chez les appartements Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    La législation espagnole nous oblige à vous demander votre carte d'."'".'identité nationale ou votre passeport. l est obligatoire que vous nous le fournissiez, sinon vous ne pourrez pas séjourner dans l'."'".'appartement.
+                </p>
+                <p style="margin: 0 !important">
+                    Nous vous laissons un lien pour nous le fournir via le bouton ci-dessous:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                    Les codes d'."'".'accès à l'."'".'appartement vous seront envoyés le jour de votre arrivée par WhatsApp et par e-mail, assurez-vous d'."'".'avoir les informations de contact correctes.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Merci d'."'".'utiliser notre application!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'ar':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    شكراً لحجزكم في شقق هوكينز!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    يُلزمنا القانون الإسباني بطلب هويتكم الوطنية أو جواز سفركم. من الضروري أن تقدموه لنا، وإلا لن تتمكنوا من الإقامة في الشقة.
+                </p>
+                <p style="margin: 0 !important">
+                    :نترك لكم رابطاً لتقديمه لنا عبر الزر أدناه.
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                سنرسل لك رموز الوصول إلى الشقة في يوم وصولك عبر تطبيق WhatsApp والبريد الإلكتروني، وتأكد من حصولك على معلومات الاتصال بشكل صحيح.
+                </p>
+                <br>
+                <p style="margin: 0 !important">شكرا لك على استخدام التطبيق لدينا!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'de':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Danke, dass Sie sich für die Hawkins Apartments entschieden haben!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    Die spanische Gesetzgebung verpflichtet uns, Ihren Personalausweis oder Ihren Reisepass anzufordern. Es ist obligatorisch, dass Sie uns diesen zur Verfügung stellen, ansonsten können Sie nicht in der Wohnung übernachten.
+                </p>
+                <p style="margin: 0 !important">
+                Wir hinterlassen Ihnen einen Link, um uns dies über den unteren Button zu übermitteln.:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                    Wir senden Ihnen die Zugangscodes zum Apartment am Tag Ihrer Ankunft per WhatsApp und E-Mail zu. Stellen Sie sicher, dass Sie die Kontaktinformationen korrekt haben.                </p>
+                <br>
+                <p style="margin: 0 !important">
+                    Vielen Dank, dass Sie unsere Anwendung nutzen!
+                </p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'pt_PT':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                Obrigado por reservar nos apartamentos Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    A legislação espanhola nos obriga a solicitar o seu Documento Nacional de Identidade ou passaporte. É obrigatório que nos forneça, caso contrário, não poderá ficar no apartamento.
+                </p>
+                <p style="margin: 0 !important">
+                    Deixamos um link para nos fornecer isso através do botão abaixo:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                    Enviaremos os códigos de acesso ao apartamento no dia da sua chegada por WhatsApp e email, certifique-se de ter os dados de contato corretos.
+                </p>
+                <br>
+                <p style="margin: 0 !important">
+                    Obrigado por usar nosso aplicativo!
+                </p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'it':
+                $$temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Grazie per aver prenotato presso gli appartamenti Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    La legislazione spagnola ci obbliga a richiedere il vostro Documento Nazionale d'."'".'Identità o il passaporto. È obbligatorio che ce lo forniate, altrimenti non potrete soggiornare nell'."'".'appartamento.
+                </p>
+                <p style="margin: 0 !important">
+                    Vi lasciamo un link per fornircelo tramite il pulsante in basso:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                Ti invieremo i codici di accesso all'."'".'appartamento il giorno del tuo arrivo tramite WhatsApp ed e-mail, assicurati di avere le informazioni di contatto corrette.
+                </p>
+                <br>
+                <p style="margin: 0 !important">
+                    Grazie per aver utilizzato la nostra applicazione!
+                </p>
+                ';
+                return $temaplate;
+                break;
+
+            default:
+                //en
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Thank you for booking at Hawkins Apartments!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    Spanish legislation requires us to request your National Identity Document or your passport. It is mandatory that you provide it to us or you will not be able to stay in the apartment.
+                </p>
+                <p style="margin: 0 !important">
+                    We leave you a link to fill out your information and provide us with a copy of your DNI or Passport:
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p style="margin: 0 !important">
+                    Thank you for using our application!We will send you the access codes to the apartment on the day of your arrival by WhatsApp and email, make sure you have the contact information correctly.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Thank you for using our application!</p>
+                ';
+                return $temaplate;
+                break;
+        }
+
+    }
+    public function clavesEmail($idioma, $cliente, $apartamento, $claveEntrada, $clavePiso){
+
+        switch ($idioma) {
+            case 'es':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Gracias por reservar en los apartamentos Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Hola '.$cliente.'!! La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Tu apartamento es el '.$apartamento.', los códigos para entrar al apartamento son: Para la puerta principal '.$claveEntrada.' y para la puerta de tu apartamento '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    Espero que pases una estancia maravillosa.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Gracias por utilizar nuestra aplicación!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'fr':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Merci de votre réservation chez les appartements Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    J’espère que vous passerez un séjour merveilleux.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                ';
+
+                return $temaplate;
+                break;
+
+            case 'ar':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    شكرًا لك على حجزك في شقق هوكينز!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                مرحبًا '.$cliente.'!! موقع الشقق هو: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    شقتك هي '.$apartamento.'، رموز الدخول للشقة هي: للباب الرئيسي '.$claveEntrada.' ولباب شقتك '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    أتمنى لك إقامة رائعة.
+                </p>
+                <br>
+                <p style="margin: 0 !important">شكرًا لك على استخدام تطبيقنا!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'de':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Danke für Ihre Buchung bei den Hawkins Apartments!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Hallo '.$cliente.'!! Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Ihr Apartment ist das '.$apartamento.', die Codes zum Betreten des Apartments sind: Für die Haupteingangstür '.$claveEntrada.' und für die Tür Ihrer Wohnung '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    Ich hoffe, Sie haben einen wunderbaren Aufenthalt.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Danke, dass Sie unsere Anwendung nutzen!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'pt_PT':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Obrigado por reservar nos apartamentos Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Espero que tenha uma estadia maravilhosa.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Obrigado por utilizar nossa aplicação!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'it':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Grazie per aver prenotato all'."'".'Hawkins Apartments!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    Ciao  '.$cliente.'!! La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Spero che tu abbia un soggiorno meraviglioso.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Grazie per aver utilizzato la nostra applicazione!</p>
+                ';
+                return $temaplate;
+                break;
+
+            default:
+                //en
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Thank you for booking at Hawkins Apartments!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                    Hello  '.$cliente.'!! The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Your apartment is '.$apartamento.', the codes to enter the apartment are: for the main door '.$claveEntrada.' and for the door of your apartment '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    I hope you have a wonderful stay.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Thank you for using our application!</p>
+                ';
+                return $temaplate;
+                break;
+        }
+
+    }
+    public function enviarEmail( $correo, $vista, $data, $asunto, $token, ){
+
+        // 'emails.envioClavesEmail'
+
+        Mail::to($correo)->send(new EnvioClavesEmail(
+            $vista,
+            $data,
+            $asunto,
+            $token
+        ));
+
     }
 }

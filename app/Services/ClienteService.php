@@ -193,11 +193,11 @@ class ClienteService
             case 'Francia':
                 return 'fr';
                 break;
-                
+
             case 'Marruecos':
                 return 'ar';
                 break;
-            
+
             case 'Alemania':
                 return 'de';
                 break;
@@ -205,9 +205,9 @@ class ClienteService
             case 'Portugal':
                 return 'pt_PT';
                 break;
-            
+
             case 'Italia':
-                return 'ir';
+                return 'it';
                 break;
 
             default:

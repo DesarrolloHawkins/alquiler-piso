@@ -23,23 +23,7 @@
             >
                 <strong>Hawkins Suite</strong>
             </h1>
-            <h3 style="color:#0F1739; text-align: center">
-                Gracias por reservar en los apartamentos Hawkins!!
-            </h3>
-            <p style="margin: 0 !important">
-                La legislación Española Nos obliga a solicitarle si Documento Nacional de Identidad o su pasaporte. Es obligatorio que nos lo facilite o no podrá alojarse en el apartamento.
-            </p>
-            <p style="margin: 0 !important">
-                Le dejamos un enlace para que rellene sus datos y nos lo facilite la copia del DNI o Pasaporte:
-            </p>
-            <p>
-                <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/token">https://crm.apartamentosalgeciras.com/dni-user/token</a>
-            </p>
-            <p style="margin: 0 !important">
-                Las claves de acceso al apartamento se las enviamos el dia de su llegada por whatsapp y correo electronico, asegurese de tener la informacion de contacto correctamente.
-            </p>
-            <br>
-            <p style="margin: 0 !important">Gracias por utilizar nuestra aplicación!</p>
+            {{ $data }}
             <p style="margin:0;">
                 <a href="https://apartamentosalgeciras.com" style="margin:0; font-size: 12px">
                     https://apartamentosalgeciras.com

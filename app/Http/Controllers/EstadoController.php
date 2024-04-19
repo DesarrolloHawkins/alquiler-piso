@@ -15,7 +15,13 @@ class EstadoController extends Controller
     {
         $emailAddress = 'p.ragel@hawkins.es'; // Dirección del destinatario
 
-        Mail::to($emailAddress)->send(new EnvioClavesEmail());
+        Mail::to($emailAddress)->send(new EnvioClavesEmail(
+            'emails.envioClavesEmail',
+            'data',
+            'Prueba',
+            'token',
+            'titulo'
+        ));
 
         return view('welcome');
     }
