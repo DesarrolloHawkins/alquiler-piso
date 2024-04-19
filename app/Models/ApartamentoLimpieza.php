@@ -147,7 +147,11 @@ class ApartamentoLimpieza extends Model
      */
     public static function apartamentosEnLimpiados()
     {
-        return self::where('status_id', 2)->get();
+        // Obtener la fecha y hora actual en el formato deseado
+        $fechaActual = now()->format('Y-m-d');
+        return self::where('status_id', 2)
+                ->where('fecha_comienzo', $fechaActual)
+                ->get();
     }
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
@@ -156,6 +160,10 @@ class ApartamentoLimpieza extends Model
      */
     public static function apartamentosLimpiados()
     {
-        return self::where('status_id', 3)->get();
+        $fechaActual = now()->format('Y-m-d');
+
+        return self::where('status_id', 3)
+                ->where('fecha_fin', $fechaActual)
+                ->get();
     }
 }
