@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -148,7 +149,7 @@ class ApartamentoLimpieza extends Model
     public static function apartamentosEnLimpiados()
     {
         // Obtener la fecha y hora actual en el formato deseado
-        $fechaActual = now()->format('Y-m-d');
+        $fechaActual = Carbon::now()->format('Y-m-d');
         return self::where('status_id', 2)
                 ->whereDate('fecha_comienzo', $fechaActual)
                 ->get();
@@ -160,7 +161,7 @@ class ApartamentoLimpieza extends Model
      */
     public static function apartamentosLimpiados()
     {
-        $fechaActual = now()->format('Y-m-d');
+        $fechaActual = Carbon::now()->format('Y-m-d');
 
         return self::where('status_id', 3)
                 ->whereDate('fecha_fin', $fechaActual)
