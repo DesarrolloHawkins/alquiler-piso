@@ -23,7 +23,7 @@
             >
                 <strong>Hawkins Suite</strong>
             </h1>
-            {{ $data }}
+            {!! $data !!}
             <p style="margin:0;">
                 <a href="https://apartamentosalgeciras.com" style="margin:0; font-size: 12px">
                     https://apartamentosalgeciras.com
