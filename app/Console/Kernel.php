@@ -45,10 +45,10 @@ class Kernel extends ConsoleKernel
 
         $schedule->call(function () {
 
-            $mensajeEmail = $this->dniEmail('es', '123456789');
-            $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', '123456789');
+            // $mensajeEmail = $this->dniEmail('es', '123456789');
+            // $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', '123456789');
 
-            Log::info("Tarea programada de Email al cliente ejecutada con éxito.");
+            // Log::info("Tarea programada de Email al cliente ejecutada con éxito.");
         })->everyMinute();
 
         // Tarea par enviar el mensaje del Dni
