@@ -32,7 +32,10 @@
     @yield('scriptHead')
 
     <!-- Scripts -->
-
+    <script>
+        // Tiempo de sesión en milisegundos
+        var sessionLifetime = {{ config('session.lifetime') * 60000 }};
+    </script>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
@@ -160,6 +163,28 @@
     {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
 
     {{-- Scripts --}}
+    <script>
+        function startSessionTimer() {
+            setTimeout(function() {
+                // Aquí puedes mostrar un mensaje de alerta si lo consideras necesario antes de redireccionar
+                alert('Tu sesión ha expirado. Serás redirigido a la página de login.');
+                window.location.href = '/login';  // Asegúrate que esta sea la URL de tu página de login
+            }, sessionLifetime);
+        }
+
+        function resetSessionTimer() {
+            clearTimeout(window.sessionTimeout);
+            startSessionTimer();
+        }
+
+        // Inicia el temporizador de sesión
+        startSessionTimer();
+
+        // Reinicia el temporizador con cualquier interacción del usuario
+        document.addEventListener('mousemove', resetSessionTimer);
+        document.addEventListener('keypress', resetSessionTimer);
+        document.addEventListener('click', resetSessionTimer);
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @include('sweetalert::alert')
