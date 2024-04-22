@@ -32,6 +32,8 @@ class Cliente extends Model
         'email',
         'identificador',
         'idioma',
+        'idiomas',
+        'inactivo',
     ];
 
     /**
@@ -40,7 +42,7 @@ class Cliente extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 
+        'created_at', 'updated_at', 'deleted_at',
     ];
 
 }

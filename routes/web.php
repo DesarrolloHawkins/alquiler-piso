@@ -25,17 +25,20 @@ Auth::routes();
 
 // Rutas de admin
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
-    Route::get('/admin', function () {
-        return view('admin.dashboard');
-    })->name('inicio');
+    Route::get('/admin', function () { return view('admin.dashboard');})->name('inicio');
 
+
+    // Reservas
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
     // Clientes
     Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
     Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
     Route::get('/clientes/{cliente}', [App\Http\Controllers\ClientesController::class, 'show'])->name('clientes.show');
-
+    Route::post('/cliente/store', [App\Http\Controllers\ClientesController::class, 'store'])->name('clientes.store');
+    Route::get('/cliente/edit/{id}', [App\Http\Controllers\ClientesController::class, 'edit'])->name('clientes.edit');
+    Route::post('/cliente/update/{id}', [App\Http\Controllers\ClientesController::class, 'update'])->name('clientes.update');
+    Route::post('/cliente/destroy/{id}', [App\Http\Controllers\ClientesController::class, 'destroy'])->name('clientes.destroy');
 
 });
 

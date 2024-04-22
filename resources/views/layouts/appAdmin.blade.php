@@ -37,6 +37,7 @@
         var sessionLifetime = {{ config('session.lifetime') * 60000 }};
     </script>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         .font-titulo{
@@ -55,6 +56,20 @@
             color: white !important;
             border-color: #3B3F64;
         }
+         /* Estilos para mantener fijo el sidebar y permitir el scroll en contenedor principal */
+    .sidebar {
+        //position: fixed; /* Hace el sidebar fijo */
+        // width: 20%; /* Ajusta el ancho del sidebar */
+        height: 100vh; /* Altura completa de la ventana */
+        overflow-y: auto; /* Permite scroll solo si es necesario */
+    }
+    .contenedor-principal {
+        //margin-left: 20%; /* Desplaza el contenedor principal para no solaparse con el sidebar */
+        //width: 80%; /* Ajusta el ancho del contenedor principal */
+        overflow-y: auto; /* Permite scroll en el contenedor principal */
+        height: 100vh; /* Altura completa de la ventana */
+    }
+
     </style>
 
 </head>
@@ -66,19 +81,19 @@
                     <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
                         <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
                           {{-- <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg> --}}
-                          <img src="{{asset('logo_small_azul.png')}}" alt="" style="max-width: 230px" class="img-fluid d-block m-auto mt-1">
+                          <img src="{{asset('logo_small_azul.png')}}" alt="" style="" class="img-fluid d-block m-auto mt-1">
 
                         </a>
                         <hr>
                         <ul class="nav nav-pills flex-column mb-auto">
                           <li class="nav-item">
-                            <a href="#" class="nav-link active fs-5" aria-current="page">
+                            <a href="{{route('dashboard.index')}}" class="nav-link fs-5 {{ request()->is('dashboard', 'dashboard/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-chart-area me-2"></i>
                                Dashboard
                             </a>
                           </li>
                           <li>
-                            <a href="{{route('clientes.index')}}" class="nav-link fs-5" aria-current="page">
+                            <a href="{{route('clientes.index')}}" class="nav-link fs-5 {{ request()->is('clientes', 'clientes/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-users me-2"></i>
                               Clientes
                             </a>
@@ -139,15 +154,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-10 p-4">
+                <div class="col-10 p-4 contenedor-principal">
                     <div class="nav-top">
                         <h3 class="fw-bold font-titulo">
                             @yield('tituloSeccion')
                         </h3>
                     </div>
-                    <main class=" contendor">
-
-
+                    <main class="contendor">
                         @yield('content')
                     </main>
                 </div>
