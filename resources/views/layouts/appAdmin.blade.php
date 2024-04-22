@@ -37,88 +37,131 @@
         var sessionLifetime = {{ config('session.lifetime') * 60000 }};
     </script>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    <style>
+        .font-titulo{
+            font-family:Arial, Helvetica, sans-serif;
+        }
+        .nav-pills .nav-link{
+            color: #3B3F64
+        }
+        .nav-pills .nav-link.active, .nav-pills .show > .nav-link{
+            background-color: #0F1739;
+            color: white;
+            border-color: #0F1739;
+        }
+        .nav-pills .nav-link:hover{
+            background-color: #3B3F64;
+            color: white !important;
+            border-color: #3B3F64;
+        }
+    </style>
+
 </head>
 <body>
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-color-primero shadow-sm"
-             style="
-                    height: 52px;
-                    border-radius: 0 0 45px 45px;
-                    box-shadow: 1px 1px 1px black;
-        ">
-            <div class="container">
-                @yield('volver')
-                {{-- <a class="navbar-brand text-white text-center" href="{{ url('/') }}">
-                    {{ config('app.name', 'Hawkins Suite') }}
-                <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" class="img-fluid m-auto" style="width: 60%">
+        <div class="container-fluid h-100">
+            <div class="row h-100">
+                <div class="col-2 bg-light sidebar p-3" style="height: 100vh; overflow-y: auto;"> <!-- Sidebar -->
+                    <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
+                        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
+                          {{-- <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg> --}}
+                          <img src="{{asset('logo_small_azul.png')}}" alt="" style="max-width: 230px" class="img-fluid d-block m-auto mt-1">
 
-                </a> --}}
-                <div class="pt-1 w-100 text-light d-flex flex-row">
-                    @if(!in_array(Route::currentRouteName(), ['dashboard.index', 'inicio']))
-                        <a href="{{ url()->previous() }}" class="" style="font-size:1.5rem; margin-left:1rem; color:white !important"><i class="fa-solid fa-arrow-left" style="color:white !important"></i></a>
-                    @endif
-                    {{-- @yield('bienvenido') --}}
-                    <h5 class="navbar-brand mb-0 text-center text-light w-100">Bienvenid@ <span class="text-uppercase">{{Auth::user()->name}}</span></h5>
+                        </a>
+                        <hr>
+                        <ul class="nav nav-pills flex-column mb-auto">
+                          <li class="nav-item">
+                            <a href="#" class="nav-link active fs-5" aria-current="page">
+                                <i class="fa-solid fa-chart-area me-2"></i>
+                               Dashboard
+                            </a>
+                          </li>
+                          <li>
+                            <a href="{{route('clientes.index')}}" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-users me-2"></i>
+                              Clientes
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-calendar-days me-2"></i>
+                              Reservas
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-id-card me-2"></i>
+                              DNI
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-user-astronaut me-2"></i>
+                              Asistente
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-file-lines me-2"></i>
+                              Logs
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" class="nav-link fs-5" aria-current="page">
+                                <i class="fa-solid fa-gear me-2"></i>
+                              Configuracion
+                            </a>
+                          </li>
+                        </ul>
+                        <hr>
+                        <div class="dropdown">
+                            <a class="nav-link my-1 mx-3 text-black" href="{{ route('logout') }}"
+                            onclick="event.preventDefault();
+                                          document.getElementById('logout-form').submit();">
+                             {{ __('Logout') }}
+                         </a>
+
+                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                             @csrf
+                         </form>
+                          {{-- <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+                            <strong>mdo</strong>
+                          </a> --}}
+                          {{-- <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                            <li><a class="dropdown-item" href="#">New project...</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Sign out</a></li>
+                          </ul> --}}
+                        </div>
+                    </div>
                 </div>
+                <div class="col-10 p-4">
+                    <div class="nav-top">
+                        <h3 class="fw-bold font-titulo">
+                            @yield('tituloSeccion')
+                        </h3>
+                    </div>
+                    <main class=" contendor">
 
-                {{-- <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button> --}}
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ms-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown bg-light mt-2">
-                                {{-- <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }}
-                                </a> --}}
-
-                                <a class="nav-link my-1 mx-3" href="{{ route('logout') }}"
-                                   onclick="event.preventDefault();
-                                                 document.getElementById('logout-form').submit();">
-                                    {{ __('Logout') }}
-                                </a>
-
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                    @csrf
-                                </form>
-                                {{-- <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                </div> --}}
-                            </li>
-                        @endguest
-                    </ul>
+                        @yield('content')
+                    </main>
                 </div>
             </div>
-        </nav>
+        </div>
 
-        <main class="py-4 contendor">
-            @yield('content')
-        </main>
-        <footer class="nav-bar-mobile p-2" style="background-color: white">
+        {{-- <footer class="nav-bar-mobile p-2" style="background-color: white">
             <div class="row px-3">
                 <div class="col-3 ">
                    <a href="{{route('dashboard.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                         <div class="icon fs-1 m-0 text-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-house "></i>
                         </div>
-                        {{-- <div class="texto fs-6 p-0 text-muted">
-                            Inicio
-                        </div> --}}
+
                    </a>
                 </div>
                 <div class="col-3">
@@ -126,9 +169,7 @@
                          <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                          </div>
-                         {{-- <div class="texto fs-6 p-0 text-muted">
-                            Historial
-                         </div> --}}
+
                     </a>
                 </div>
                 <div class="col-3">
@@ -136,9 +177,7 @@
                          <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-question"></i>
                          </div>
-                         {{-- <div class="texto fs-6 p-0 text-muted">
-                            Faq
-                         </div> --}}
+
                     </a>
                 </div>
                 <div class="col-3">
@@ -148,9 +187,7 @@
                          <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7  !important">
                             <i class="fa-solid fa-right-from-bracket"></i>
                          </div>
-                         {{-- <div class="texto fs-6 p-0 text-muted">
-                            Salir
-                         </div> --}}
+
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                         @csrf
@@ -158,7 +195,7 @@
                 </div>
 
             </div>
-        </footer>
+        </footer> --}}
     </div>
     {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
 
@@ -191,7 +228,6 @@
         document.addEventListener('keypress', resetSessionTimer);
         document.addEventListener('click', resetSessionTimer);
     </script>
-
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @include('sweetalert::alert')

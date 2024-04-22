@@ -31,7 +31,12 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
-    // Otras rutas de admin
+    // Clientes
+    Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
+    Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
+    Route::get('/clientes/{cliente}', [App\Http\Controllers\ClientesController::class, 'show'])->name('clientes.show');
+
+
 });
 
 // Rutas de usuarios logueados
@@ -59,10 +64,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');
 Route::get('/email', [App\Http\Controllers\EstadoController::class, 'index'])->name('email.index');
 
-// Clientes
-Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
-Route::get('/clientes/create', [App\Http\Controllers\ClientesController::class, 'create'])->name('clientes.create');
-Route::get('/clientes/{cliente}', [App\Http\Controllers\ClientesController::class, 'show'])->name('clientes.show');
+
 
 // Reservas
 Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');

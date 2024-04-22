@@ -13,9 +13,15 @@ class ClientesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clientes = Cliente::paginate(10);
+        $search = $request->get('search');
+
+        $clientes = Cliente::where('alias', 'like', '%'.$search.'%')
+                        ->orWhere('apellido1', 'like', '%'.$search.'%')
+                        ->orWhere('apellido2', 'like', '%'.$search.'%')
+                        ->orWhere('nombre', 'like', '%'.$search.'%')
+                        ->paginate(10);
         return view('Clientes.index', compact('clientes'));
     }
 

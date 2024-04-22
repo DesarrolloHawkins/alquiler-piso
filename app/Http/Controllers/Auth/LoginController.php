@@ -23,9 +23,9 @@ class LoginController extends Controller
         if (auth()->check()) {
             $user = auth()->user();
             if ($user->role === 'ADMIN') {
-                return '/home';  // Ruta de redirección para administradores.
+                return '/dashboard';  // Ruta de redirección para administradores.
             } elseif ($user->role === 'USER ') {
-                return '/gestion';  // Ruta de redirección para usuarios estándar.
+                return '/dashboard';  // Ruta de redirección para usuarios estándar.
             }
         }
 
