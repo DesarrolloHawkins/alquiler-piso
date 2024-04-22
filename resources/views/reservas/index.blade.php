@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.appAdmin')
 @section('scriptHead')
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
@@ -82,29 +82,30 @@
                 modal.modal('show');
             }
           });
-  
+
           calendar.render();
         });
-  
+
       </script>
 @endsection
 @section('content')
 
 <div class="container-fluid">
+    <h2 class="mb-3">{{ __('Reservas') }}</h2>
+    <a href="{{route('clientes.create')}}" class="btn bg-color-quinto">Crear Reserva</a>
+    <hr class="mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Nuestros Clientes') }}</div>
+        <div class="col-md-12">
+                {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
                 @php
                     $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
                 @endphp
-                <div class="card-body">
                     @if (session('status'))
                         <div class="alert alert-success" role="alert">
                             {{ session('status') }}
                         </div>
                     @endif
-                    <div class="row">
+                    <div class="row mb-4">
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <form action="{{ route('reservas.index') }}" method="GET">
@@ -137,14 +138,14 @@
                                         <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                                         <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
 
-                                        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+                                        <button type="submit" class="btn btn-terminar">Buscar</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    
-                    
+
+
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
@@ -248,7 +249,7 @@
                                     <td>{{$reserva->origen}}</td>
                                     <td>{{$reserva->codigo_reserva}}</td>
                                     <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn btn-primary">Ver</a></td>
-                                </tr>                 
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -256,11 +257,8 @@
                     {{-- {!! $reservas->links('pagination::bootstrap-5') !!}                 --}}
                     {{ $reservas->appends(request()->except('page'))->links() }}
 
-                    
-                </div>
-            </div>
         </div>
     </div>
 </div>
-  
+
 @endsection

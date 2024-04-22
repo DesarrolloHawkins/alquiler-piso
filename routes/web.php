@@ -40,6 +40,12 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/cliente/update/{id}', [App\Http\Controllers\ClientesController::class, 'update'])->name('clientes.update');
     Route::post('/cliente/destroy/{id}', [App\Http\Controllers\ClientesController::class, 'destroy'])->name('clientes.destroy');
 
+    // Reservas
+    Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
+    Route::get('/reservas/{reserva}', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
+    Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
+    Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
+
 });
 
 // Rutas de usuarios logueados
@@ -69,11 +75,7 @@ Route::get('/email', [App\Http\Controllers\EstadoController::class, 'index'])->n
 
 
 
-// Reservas
-Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
-Route::get('/reservas/{reserva}', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
-Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
-Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
+
 
 // Añadir Reserva
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');

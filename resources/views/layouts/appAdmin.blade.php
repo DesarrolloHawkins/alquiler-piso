@@ -99,7 +99,7 @@
                             </a>
                           </li>
                           <li>
-                            <a href="#" class="nav-link fs-5" aria-current="page">
+                            <a href="{{route('reservas.index')}}"" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-calendar-days me-2"></i>
                               Reservas
                             </a>
