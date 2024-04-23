@@ -67,6 +67,7 @@
                         <td>{{$cliente->email}}</td>
                     </tr>
 
+
                 </tbody>
             </table>
             <div class="card">
@@ -166,8 +167,10 @@
         </div>
         <div class="col-md-3">
             <div class="card">
+                <h4 class="mt-4 text-center">Acciones</h4>
                 <div class="card-body">
-                    <button class="btn btn-secundario w-100 fs-3"><i class="fa-regular fa-pen-to-square"></i> Editar</button>
+                    <a class="btn btn-secundario w-100 fs-4"><i class="fa-regular fa-pen-to-square"></i> Editar</a>
+                    <a class="btn btn-secundario w-100 fs-4 mt-2"><i class="fa-regular fa-pen-to-square"></i> Editar</a>
                 </div>
             </div>
         </div>

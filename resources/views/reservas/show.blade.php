@@ -59,6 +59,10 @@
                                 @endif
                             </td>
                         </tr>
+                        <tr>
+                            <th style="width: 140px" scope="row">Enlace para DNI</th>
+                            <td><a href="http://crm.apartamentosalgeciras.com/dni-user/{{$reserva->token}}">http://crm.apartamentosalgeciras.com/dni-user/{{$reserva->token}}</a></td>
+                        </tr>
                     </tbody>
                 </table>
 
