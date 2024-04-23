@@ -47,8 +47,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
 
     // Huespedes
-    Route::get('/huspedes', [App\Http\Controllers\HuespedesController::class, 'index'])->name('huspedes.index');
-    Route::get('/huspedes/show/{id}', [App\Http\Controllers\HuespedesController::class, 'show'])->name('huspedes.show');
+    Route::get('/huespedes', [App\Http\Controllers\HuespedesController::class, 'index'])->name('huespedes.index');
+    Route::get('/huesped/show/{id}', [App\Http\Controllers\HuespedesController::class, 'show'])->name('huespedes.show');
 
 });
 
