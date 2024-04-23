@@ -34,6 +34,7 @@ class Cliente extends Model
         'idioma',
         'idiomas',
         'inactivo',
+        'email_secundario',
     ];
 
     /**
