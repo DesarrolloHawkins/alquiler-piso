@@ -121,7 +121,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
 
                         $mensajeEmail = $this->dniEmail($idiomaCliente, $token);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
                     } else {
                         // if ($reserva->dni_entregado == null) {
                         //     if ($reserva->fecha_entrada == $hoyFormateado) {
@@ -225,7 +225,7 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
                         $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
+                        $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                     }
                 }
 

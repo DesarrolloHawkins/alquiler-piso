@@ -23,10 +23,10 @@ class ReservasController extends Controller
         $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
         $searchTerm = $request->get('search', '');
 
-        $perPage == '' ? $perPage = 10: $perPage; 
+        $perPage == '' ? $perPage = 10: $perPage;
         $direction == '' ? $direction = 'asc': $direction;
         $orderBy == '' ? $orderBy = 'fecha_entrada': $orderBy;
-        
+
         $query = Reserva::with('cliente'); // Asegúrate de que 'cliente' sea el nombre de la relación en el modelo Reserva
 
         if (!empty($searchTerm)) {
@@ -57,7 +57,7 @@ class ReservasController extends Controller
     public function calendar()
     {
         return view('reservas.calendar');
-        
+
     }
 
     public function getReservas()
@@ -97,7 +97,7 @@ class ReservasController extends Controller
         $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
         $photos = Photo::where('reserva_id', $reserva->id)->get();
         return view('reservas.show', compact('reserva', 'mensajes', 'photos'));
-        
+
     }
 
     /**
@@ -178,22 +178,22 @@ class ReservasController extends Controller
 						'alias' => $nombre,
 						'idiomas' => $data['idiomas'],
 						'telefono' => $data['telefono'],
-						'identificador' => $data['email'],
+						'email_secundario' => $data['email'],
 					]);
 					$cliente = $crearCliente;
-					
+
 				}else {
                     // Si existe creamos al cliente
 					$crearCliente = Cliente::create([
 						'alias' => $data['alias'],
 						'idiomas' => $data['idiomas'],
 						'telefono' => $data['telefono'],
-						'identificador' => $data['email'],
+						'email_secundario' => $data['email'],
 					]);
 					$cliente = $crearCliente;
 				}
-				
-				
+
+
             }else {
                 // En caso que el cliente ya existe
                 $cliente = $verificarCliente;
@@ -204,7 +204,7 @@ class ReservasController extends Controller
             // Parseamos las Fechas
            	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada']);
 			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida']);
-            
+
             // Verificamos si la reserva existe por el codigo de reserva
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
             // Si la reserva no existe
@@ -237,8 +237,8 @@ class ReservasController extends Controller
                         case 'ÁApartamento BB Centro Algeciras':
                             $apartamento = (object) ['id'=> 7];
                             break;
-    
-                        
+
+
                         default:
                             $apartamento = (object) ['id'=> null];
                             break;
@@ -273,13 +273,13 @@ class ReservasController extends Controller
                 return response('Ya existe la Reserva', 200);
 
             }
-            
+
         } else {
             return response('Ya existe la Reserva', 200);
         }
 
     }
-	
+
 	public function cancelarAirBnb($reserva){
         // Conprobamos la reserva con el codigo de reserva
 		$reserva = Reserva::where('codigo_reserva', $reserva)->first();
@@ -293,7 +293,7 @@ class ReservasController extends Controller
 		$reserva->save();
 
         return response('La reserva de ha cancelado', 200);
-		
+
 	}
 	public function cancelarBooking($reserva){
         // Conprobamos la reserva con el codigo de reserva
@@ -308,7 +308,7 @@ class ReservasController extends Controller
 		$reserva->save();
 
         return response('La reserva de ha cancelado', 200);
-		
+
 	}
 }
 
