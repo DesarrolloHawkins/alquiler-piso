@@ -42,6 +42,10 @@
                             <td>{{$reserva->cliente->alias}} <a href="{{route('clientes.show', $reserva->cliente_id)}}" class="btn btn-primary ms-3"><i class="fa-regular fa-eye"></i> </a></td>
                         </tr>
                         <tr>
+                            <th style="width: 140px" scope="row">Huespeds</th>
+                            {{dd($huespedes)}}
+                            <td>{{$reserva->numero_personas}} <a href="{{route('huespedes.show', $reserva->cliente_id)}}" class="btn btn-primary ms-3"><i class="fa-regular fa-eye"></i> </a></td>                        </tr>
+                        <tr>
                             <th style="width: 140px" scope="row">Fecha Limpieza</th>
                             <td>{{$reserva->fecha_limpieza}}</td>
                         </tr>

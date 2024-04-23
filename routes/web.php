@@ -46,6 +46,10 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
     Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
 
+    // Huespedes
+    Route::get('/huspedes', [App\Http\Controllers\HuespedesController::class, 'index'])->name('huspedes.index');
+    Route::get('/huspedes/show/{id}', [App\Http\Controllers\HuespedesController::class, 'show'])->name('huspedes.show');
+
 });
 
 // Rutas de usuarios logueados
