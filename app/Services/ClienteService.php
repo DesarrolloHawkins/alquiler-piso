@@ -30,16 +30,18 @@ class ClienteService
 
             // Convertir el código del teléfono a código ISO del país
             try {
-                $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
-                $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
-                $countryCode = $phoneNumber->getCountryCode();
-                $countryCodeToIso = $this->getCountryCodeToIso();
-                $codigoPaisISO = $countryCodeToIso[$countryCode] ?? null;
+                if($cliente->telefono != null){
+                    $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
+                    $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
+                    $countryCode = $phoneNumber->getCountryCode();
+                    $countryCodeToIso = $this->getCountryCodeToIso();
+                    $codigoPaisISO = $countryCodeToIso[$countryCode] ?? null;
 
-                if ($codigoPaisISO === null) {
-                    echo "Código de país ISO no encontrado para el código: $countryCode";
                 } else {
-                    echo "Código de país ISO obtenido: $codigoPaisISO";
+                    return [
+                        'status' => '500',
+                        'mensaje' => "Telefono es NULL"
+                    ];
                 }
             } catch (\libphonenumber\NumberParseException $e) {
                 // Devolver la operación con un status 500 y mensaje de error
@@ -53,7 +55,6 @@ class ClienteService
             $url = "https://restcountries.com/v3.1/alpha/" . $codigoPaisISO;
             $datosPais = file_get_contents($url);
             $infoPais = json_decode($datosPais, true);
-            dd($infoPais);
             // Obtener del array de idioma el código del país y enviarlo a ChatGPT
             $reponseIdioma = $this->addIdiomaCliente($infoPais[0]['cioc']);
 
