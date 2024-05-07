@@ -25,11 +25,16 @@ class Huesped extends Model
         'fecha_nacimiento',
         'pais',
         'tipo_documento',
+        'tipo_documento_str',
         'numero_identificacion',
         'fecha_expedicion',
         'sexo',
+        'sexo_str',
         'email',
         'contador',
+        'nacionalidadStr',
+        'nacionalidadCode',
+        'nacionalidad'
     ];
 
     /**

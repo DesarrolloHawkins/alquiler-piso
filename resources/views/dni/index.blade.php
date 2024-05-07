@@ -83,9 +83,9 @@
                         <div class="mb-3">
                             <select name="sexo" id="sexo" class="form-control" placeholder="Sexo" aria-label="Sexo">
                                 <option value="{{null}}">Seleccione Sexo</option>
-                                <option value="Masculino" {{ (old('tipo_documento') == 'Masculino' ? 'selected' : '') }}>Masculino</option>
-                                <option value="Femenino" {{ (old('tipo_documento') == 'Femenino' ? 'selected' : '') }}>Femenino</option>
-                                <option value="Binario" {{ (old('tipo_documento') == 'Binario' ? 'selected' : '') }}>Binario</option>
+                                <option value="Masculino" {{ (old('sexo') == 'Masculino' ? 'selected' : '') }}>Masculino</option>
+                                <option value="Femenino" {{ (old('sexo') == 'Femenino' ? 'selected' : '') }}>Femenino</option>
+                                <!-- <option value="Binario" {{ (old('tipo_documento') == 'Binario' ? 'selected' : '') }}>Binario</option> -->
                             </select>
                             @error('sexo')
                                 <div class="alert alert-danger">{{ $message }}</div>
@@ -233,6 +233,9 @@
                                 {{ session('alerta') }}
                             </div>
                         @endif
+                        @php
+                            $nacionalidadComun = $data[0]->nacionalidad;
+                        @endphp
                         <div id="formularios">
                             <form action="{{route('dni.store')}}" method="POST" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
                                 @csrf
@@ -335,20 +338,33 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <div class="form-floating mb-3">
+                                            <div class="form-floating mb-3 ">
+                                                {{-- {{dd($nacionalidadComun)}} --}}
                                                 <select 
                                                 name="nacionalidad_{{$i}}" 
                                                 id="nacionalidad_{{$i}}" 
-                                                class="form-select js-example-basic-single{{$i}}" 
+                                                class="form-select js-example-basic-single{{$i}} nacionalidad" 
                                                 aria-label="Pais" 
                                                 placeholder="{{$textos['Pais']}}">
-                                                    @foreach ($paises as $pais)
+                                                    {{-- @foreach ($paises as $pais)
                                                         <option 
                                                         value="{{$pais}}"
                                                         {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
                                                         >
-                                                        {{$pais}}
-                                                    </option>
+                                                            {{$pais}}
+                                                        </option>
+                                                    @endforeach --}}
+                                                    @foreach ($paises as $pais)
+                                                        <option value="{{$pais}}"
+                                                            {{
+                                                                (isset($nacionalidadComun) && $nacionalidadComun == $pais) ||
+                                                                (old('nacionalidad_'.$i) == $pais) ||
+                                                                (empty(old('nacionalidad_'.$i)) && !isset($nacionalidadComun) && $pais == 'España')
+                                                                ? 'selected' : ''
+                                                            }}
+                                                        >
+                                                            {{$pais}}
+                                                        </option>
                                                     @endforeach
                                                 </select>
                                                 <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
@@ -628,28 +644,26 @@
         var tipoDocumento = document.querySelectorAll('.tiposDocumentos')
         console.log(tipoDocumento)
         tipoDocumento.forEach( function(tipo){
-            tipo.addEventListener('change', function() {
+            console.log(tipo)
+            tipo.addEventListener('change', function(e) {
+                console.log(e)
                 var valor = this.value;
                 var info = this.getAttribute('data-info')
                 console.log(valor)
                 console.log(info)
-                if (valor === '1') {
+                if (valor === 'I' || valor === 'N' || valor === 'X' || valor === 'C' || valor === 'D') {
                     // dniUploaed - pasaporteUpload
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = true;
                     document.getElementById('trasera_'+info).required = true;
                     document.getElementById('pasaporteUpload_'+info).style.display = 'none';
                     document.getElementById('frontal_'+info).required = false;
-
-
-                } else if (valor === '2') {
+                } else if (valor === 'P') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = false;
                     document.getElementById('trasera_'+info).required = false;
                     document.getElementById('frontal_'+info).required = true;
-
-
                 } else {
 
                 }
@@ -707,51 +721,148 @@
         reader.readAsDataURL(event.target.files[0]);
     }
     // Si ya existe una URL de imagen, mostrar la vista previa al cargar la página
-    window.onload = function() {
+    // window.onload = function() {
 
-        var reserva = @json($reserva);
-        var data = @json($data);
+    //     var reserva = @json($reserva);
+    //     var data = @json($data);
 
-        for (let i = 0; i < data.length; i++) {
-            if (data[i].tipo_documento == 1) {
+    //     for (let i = 0; i < data.length; i++) {
+    //         if (data[i].tipo_documento == 1) {
                 
-                var divPhotos = document.getElementById('dniUploaed_'+i);
-                divPhotos.style.display = 'block';
-                var imageUrl = data[i].frontal.url;
+    //             var divPhotos = document.getElementById('dniUploaed_'+i);
+    //             divPhotos.style.display = 'block';
+    //             var imageUrl = data[i].frontal.url;
 
-                if (imageUrl) {
-                    console.log(imageUrl)
-                    var output = document.getElementById('image-preview_frontal_'+i);
-                    output.src = '/'+imageUrl;
-                    output.style.display = 'block';
-                }
+    //             if (imageUrl) {
+    //                 console.log(imageUrl)
+    //                 var output = document.getElementById('image-preview_frontal_'+i);
+    //                 output.src = '/'+imageUrl;
+    //                 output.style.display = 'block';
+    //             }
 
-                var imageUrl2 = data[i].trasera.url;
+    //             var imageUrl2 = data[i].trasera.url;
 
-                if (imageUrl2) {
-                    console.log(imageUrl2)
+    //             if (imageUrl2) {
+    //                 console.log(imageUrl2)
 
-                    var output = document.getElementById('image-preview_trasera_'+i);
-                    output.src = '/'+imageUrl2;
-                    output.style.display = 'block';
-                }
-            } else {
-                var divPhotos = document.getElementById('pasaporteUpload_'+i);
-                divPhotos.style.display = 'block';
-                var imageUrl3 = data[i].pasaporte.url;
+    //                 var output = document.getElementById('image-preview_trasera_'+i);
+    //                 output.src = '/'+imageUrl2;
+    //                 output.style.display = 'block';
+    //             }
+    //         } else {
+    //             var divPhotos = document.getElementById('pasaporteUpload_'+i);
+    //             divPhotos.style.display = 'block';
+    //             var imageUrl3 = data[i].pasaporte.url ? data[i].pasaporte.url : null;
 
-                if (imageUrl3) {
-                    console.log(imageUrl3)
+    //             if (imageUrl3) {
+    //                 console.log(imageUrl3)
 
-                    var output = document.getElementById('image-preview_pasaporte_'+i);
-                    output.src = '/'+imageUrl3;
-                    output.style.display = 'block';
-                }
+    //                 var output = document.getElementById('image-preview_pasaporte_'+i);
+    //                 output.src = '/'+imageUrl3;
+    //                 output.style.display = 'block';
+    //             }
+    //         }
+    //     }
+        
+        
+    // };
+    window.onload = function() {
+    var reserva = @json($reserva);
+    var data = @json($data);
+
+    for (let i = 0; i < data.length; i++) {
+        if (data[i].tipo_documento == 1) {
+            var divPhotos = document.getElementById('dniUploaed_' + i);
+            divPhotos.style.display = 'block';
+
+            // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
+            if (data[i].frontal && data[i].frontal.url) {
+                console.log(data[i].frontal.url);
+                var output = document.getElementById('image-preview_frontal_' + i);
+                output.src = '/' + data[i].frontal.url;
+                output.style.display = 'block';
+            }
+
+            // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
+            if (data[i].trasera && data[i].trasera.url) {
+                console.log(data[i].trasera.url);
+                var output = document.getElementById('image-preview_trasera_' + i);
+                output.src = '/' + data[i].trasera.url;
+                output.style.display = 'block';
+            }
+        } else {
+            var divPhotos = document.getElementById('pasaporteUpload_' + i);
+            divPhotos.style.display = 'block';
+
+            // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
+            if (data[i].pasaporte && data[i].pasaporte.url) {
+                console.log(data[i].pasaporte.url);
+                var output = document.getElementById('image-preview_pasaporte_' + i);
+                output.src = '/' + data[i].pasaporte.url;
+                output.style.display = 'block';
             }
         }
-        
-        
-    };
+    }
+}
+
+$(document).ready(function() {
+    $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
+
+    // Función para manejar la lógica de selección y actualización de tipos de documento
+    function handleNationalityChange() {
+        var selectedValue = $('.nacionalidad').val();
+        var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
+
+        console.log("Valor seleccionado:", normalizedValue);
+
+        var opciones = @json($optionesTipo);
+        var paisesDni = @json($paisesDni);
+        var countryInfo = paisesDni[normalizedValue];
+
+        console.log("Información del país:", countryInfo);
+
+        if (countryInfo) {
+            let indices;
+            let nuevasOpciones = [];
+
+            if (normalizedValue === "ESPAÑA") {
+                indices = [0, 4, 5];
+            } else if (countryInfo.isEuropean) {
+                indices = [0, 1, 2, 3];
+            } else {
+                indices = [0, 1, 2];
+            }
+
+            indices.forEach(i => {
+                nuevasOpciones.push(opciones[i]);
+            });
+
+            $('.tiposDocumentos').empty().each(function() {
+                var select = $(this);
+                nuevasOpciones.forEach(opcion => {
+                    select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
+                });
+            });
+        } else {
+            console.log("No se encontró información para:", normalizedValue);
+        }
+    }
+
+    // Evento de cambio en el select de nacionalidad
+    $('.nacionalidad').on('change', handleNationalityChange);
+
+    // Ejecuta la función al cargar para manejar el valor inicial
+    handleNationalityChange();
+
+    // Función para normalizar texto
+    function normalizeText(input) {
+        return input
+            .normalize("NFD") // Descompone las letras de los diacríticos
+            .replace(/(?<!n[\u0300-\u036f])[\u0300-\u036f]/gi, "") // Elimina diacríticos excluyendo la "ñ"
+            .toUpperCase(); // Convierte todo a mayúsculas
+    }
+});
+
 
 </script>
 @endsection

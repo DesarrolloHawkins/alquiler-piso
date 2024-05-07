@@ -43,16 +43,32 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
+        // $schedule->call(function (ClienteService $clienteService) {
+        //     // Obtener la fecha de hoy
+        //     $hoy = Carbon::now();
+        //     // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
+        //     $clientes = Cliente::where('idioma', null)
+        //     ->get();
+
+        //     foreach($clientes as $cliente){
+        //         $cliente = $clienteService->getIdiomaClienteID($cliente->id);
+        //     }
+        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+        // })->everyMinute();
+
+
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
-            // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-            $clientes = Cliente::where('idioma', null)
+
+            $reservasEntrada = Reserva::where('dni_entregado', null)
+            ->where('estado_id', 1)
+            ->where('fecha_entrada', '>=', $hoy->toDateString())
             ->get();
 
-            foreach($clientes as $cliente){
-                $cliente = $clienteService->getIdiomaClienteID($cliente->id);
-            }
+            
+
+
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
