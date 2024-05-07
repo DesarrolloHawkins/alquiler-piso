@@ -60,101 +60,101 @@ class Kernel extends ConsoleKernel
         // })->everyMinute();
 
 
-        $schedule->call(function (ClienteService $clienteService) {
-            // Obtener la fecha de hoy
-            $hoy = Carbon::now();
+        // $schedule->call(function (ClienteService $clienteService) {
+        //     // Obtener la fecha de hoy
+        //     $hoy = Carbon::now();
 
-              // Modificamos la consulta para obtener registros donde enviado_webpol no sea true (1)
-                $reservasEntrada = Reserva::where('dni_entregado', true)
-                ->where('fecha_entrada', '=', $hoy->toDateString())
-                ->where(function($query) {
-                    $query->where('enviado_webpol', '=', 0)
-                        ->orWhereNull('enviado_webpol');
-                })
-                ->first();
+        //       // Modificamos la consulta para obtener registros donde enviado_webpol no sea true (1)
+        //         $reservasEntrada = Reserva::where('dni_entregado', true)
+        //         ->where('fecha_entrada', '=', $hoy->toDateString())
+        //         ->where(function($query) {
+        //             $query->where('enviado_webpol', '=', 0)
+        //                 ->orWhereNull('enviado_webpol');
+        //         })
+        //         ->first();
 
-                if ($reservasEntrada != null) {
-                    $cliente = Cliente::where('id',$reservasEntrada->cliente_id)
-                    ->where(function($query) {
-                        $query->where('webpol', '=', 0)
-                            ->orWhereNull('webpol');
-                    })
-                    ->first();
-                    if ($cliente != null) {
-                        $fechaExpedicion = new Carbon($cliente->fecha_expedicion_doc);
-                        $fechaNacimiento = new Carbon($cliente->fecha_nacimiento);
-                        $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
+        //         if ($reservasEntrada != null) {
+        //             $cliente = Cliente::where('id',$reservasEntrada->cliente_id)
+        //             ->where(function($query) {
+        //                 $query->where('webpol', '=', 0)
+        //                     ->orWhereNull('webpol');
+        //             })
+        //             ->first();
+        //             if ($cliente != null) {
+        //                 $fechaExpedicion = new Carbon($cliente->fecha_expedicion_doc);
+        //                 $fechaNacimiento = new Carbon($cliente->fecha_nacimiento);
+        //                 $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
 
-                        $data = [
-                            'jsonHiddenComunes'=> null, 
-                            // 'idHospederia' => $idHospederia,
-                            'nombre' => $cliente->nombre,
-                            'apellido1' => $cliente->apellido1,
-                            'apellido2' => $cliente->apellido2,
-                            'nacionalidad' => $cliente->nacionalidadCode,
-                            'nacionalidadStr' => $cliente->nacionalidadStr,
-                            'tipoDocumento' => $cliente->tipo_documento,
-                            'tipoDocumentoStr' => $cliente->tipo_documento_str,
-                            'numIdentificacion' => $cliente->num_identificacion,
-                            'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
-                            'dia' => $fechaNacimiento->day,
-                            'mes' => $fechaNacimiento->month,
-                            'ano' => $fechaNacimiento->year,
-                            'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
-                            'sexo' => $cliente->sexo_str,
-                            'sexoStr' => $cliente->sexo,
-                            'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
-                            // '_csrf' => $csrfToken
-                        ];
-                        $this->webPol($data);
-                        $cliente->wepbol = true;
-                        $cliente->save();
-                        return true;
-                    }else{
-                        $huesped = Huesped::where('reserva_id', $reservasEntrada->id)
-                        ->where(function($query) {
-                            $query->where('webpol', '=', 0)
-                                ->orWhereNull('webpol');
-                        })
-                        ->first();
-                        if ($huesped != null) {
-                            $fechaExpedicion = new Carbon($huesped->fecha_expedicion);
-                            $fechaNacimiento = new Carbon($huesped->fecha_nacimiento);
-                            $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
+        //                 $data = [
+        //                     'jsonHiddenComunes'=> null, 
+        //                     // 'idHospederia' => $idHospederia,
+        //                     'nombre' => $cliente->nombre,
+        //                     'apellido1' => $cliente->apellido1,
+        //                     'apellido2' => $cliente->apellido2,
+        //                     'nacionalidad' => $cliente->nacionalidadCode,
+        //                     'nacionalidadStr' => $cliente->nacionalidadStr,
+        //                     'tipoDocumento' => $cliente->tipo_documento,
+        //                     'tipoDocumentoStr' => $cliente->tipo_documento_str,
+        //                     'numIdentificacion' => $cliente->num_identificacion,
+        //                     'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
+        //                     'dia' => $fechaNacimiento->day,
+        //                     'mes' => $fechaNacimiento->month,
+        //                     'ano' => $fechaNacimiento->year,
+        //                     'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
+        //                     'sexo' => $cliente->sexo_str,
+        //                     'sexoStr' => $cliente->sexo,
+        //                     'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
+        //                     // '_csrf' => $csrfToken
+        //                 ];
+        //                 $this->webPol($data);
+        //                 $cliente->wepbol = true;
+        //                 $cliente->save();
+        //                 return true;
+        //             }else{
+        //                 $huesped = Huesped::where('reserva_id', $reservasEntrada->id)
+        //                 ->where(function($query) {
+        //                     $query->where('webpol', '=', 0)
+        //                         ->orWhereNull('webpol');
+        //                 })
+        //                 ->first();
+        //                 if ($huesped != null) {
+        //                     $fechaExpedicion = new Carbon($huesped->fecha_expedicion);
+        //                     $fechaNacimiento = new Carbon($huesped->fecha_nacimiento);
+        //                     $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
 
-                            $data = [
-                                'jsonHiddenComunes'=> null, 
-                                // 'idHospederia' => $idHospederia,
-                                'nombre' => $huesped->nombre,
-                                'apellido1' => $huesped->primer_apellido,
-                                'apellido2' => $huesped->segundo_apellido,
-                                'nacionalidad' => $huesped->nacionalidadCode,
-                                'nacionalidadStr' => $huesped->nacionalidadStr,
-                                'tipoDocumento' => $huesped->tipo_documento,
-                                'tipoDocumentoStr' => $huesped->tipo_documento_str,
-                                'numIdentificacion' => $huesped->numero_identificacion,
-                                'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
-                                'dia' => $fechaNacimiento->day,
-                                'mes' => $fechaNacimiento->month,
-                                'ano' => $fechaNacimiento->year,
-                                'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
-                                'sexo' => $huesped->sexo_str,
-                                'sexoStr' => $huesped->sexo,
-                                'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
-                                // '_csrf' => $csrfToken
-                            ];
-                            $this->webPol($data);
-                            $huesped->wepbol = true;
-                            $huesped->save();
-                        }
-                        $reservasEntrada->enviado_webpol = true;
-                        $reservasEntrada->save();
-                    }
+        //                     $data = [
+        //                         'jsonHiddenComunes'=> null, 
+        //                         // 'idHospederia' => $idHospederia,
+        //                         'nombre' => $huesped->nombre,
+        //                         'apellido1' => $huesped->primer_apellido,
+        //                         'apellido2' => $huesped->segundo_apellido,
+        //                         'nacionalidad' => $huesped->nacionalidadCode,
+        //                         'nacionalidadStr' => $huesped->nacionalidadStr,
+        //                         'tipoDocumento' => $huesped->tipo_documento,
+        //                         'tipoDocumentoStr' => $huesped->tipo_documento_str,
+        //                         'numIdentificacion' => $huesped->numero_identificacion,
+        //                         'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
+        //                         'dia' => $fechaNacimiento->day,
+        //                         'mes' => $fechaNacimiento->month,
+        //                         'ano' => $fechaNacimiento->year,
+        //                         'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
+        //                         'sexo' => $huesped->sexo_str,
+        //                         'sexoStr' => $huesped->sexo,
+        //                         'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
+        //                         // '_csrf' => $csrfToken
+        //                     ];
+        //                     $this->webPol($data);
+        //                     $huesped->wepbol = true;
+        //                     $huesped->save();
+        //                 }
+        //                 $reservasEntrada->enviado_webpol = true;
+        //                 $reservasEntrada->save();
+        //             }
 
-                }
+        //         }
 
-            Log::info("Tarea programada de WebPol ejecutada con éxito.");
-        })->everyMinute();
+        //     Log::info("Tarea programada de WebPol ejecutada con éxito.");
+        // })->everyMinute();
 
         $schedule->call(function () {
 
