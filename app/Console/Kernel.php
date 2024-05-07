@@ -57,20 +57,20 @@ class Kernel extends ConsoleKernel
         // })->everyMinute();
 
 
-        $schedule->call(function (ClienteService $clienteService) {
-            // Obtener la fecha de hoy
-            $hoy = Carbon::now();
+        // $schedule->call(function (ClienteService $clienteService) {
+        //     // Obtener la fecha de hoy
+        //     $hoy = Carbon::now();
 
-            $reservasEntrada = Reserva::where('dni_entregado', null)
-            ->where('estado_id', 1)
-            ->where('fecha_entrada', '>=', $hoy->toDateString())
-            ->get();
+        //     $reservasEntrada = Reserva::where('dni_entregado', null)
+        //     ->where('estado_id', 1)
+        //     ->where('fecha_entrada', '>=', $hoy->toDateString())
+        //     ->get();
 
             
 
 
-            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        })->everyMinute();
+        //     Log::info("Tarea programada de WebPol ejecutada con éxito.");
+        // })->everyMinute();
 
         $schedule->call(function () {
 
