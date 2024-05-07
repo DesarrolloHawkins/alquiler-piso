@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Mail\EnvioClavesEmail;
 use App\Models\Cliente;
+use App\Models\Huesped;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use Carbon\Carbon;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use DateTime;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\BrowserKit\HttpBrowser;
+use Symfony\Component\HttpClient\HttpClient;
 
 class Kernel extends ConsoleKernel
 {
@@ -57,20 +60,97 @@ class Kernel extends ConsoleKernel
         // })->everyMinute();
 
 
-        // $schedule->call(function (ClienteService $clienteService) {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
+        $schedule->call(function (ClienteService $clienteService) {
+            // Obtener la fecha de hoy
+            $hoy = Carbon::now();
 
-        //     $reservasEntrada = Reserva::where('dni_entregado', null)
-        //     ->where('estado_id', 1)
-        //     ->where('fecha_entrada', '>=', $hoy->toDateString())
-        //     ->get();
+              // Modificamos la consulta para obtener registros donde enviado_webpol no sea true (1)
+                $reservasEntrada = Reserva::where('dni_entregado', true)
+                ->where('fecha_entrada', '=', $hoy->toDateString())
+                ->where(function($query) {
+                    $query->where('enviado_webpol', '=', 0)
+                        ->orWhereNull('enviado_webpol');
+                })
+                ->first();
 
-            
+                if ($reservasEntrada != null) {
+                    $cliente = Cliente::where('id',$reservasEntrada->cliente_id)
+                    ->where(function($query) {
+                        $query->where('webpol', '=', 0)
+                            ->orWhereNull('webpol');
+                    })
+                    ->first();
+                    if ($cliente != null) {
+                        $fechaExpedicion = new Carbon($cliente->fecha_expedicion_doc);
+                        $fechaNacimiento = new Carbon($cliente->fecha_nacimiento);
+                        $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
 
+                        $data = [
+                            'jsonHiddenComunes'=> null, 
+                            // 'idHospederia' => $idHospederia,
+                            'nombre' => $cliente->nombre,
+                            'apellido1' => $cliente->apellido1,
+                            'apellido2' => $cliente->apellido2,
+                            'nacionalidad' => $cliente->nacionalidadCode,
+                            'nacionalidadStr' => $cliente->nacionalidadStr,
+                            'tipoDocumento' => $cliente->tipo_documento,
+                            'tipoDocumentoStr' => $cliente->tipo_documento_str,
+                            'numIdentificacion' => $cliente->num_identificacion,
+                            'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
+                            'dia' => $fechaNacimiento->day,
+                            'mes' => $fechaNacimiento->month,
+                            'ano' => $fechaNacimiento->year,
+                            'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
+                            'sexo' => $cliente->sexo_str,
+                            'sexoStr' => $cliente->sexo,
+                            'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
+                            // '_csrf' => $csrfToken
+                        ];
+                        $this->webPol($data);
+                        return true;
+                    }else{
+                        $huesped = Huesped::where('reserva_id', $reservasEntrada->id)
+                        ->where(function($query) {
+                            $query->where('webpol', '=', 0)
+                                ->orWhereNull('webpol');
+                        })
+                        ->first();
+                        if ($huesped != null) {
+                            $fechaExpedicion = new Carbon($huesped->fecha_expedicion);
+                            $fechaNacimiento = new Carbon($huesped->fecha_nacimiento);
+                            $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
 
-        //     Log::info("Tarea programada de WebPol ejecutada con éxito.");
-        // })->everyMinute();
+                            $data = [
+                                'jsonHiddenComunes'=> null, 
+                                // 'idHospederia' => $idHospederia,
+                                'nombre' => $huesped->nombre,
+                                'apellido1' => $huesped->primer_apellido,
+                                'apellido2' => $huesped->segundo_apellido,
+                                'nacionalidad' => $huesped->nacionalidadCode,
+                                'nacionalidadStr' => $huesped->nacionalidadStr,
+                                'tipoDocumento' => $huesped->tipo_documento,
+                                'tipoDocumentoStr' => $huesped->tipo_documento_str,
+                                'numIdentificacion' => $huesped->numero_identificacion,
+                                'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
+                                'dia' => $fechaNacimiento->day,
+                                'mes' => $fechaNacimiento->month,
+                                'ano' => $fechaNacimiento->year,
+                                'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
+                                'sexo' => $huesped->sexo_str,
+                                'sexoStr' => $huesped->sexo,
+                                'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
+                                // '_csrf' => $csrfToken
+                            ];
+                            $this->webPol($data);
+                        }
+                        $reservasEntrada->enviado_webpol = true;
+                        $reservasEntrada->save();
+                    }
+
+                }
+
+            Log::info("Tarea programada de WebPol ejecutada con éxito.");
+        })->everyMinute();
 
         $schedule->call(function () {
 
@@ -399,6 +479,135 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+
+    public function webPol($data){
+        // $credentials = array(
+        //     'user' => 'H11070GEV04',
+        //     'pass' => 'H4Kins4p4rtamento2023'
+        // ); 
+        // $data = [
+        //     'username' => 'H11070GEV04',
+        //     'password' => 'H4Kins4p4rtamento2023',
+        //     '_csrf' => '49614a9a-efc7-4c36-9063-b1cd6824aa9a'
+        // ];
+        //https://webpol.policia.es/e-hotel/execute_login
+        //https://webpol.policia.es/e-hotel/login
+        //https://webpol.policia.es/hospederia/manual/vista/grabadorManual
+        //https://webpol.policia.es/hospederia/manual/insertar/huesped
+
+        $browser = new HttpBrowser(HttpClient::create());
+        $crawler = $browser->request('GET', 'https://webpol.policia.es/e-hotel/login');
+        $csrfToken = $crawler->filter('meta[name="_csrf"]')->attr('content');
+
+        $response1 = $browser->getResponse();
+        $statusCode1 = $response1->getStatusCode();
+        if ($statusCode1 == 200) {
+            $responseContent = $crawler->html();
+        } else {
+            // Manejar el caso en que la respuesta no es exitosa
+            echo '1 - Código de estado HTTP: ' . $statusCode1;
+            return;
+        }
+
+        $cookiesArray = [];
+        foreach ($browser->getCookieJar()->all() as $cookie) {
+            $cookiesArray[$cookie->getName()] = $cookie->getValue();
+        }
+        
+        $postData = [
+            'username' => 'H11070GEV04',
+            'password' => 'HaKinsapartamento2024',
+            '_csrf'    => $csrfToken
+        ];
+
+        $headers = [
+            'HTTP_CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'HTTP_COOKIE' => 'FRONTAL_JSESSIONID: ' . $cookiesArray['FRONTAL_JSESSIONID'] . ' UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_: ' . $cookiesArray['UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_'] . ' cookiesession1: ' . $cookiesArray['cookiesession1']
+        ];
+
+        $browser->setServerParameters($headers);
+        $crawler = $browser->request(
+            'POST',
+            'https://webpol.policia.es/e-hotel/execute_login',
+            $postData
+        );
+
+        $response2 = $browser->getResponse();
+        $statusCode2 = $response2->getStatusCode();
+        if ($statusCode2 == 200) {
+            $responseContent = $crawler->html();
+        } else {
+            // Manejar el caso en que la respuesta no es exitosa
+            echo '2 - Código de estado HTTP: ' . $statusCode2;
+            return;
+        }
+
+        $crawler = $browser->request('GET', 'https://webpol.policia.es/e-hotel/hospederia/manual/vista/grabadorManual');
+        $idHospederia = $crawler->filter('#idHospederia')->attr('value');
+
+        $response3 = $browser->getResponse();
+        $statusCode3 = $response3->getStatusCode();
+        if ($statusCode3 == 200) {
+            $responseContent = $crawler->html();
+        } else {
+            // Manejar el caso en que la respuesta no es exitosa
+            echo '3 - Código de estado HTTP: ' . $statusCode3;
+            return;
+        }
+        mb_internal_encoding("UTF-8");
+
+        $apellido = mb_convert_encoding('CASTAÑOS', 'UTF-8');
+        
+       
+        $headers = [
+            'Cookie' => 'FRONTAL_JSESSIONID: ' . $cookiesArray['FRONTAL_JSESSIONID'] . ' UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_: ' . $cookiesArray['UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_'] . ' cookiesession1: ' . $cookiesArray['cookiesession1'],
+            'Accept' => 'text/html, */*; q=0.01',
+            'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Referer' => 'https://webpol.policia.es/e-hotel/inicio',
+            'X-Csrf-Token' => $csrfToken,
+            'X-Requested-With' => 'XMLHttpRequest',
+            // Otros encabezados según sea necesario
+        ];
+        // $data['apellido1'] = mb_convert_encoding('CASTAÑOS', 'UTF-8');
+        $data['idHospederia'] = $idHospederia;
+        $data['_csrf'] = $csrfToken;
+
+        // 'idHospederia' => $idHospederia,
+        // '_csrf' => $csrfToken
+        $browser->setServerParameters($headers);
+
+        $crawler = $browser->request(
+            'POST',
+            'https://webpol.policia.es/e-hotel/hospederia/manual/insertar/huesped',
+            $data
+        );
+        // Diagnóstico: Ver contenido de la respuesta
+        $responseContent = $browser->getResponse()->getContent();
+        echo $responseContent;
+
+        $response4 = $browser->getResponse();
+        $statusCode4 = $response4->getStatusCode();
+        
+        if ($browser->getResponse()->getStatusCode() == 302) {
+            $crawler = $browser->followRedirect();
+            // Sigue la redirección
+        }
+
+        if ($statusCode4 == 200) {
+            $responseContent = $crawler->html();
+        } else {
+            // Manejar el caso en que la respuesta no es exitosa
+            // echo '4 - Código de estado HTTP: ' . $statusCode4 . $csrfToken . ' id: '. $idHospederia;
+            return;
+        }
+        return [
+            $csrfToken,
+            $cookiesArray,
+            $responseContent
+        ];
+    }
+
 
     function limpiarNumeroTelefono($numero) {
         // Eliminar el signo más y cualquier espacio
