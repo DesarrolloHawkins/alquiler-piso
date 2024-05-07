@@ -107,6 +107,8 @@ class Kernel extends ConsoleKernel
                             // '_csrf' => $csrfToken
                         ];
                         $this->webPol($data);
+                        $cliente->wepbol = true;
+                        $cliente->save();
                         return true;
                     }else{
                         $huesped = Huesped::where('reserva_id', $reservasEntrada->id)
@@ -142,6 +144,8 @@ class Kernel extends ConsoleKernel
                                 // '_csrf' => $csrfToken
                             ];
                             $this->webPol($data);
+                            $huesped->wepbol = true;
+                            $huesped->save();
                         }
                         $reservasEntrada->enviado_webpol = true;
                         $reservasEntrada->save();
