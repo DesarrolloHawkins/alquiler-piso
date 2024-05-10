@@ -99,7 +99,7 @@
                             </a>
                           </li>
                           <li>
-                            <a href="{{route('reservas.index')}}"" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
+                            <a href="{{route('reservas.index')}}" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-calendar-days me-2"></i>
                               Reservas
                             </a>
@@ -114,6 +114,12 @@
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-user-astronaut me-2"></i>
                               Asistente
+                            </a>
+                          </li>
+                          <li>
+                            <a href="{{route('apartamentos.admin.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
+                                <i class="fa-solid fa-file-lines me-2"></i>
+                              Apartamentos
                             </a>
                           </li>
                           <li>

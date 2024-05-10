@@ -27,6 +27,10 @@ Auth::routes();
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/admin', function () { return view('admin.dashboard');})->name('inicio');
 
+    // Apartamentos
+    Route::get('/apartamentos', [App\Http\Controllers\ApartamentosController::class, 'indexAdmin'])->name('apartamentos.admin.index');
+    Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
+    Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
 
     // Reservas
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
