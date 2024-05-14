@@ -18,6 +18,7 @@ use libphonenumber\PhoneNumberUtil;
 use libphonenumber\PhoneNumberToCarrierMapper;
 use libphonenumber\geocoding\PhoneNumberOfflineGeocoder;
 use libphonenumber\PhoneNumberFormat;
+use Illuminate\Support\Facades\Log;
 
 class WhatsappController extends Controller
 {
@@ -500,27 +501,25 @@ class WhatsappController extends Controller
 		}
 		return $string;
 	}
-    public function contestarWhatsapp( $phone, $texto ){
+    public function contestarWhatsapp($phone, $texto) {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-        // return $texto;
-
-        $mensajePersonalizado = '{
-            "messaging_product": "whatsapp",
-            "recipient_type": "individual",
-            "to": "'.$phone.'",
-            "type": "text",
-            "text": {
-                "body": "'.$texto.'"
-            }
-        }';
-
-        // return $mensajePersonalizado;
-
+    
+        // Construir la carga útil como un array en lugar de un string JSON
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phone,
+            "type" => "text",
+            "text" => [
+                "body" => $texto
+            ]
+        ];
+    
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
-
+    
         $curl = curl_init();
-
-        curl_setopt_array($curl, array(
+    
+        curl_setopt_array($curl, [
             CURLOPT_URL => $urlMensajes,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -529,20 +528,30 @@ class WhatsappController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $mensajePersonalizado,
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),  // Asegúrate de que mensajePersonalizado sea un array
+            CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $token
-            ),
-
-        ));
-
+            ],
+        ]);
+    
         $response = curl_exec($curl);
+        if ($response === false) {
+            $error = curl_error($curl);
+            curl_close($curl);
+            Log::error("Error en cURL al enviar mensaje de WhatsApp: " . $error);
+            return ['error' => $error];
+        }
         curl_close($curl);
-        // $responseJson = json_decode($response);
-        // Storage::disk('local')->put('response0001.txt', json_encode($response) . json_encode($mensajePersonalizado) );
-        return $response;
-
+    
+        try {
+            $responseJson = json_decode($response, true);
+            Storage::disk('local')->put("Respuesta_Envio_Whatsapp-{$phone}.txt", $response);
+            return $responseJson;
+        } catch (\Exception $e) {
+            Log::error("Error al guardar la respuesta de WhatsApp: " . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
     }
 
 

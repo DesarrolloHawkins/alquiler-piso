@@ -219,7 +219,7 @@ class Kernel extends ConsoleKernel
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
 
-                       // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
+                        // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
                         Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
 
@@ -326,7 +326,19 @@ class Kernel extends ConsoleKernel
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
-                        $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
+                        if ($reserva->apartamento_id === 1) {
+                            $data = $this->clavesMensajeAtico(
+                                $reserva->cliente->nombre,
+                                $code['nombre'], $codigoPuertaPrincipal,
+                                $code['codigo'],
+                                $reserva->cliente->telefono,
+                                $idiomaCliente,
+                                $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico'
+                            );
+                            # code...
+                        } else {
+                            $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
+                        }
 
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
@@ -337,7 +349,13 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
-                        $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+
+
+                        if ($reserva->apartamento_id === 1) {
+                            $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                        }else {
+                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                        }
                         $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                     }
                 }
@@ -929,6 +947,58 @@ class Kernel extends ConsoleKernel
         return $response;
     }
 
+    public function clavesMensajeAtico($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $template){
+        $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefono,
+            "type" => "template",
+            "template" => [
+                "name" => $template,
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $nombre],
+                            ["type" => "text", "text" => $apartamento],
+                            ["type" => "text", "text" => $puertaPrincipal],
+                            ["type" => "text", "text" => $codigoApartamento]
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$tokenEnv
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+    }
+
     public function consultaMensaje($nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -1400,6 +1470,219 @@ class Kernel extends ConsoleKernel
                 ';
                 return $temaplate;
                 break;
+        }
+
+    }
+
+    public function clavesEmailAtico($idioma, $cliente, $apartamento, $claveEntrada, $clavePiso){
+
+        switch ($idioma) {
+            case 'es':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Gracias por reservar en los apartamentos Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Hola '.$cliente.'!!
+                </p>
+                <p>
+                Te indico que la entrada debes realizarla después de las 14 horas
+                </p>
+                <p>
+                    La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                </p>
+                <p style="margin: 0 !important">
+                    Tu apartamento es el '.$apartamento.', los códigos para entrar al apartamento son: Para la puerta principal '.$claveEntrada.'.
+                </p>
+                <p>
+                Tienes que subir a la 3 planta, ahi estará la caja con sus llaves, clave es '.$clavePiso.' debes de darle a la pestaña negra y ahí estarán las llaves.
+                </p>
+                <p style="margin: 0 !important">
+                    Espero que pases una estancia maravillosa.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Gracias por utilizar nuestra aplicación!</p>
+                ';
+                return $temaplate;
+                break;
+
+            case 'fr':
+                $temaplate = '
+                <h3 style="color:#0F1739; text-align: center">
+                    Merci de votre réservation chez les appartements Hawkins!!
+                </h3>
+
+                <p style="margin: 0 !important">
+                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                </p>
+                <p style="margin: 0 !important">
+                    J’espère que vous passerez un séjour merveilleux.
+                </p>
+                <br>
+                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                ';
+
+                return $temaplate;
+                break;
+
+                case 'ar':
+                    $temaplate = '
+                    <h3 style="color:#0F1739; text-align: center">
+                        شكرًا لحجزك في شقق هوكينز!!
+                    </h3>
+                
+                    <p style="margin: 0 !important">
+                    مرحبًا '.$cliente.'!!
+                    </p>
+                    <p>
+                    يرجى ملاحظة أنه يمكنك تسجيل الدخول بعد الساعة 2 مساءً.
+                    </p>
+                    <p>
+                        موقع الشقق هو: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                    </p>
+                    <p style="margin: 0 !important">
+                        شقتك هي الرقم '.$apartamento.'، أكواد الدخول هي: للباب الرئيسي '.$claveEntrada.'.
+                    </p>
+                    <p>
+                    عليك الصعود إلى الطابق الثالث، حيث ستجد صندوقًا يحتوي على المفاتيح، الرمز هو '.$clavePiso.'. اضغط على اللسان الأسود للوصول إلى المفاتيح.
+                    </p>
+                    <p style="margin: 0 !important">
+                        أتمنى لك إقامة رائعة.
+                    </p>
+                    <br>
+                    <p style="margin: 0 !important">شكرًا لاستخدامك تطبيقنا!</p>
+                    ';
+                    return $temaplate;
+                    break;
+                
+
+                case 'de':
+                    $temaplate = '
+                    <h3 style="color:#0F1739; text-align: center">
+                        Danke für Ihre Buchung bei den Hawkins Apartments!!
+                    </h3>
+                
+                    <p style="margin: 0 !important">
+                    Hallo '.$cliente.'!!
+                    </p>
+                    <p>
+                    Bitte beachten Sie, dass der Check-in nach 14 Uhr möglich ist.
+                    </p>
+                    <p>
+                        Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                    </p>
+                    <p style="margin: 0 !important">
+                        Ihr Apartment ist das '.$apartamento.', die Zugangscodes sind: Für die Haupteingangstür '.$claveEntrada.'.
+                    </p>
+                    <p>
+                    Sie müssen in die 3. Etage gehen, dort finden Sie eine Box mit den Schlüsseln, der Code ist '.$clavePiso.'. Bitte drücken Sie die schwarze Lasche, um die Schlüssel zu entnehmen.
+                    </p>
+                    <p style="margin: 0 !important">
+                        Ich hoffe, Sie haben einen wunderbaren Aufenthalt.
+                    </p>
+                    <br>
+                    <p style="margin: 0 !important">Vielen Dank für die Nutzung unserer App!</p>
+                    ';
+                    return $temaplate;
+                    break;
+                
+
+                    case 'pt':
+                        $temaplate = '
+                        <h3 style="color:#0F1739; text-align: center">
+                            Obrigado por reservar nos apartamentos Hawkins!!
+                        </h3>
+                    
+                        <p style="margin: 0 !important">
+                        Olá '.$cliente.'!!
+                        </p>
+                        <p>
+                        Por favor, note que o check-in é após as 14 horas.
+                        </p>
+                        <p>
+                            A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                        </p>
+                        <p style="margin: 0 !important">
+                            Seu número de apartamento é '.$apartamento.', os códigos para entrar são: Para a porta principal '.$claveEntrada.'.
+                        </p>
+                        <p>
+                        Você deve subir ao 3º andar, onde encontrará uma caixa com as chaves, o código é '.$clavePiso.'.
+                        </p>
+                        <p style="margin: 0 !important">
+                            Espero que tenha uma estadia maravilhosa.
+                        </p>
+                        <br>
+                        <p style="margin: 0 !important">Obrigado por usar nosso aplicativo!</p>
+                        ';
+                        return $temaplate;
+                        break;
+                    
+
+                        case 'it':
+                            $temaplate = '
+                            <h3 style="color:#0F1739; text-align: center">
+                                Grazie per aver prenotato presso Hawkins Apartments!!
+                            </h3>
+                        
+                            <p style="margin: 0 !important">
+                            Ciao '.$cliente.'!!
+                            </p>
+                            <p>
+                            Ti ricordo che il check-in è possibile dopo le 14:00.
+                            </p>
+                            <p>
+                                La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                            </p>
+                            <p style="margin: 0 !important">
+                                Il tuo appartamento è il numero '.$apartamento.', i codici per entrare sono: Per la porta principale '.$claveEntrada.'.
+                            </p>
+                            <p>
+                            Devi salire al terzo piano, dove troverai una scatola con le chiavi, il codice è '.$clavePiso.'. Premi la linguetta nera per accedere alle chiavi.
+                            </p>
+                            <p style="margin: 0 !important">
+                                Spero che tu abbia un soggiorno meraviglioso.
+                            </p>
+                            <br>
+                            <p style="margin: 0 !important">Grazie per aver utilizzato la nostra applicazione!</p>
+                            ';
+                            return $temaplate;
+                            break;
+                        
+
+            default:
+                //en
+                    $temaplate = '
+                    <h3 style="color:#0F1739; text-align: center">
+                        Thank you for booking at Hawkins Apartments!!
+                    </h3>
+                
+                    <p style="margin: 0 !important">
+                    Hello '.$cliente.'!!
+                    </p>
+                    <p>
+                    Please note that check-in is after 2 PM.
+                    </p>
+                    <p>
+                        The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                    </p>
+                    <p style="margin: 0 !important">
+                        Your apartment number is '.$apartamento.', the entry codes are: For the main door '.$claveEntrada.'.
+                    </p>
+                    <p>
+                    You need to go up to the 3rd floor, where you will find a box with the keys, the code is '.$clavePiso.'. Please press the black tab to access the keys.
+                    </p>
+                    <p style="margin: 0 !important">
+                        I hope you have a wonderful stay.
+                    </p>
+                    <br>
+                    <p style="margin: 0 !important">Thank you for using our app!</p>
+                    ';
+                    return $temaplate;
+                    break;                
         }
 
     }
