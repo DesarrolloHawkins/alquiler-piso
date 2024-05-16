@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('comprobacion', function (Blueprint $table) {
+        Schema::create('comprobacion', function (Blueprint $table) {
             $table->id();
             $table->date('fecha')->nullable();
             $table->timestamps();
