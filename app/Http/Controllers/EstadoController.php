@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\EnvioClavesEmail;
+use App\Models\Comprobacion;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -29,9 +31,11 @@ class EstadoController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function comprobacionServer()
     {
-        //
+        Comprobacion::create([
+            'fecha' => Carbon::now()
+        ]);
     }
 
     /**
