@@ -23,6 +23,16 @@ class Kernel extends ConsoleKernel
 {
 
     /**
+     * The Artisan commands provided by your application.
+     *
+     * @var array
+     */
+    protected $commands = [
+        \App\Console\Commands\CheckComprobacion::class,
+    ];
+
+
+    /**
      * Define the application's command schedule.
      */
     protected function schedule(Schedule $schedule): void
@@ -46,6 +56,10 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
+        // Tarea comprobacion del estado del PC
+        // $schedule->command('check:comprobacion')->everyTenMinutes();
+
+        
         // $schedule->call(function (ClienteService $clienteService) {
         //     // Obtener la fecha de hoy
         //     $hoy = Carbon::now();
