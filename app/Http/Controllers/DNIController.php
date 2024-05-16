@@ -1196,7 +1196,7 @@ class DNIController extends Controller
         ];
 
         // Convertir tipo a mayúsculas para manejar la consistencia
-        $tipo = strtoupper($tipo);
+        $tipo = mb_strtoupper($tipo);
 
         if (array_key_exists($tipo, $paisesDni)) {
             // Devuelve el valor, si es europeo y el nombre del país (índice)
@@ -1245,9 +1245,9 @@ class DNIController extends Controller
         for ($i=0; $i < $reserva->numero_personas; $i++) {
             if ($i == 0 ) {
                 // dd($request->input('nacionalidad_'.$i));
-                $resultado = $this->obtenerNacionalidad($request->input('nacionalidad_'.$i));
-
+                
                 $cliente = Cliente::where('id', $reserva->cliente_id)->first();
+                $resultado = $this->obtenerNacionalidad($request->input('nacionalidad_'.$i));
                 // Comprobamos si la reserva ya tiene los dni entregados
                 $cliente->nombre = $request->input('nombre_'.$i);
                 $cliente->apellido1 = $request->input('apellido1_'.$i);
