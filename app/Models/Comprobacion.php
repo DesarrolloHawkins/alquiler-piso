@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Comprobacion extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'comprobacion';
+
       /**
      * The attributes that are mass assignable.
      *
