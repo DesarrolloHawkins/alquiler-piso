@@ -28,7 +28,8 @@ class CheckComprobacion extends Command
             if ($diffInMinutes > 10) {
                 $telefonos = [
                     'Ivan' => '34605621704',
-                    'Elena' => '34664368232'
+                    'Elena' => '34664368232',
+                    'Africa' => '34655659573'
                 ];
 
                 foreach($telefonos as $telefono){

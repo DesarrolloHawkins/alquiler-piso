@@ -57,7 +57,7 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         // Tarea comprobacion del estado del PC
-        $schedule->command('check:comprobacion')->everyTenMinutes();
+        $schedule->command('check:comprobacion')->everyFifteenMinutes();
 
         
         // $schedule->call(function (ClienteService $clienteService) {
