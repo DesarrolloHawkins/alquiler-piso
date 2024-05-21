@@ -118,81 +118,6 @@
                         Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
                     </div>
                     <div class="card-body">
-                        {{-- <form class="row g-3 needs-validation" novalidate>
-                            <div class="col-md-4">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="nombre" placeholder="Escriba su nombre..." required>
-                                    <label for="nombre">Nombre</label>
-                                    <div class="valid-feedback">
-                                        {{$textos['Correcto']}}
-                                    </div>
-                                    <div class="invalid-feedback">
-                                        Por favor el nombre es obligatorio.
-                                    </div>
-                                </div>
-                            
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-floating mb-3">
-                                    <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" required>
-                                    <label for="floatingInput">Email address</label>
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                                <div class="invalid-feedback">
-                                    Please choose a username.
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                            <label for="validationCustomUsername" class="form-label">Username</label>
-                            <div class="input-group has-validation">
-                                <span class="input-group-text" id="inputGroupPrepend">@</span>
-                                <input type="text" class="form-control" id="validationCustomUsername" aria-describedby="inputGroupPrepend" required>
-                                <div class="invalid-feedback">
-                                Please choose a username.
-                                </div>
-                            </div>
-                            </div>
-                            <div class="col-md-6">
-                            <label for="validationCustom03" class="form-label">City</label>
-                            <input type="text" class="form-control" id="validationCustom03" required>
-                            <div class="invalid-feedback">
-                                Please provide a valid city.
-                            </div>
-                            </div>
-                            <div class="col-md-3">
-                            <label for="validationCustom04" class="form-label">State</label>
-                            <select class="form-select" id="validationCustom04" required>
-                                <option selected disabled value="">Choose...</option>
-                                <option>...</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Please select a valid state.
-                            </div>
-                            </div>
-                            <div class="col-md-3">
-                            <label for="validationCustom05" class="form-label">Zip</label>
-                            <input type="text" class="form-control" id="validationCustom05" required>
-                            <div class="invalid-feedback">
-                                Please provide a valid zip.
-                            </div>
-                            </div>
-                            <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="invalidCheck" required>
-                                <label class="form-check-label" for="invalidCheck">
-                                Agree to terms and conditions
-                                </label>
-                                <div class="invalid-feedback">
-                                You must agree before submitting.
-                                </div>
-                            </div>
-                            </div>
-                            <div class="col-12">
-                            <button class="btn btn-primary" type="submit">Submit form</button>
-                            </div>
-                        </form> --}}
                         <div class="row align-items-center">
                             <div class="col-12" > Numero de Adultos:</div>
                             <div class="col-6">
@@ -223,8 +148,6 @@
                 
                 <div class="card">
                     <div class="card-header bg-color-primero">
-                        {{-- {{dd($textos)}} --}}
-                        {{-- <p>{{ __('messages.welcome') }}</p> --}}
                         {{$textos['Inicio']}}
                     </div>
                     <div class="card-body">
@@ -339,21 +262,12 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3 ">
-                                                {{-- {{dd($nacionalidadComun)}} --}}
                                                 <select 
                                                 name="nacionalidad_{{$i}}" 
                                                 id="nacionalidad_{{$i}}" 
                                                 class="form-select js-example-basic-single{{$i}} nacionalidad" 
                                                 aria-label="Pais" 
                                                 placeholder="{{$textos['Pais']}}">
-                                                    {{-- @foreach ($paises as $pais)
-                                                        <option 
-                                                        value="{{$pais}}"
-                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
-                                                        >
-                                                            {{$pais}}
-                                                        </option>
-                                                    @endforeach --}}
                                                     @foreach ($paises as $pais)
                                                         <option value="{{$pais}}"
                                                             {{
@@ -539,7 +453,7 @@
                                                             {{$textos['dni_front_obli']}}
                                                         </div>
                                                         @error('trasera_{{$i}}')
-                                                            <div class="alert alert-danger">{{ $message }}</div>
+                                                            <div class="alert alert-danger">{{ $ message }}</div>
                                                         @enderror
                                                     </div>
                                                 </div>
@@ -593,7 +507,6 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    // In your Javascript (external .js resource or <script> tag)
     $(document).ready(function() {
         var cantidadPersonas = @json($reserva->numero_personas);
         for (let i = 0; i < cantidadPersonas; i++) {
@@ -604,25 +517,25 @@
             let valor = parseInt($('#numero').val(), 10); // Convierte el valor a un número entero
             valor += 1;
             if (valor == 0) {
-                valor =1
-            }            $('#numero').val(valor);
-            console.log($('#numero').val())
-        })
+                valor = 1;
+            }
+            $('#numero').val(valor);
+            console.log($('#numero').val());
+        });
         $('#restar').on('click', function(){
             let valor = parseInt($('#numero').val(), 10); // Convierte el valor a un número entero
             valor -= 1;
             if (valor == 0) {
-                valor =1
+                valor = 1;
             }
-
             $('#numero').val(valor);
-            console.log($('#numero').val())
-        })
+            console.log($('#numero').val());
+        });
 
         $('#enviar').click(function() {
             var cantidad = $('#numero').val();
             var id = $('#idReserva').val();
-            console.log(id)
+            console.log(id);
             $.ajax({
                 url: '/guardar-numero-personas',
                 method: 'POST',
@@ -632,69 +545,48 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
-                    // $('#formularios').html('');
-                    // for (var i = 0; i < cantidad; i++) {
-                    //     $('#formularios').append(`<form><input type="text" name="campo${i}"></form>`);
-                    // }
                     window.location.reload();
                 }
             });
         });
 
-        var tipoDocumento = document.querySelectorAll('.tiposDocumentos')
-        console.log(tipoDocumento)
-        tipoDocumento.forEach( function(tipo){
-            console.log(tipo)
+        var tipoDocumento = document.querySelectorAll('.tiposDocumentos');
+        tipoDocumento.forEach(function(tipo){
             tipo.addEventListener('change', function(e) {
-                console.log(e)
                 var valor = this.value;
-                var info = this.getAttribute('data-info')
-                console.log(valor)
-                console.log(info)
-                if (valor === 'I' || valor === 'N' || valor === 'X' || valor === 'C' || valor === 'D') {
-                    // dniUploaed - pasaporteUpload
+                var info = this.getAttribute('data-info');
+                if (valor === '1') {
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = true;
                     document.getElementById('trasera_'+info).required = true;
                     document.getElementById('pasaporteUpload_'+info).style.display = 'none';
                     document.getElementById('frontal_'+info).required = false;
-                } else if (valor === 'P') {
+                } else if (valor === '2') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = false;
                     document.getElementById('trasera_'+info).required = false;
                     document.getElementById('frontal_'+info).required = true;
-                } else {
-
                 }
             });
-        })
+        });
     });
-    // Example starter JavaScript for disabling form submissions if there are invalid fields
+
     (function () {
-    'use strict'
-
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.querySelectorAll('.needs-validation')
-
-    // Loop over them and prevent submission
-    Array.prototype.slice.call(forms)
-        .forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            console.log(form.checkValidity())
-            if (!form.checkValidity()) {
-            event.preventDefault()
-            event.stopPropagation()
-            }
-            var tipoDocumento = 
-
-            form.classList.add('was-validated')
-        }, false)
-        })
-    })()
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
 
     function previewImage(info, event) {
-        console.log(info)
         var reader = new FileReader();
         reader.onload = function(){
             var output = document.getElementById('image-preview_frontal_'+info);
@@ -703,7 +595,6 @@
         reader.readAsDataURL(event.target.files[0]);
     }
     
-
     function previewImage2(info, event) {
         var reader = new FileReader();
         reader.onload = function(){
@@ -720,149 +611,88 @@
         };
         reader.readAsDataURL(event.target.files[0]);
     }
-    // Si ya existe una URL de imagen, mostrar la vista previa al cargar la página
-    // window.onload = function() {
 
-    //     var reserva = @json($reserva);
-    //     var data = @json($data);
-
-    //     for (let i = 0; i < data.length; i++) {
-    //         if (data[i].tipo_documento == 1) {
-                
-    //             var divPhotos = document.getElementById('dniUploaed_'+i);
-    //             divPhotos.style.display = 'block';
-    //             var imageUrl = data[i].frontal.url;
-
-    //             if (imageUrl) {
-    //                 console.log(imageUrl)
-    //                 var output = document.getElementById('image-preview_frontal_'+i);
-    //                 output.src = '/'+imageUrl;
-    //                 output.style.display = 'block';
-    //             }
-
-    //             var imageUrl2 = data[i].trasera.url;
-
-    //             if (imageUrl2) {
-    //                 console.log(imageUrl2)
-
-    //                 var output = document.getElementById('image-preview_trasera_'+i);
-    //                 output.src = '/'+imageUrl2;
-    //                 output.style.display = 'block';
-    //             }
-    //         } else {
-    //             var divPhotos = document.getElementById('pasaporteUpload_'+i);
-    //             divPhotos.style.display = 'block';
-    //             var imageUrl3 = data[i].pasaporte.url ? data[i].pasaporte.url : null;
-
-    //             if (imageUrl3) {
-    //                 console.log(imageUrl3)
-
-    //                 var output = document.getElementById('image-preview_pasaporte_'+i);
-    //                 output.src = '/'+imageUrl3;
-    //                 output.style.display = 'block';
-    //             }
-    //         }
-    //     }
-        
-        
-    // };
     window.onload = function() {
-    var reserva = @json($reserva);
-    var data = @json($data);
+        var reserva = @json($reserva);
+        var data = @json($data);
 
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].tipo_documento == 1) {
-            var divPhotos = document.getElementById('dniUploaed_' + i);
-            divPhotos.style.display = 'block';
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].tipo_documento == 1) {
+                var divPhotos = document.getElementById('dniUploaed_' + i);
+                divPhotos.style.display = 'block';
 
-            // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
-            if (data[i].frontal && data[i].frontal.url) {
-                console.log(data[i].frontal.url);
-                var output = document.getElementById('image-preview_frontal_' + i);
-                output.src = '/' + data[i].frontal.url;
-                output.style.display = 'block';
-            }
+                if (data[i].frontal && data[i].frontal.url) {
+                    var output = document.getElementById('image-preview_frontal_' + i);
+                    output.src = '/' + data[i].frontal.url;
+                    output.style.display = 'block';
+                }
 
-            // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
-            if (data[i].trasera && data[i].trasera.url) {
-                console.log(data[i].trasera.url);
-                var output = document.getElementById('image-preview_trasera_' + i);
-                output.src = '/' + data[i].trasera.url;
-                output.style.display = 'block';
-            }
-        } else {
-            var divPhotos = document.getElementById('pasaporteUpload_' + i);
-            divPhotos.style.display = 'block';
-
-            // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
-            if (data[i].pasaporte && data[i].pasaporte.url) {
-                console.log(data[i].pasaporte.url);
-                var output = document.getElementById('image-preview_pasaporte_' + i);
-                output.src = '/' + data[i].pasaporte.url;
-                output.style.display = 'block';
-            }
-        }
-    }
-}
-
-$(document).ready(function() {
-    $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
-
-    // Función para manejar la lógica de selección y actualización de tipos de documento
-    function handleNationalityChange() {
-        var selectedValue = $('.nacionalidad').val();
-        var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
-
-        console.log("Valor seleccionado:", normalizedValue);
-
-        var opciones = @json($optionesTipo);
-        var paisesDni = @json($paisesDni);
-        var countryInfo = paisesDni[normalizedValue];
-
-        console.log("Información del país:", countryInfo);
-
-        if (countryInfo) {
-            let indices;
-            let nuevasOpciones = [];
-
-            if (normalizedValue === "ESPAÑA") {
-                indices = [0, 4, 5];
-            } else if (countryInfo.isEuropean) {
-                indices = [0, 1, 2, 3];
+                if (data[i].trasera && data[i].trasera.url) {
+                    var output = document.getElementById('image-preview_trasera_' + i);
+                    output.src = '/' + data[i].trasera.url;
+                    output.style.display = 'block';
+                }
             } else {
-                indices = [0, 1, 2];
+                var divPhotos = document.getElementById('pasaporteUpload_' + i);
+                divPhotos.style.display = 'block';
+
+                if (data[i].pasaporte && data[i].pasaporte.url) {
+                    var output = document.getElementById('image-preview_pasaporte_' + i);
+                    output.src = '/' + data[i].pasaporte.url;
+                    output.style.display = 'block';
+                }
             }
-
-            indices.forEach(i => {
-                nuevasOpciones.push(opciones[i]);
-            });
-
-            $('.tiposDocumentos').empty().each(function() {
-                var select = $(this);
-                nuevasOpciones.forEach(opcion => {
-                    select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
-                });
-            });
-        } else {
-            console.log("No se encontró información para:", normalizedValue);
         }
-    }
+    };
 
-    // Evento de cambio en el select de nacionalidad
-    $('.nacionalidad').on('change', handleNationalityChange);
+    $(document).ready(function() {
+        $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
 
-    // Ejecuta la función al cargar para manejar el valor inicial
-    handleNationalityChange();
+        function handleNationalityChange() {
+            var selectedValue = $('.nacionalidad').val();
+            var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
 
-    // Función para normalizar texto
-    function normalizeText(input) {
-        return input
-            .normalize("NFD") // Descompone las letras de los diacríticos
-            .replace(/(?<!n[\u0300-\u036f])[\u0300-\u036f]/gi, "") // Elimina diacríticos excluyendo la "ñ"
-            .toUpperCase(); // Convierte todo a mayúsculas
-    }
-});
+            var opciones = @json($optionesTipo);
+            var paisesDni = @json($paisesDni);
+            var countryInfo = paisesDni[normalizedValue];
 
+            if (countryInfo) {
+                let indices;
+                let nuevasOpciones = [];
 
+                if (normalizedValue === "ESPAÑA") {
+                    indices = [0, 4, 5];
+                } else if (countryInfo.isEuropean) {
+                    indices = [0, 1, 2, 3];
+                } else {
+                    indices = [0, 1, 2];
+                }
+
+                indices.forEach(i => {
+                    nuevasOpciones.push(opciones[i]);
+                });
+
+                $('.tiposDocumentos').empty().each(function() {
+                    var select = $(this);
+                    nuevasOpciones.forEach(opcion => {
+                        select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
+                    });
+                });
+            } else {
+                console.log("No se encontró información para:", normalizedValue);
+            }
+        }
+
+        $('.nacionalidad').on('change', handleNationalityChange);
+
+        handleNationalityChange();
+
+        function normalizeText(input) {
+            return input
+                .normalize("NFD")
+                .replace(/(?<!n[\u0300-\u036f])[\u0300-\u036f]/gi, "")
+                .toUpperCase();
+        }
+    });
 </script>
 @endsection
