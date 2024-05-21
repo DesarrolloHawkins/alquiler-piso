@@ -547,7 +547,7 @@
                                                     <h4>{{$textos['Imagen.Pasaporte']}}</h4>
                                                     <div class="files mt-3">
                                                         <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
-                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('frontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('pasaporte_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
                                                             {{$textos['Correcto']}}
