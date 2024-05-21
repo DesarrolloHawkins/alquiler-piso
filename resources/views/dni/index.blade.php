@@ -675,7 +675,9 @@
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = false;
                     document.getElementById('trasera_'+info).required = false;
-                    document.getElementById('frontal_'+info).required = true;
+                    // document.getElementById('frontal_'+info).required = true;
+                    document.getElementById('pasaporte_'+info).required = true;
+
                 } else {
 
                 }
@@ -793,6 +795,7 @@
                 var output = document.getElementById('image-preview_frontal_' + i);
                 output.src = '/' + data[i].frontal.url;
                 output.style.display = 'block';
+                document.getElementById('fontal_'+i).required = true;
             }
 
             // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
@@ -801,6 +804,8 @@
                 var output = document.getElementById('image-preview_trasera_' + i);
                 output.src = '/' + data[i].trasera.url;
                 output.style.display = 'block';
+                document.getElementById('trasera_'+i).required = true;
+
             }
         } else {
             var divPhotos = document.getElementById('pasaporteUpload_' + i);
@@ -812,6 +817,8 @@
                 var output = document.getElementById('image-preview_pasaporte_' + i);
                 output.src = '/' + data[i].pasaporte.url;
                 output.style.display = 'block';
+                document.getElementById('pasaporte_'+i).required = true;
+
             }
         }
     }
