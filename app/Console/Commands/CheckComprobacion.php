@@ -29,7 +29,8 @@ class CheckComprobacion extends Command
                 $telefonos = [
                     'Ivan' => '34605621704',
                     'Elena' => '34664368232',
-                    'Africa' => '34655659573'
+                    'Africa' => '34655659573',
+                    'David' => '34622440984'
                 ];
 
                 foreach($telefonos as $telefono){
