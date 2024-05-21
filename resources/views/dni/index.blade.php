@@ -453,7 +453,7 @@
                                                             {{$textos['dni_front_obli']}}
                                                         </div>
                                                         @error('trasera_{{$i}}')
-                                                            <div class="alert alert-danger">{{ $ message }}</div>
+                                                            <div class="alert alert-danger">{{ $message }}</div>
                                                         @enderror
                                                     </div>
                                                 </div>
