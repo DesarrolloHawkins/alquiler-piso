@@ -597,10 +597,11 @@
     $(document).ready(function() {
 
 
-        var tipoDocumentoInit = document.querySelectorAll('.tiposDocumentos')
-        tipoDocumentoInit.forEach( function(tipo){
-            console.log("TIPO DOCUMENTO: " + tipo[0].value)
-        })
+        var tipoDocumentoInit = document.querySelectorAll('.tiposDocumentos');
+        tipoDocumentoInit.forEach(function(select) {
+            console.log("TIPO DOCUMENTO: " + select.value);
+        });
+
 
 
 
