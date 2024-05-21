@@ -787,6 +787,7 @@
         if (data[i].tipo_documento == 1) {
             var divPhotos = document.getElementById('dniUploaed_' + i);
             divPhotos.style.display = 'block';
+            console.log('DNI')
 
             // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
             if (data[i].frontal && data[i].frontal.url) {
@@ -809,7 +810,7 @@
         } else {
             var divPhotos = document.getElementById('pasaporteUpload_' + i);
             divPhotos.style.display = 'block';
-
+            console.log('Pasaporte')
             // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
             if (data[i].pasaporte && data[i].pasaporte.url) {
                 console.log(data[i].pasaporte.url);
