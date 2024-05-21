@@ -811,13 +811,13 @@
             var divPhotos = document.getElementById('pasaporteUpload_' + i);
             divPhotos.style.display = 'block';
             console.log('Pasaporte')
+            document.getElementById('pasaporte_'+i).required = true;
             // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
             if (data[i].pasaporte && data[i].pasaporte.url) {
                 console.log(data[i].pasaporte.url);
                 var output = document.getElementById('image-preview_pasaporte_' + i);
                 output.src = '/' + data[i].pasaporte.url;
                 output.style.display = 'block';
-                document.getElementById('pasaporte_'+i).required = true;
 
             }
         }
