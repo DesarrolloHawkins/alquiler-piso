@@ -677,7 +677,6 @@
                     document.getElementById('trasera_'+info).required = false;
                     // document.getElementById('frontal_'+info).required = true;
                     document.getElementById('pasaporte_'+info).required = true;
-
                 } else {
 
                 }
