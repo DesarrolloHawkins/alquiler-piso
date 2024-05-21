@@ -653,9 +653,9 @@
         });
 
         var tipoDocumento = document.querySelectorAll('.tiposDocumentos')
-        console.log(tipoDocumento)
+        console.log('NODOS: ',tipoDocumento)
         tipoDocumento.forEach( function(tipo){
-            console.log(tipo)
+            console.log('TIPOS: ', tipo)
             tipo.addEventListener('change', function(e) {
                 console.log(e)
                 var valor = this.value;
