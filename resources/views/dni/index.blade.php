@@ -595,6 +595,17 @@
 <script>
     // In your Javascript (external .js resource or <script> tag)
     $(document).ready(function() {
+
+
+        var tipoDocumentoInit = document.querySelectorAll('.tiposDocumentos')
+        tipoDocumento.forEach( function(tipo){
+            console.log("TIPO DOCUMENTO: " + tipo)
+        })
+
+
+
+
+
         var cantidadPersonas = @json($reserva->numero_personas);
         for (let i = 0; i < cantidadPersonas; i++) {
             $('.js-example-basic-single'+i).select2();
