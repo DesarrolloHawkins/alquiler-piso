@@ -599,7 +599,7 @@
 
         var tipoDocumentoInit = document.querySelectorAll('.tiposDocumentos')
         tipoDocumentoInit.forEach( function(tipo){
-            console.log("TIPO DOCUMENTO: " + tipo.value)
+            console.log("TIPO DOCUMENTO: " + tipo[0].value)
         })
 
 
