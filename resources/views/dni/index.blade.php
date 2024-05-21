@@ -810,7 +810,7 @@
         } else {
             var divPhotos = document.getElementById('pasaporteUpload_' + i);
             divPhotos.style.display = 'block';
-            console.log('Pasaporte')
+            console.log('pasaporte_'+i)
             document.getElementById('pasaporte_'+i).required = true;
             // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
             if (data[i].pasaporte && data[i].pasaporte.url) {
