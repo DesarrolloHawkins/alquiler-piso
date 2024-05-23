@@ -302,14 +302,14 @@
                                             <div class="form-floating mb-3">
                                                 <select required data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
                                                     <option value="{{null}}" selected>Seleccion el tipo</option>
-                                                    <option 
+                                                    {{-- <option 
                                                     value="1"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
                                                      >{{$textos['Dni']}}</option>
                                                     <option 
                                                     value="2"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
-                                                     >{{$textos['Pasaporte']}}</option>
+                                                     >{{$textos['Pasaporte']}}</option> --}}
                                                 </select>
                                                 <label for="tipo_documento_{{$i}}">{{$textos['Tipo.Documento']}}</label>
 
@@ -430,7 +430,7 @@
                                                 <div id="dniUploaed_{{$i}}" style="display: none">
                                                     <h4>{{$textos['Imagen.Frontal']}}</h4>
                                                     <div class="files mt-3">
-                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -446,7 +446,7 @@
                                                     <h4>{{$textos['Imagen.Trasera']}}</h4>
 
                                                     <div class="files mt-3">
-                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Trasera']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -463,7 +463,7 @@
                                                 <div id="pasaporteUpload_{{$i}}" style="display: none">
                                                     <h4>{{$textos['Imagen.Pasaporte']}}</h4>
                                                     <div class="files mt-3">
-                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('pasaporte_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -574,8 +574,8 @@
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
                     document.getElementById('fontal_'+info).required = true;
                     document.getElementById('trasera_'+info).required = true;
+                    document.getElementById('pasaporte_'+info).required = false;
                     document.getElementById('pasaporteUpload_'+info).style.display = 'none';
-                    document.getElementById('frontal_'+info).required = false;
                 } else if (valor === 'P') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
@@ -685,12 +685,12 @@
 }
 
 $(document).ready(function() {
-    $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
+    // $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
 
     // Función para normalizar texto
     function normalizeText(text) {
         // Implementa la lógica de normalización de texto aquí si es necesario
-        return text.trim().toLowerCase();
+        return text.trim().toUpperCase();
     }
 
     // Función para manejar la lógica de selección y actualización de tipos de documento
@@ -701,7 +701,11 @@ $(document).ready(function() {
         console.log("Valor seleccionado:", normalizedValue);
 
         var opciones = @json($optionesTipo);
+        console.log("Opciones del país:", opciones);
+
         var paisesDni = @json($paisesDni);
+        console.log("Paises del país:", paisesDni);
+
         var countryInfo = paisesDni[normalizedValue];
 
         console.log("Información del país:", countryInfo);

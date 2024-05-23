@@ -1285,7 +1285,7 @@ class DNIController extends Controller
                 //     'fechaEntrada' => '21/12/2023',
                 //     '_csrf' => $csrfToken
                 // ];
-                if ($request->input('tipo_documento_'.$i) == 1) {
+                if ($request->input('tipo_documento_'.$i) != 'P') {
 
                     // Si tenemos imagen Frontal DNI
                     if($request->hasFile('fontal_'.$i)){
@@ -1299,7 +1299,7 @@ class DNIController extends Controller
                         }
                     }
 
-                    if ($request->input('tipo_documento_'.$i) == 1) {
+                    if ($request->input('tipo_documento_'.$i) != 'P') {
                         // Si no obtenemos imagen Frontal del DNI
                         $frontal = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 13)
@@ -1321,7 +1321,7 @@ class DNIController extends Controller
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
                     }
-                    if ($request->input('tipo_documento_'.$i) == 1) {
+                    if ($request->input('tipo_documento_'.$i) != 'P') {
                         $trasera = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 14)
                         ->first();
