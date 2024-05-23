@@ -1343,7 +1343,7 @@ class DNIController extends Controller
                             return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
                         }
                     }
-                    if ($request->input('tipo_documento_'.$i) == 2) {
+                    if ($request->input('tipo_documento_'.$i) == 'P') {
                         $pasaporte = Photo::where('reserva_id', $reserva->id)
                         ->where('photo_categoria_id', 15)
                         ->first();
@@ -1380,7 +1380,7 @@ class DNIController extends Controller
                     $huesped->save();
                     // dd($huesped);
 
-                    if ($request->input('tipo_documento_'.$i) == 1) {
+                    if ($request->input('tipo_documento_'.$i) != 'P') {
 
                         // Si tenemos imagen Frontal DNI
                         if($request->hasFile('fontal_'.$i)){
@@ -1394,7 +1394,7 @@ class DNIController extends Controller
                             }
                         } else {
 
-                            if ($request->input('tipo_documento_'.$i) == 1) {
+                            if ($request->input('tipo_documento_'.$i) != 'P') {
                                 $frontal = Photo::where('huespedes_id', $huesped->id)
                                 ->where('photo_categoria_id', 13)
                                 ->first();
@@ -1417,7 +1417,7 @@ class DNIController extends Controller
                             }
                             $reserva->dni_entregado = true;
                         } else {
-                            if ($request->input('tipo_documento_'.$i) == 1) {
+                            if ($request->input('tipo_documento_'.$i) != 'P') {
                                 $trasera = Photo::where('huespedes_id', $huesped->id)
                                 ->where('photo_categoria_id', 14)
                                 ->first();
@@ -1441,7 +1441,7 @@ class DNIController extends Controller
                             }
                             $reserva->dni_entregado = true;
                         } else {
-                            if ($request->input('tipo_documento_'.$i) == 2) {
+                            if ($request->input('tipo_documento_'.$i) == 'P') {
                                 $pasaporte = Photo::where('huespedes_id', $huesped->id)
                                 ->where('photo_categoria_id', 15)
                                 ->first();
