@@ -513,7 +513,7 @@
                                                 <div id="dniUploaed_{{$i}}" style="display: none">
                                                     <h4>{{$textos['Imagen.Frontal']}}</h4>
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
+                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -529,7 +529,7 @@
                                                     <h4>{{$textos['Imagen.Trasera']}}</h4>
 
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
+                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Trasera']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -546,7 +546,7 @@
                                                 <div id="pasaporteUpload_{{$i}}" style="display: none">
                                                     <h4>{{$textos['Imagen.Pasaporte']}}</h4>
                                                     <div class="files mt-3">
-                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
+                                                        <input required type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
                                                         <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('pasaporte_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
                                                         <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
                                                         <div class="valid-feedback">
@@ -596,18 +596,8 @@
     // In your Javascript (external .js resource or <script> tag)
     $(document).ready(function() {
 
-
-        var tipoDocumentoInit = document.querySelectorAll('.tiposDocumentos');
-        tipoDocumentoInit.forEach(function(select) {
-            console.log("TIPO DOCUMENTO: " + select.value);
-        });
-
-
-
-
-
-
         var cantidadPersonas = @json($reserva->numero_personas);
+
         for (let i = 0; i < cantidadPersonas; i++) {
             $('.js-example-basic-single'+i).select2();
         }
@@ -630,7 +620,6 @@
             $('#numero').val(valor);
             console.log($('#numero').val())
         })
-
         $('#enviar').click(function() {
             var cantidad = $('#numero').val();
             var id = $('#idReserva').val();
@@ -682,16 +671,17 @@
                 }
             });
         })
-    });
+    })
+
     // Example starter JavaScript for disabling form submissions if there are invalid fields
     (function () {
-    'use strict'
+        'use strict'
 
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.querySelectorAll('.needs-validation')
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.querySelectorAll('.needs-validation')
 
-    // Loop over them and prevent submission
-    Array.prototype.slice.call(forms)
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms)
         .forEach(function (form) {
         form.addEventListener('submit', function (event) {
             console.log(form.checkValidity())
@@ -715,8 +705,6 @@
         };
         reader.readAsDataURL(event.target.files[0]);
     }
-    
-
     function previewImage2(info, event) {
         var reader = new FileReader();
         reader.onload = function(){
@@ -733,52 +721,7 @@
         };
         reader.readAsDataURL(event.target.files[0]);
     }
-    // Si ya existe una URL de imagen, mostrar la vista previa al cargar la página
-    // window.onload = function() {
-
-    //     var reserva = @json($reserva);
-    //     var data = @json($data);
-
-    //     for (let i = 0; i < data.length; i++) {
-    //         if (data[i].tipo_documento == 1) {
-                
-    //             var divPhotos = document.getElementById('dniUploaed_'+i);
-    //             divPhotos.style.display = 'block';
-    //             var imageUrl = data[i].frontal.url;
-
-    //             if (imageUrl) {
-    //                 console.log(imageUrl)
-    //                 var output = document.getElementById('image-preview_frontal_'+i);
-    //                 output.src = '/'+imageUrl;
-    //                 output.style.display = 'block';
-    //             }
-
-    //             var imageUrl2 = data[i].trasera.url;
-
-    //             if (imageUrl2) {
-    //                 console.log(imageUrl2)
-
-    //                 var output = document.getElementById('image-preview_trasera_'+i);
-    //                 output.src = '/'+imageUrl2;
-    //                 output.style.display = 'block';
-    //             }
-    //         } else {
-    //             var divPhotos = document.getElementById('pasaporteUpload_'+i);
-    //             divPhotos.style.display = 'block';
-    //             var imageUrl3 = data[i].pasaporte.url ? data[i].pasaporte.url : null;
-
-    //             if (imageUrl3) {
-    //                 console.log(imageUrl3)
-
-    //                 var output = document.getElementById('image-preview_pasaporte_'+i);
-    //                 output.src = '/'+imageUrl3;
-    //                 output.style.display = 'block';
-    //             }
-    //         }
-    //     }
-        
-        
-    // };
+   
     window.onload = function() {
     var reserva = @json($reserva);
     var data = @json($data);
