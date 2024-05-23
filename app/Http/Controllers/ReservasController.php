@@ -218,25 +218,25 @@ class ReservasController extends Controller
                 }else if($data['origen'] == 'Airbnb'){
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
                     switch ($data['apartamento']) {
-                        case 'Ático nuevo en pleno centro. Plaza alta.':
+                        case 'Atico nueva contruccion en el centro de Algeciras':
                             $apartamento = (object) ['id'=> 1];
                             break;
-                        case 'Apartamento interior Algeciras 2a':
+                        case 'Apartamento interior en el centro de Algeciras 2A':
                             $apartamento = (object) ['id'=> 2];
                             break;
-                        case 'Apartamento en el absoluto centro 2b':
+                        case 'Apartamento en el absoluto centro 2B':
                             $apartamento = (object) ['id'=> 3];
                             break;
                         case 'Apartamento interior centro en Algeciras 1º A':
                             $apartamento = (object) ['id'=> 4];
                             break;
-                        case 'Apartamento en absoluto centro. 1ºB':
+                        case 'Apartamento de 2020 a estrenar en pleno centro1B':
                             $apartamento = (object) ['id'=> 5];
                             break;
-                        case 'Apartamento en absoluto centro. ba':
+                        case 'Apartamento interior en el absoluto centro BA':
                             $apartamento = (object) ['id'=> 6];
                             break;
-                        case 'ÁApartamento BB Centro Algeciras':
+                        case 'Apartamento BB Centro Algeciras':
                             $apartamento = (object) ['id'=> 7];
                             break;
 
