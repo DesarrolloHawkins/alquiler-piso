@@ -1480,7 +1480,7 @@ class DNIController extends Controller
                     $huespedFinal = Huesped::create($huespedNew);
                     // dd($huespedNew);
 
-                    if ($request->input('tipo_documento_'.$i) == 1) {
+                    if ($request->input('tipo_documento_'.$i) != 'P') {
                         // Si tenemos imagen Frontal DNI
                         if($request->hasFile('fontal_'.$i)){
                             // Imagen Frontal DNI
@@ -1493,7 +1493,7 @@ class DNIController extends Controller
                             }
 
                         }
-                        if ($request->input('tipo_documento_'.$i) == 1) {
+                        if ($request->input('tipo_documento_'.$i) != 'P') {
                             $frontal = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 13)
                             ->first();
@@ -1513,7 +1513,7 @@ class DNIController extends Controller
                             }
                             $reserva->dni_entregado = true;
                         }
-                        if ($request->input('tipo_documento_'.$i) == 1) {
+                        if ($request->input('tipo_documento_'.$i) != 'P') {
                             $trasera = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 14)
                             ->first();
@@ -1535,7 +1535,7 @@ class DNIController extends Controller
                             }
                             $reserva->dni_entregado = true;
                         }
-                        if ($request->input('tipo_documento_'.$i) == 2) {
+                        if ($request->input('tipo_documento_'.$i) == 'P') {
                             $pasaporte = Photo::where('huespedes_id', $huespedFinal->id)
                             ->where('photo_categoria_id', 15)
                             ->first();
