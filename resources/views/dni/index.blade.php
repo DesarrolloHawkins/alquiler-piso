@@ -118,81 +118,6 @@
                         Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
                     </div>
                     <div class="card-body">
-                        {{-- <form class="row g-3 needs-validation" novalidate>
-                            <div class="col-md-4">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="nombre" placeholder="Escriba su nombre..." required>
-                                    <label for="nombre">Nombre</label>
-                                    <div class="valid-feedback">
-                                        {{$textos['Correcto']}}
-                                    </div>
-                                    <div class="invalid-feedback">
-                                        Por favor el nombre es obligatorio.
-                                    </div>
-                                </div>
-                            
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-floating mb-3">
-                                    <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" required>
-                                    <label for="floatingInput">Email address</label>
-                                </div>
-                                <div class="valid-feedback">
-                                    Looks good!
-                                </div>
-                                <div class="invalid-feedback">
-                                    Please choose a username.
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                            <label for="validationCustomUsername" class="form-label">Username</label>
-                            <div class="input-group has-validation">
-                                <span class="input-group-text" id="inputGroupPrepend">@</span>
-                                <input type="text" class="form-control" id="validationCustomUsername" aria-describedby="inputGroupPrepend" required>
-                                <div class="invalid-feedback">
-                                Please choose a username.
-                                </div>
-                            </div>
-                            </div>
-                            <div class="col-md-6">
-                            <label for="validationCustom03" class="form-label">City</label>
-                            <input type="text" class="form-control" id="validationCustom03" required>
-                            <div class="invalid-feedback">
-                                Please provide a valid city.
-                            </div>
-                            </div>
-                            <div class="col-md-3">
-                            <label for="validationCustom04" class="form-label">State</label>
-                            <select class="form-select" id="validationCustom04" required>
-                                <option selected disabled value="">Choose...</option>
-                                <option>...</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Please select a valid state.
-                            </div>
-                            </div>
-                            <div class="col-md-3">
-                            <label for="validationCustom05" class="form-label">Zip</label>
-                            <input type="text" class="form-control" id="validationCustom05" required>
-                            <div class="invalid-feedback">
-                                Please provide a valid zip.
-                            </div>
-                            </div>
-                            <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="invalidCheck" required>
-                                <label class="form-check-label" for="invalidCheck">
-                                Agree to terms and conditions
-                                </label>
-                                <div class="invalid-feedback">
-                                You must agree before submitting.
-                                </div>
-                            </div>
-                            </div>
-                            <div class="col-12">
-                            <button class="btn btn-primary" type="submit">Submit form</button>
-                            </div>
-                        </form> --}}
                         <div class="row align-items-center">
                             <div class="col-12" > Numero de Adultos:</div>
                             <div class="col-6">
@@ -346,14 +271,6 @@
                                                 class="form-select js-example-basic-single{{$i}} nacionalidad" 
                                                 aria-label="Pais" 
                                                 placeholder="{{$textos['Pais']}}">
-                                                    {{-- @foreach ($paises as $pais)
-                                                        <option 
-                                                        value="{{$pais}}"
-                                                        {{ (isset($data[$i]) ? ($i == 0 ? (!empty($data[$i]->nacionalidad) ? $data[$i]->nacionalidad == $pais : $pais == 'España') : (!empty($data[$i]->pais) ? $data[$i]->pais == $pais : $pais == 'España')) : $pais == 'España') || old('nacionalidad_'.$i) == $pais ? 'selected' : '' }}
-                                                        >
-                                                            {{$pais}}
-                                                        </option>
-                                                    @endforeach --}}
                                                     @foreach ($paises as $pais)
                                                         <option value="{{$pais}}"
                                                             {{
@@ -383,7 +300,7 @@
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
+                                                <select required data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
                                                     <option value="{{null}}" selected>Seleccion el tipo</option>
                                                     <option 
                                                     value="1"
@@ -770,9 +687,15 @@
 $(document).ready(function() {
     $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
 
+    // Función para normalizar texto
+    function normalizeText(text) {
+        // Implementa la lógica de normalización de texto aquí si es necesario
+        return text.trim().toLowerCase();
+    }
+
     // Función para manejar la lógica de selección y actualización de tipos de documento
-    function handleNationalityChange() {
-        var selectedValue = $('.nacionalidad').val();
+    function handleNationalityChange(index) {
+        var selectedValue = $('.nacionalidad').eq(index).val();
         var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
 
         console.log("Valor seleccionado:", normalizedValue);
@@ -799,7 +722,7 @@ $(document).ready(function() {
                 nuevasOpciones.push(opciones[i]);
             });
 
-            $('.tiposDocumentos').empty().each(function() {
+            $('.tiposDocumentos').eq(index).empty().each(function() {
                 var select = $(this);
                 nuevasOpciones.forEach(opcion => {
                     select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
@@ -811,18 +734,17 @@ $(document).ready(function() {
     }
 
     // Evento de cambio en el select de nacionalidad
-    $('.nacionalidad').on('change', handleNationalityChange);
+    $('.nacionalidad').each(function(index) {
+        $(this).on('change', function() {
+            handleNationalityChange(index);
+        });
+    });
 
     // Ejecuta la función al cargar para manejar el valor inicial
-    handleNationalityChange();
+    $('.nacionalidad').each(function(index) {
+        handleNationalityChange(index);
+    });
 
-    // Función para normalizar texto
-    function normalizeText(input) {
-        return input
-            .normalize("NFD") // Descompone las letras de los diacríticos
-            .replace(/(?<!n[\u0300-\u036f])[\u0300-\u036f]/gi, "") // Elimina diacríticos excluyendo la "ñ"
-            .toUpperCase(); // Convierte todo a mayúsculas
-    }
 });
 
 
