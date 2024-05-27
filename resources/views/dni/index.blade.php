@@ -640,116 +640,116 @@
     }
    
     window.onload = function() {
-    var reserva = @json($reserva);
-    var data = @json($data);
+        var reserva = @json($reserva);
+        var data = @json($data);
 
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].tipo_documento == 1) {
-            var divPhotos = document.getElementById('dniUploaed_' + i);
-            divPhotos.style.display = 'block';
-            console.log('DNI')
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].tipo_documento == 1) {
+                var divPhotos = document.getElementById('dniUploaed_' + i);
+                divPhotos.style.display = 'block';
+                console.log('DNI')
 
-            // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
-            if (data[i].frontal && data[i].frontal.url) {
-                console.log(data[i].frontal.url);
-                var output = document.getElementById('image-preview_frontal_' + i);
-                output.src = '/' + data[i].frontal.url;
-                output.style.display = 'block';
-                document.getElementById('fontal_'+i).required = true;
-            }
+                // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
+                if (data[i].frontal && data[i].frontal.url) {
+                    console.log(data[i].frontal.url);
+                    var output = document.getElementById('image-preview_frontal_' + i);
+                    output.src = '/' + data[i].frontal.url;
+                    output.style.display = 'block';
+                    document.getElementById('fontal_'+i).required = true;
+                }
 
-            // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
-            if (data[i].trasera && data[i].trasera.url) {
-                console.log(data[i].trasera.url);
-                var output = document.getElementById('image-preview_trasera_' + i);
-                output.src = '/' + data[i].trasera.url;
-                output.style.display = 'block';
-                document.getElementById('trasera_'+i).required = true;
+                // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
+                if (data[i].trasera && data[i].trasera.url) {
+                    console.log(data[i].trasera.url);
+                    var output = document.getElementById('image-preview_trasera_' + i);
+                    output.src = '/' + data[i].trasera.url;
+                    output.style.display = 'block';
+                    document.getElementById('trasera_'+i).required = true;
 
-            }
-        } else {
-            var divPhotos = document.getElementById('pasaporteUpload_' + i);
-            divPhotos.style.display = 'block';
-            console.log('pasaporte_'+i)
-            document.getElementById('pasaporte_'+i).required = true;
-            // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
-            if (data[i].pasaporte && data[i].pasaporte.url) {
-                console.log(data[i].pasaporte.url);
-                var output = document.getElementById('image-preview_pasaporte_' + i);
-                output.src = '/' + data[i].pasaporte.url;
-                output.style.display = 'block';
-
-            }
-        }
-    }
-}
-
-$(document).ready(function() {
-    // $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
-
-    // Función para normalizar texto
-    function normalizeText(text) {
-        // Implementa la lógica de normalización de texto aquí si es necesario
-        return text.trim().toUpperCase();
-    }
-
-    // Función para manejar la lógica de selección y actualización de tipos de documento
-    function handleNationalityChange(index) {
-        var selectedValue = $('.nacionalidad').eq(index).val();
-        var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
-
-        console.log("Valor seleccionado:", normalizedValue);
-
-        var opciones = @json($optionesTipo);
-        console.log("Opciones del país:", opciones);
-
-        var paisesDni = @json($paisesDni);
-        console.log("Paises del país:", paisesDni);
-
-        var countryInfo = paisesDni[normalizedValue];
-
-        console.log("Información del país:", countryInfo);
-
-        if (countryInfo) {
-            let indices;
-            let nuevasOpciones = [];
-
-            if (normalizedValue === "ESPAÑA") {
-                indices = [0, 4, 5];
-            } else if (countryInfo.isEuropean) {
-                indices = [0, 1, 2, 3];
+                }
             } else {
-                indices = [0, 1, 2];
+                var divPhotos = document.getElementById('pasaporteUpload_' + i);
+                divPhotos.style.display = 'block';
+                console.log('pasaporte_'+i)
+                document.getElementById('pasaporte_'+i).required = true;
+                // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
+                if (data[i].pasaporte && data[i].pasaporte.url) {
+                    console.log(data[i].pasaporte.url);
+                    var output = document.getElementById('image-preview_pasaporte_' + i);
+                    output.src = '/' + data[i].pasaporte.url;
+                    output.style.display = 'block';
+
+                }
             }
-
-            indices.forEach(i => {
-                nuevasOpciones.push(opciones[i]);
-            });
-
-            $('.tiposDocumentos').eq(index).empty().each(function() {
-                var select = $(this);
-                nuevasOpciones.forEach(opcion => {
-                    select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
-                });
-            });
-        } else {
-            console.log("No se encontró información para:", normalizedValue);
         }
     }
 
-    // Evento de cambio en el select de nacionalidad
-    $('.nacionalidad').each(function(index) {
-        $(this).on('change', function() {
+    $(document).ready(function() {
+        // $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
+
+        // Función para normalizar texto
+        function normalizeText(text) {
+            // Implementa la lógica de normalización de texto aquí si es necesario
+            return text.trim().toUpperCase();
+        }
+
+        // Función para manejar la lógica de selección y actualización de tipos de documento
+        function handleNationalityChange(index) {
+            var selectedValue = $('.nacionalidad').eq(index).val();
+            var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
+
+            console.log("Valor seleccionado:", normalizedValue);
+
+            var opciones = @json($optionesTipo);
+            console.log("Opciones del país:", opciones);
+
+            var paisesDni = @json($paisesDni);
+            console.log("Paises del país:", paisesDni);
+
+            var countryInfo = paisesDni[normalizedValue];
+
+            console.log("Información del país:", countryInfo);
+
+            if (countryInfo) {
+                let indices;
+                let nuevasOpciones = [];
+
+                if (normalizedValue === "ESPAÑA") {
+                    indices = [0, 4, 5];
+                } else if (countryInfo.isEuropean) {
+                    indices = [0, 1, 2, 3];
+                } else {
+                    indices = [0, 1, 2];
+                }
+
+                indices.forEach(i => {
+                    nuevasOpciones.push(opciones[i]);
+                });
+
+                $('.tiposDocumentos').eq(index).empty().each(function() {
+                    var select = $(this);
+                    nuevasOpciones.forEach(opcion => {
+                        select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
+                    });
+                });
+            } else {
+                console.log("No se encontró información para:", normalizedValue);
+            }
+        }
+
+        // Evento de cambio en el select de nacionalidad
+        $('.nacionalidad').each(function(index) {
+            $(this).on('change', function() {
+                handleNationalityChange(index);
+            });
+        });
+
+        // Ejecuta la función al cargar para manejar el valor inicial
+        $('.nacionalidad').each(function(index) {
             handleNationalityChange(index);
         });
-    });
 
-    // Ejecuta la función al cargar para manejar el valor inicial
-    $('.nacionalidad').each(function(index) {
-        handleNationalityChange(index);
     });
-
-});
 
 
 </script>

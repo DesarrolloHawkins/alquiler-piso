@@ -16,7 +16,7 @@ class GraciasController extends Controller
             'tenemos' => 'Ya tenemos los datos necesario para poder acceder a nuestras instalaciones, el mismo dia de la fecha de entrada recibira las indicaciones para acceder al apartamento.',
             'info' => 'Para cualquier informacion o reclamacion puede realizarla atraves de nuestro formulario de',
             'telefono' => 'o en el telefono:',
-            'horario' => 'en horario de 09:00 a 14:00 horas.',
+            'horario' => 'en horario de Lunes a Jueves 09:00 a 14:00 horas y de 16:00 a 18:00 horas. Viernes de 08:00 a 15:00 horas.',
             'horaario2' => 'Para cualquier horario a traves de whatsapp:',
             'ir' => 'Ir al Whatsapp',
             'ia' => 'sera atendido por nuestra Inteligencia Artificial.',

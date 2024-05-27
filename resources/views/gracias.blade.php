@@ -22,7 +22,7 @@
                 <p>{{$textos['tenemos']}}</p>
             </div>
             <div class="col-12 mt-4">
-                <p>{{$textos['info']}} <a href="{{route('gracias.contacto')}}">{{$textos['contacto']}}</a> {{$textos['telefono']}} <a href="tel:+34652544141">+34 652 54 41 41</a> {{$textos['horario']}}</p>
+                <p>{{$textos['info']}} <a href="{{route('gracias.contacto')}}">{{$textos['contacto']}}</a> {{$textos['telefono']}} <a href="tel:+34652544141">+34 633 06 52 37</a> {{$textos['horario']}}</p>
                 <p>{{$textos['horaario2']}}
                 <button class="btn btn-primary d-block w-100 my-3">{{$textos['ir']}}</button>
                 {{$textos['ia']}}</p>
