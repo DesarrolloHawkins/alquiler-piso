@@ -1472,7 +1472,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                    Hello  '.$cliente.'!! The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                    Hello  '.$cliente.'!! The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Your apartment is '.$apartamento.', the codes to enter the apartment are: for the main door '.$claveEntrada.' and for the door of your apartment '.$clavePiso.'.
