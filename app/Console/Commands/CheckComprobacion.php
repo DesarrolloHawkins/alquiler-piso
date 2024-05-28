@@ -25,7 +25,7 @@ class CheckComprobacion extends Command
             $now = Carbon::now();
             $diffInMinutes = $createdAt->diffInMinutes($now);
 
-            if ($diffInMinutes > 10) {
+            if ($diffInMinutes > 500) {
                 $telefonos = [
                     'Ivan' => '34605621704',
                     'Elena' => '34664368232',
