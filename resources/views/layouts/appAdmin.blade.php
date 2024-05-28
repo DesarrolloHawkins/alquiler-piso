@@ -111,7 +111,7 @@
                             </a>
                           </li>
                           <li>
-                            <a href="#" class="nav-link fs-5" aria-current="page">
+                            <a href="{{route('whatsapp.mensajes')}}" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-user-astronaut me-2"></i>
                               Asistente
                             </a>

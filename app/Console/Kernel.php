@@ -18,6 +18,7 @@ use DateTime;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
+use Spatie\UrlSigner\UrlSigner;
 
 class Kernel extends ConsoleKernel
 {
@@ -1176,7 +1177,7 @@ class Kernel extends ConsoleKernel
                     Le dejamos un enlace para que rellene sus datos y nos lo facilite la copia del DNI o Pasaporte:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Rellenar datos</a>
                 </p>
                 <p style="margin: 0 !important">
                     Las claves de acceso al apartamento se las enviamos el dia de su llegada por whatsapp y correo electronico, asegurese de tener la informacion de contacto correctamente.
@@ -1200,7 +1201,7 @@ class Kernel extends ConsoleKernel
                     Nous vous laissons un lien pour nous le fournir via le bouton ci-dessous:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Remplir les données</a>
                 </p>
                 <p style="margin: 0 !important">
                     Les codes d'."'".'accès à l'."'".'appartement vous seront envoyés le jour de votre arrivée par WhatsApp et par e-mail, assurez-vous d'."'".'avoir les informations de contact correctes.
@@ -1224,7 +1225,7 @@ class Kernel extends ConsoleKernel
                     :نترك لكم رابطاً لتقديمه لنا عبر الزر أدناه.
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">ملء البيانات</a>
                 </p>
                 <p style="margin: 0 !important">
                 سنرسل لك رموز الوصول إلى الشقة في يوم وصولك عبر تطبيق WhatsApp والبريد الإلكتروني، وتأكد من حصولك على معلومات الاتصال بشكل صحيح.
@@ -1248,7 +1249,7 @@ class Kernel extends ConsoleKernel
                 Wir hinterlassen Ihnen einen Link, um uns dies über den unteren Button zu übermitteln.:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Daten füllen</a>
                 </p>
                 <p style="margin: 0 !important">
                     Wir senden Ihnen die Zugangscodes zum Apartment am Tag Ihrer Ankunft per WhatsApp und E-Mail zu. Stellen Sie sicher, dass Sie die Kontaktinformationen korrekt haben.                </p>
@@ -1273,7 +1274,7 @@ class Kernel extends ConsoleKernel
                     Deixamos um link para nos fornecer isso através do botão abaixo:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Preencha os dados</a>
                 </p>
                 <p style="margin: 0 !important">
                     Enviaremos os códigos de acesso ao apartamento no dia da sua chegada por WhatsApp e email, certifique-se de ter os dados de contato corretos.
@@ -1299,7 +1300,7 @@ class Kernel extends ConsoleKernel
                     Vi lasciamo un link per fornircelo tramite il pulsante in basso:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Compila i dati</a>
                 </p>
                 <p style="margin: 0 !important">
                 Ti invieremo i codici di accesso all'."'".'appartamento il giorno del tuo arrivo tramite WhatsApp ed e-mail, assicurati di avere le informazioni di contatto corrette.
@@ -1326,7 +1327,7 @@ class Kernel extends ConsoleKernel
                     We leave you a link to fill out your information and provide us with a copy of your DNI or Passport:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Fill data</a>
                 </p>
                 <p style="margin: 0 !important">
                     Thank you for using our application!We will send you the access codes to the apartment on the day of your arrival by WhatsApp and email, make sure you have the contact information correctly.
@@ -1504,7 +1505,7 @@ class Kernel extends ConsoleKernel
                 Te indico que la entrada debes realizarla después de las 14 horas
                 </p>
                 <p>
-                    La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                    La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9" >Ir a google map</a></p>
                 </p>
                 <p style="margin: 0 !important">
                     Tu apartamento es el '.$apartamento.', los códigos para entrar al apartamento son: Para la puerta principal '.$claveEntrada.'.
@@ -1528,7 +1529,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Allez sur Google Map</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
@@ -1556,7 +1557,7 @@ class Kernel extends ConsoleKernel
                     يرجى ملاحظة أنه يمكنك تسجيل الدخول بعد الساعة 2 مساءً.
                     </p>
                     <p>
-                        موقع الشقق هو: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                        موقع الشقق هو: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">اذهب إلى خريطة جوجل</a></p>
                     </p>
                     <p style="margin: 0 !important">
                         شقتك هي الرقم '.$apartamento.'، أكواد الدخول هي: للباب الرئيسي '.$claveEntrada.'.
@@ -1587,7 +1588,7 @@ class Kernel extends ConsoleKernel
                     Bitte beachten Sie, dass der Check-in nach 14 Uhr möglich ist.
                     </p>
                     <p>
-                        Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                        Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Gehen Sie zu Google Map</a></p>
                     </p>
                     <p style="margin: 0 !important">
                         Ihr Apartment ist das '.$apartamento.', die Zugangscodes sind: Für die Haupteingangstür '.$claveEntrada.'.
@@ -1618,7 +1619,7 @@ class Kernel extends ConsoleKernel
                         Por favor, note que o check-in é após as 14 horas.
                         </p>
                         <p>
-                            A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                            A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Vá para o mapa do Google</a></p>
                         </p>
                         <p style="margin: 0 !important">
                             Seu número de apartamento é '.$apartamento.', os códigos para entrar são: Para a porta principal '.$claveEntrada.'.
@@ -1649,7 +1650,7 @@ class Kernel extends ConsoleKernel
                             Ti ricordo che il check-in è possibile dopo le 14:00.
                             </p>
                             <p>
-                                La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                                La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Vai su Google Map</a></p>
                             </p>
                             <p style="margin: 0 !important">
                                 Il tuo appartamento è il numero '.$apartamento.', i codici per entrare sono: Per la porta principale '.$claveEntrada.'.
@@ -1681,7 +1682,7 @@ class Kernel extends ConsoleKernel
                     Please note that check-in is after 2 PM.
                     </p>
                     <p>
-                        The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a></p>
+                        The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Go to google map</a></p>
                     </p>
                     <p style="margin: 0 !important">
                         Your apartment number is '.$apartamento.', the entry codes are: For the main door '.$claveEntrada.'.
