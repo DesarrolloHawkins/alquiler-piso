@@ -36,6 +36,9 @@ class EstadoController extends Controller
         Comprobacion::create([
             'fecha' => Carbon::now()
         ]);
+        return response()->json([
+            'estatus' => true
+        ]);
     }
 
     /**
