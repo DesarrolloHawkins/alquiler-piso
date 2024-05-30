@@ -4,33 +4,31 @@
 @endsection
 
 @section('title')
-{{ __('Subidas de fotos del dormitorio')}}
+{{ __('Subidas de fotos del Salon')}}
 @endsection
-
-{{-- @section('bienvenido')
-    <h5 class="navbar-brand mb-0 w-auto text-center text-white">Bienvenid@ {{Auth::user()->name}}</h5>
-@endsection --}}
 
 @section('content')
 <style>
     .file-input {
       display: none;
     }
-  </style>
+</style>
 <div class="container-fluid">
-    <form action="{{ route('fotos.salonStore', $id) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('fotos.salonStore', $id) }}" method="POST" enctype="multipart/form-data" id="uploadForm">
         @csrf
         <div class="filesc card p-2">
             <h3 class="text-center text-uppercase fw-bold">Salón General</h3>
-            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general" onchange="previewImage(event)">
+            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general" onchange="resizeImage(event, 'image-preview', 'image_general_resized')">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
+            <input type="hidden" name="image_general_resized" id="image_general_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Salón Sofa y Bajos</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_sofa" id="image_sofa" onchange="previewImage2(event)">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_sofa" id="image_sofa" onchange="resizeImage(event, 'image-preview2', 'image_sofa_resized')">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_sofa').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview2" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
+            <input type="hidden" name="image_sofa_resized" id="image_sofa_resized">
         </div>
         
         <button class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="submit">Subir Imagenes</button>
@@ -40,17 +38,49 @@
 
 @section('scripts')
 <script>
-    console.log('Limpieza de Apartamento by Hawkins.')
+    console.log('Limpieza de Apartamento by Hawkins.');
 
-    function previewImage(event) {
+    function resizeImage(event, previewElementId, hiddenInputId) {
+        var file = event.target.files[0];
         var reader = new FileReader();
-        reader.onload = function(){
-            var output = document.getElementById('image-preview');
-            output.src = reader.result;
-        };
-        reader.readAsDataURL(event.target.files[0]);
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                var maxWidth = 800; // Max width for the image
+                var maxHeight = 800; // Max height for the image
+                var width = img.width;
+                var height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Show the resized image in the preview element
+                var dataurl = canvas.toDataURL('image/jpeg');
+                document.getElementById(previewElementId).src = dataurl;
+
+                // Set the resized image data in the hidden input
+                document.getElementById(hiddenInputId).value = dataurl;
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
     }
-    // Si ya existe una URL de imagen, mostrar la vista previa al cargar la página
+
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
         if (imageUrl) {
@@ -58,28 +88,12 @@
             output.src = imageUrl;
             output.style.display = 'block';
         }
-        var imageUrl = "{{ $imageUrlAlmohada }}";
-        if (imageUrl) {
-            var output = document.getElementById('image-preview2');
-            output.src = imageUrl;
-            output.style.display = 'block';
+        var imageUrlSofa = "{{ $imageUrlSofa }}";
+        if (imageUrlSofa) {
+            var output2 = document.getElementById('image-preview2');
+            output2.src = imageUrlSofa;
+            output2.style.display = 'block';
         }
-
     };
-
-    function previewImage2(event) {
-        var reader = new FileReader();
-        reader.onload = function(){
-            var output = document.getElementById('image-preview2');
-            output.src = reader.result;
-        };
-        reader.readAsDataURL(event.target.files[0]);
-    }
-
-
 </script>
 @endsection
-
-
-
-
