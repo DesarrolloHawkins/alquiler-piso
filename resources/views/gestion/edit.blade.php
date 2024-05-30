@@ -87,9 +87,9 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('armario', $apartamentoLimpieza->armario) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="armario" name="armario">
                                             <label class="form-check-label" for="armario"></label>
-                                            @if ($apartamentoLimpieza->armario)
+                                            {{-- @if ($apartamentoLimpieza->armario)
                                                 <a id="camaraArmario" @if ($apartamentoLimpieza->armario === 1 ) style="display:block" @else style="display:none" @endif href="{{route('fotos.dormitorio', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
-                                            @endif
+                                            @endif --}}
                                         </div>
                                     </div>
                                 </div>
@@ -142,9 +142,9 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('canape', $apartamentoLimpieza->canape) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="canape" name="canape">
                                             <label class="form-check-label" for="canape"></label>
-                                            @if ($apartamentoLimpieza->canape)
+                                            {{-- @if ($apartamentoLimpieza->canape)
                                                 <a href="{{route('fotos.dormitorio', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
-                                            @endif
+                                            @endif --}}
                                         </div>
                                     </div>
                                 </div>
@@ -270,7 +270,7 @@
                                         <div class="form-check form-switch mt-2 mb-2 d-flex w-100 justify-content-evenly">
                                             <input data-id="{{$apartamentoLimpieza->id}}" {{ old('cocina', $apartamentoLimpieza->cocina) ? 'checked' : '' }} class="form-check-input" type="checkbox" id="cocina" name="cocina">
                                             <label class="form-check-label" for="cocina"></label>
-                                            {{$apartamentoLimpieza->cocina_photo}}
+                                            {{-- {{$apartamentoLimpieza->cocina_photo}} --}}
                                             <a @if( $apartamentoLimpieza->cocina === 1) style="display:block" @else style="display:none" @endif id="camaraCocina" href="{{route('fotos.cocina', $apartamentoLimpieza->id)}}" class="btn btn-foto"><i class="fa-solid fa-camera"></i></a>                                                
                                         </div>
                                     </div>

@@ -112,7 +112,7 @@
         <footer class="nav-bar-mobile p-2" style="background-color: white">
             <div class="row px-3">
                 <div class="col-3 ">
-                   <a href="{{route('dashboard.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
+                   <a href="{{route('gestion.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
                         <div class="icon fs-1 m-0 text-secondary" style="color: #b8c2d7 !important">
                             <i class="fa-solid fa-house "></i>
                         </div>
