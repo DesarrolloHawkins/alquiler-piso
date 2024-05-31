@@ -149,9 +149,9 @@ class PhotoController extends Controller
         $imageUrl = $imagen ? asset($imagen->url) : null;
 
         $imagen2 = Photo::where('limpieza_id', $id)->where('photo_categoria_id', 5)->first();
-        $imageUrlAlmohada = $imagen2 ? asset($imagen2->url) : null;
+        $imageUrlSofa = $imagen2 ? asset($imagen2->url) : null;
 
-        return view('photos.salonIndex', compact('id','imageUrl','imageUrlAlmohada'));
+        return view('photos.salonIndex', compact('id','imageUrl','imageUrlSofa'));
     }
 
     /**
