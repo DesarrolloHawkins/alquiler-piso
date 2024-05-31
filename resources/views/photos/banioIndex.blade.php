@@ -18,21 +18,21 @@
         @csrf
         <div class="filesc card p-2">
             <h3 class="text-center text-uppercase fw-bold">Baños General</h3>
-            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general" onchange="resizeImage(event, 'image-preview', 'image_general_resized')">
+            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_general_resized" id="image_general_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Baños Inodoro</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_inodoro" id="image_inodoro" onchange="resizeImage(event, 'image-preview2', 'image_inodoro_resized')">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_inodoro" id="image_inodoro">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_inodoro').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview2" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_inodoro_resized" id="image_inodoro_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Baños Desagüe Ducha</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_desague" id="image_desague" onchange="resizeImage(event, 'image-preview3', 'image_desague_resized')">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_desague" id="image_desague" >
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_desague').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview3" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_desague_resized" id="image_desague_resized">

@@ -18,21 +18,21 @@
         @csrf
         <div class="filesc card p-2">
             <h3 class="text-center text-uppercase fw-bold">Dormitorio General</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_general" id="image_general" onchange="resizeImage(event, 'image-preview', 'image_general_resized')">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_general" id="image_general">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_general_resized" id="image_general_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Dormitorio Almohada</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_almohada" id="image_almohada" onchange="resizeImage(event, 'image-preview2', 'image_almohada_resized')">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_almohada" id="image_almohada">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_almohada').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview2" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_almohada_resized" id="image_almohada_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Dormitorio Canape</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_canape" id="image_canape" onchange="resizeImage(event, 'image-preview3', 'image_canape_resized')">
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_canape" id="image_canape">
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_canape').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview3" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_canape_resized" id="image_canape_resized">
