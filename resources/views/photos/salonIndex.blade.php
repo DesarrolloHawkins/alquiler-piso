@@ -18,14 +18,16 @@
         @csrf
         <div class="filesc card p-2">
             <h3 class="text-center text-uppercase fw-bold">Salón General</h3>
-            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general" onchange="resizeImage(event, 'image-preview', 'image_general_resized')">
+            // onchange="resizeImage(event, 'image-preview', 'image_general_resized')"
+            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general" >
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_general_resized" id="image_general_resized">
         </div>
         <div class="files mt-4 card p-2">
             <h3 class="text-center text-uppercase fw-bold">Salón Sofa y Bajos</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_sofa" id="image_sofa" onchange="resizeImage(event, 'image-preview2', 'image_sofa_resized')">
+            // onchange="resizeImage(event, 'image-preview2', 'image_sofa_resized')"
+            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_sofa" id="image_sofa" >
             <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_sofa').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview2" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_sofa_resized" id="image_sofa_resized">
