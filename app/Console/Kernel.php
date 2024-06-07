@@ -72,7 +72,7 @@ class Kernel extends ConsoleKernel
                 foreach ($reservasEntrada as $reserva) {
                     // Comprobamos si ya existe un mensaje automático para esta reserva
                     $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
-                                          ->where('categoria_id', 50)
+                                          ->where('categoria_id', 8)
                                           ->first(); // Asegúrate de que 'first' esté escrito correctamente
         
                     if (!$mensaje) {
@@ -90,18 +90,18 @@ class Kernel extends ConsoleKernel
                             $resultado = $this->noEntregadoDNIMensaje($cliente->alias, $reserva->codigo_reserva, $reserva->origen, $phone, $telefonoCliente, $url);
                         }
         
-                        // Crear la data para guardar el mensaje
-                        $dataMensaje = [
-                            'reserva_id' => $reserva->id,
-                            'cliente_id' => $reserva->cliente_id,
-                            'categoria_id' => 8,
-                            'fecha_envio' => Carbon::now()
-                        ];
-        
-                        // Crear el mensaje
-                        MensajeAuto::create($dataMensaje);
                     }
                 }
+                // Crear la data para guardar el mensaje
+                $dataMensaje = [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $reserva->cliente_id,
+                    'categoria_id' => 8,
+                    'fecha_envio' => Carbon::now()
+                ];
+
+                // Crear el mensaje
+                MensajeAuto::create($dataMensaje);
         
                 Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
             }
