@@ -57,6 +57,57 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
+        // Miramos si el cliente ha entregado el DNI el dia de entrada
+        $schedule->call(function () {
+            $hoy = Carbon::now();
+        
+            // Solo ejecutar después de las 10 de la mañana
+            if ($hoy->hour >= 10) {
+                // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
+                $reservasEntrada = Reserva::where('dni_entregado', null)
+                                          ->where('estado_id', 1)
+                                          ->whereDate('fecha_entrada', '=', $hoy->toDateString())
+                                          ->get();
+        
+                foreach ($reservasEntrada as $reserva) {
+                    // Comprobamos si ya existe un mensaje automático para esta reserva
+                    $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
+                                          ->where('categoria_id', 50)
+                                          ->first(); // Asegúrate de que 'first' esté escrito correctamente
+        
+                    if (!$mensaje) {
+                        $cliente = $reserva->cliente;
+                        $url = 'https://crm.apartamentosalgeciras.com/dni-user/'.$reserva->token;
+                        $telefonosEnvios = [
+                            'Ivan' => '34605621704',
+                            'Elena' => '34664368232',
+                            'Africa' => '34655659573',
+                            'David' => '34622440984'
+                        ];
+                        $telefonoCliente = $this->limpiarNumeroTelefono($cliente->telefono);
+        
+                        foreach ($telefonosEnvios as $phone) {
+                            $resultado = $this->noEntregadoDNIMensaje($cliente->alias, $reserva->codigo_reserva, $reserva->origen, $phone, $telefonoCliente, $url);
+                        }
+        
+                        // Crear la data para guardar el mensaje
+                        $dataMensaje = [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'categoria_id' => 50,
+                            'fecha_envio' => Carbon::now()
+                        ];
+        
+                        // Crear el mensaje
+                        MensajeAuto::create($dataMensaje);
+                    }
+                }
+        
+                Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
+            }
+        })->everyMinute();
+        
+
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
 
@@ -861,6 +912,73 @@ class Kernel extends ConsoleKernel
     }
 
 
+    public function noEntregadoDNIMensaje($nombre, $codigoReserva, $plataforma, $telefono, $telefonoCliente, $url, $idioma = 'es', ){
+        $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefono,
+            "type" => "template",
+            "template" => [
+                "name" => 'dni_no_entregado',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            [
+                                "type" => "text", 
+                                "text" => $nombre
+                            ],
+                            [
+                                "type" => "text", 
+                                "text" => $codigoReserva
+                            ],
+                            [
+                                "type" => "text", 
+                                "text" => $plataforma
+                            ],
+                            [
+                                "type" => "text", 
+                                "text" => $telefonoCliente
+                            ],
+                            [
+                                "type" => "text", 
+                                "text" => $url
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$tokenEnv
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+    }
     public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
