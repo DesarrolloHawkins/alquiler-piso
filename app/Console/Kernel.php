@@ -94,7 +94,7 @@ class Kernel extends ConsoleKernel
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
                             'cliente_id' => $reserva->cliente_id,
-                            'categoria_id' => 50,
+                            'categoria_id' => 8,
                             'fecha_envio' => Carbon::now()
                         ];
         
