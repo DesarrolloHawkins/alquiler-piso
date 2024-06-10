@@ -62,7 +62,7 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
         
             // Solo ejecutar después de las 10 de la mañana
-            if ($hoy->hour >= 10) {
+            if ($hoy->hour >= 8) {
                 // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
                 $reservasEntrada = Reserva::where('dni_entregado', null)
                                           ->where('estado_id', 1)
