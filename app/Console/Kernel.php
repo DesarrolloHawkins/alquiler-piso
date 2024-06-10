@@ -74,14 +74,13 @@ class Kernel extends ConsoleKernel
                     $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
                                           ->where('categoria_id', 8)
                                           ->first(); // Asegúrate de que 'first' esté escrito correctamente
-        
                     if (!$mensaje) {
                         $cliente = $reserva->cliente;
                         $url = 'https://crm.apartamentosalgeciras.com/dni-user/'.$reserva->token;
                         $telefonosEnvios = [
                             'Ivan' => '34605621704',
                             'Elena' => '34664368232',
-                            'Africa' => '34655659573',
+                            // 'Africa' => '34655659573',
                             'David' => '34622440984'
                         ];
                         $telefonoCliente = $this->limpiarNumeroTelefono($cliente->telefono);
@@ -89,20 +88,18 @@ class Kernel extends ConsoleKernel
                         foreach ($telefonosEnvios as $phone) {
                             $resultado = $this->noEntregadoDNIMensaje($cliente->alias, $reserva->codigo_reserva, $reserva->origen, $phone, $telefonoCliente, $url);
                         }
-        
+                        // Crear la data para guardar el mensaje
+                        $dataMensaje = [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'categoria_id' => 8,
+                            'fecha_envio' => Carbon::now()
+                        ];
+                        // Crear el mensaje
+                        MensajeAuto::create($dataMensaje);
                     }
                 }
-                // Crear la data para guardar el mensaje
-                $dataMensaje = [
-                    'reserva_id' => $reserva->id,
-                    'cliente_id' => $reserva->cliente_id,
-                    'categoria_id' => 8,
-                    'fecha_envio' => Carbon::now()
-                ];
 
-                // Crear el mensaje
-                MensajeAuto::create($dataMensaje);
-        
                 Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
             }
         })->everyMinute();
