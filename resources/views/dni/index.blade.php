@@ -721,7 +721,7 @@
                 } else {
                     indices = [0, 1, 2];
                 }
-
+                console.log(nuevasOpciones)
                 indices.forEach(i => {
                     nuevasOpciones.push(opciones[i]);
                 });
