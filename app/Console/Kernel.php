@@ -40,6 +40,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         // $clienteService = app(ClienteService::class);
+        $schedule->command('clean:phonenumbers')->twiceDaily(1, 13);
 
         // // Miramos si el cliente tiene la Nacionalidad e idioma
         $schedule->call(function (ClienteService $clienteService) {
