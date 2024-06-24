@@ -114,6 +114,7 @@ class WhatsappController extends Controller
         $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
         Storage::disk('local')->put('phone-Prueba.txt', json_encode($phone) );
+        Storage::disk('local')->put('phone-mensaje.txt', json_encode($mensajeExiste) );
         if ($mensajeExiste == null) {
 
             $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
@@ -146,7 +147,6 @@ class WhatsappController extends Controller
                 'type' => 'image'
             ];
             ChatGpt::create( $dataRegistrarChat );
-
         }
     }
 
