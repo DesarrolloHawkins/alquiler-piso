@@ -170,7 +170,7 @@ class WhatsappController extends Controller
 
         return null;
     }
-    public function descargarImagen($imageId)
+    public function descargarImage($imageId)
     {
         // URL base para obtener imágenes de WhatsApp
         $url = "https://graph.facebook.com/v20.0/{$imageId}";
