@@ -153,12 +153,15 @@ class WhatsappController extends Controller
     public function obtenerImage($imageId)
     {
         // Suponiendo que tienes una URL base para obtener imágenes
-        $url = "https://api.whatsapp.com/v1/media/{$imageId}";
+        // $url = "https://api.whatsapp.com/v1/media/{$imageId}";
+        $url = "https://graph.facebook.com/v20.0/{$imageId}/";
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
         ])->get($url);
 
         if ($response->successful()) {
+            Storage::disk('local')->put('image-response-url-response.txt', $response );
+
             $mediaUrl = $response->json()['url'];
             return $mediaUrl;
         }
