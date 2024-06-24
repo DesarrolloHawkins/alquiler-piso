@@ -122,15 +122,15 @@ class WhatsappController extends Controller
 
             Storage::disk('local')->put('image-'.$idMedia.'.txt', json_encode($data) );
 
-            $url = $this->obtenerImage($idMedia);
-            Storage::disk('local')->put('image-response-url-simple-'.$idMedia.'.txt', $url );
+            // $url = $this->obtenerImage($idMedia);
+            // Storage::disk('local')->put('image-response-url-simple-'.$idMedia.'.txt', $url );
 
-            $urlMedia = str_replace('\/', '/', $url );
+            // $urlMedia = str_replace('\/', '/', $url );
 
-            Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
+            // Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
             // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
 
-            $descargarImage = $this->descargarImage($url,$idMedia );
+            $descargarImage = $this->descargarImage($idMedia );
 
             if ($descargarImage == true) {
                 Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
@@ -170,14 +170,28 @@ class WhatsappController extends Controller
 
         return null;
     }
-    public function descargarImagen($url, $imageId)
+    public function descargarImagen($imageId)
     {
-        $response = Http::get($url);
+        // URL base para obtener imágenes de WhatsApp
+        $url = "https://graph.facebook.com/v20.0/{$imageId}";
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
+        ])->get($url);
 
         if ($response->successful()) {
-            $filename = $imageId . '.' . explode('/', $response->header('Content-Type'))[1];
-            Storage::put('public/imagenes/' . $filename, $response->body());
-            return $filename;
+            $mediaUrl = $response->json()['url'];
+
+            // Descargar el archivo de medios
+            $mediaResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
+            ])->get($mediaUrl);
+
+            if ($mediaResponse->successful()) {
+                $extension = explode('/', $mediaResponse->header('Content-Type'))[1];
+                $filename = $imageId . '.' . $extension;
+                Storage::put('public/imagenes/' . $filename, $mediaResponse->body());
+                return $filename;
+            }
         }
 
         return null;
