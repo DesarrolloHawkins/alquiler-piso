@@ -466,7 +466,7 @@
                         <div class="row no-gutters">
                             <div class="col-md-6">
                                 <div class="chat-bubble chat-bubble--left">
-                                    <img src="https://thwork.crmhawkins.com/image/${value.mensaje}.jpg" style="width: -webkit-fill-available;">
+                                    <img src="https://crm.apartamentosalgeciras.com/storage/imagenes/${value.mensaje}.jpg" style="width: -webkit-fill-available;">
                                 </div>
                             </div>
                         </div>`
