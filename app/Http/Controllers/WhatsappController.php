@@ -150,7 +150,7 @@ class WhatsappController extends Controller
             ChatGpt::create( $dataRegistrarChat );
         }
     }
-    public function obtenerImagen($imageId)
+    public function obtenerImage($imageId)
     {
         // Suponiendo que tienes una URL base para obtener imágenes
         $url = "https://api.whatsapp.com/v1/media/{$imageId}";
