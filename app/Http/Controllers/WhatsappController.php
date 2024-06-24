@@ -123,6 +123,7 @@ class WhatsappController extends Controller
             Storage::disk('local')->put('image-'.$idMedia.'.txt', json_encode($data) );
 
             $url = $this->obtenerImage($idMedia);
+            Storage::disk('local')->put('image-response-url-simple-'.$idMedia.'.txt', $url );
 
             $urlMedia = str_replace('\/', '/', $url );
 
@@ -132,6 +133,7 @@ class WhatsappController extends Controller
             $descargarImage = $this->descargarImage($urlMedia,$idMedia );
 
             if ($descargarImage == true) {
+                Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
 
             }
 
@@ -164,6 +166,18 @@ class WhatsappController extends Controller
 
             $mediaUrl = $response->json()['url'];
             return $mediaUrl;
+        }
+
+        return null;
+    }
+    public function descargarImagen($url, $imageId)
+    {
+        $response = Http::get($url);
+
+        if ($response->successful()) {
+            $filename = $imageId . '.' . explode('/', $response->header('Content-Type'))[1];
+            Storage::put('public/imagenes/' . $filename, $response->body());
+            return $filename;
         }
 
         return null;
