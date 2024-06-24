@@ -130,7 +130,7 @@ class WhatsappController extends Controller
             Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
             // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
 
-            $descargarImage = $this->descargarImage($urlMedia,$idMedia );
+            $descargarImage = $this->descargarImage($url,$idMedia );
 
             if ($descargarImage == true) {
                 Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
