@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use CURLFile;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use libphonenumber\PhoneNumberUtil;
 use libphonenumber\PhoneNumberToCarrierMapper;
@@ -149,7 +150,21 @@ class WhatsappController extends Controller
             ChatGpt::create( $dataRegistrarChat );
         }
     }
+    public function obtenerImagen($imageId)
+    {
+        // Suponiendo que tienes una URL base para obtener imágenes
+        $url = "https://api.whatsapp.com/v1/media/{$imageId}";
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
+        ])->get($url);
 
+        if ($response->successful()) {
+            $mediaUrl = $response->json()['url'];
+            return $mediaUrl;
+        }
+
+        return null;
+    }
     public function textMensaje( $data )
     {
         $fecha = Carbon::now()->format('Y-m-d_H-i-s');
