@@ -152,6 +152,7 @@ class WhatsappController extends Controller
             ChatGpt::create( $dataRegistrarChat );
         }
     }
+
     public function obtenerImage($imageId)
     {
         // Suponiendo que tienes una URL base para obtener imágenes
@@ -170,6 +171,7 @@ class WhatsappController extends Controller
 
         return null;
     }
+
     public function descargarImage($imageId)
     {
         // URL base para obtener imágenes de WhatsApp
@@ -196,8 +198,10 @@ class WhatsappController extends Controller
 
         return null;
     }
+
     public function textMensaje( $data )
     {
+        // Obtenemos la fecha actual de la peticion
         $fecha = Carbon::now()->format('Y-m-d_H-i-s');
 
         Storage::disk('local')->put('Mensaje_Texto_Reicibido-'.$fecha.'.txt', json_encode($data) );
@@ -207,10 +211,83 @@ class WhatsappController extends Controller
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
         $mensaje = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
 
-        $mensajeExiste = ChatGpt::where( 'id_mensaje', $id )->get();
+        $mensajeExiste = ChatGpt::where('id_mensaje', $id)->get();
+
         if (count($mensajeExiste) > 0) {
 
         }else {
+            $cliente = Cliente::where('telefono', $phone)->first();
+            if ($cliente) {
+                $today = Carbon::today()->toDateString(); // Obtener la fecha actual en formato 'Y-m-d'
+
+                $reservas = Reserva::where('cliente_id', $cliente->id)
+                            ->where('fecha_entrada', '>=', $today)
+                            ->first();
+
+                if ($reservas) {
+                    $dniEntregado = $reservas->dni_entregado;
+
+                    if ($dniEntregado == 1) {
+                        $dataRegistrar = [
+                            'id_mensaje' => $id,
+                            'id_three' => null,
+                            'cliente_is' => $cliente->id,
+                            'remitente' => $phone,
+                            'mensaje' => $mensaje,
+                            'respuesta' => null,
+                            'status' => 1,
+                            'status_mensaje' => 0,
+                            'type' => 'text',
+                            'estado_id' => 0,
+                            'reserva_id' => $reservas->id,
+                            'date' => Carbon::now()
+                        ];
+                        $mensajeCreado = ChatGpt::create($dataRegistrar);
+            
+                        $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            
+                        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            
+                        if(isset($respuestaWhatsapp['error'])){
+                            return($respuestaWhatsapp);
+                        };
+            
+                        $mensajeCreado->update([
+                            'respuesta'=> $reponseChatGPT
+                        ]);
+            
+                        return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+                    } else {
+
+
+
+                        
+                    }
+
+
+                }
+
+
+
+                $mensajesCliente = ChatGpt::where('remitente', $cliente->telefono)->get();
+
+                if ($mensajesCliente) {
+                    // Obtén el campo created_at
+                    $createdAt = $mensajesCliente->created_at;
+                
+                    // Compara la fecha actual con el created_at
+                    $now = Carbon::now();
+                    $difference = $now->diffInMinutes($createdAt);
+                
+                    if ($difference < 30) {
+                        // Realiza una acción si la fecha es inferior a 30 minutos
+                    } else {
+                        // Realiza otra acción en caso contrario
+                    }
+                } else {
+                    // Manejar el caso en que no se encuentra el mensaje
+                }
+            }
             $dataRegistrar = [
                 'id_mensaje' => $id,
                 'id_three' => null,
@@ -240,6 +317,7 @@ class WhatsappController extends Controller
 
         }
     }
+
     public function chatGpt($mensaje, $id)
     {
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
@@ -538,7 +616,6 @@ class WhatsappController extends Controller
         }
     }
 
-
 	function asegurarSignoInterrogacion( $string ) {
 		// Comprueba si el último carácter es ?
 		if ( substr( $string, -1 ) !== '?' ) {
@@ -547,6 +624,7 @@ class WhatsappController extends Controller
 		}
 		return $string;
 	}
+
     public function contestarWhatsapp($phone, $texto) {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
     
@@ -599,7 +677,6 @@ class WhatsappController extends Controller
             return ['error' => $e->getMessage()];
         }
     }
-
 
     public function chatGptPruebas( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -667,8 +744,6 @@ class WhatsappController extends Controller
 
         return $numeroLimpio;
     }
-
-
 
     // Cron 1 minuto
     public function cron(){
@@ -1213,8 +1288,6 @@ class WhatsappController extends Controller
             return $response_data['choices'][0]['message']['content'];
         }
     }
-
-
 
     // Vista de los mensajes
     public function whatsapp()

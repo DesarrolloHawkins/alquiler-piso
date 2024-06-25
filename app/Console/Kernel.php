@@ -334,7 +334,9 @@ class Kernel extends ConsoleKernel
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
 
-            $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
+            $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
+            // ->where('dni_entregado', '!=', null)
+            ->get();
             $codigoPuertaPrincipal = '5543#';
 
             foreach($reservas as $reserva){
