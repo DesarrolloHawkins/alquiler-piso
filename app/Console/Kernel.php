@@ -337,9 +337,15 @@ class Kernel extends ConsoleKernel
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
             // ->where('dni_entregado', '!=', null)
             ->get();
-            $codigoPuertaPrincipal = '5543#';
-
+            
             foreach($reservas as $reserva){
+                if ($reserva->apartamento_id > 7) {
+                    $codigoPuertaPrincipal = '1048#';
+                    # code...
+                }else {
+                    $codigoPuertaPrincipal = '5543#';
+                }
+                
                 // Fecha de Hoy
                 $FechaHoy = new \DateTime();
                 // Formatea la fecha actual a una cadena 'Y-m-d'
@@ -849,6 +855,36 @@ class Kernel extends ConsoleKernel
                 return [
                     'nombre' => 'BB',
                     'codigo' => '2302'
+                ];
+                break;
+            case 8:
+                return [
+                    'nombre' => 'Atico',
+                    'codigo' => '1458'
+                ];
+                break;
+            case 9:
+                return [
+                    'nombre' => '3A',
+                    'codigo' => '7923'
+                ];
+                break;
+            case 10:
+                return [
+                    'nombre' => '3B',
+                    'codigo' => '1679'
+                ];
+                break;
+            case 11:
+                return [
+                    'nombre' => '3C',
+                    'codigo' => '6924'
+                ];
+                break;
+            case 12:
+                return [
+                    'nombre' => '2A',
+                    'codigo' => '2568'
                 ];
                 break;
 
