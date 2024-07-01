@@ -191,7 +191,7 @@ class WhatsappController extends Controller
             if ($mediaResponse->successful()) {
                 $extension = explode('/', $mediaResponse->header('Content-Type'))[1];
                 $filename = $imageId . '.' . $extension;
-                Storage::put('imagenesWhatsapp/' . $filename, $mediaResponse->body());
+                Storage::disk('publico')->put('imagenesWhatsapp/' . $filename, $mediaResponse->body());
                 return $filename;
             }
         }
