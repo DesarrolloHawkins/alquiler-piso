@@ -292,7 +292,35 @@ class WhatsappController extends Controller
                         
                     }
 
-
+                    $dataRegistrar = [
+                        'id_mensaje' => $id,
+                        'id_three' => null,
+                        'cliente_is' => $cliente->id,
+                        'remitente' => $phone,
+                        'mensaje' => $mensaje,
+                        'respuesta' => null,
+                        'status' => 1,
+                        'status_mensaje' => 0,
+                        'type' => 'text',
+                        'estado_id' => 0,
+                        'reserva_id' => $reservas->id,
+                        'date' => Carbon::now()
+                    ];
+                    $mensajeCreado = ChatGpt::create($dataRegistrar);
+        
+                    $reponseChatGPT = $this->chatGpt($mensaje,$id);
+        
+                    $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+        
+                    if(isset($respuestaWhatsapp['error'])){
+                        return($respuestaWhatsapp);
+                    };
+        
+                    $mensajeCreado->update([
+                        'respuesta'=> $reponseChatGPT
+                    ]);
+        
+                    return response($reponseChatGPT)->header('Content-Type', 'text/plain');
                 }
 
 
