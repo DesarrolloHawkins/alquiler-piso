@@ -267,7 +267,7 @@ class WhatsappController extends Controller
                             'mensaje' => $mensaje,
                             'respuesta' => null,
                             'status' => 1,
-                            'status_mensaje' => 0,
+                            'status_mensaje' => null,
                             'type' => 'text',
                             'estado_id' => 0,
                             'reserva_id' => $reservas->id,
@@ -300,7 +300,7 @@ class WhatsappController extends Controller
                         'mensaje' => $mensaje,
                         'respuesta' => null,
                         'status' => 1,
-                        'status_mensaje' => 0,
+                        'status_mensaje' => null,
                         'type' => 'text',
                         'estado_id' => 0,
                         'reserva_id' => $reservas->id,
@@ -329,7 +329,7 @@ class WhatsappController extends Controller
                         'mensaje' => $mensaje,
                         'respuesta' => null,
                         'status' => 1,
-                        'status_mensaje' => 0,
+                        'status_mensaje' => null,
                         'type' => 'text',
                         'date' => Carbon::now()
                     ];
