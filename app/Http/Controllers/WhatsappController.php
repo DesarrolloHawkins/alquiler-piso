@@ -321,7 +321,35 @@ class WhatsappController extends Controller
                     ]);
         
                     return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-                }
+                } else {
+                    $dataRegistrar = [
+                        'id_mensaje' => $id,
+                        'id_three' => null,
+                        'remitente' => $phone,
+                        'mensaje' => $mensaje,
+                        'respuesta' => null,
+                        'status' => 1,
+                        'status_mensaje' => 0,
+                        'type' => 'text',
+                        'date' => Carbon::now()
+                    ];
+                    $mensajeCreado = ChatGpt::create($dataRegistrar);
+
+                    $reponseChatGPT = $this->chatGpt($mensaje,$id);
+
+                    $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+
+                    if(isset($respuestaWhatsapp['error'])){
+                        dd($respuestaWhatsapp);
+                    };
+
+                    $mensajeCreado->update([
+                        'respuesta'=> $reponseChatGPT
+                    ]);
+
+                    return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+                } 
+                
 
 
 
@@ -344,32 +372,7 @@ class WhatsappController extends Controller
                 //     // Manejar el caso en que no se encuentra el mensaje
                 // }
             }
-            // $dataRegistrar = [
-            //     'id_mensaje' => $id,
-            //     'id_three' => null,
-            //     'remitente' => $phone,
-            //     'mensaje' => $mensaje,
-            //     'respuesta' => null,
-            //     'status' => 1,
-            //     'status_mensaje' => 0,
-            //     'type' => 'text',
-            //     'date' => Carbon::now()
-            // ];
-            // $mensajeCreado = ChatGpt::create($dataRegistrar);
-
-            // $reponseChatGPT = $this->chatGpt($mensaje,$id);
-
-            // $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-
-            // if(isset($respuestaWhatsapp['error'])){
-            //     dd($respuestaWhatsapp);
-            // };
-
-            // $mensajeCreado->update([
-            //     'respuesta'=> $reponseChatGPT
-            // ]);
-
-            // return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            
 
         }
     }
