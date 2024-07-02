@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
-            $table->unsignedBigInteger('estado_id')->nullable();
+            $table->unsignedInteger('estado_id')->nullable();
             $table->unsignedBigInteger('reserva_id')->nullable();
             $table->unsignedBigInteger('cliente_id')->nullable();
 
