@@ -259,7 +259,35 @@ class WhatsappController extends Controller
                         return response($reponseChatGPT)->header('Content-Type', 'text/plain');
                     } else {
 
-
+                        $dataRegistrar = [
+                            'id_mensaje' => $id,
+                            'id_three' => null,
+                            'cliente_is' => $cliente->id,
+                            'remitente' => $phone,
+                            'mensaje' => $mensaje,
+                            'respuesta' => null,
+                            'status' => 1,
+                            'status_mensaje' => 0,
+                            'type' => 'text',
+                            'estado_id' => 0,
+                            'reserva_id' => $reservas->id,
+                            'date' => Carbon::now()
+                        ];
+                        $mensajeCreado = ChatGpt::create($dataRegistrar);
+            
+                        $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            
+                        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            
+                        if(isset($respuestaWhatsapp['error'])){
+                            return($respuestaWhatsapp);
+                        };
+            
+                        $mensajeCreado->update([
+                            'respuesta'=> $reponseChatGPT
+                        ]);
+            
+                        return response($reponseChatGPT)->header('Content-Type', 'text/plain');
 
                         
                     }
@@ -269,51 +297,51 @@ class WhatsappController extends Controller
 
 
 
-                $mensajesCliente = ChatGpt::where('remitente', $cliente->telefono)->get();
+                // $mensajesCliente = ChatGpt::where('remitente', $cliente->telefono)->get();
 
-                if ($mensajesCliente) {
-                    // Obtén el campo created_at
-                    $createdAt = $mensajesCliente->created_at;
+                // if ($mensajesCliente) {
+                //     // Obtén el campo created_at
+                //     $createdAt = $mensajesCliente->created_at;
                 
-                    // Compara la fecha actual con el created_at
-                    $now = Carbon::now();
-                    $difference = $now->diffInMinutes($createdAt);
+                //     // Compara la fecha actual con el created_at
+                //     $now = Carbon::now();
+                //     $difference = $now->diffInMinutes($createdAt);
                 
-                    if ($difference < 30) {
-                        // Realiza una acción si la fecha es inferior a 30 minutos
-                    } else {
-                        // Realiza otra acción en caso contrario
-                    }
-                } else {
-                    // Manejar el caso en que no se encuentra el mensaje
-                }
+                //     if ($difference < 30) {
+                //         // Realiza una acción si la fecha es inferior a 30 minutos
+                //     } else {
+                //         // Realiza otra acción en caso contrario
+                //     }
+                // } else {
+                //     // Manejar el caso en que no se encuentra el mensaje
+                // }
             }
-            $dataRegistrar = [
-                'id_mensaje' => $id,
-                'id_three' => null,
-                'remitente' => $phone,
-                'mensaje' => $mensaje,
-                'respuesta' => null,
-                'status' => 1,
-                'status_mensaje' => 0,
-                'type' => 'text',
-                'date' => Carbon::now()
-            ];
-            $mensajeCreado = ChatGpt::create($dataRegistrar);
+            // $dataRegistrar = [
+            //     'id_mensaje' => $id,
+            //     'id_three' => null,
+            //     'remitente' => $phone,
+            //     'mensaje' => $mensaje,
+            //     'respuesta' => null,
+            //     'status' => 1,
+            //     'status_mensaje' => 0,
+            //     'type' => 'text',
+            //     'date' => Carbon::now()
+            // ];
+            // $mensajeCreado = ChatGpt::create($dataRegistrar);
 
-            $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            // $reponseChatGPT = $this->chatGpt($mensaje,$id);
 
-            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            // $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
-            if(isset($respuestaWhatsapp['error'])){
-                dd($respuestaWhatsapp);
-            };
+            // if(isset($respuestaWhatsapp['error'])){
+            //     dd($respuestaWhatsapp);
+            // };
 
-            $mensajeCreado->update([
-                'respuesta'=> $reponseChatGPT
-            ]);
+            // $mensajeCreado->update([
+            //     'respuesta'=> $reponseChatGPT
+            // ]);
 
-            return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            // return response($reponseChatGPT)->header('Content-Type', 'text/plain');
 
         }
     }
