@@ -50,6 +50,7 @@ class ApartamentosController extends Controller
         $apartamento->id_web = $validatedData['id_web'];
         $apartamento->nombre = $validatedData['nombre'];
         $apartamento->claves = $request['claves'];
+        $apartamento->edificio = $request['edificio'];
         $apartamento->save();
        // Actualizar el cliente con los datos validados
         //    $apartamento->update($validatedData);
@@ -64,7 +65,8 @@ class ApartamentosController extends Controller
                 'id_booking' => 'required|string|max:255',
                 'id_web' => 'required|string|max:255',
                 'titulo' => 'required|string|max:255',
-                'claves' => 'required|string|max:255'
+                'claves' => 'required|string|max:255',
+                'edificio' => 'required'
         ];
 
         // Validar los datos del formulario
