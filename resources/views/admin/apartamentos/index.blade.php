@@ -32,7 +32,11 @@
 
             <table class="table table-striped table-hover">
                 <thead>
+
                     <tr>
+                        <th>
+                            Edificio
+                        </th>
                         <th scope="col">
                             <a href="{{ route('clientes.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
@@ -70,6 +74,7 @@
                 <tbody>
                     @foreach ($apartamentos as $apartamento)
                         <tr>
+                            <th scope="row">@if($apartamento->edificio == 1) {{'Edificio Hawkins'}} @else {{'Edificio Costa'}} @endif</th>
                             <th scope="row">{{$apartamento->id}}</th>
                             <td>{{$apartamento->titulo}}</td>
                             <td>{{$apartamento->id_booking}}</td>
