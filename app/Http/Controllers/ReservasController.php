@@ -215,36 +215,50 @@ class ReservasController extends Controller
                 if ($data['origen'] == 'Booking') {
                     // Si es booking lo obtenemos por el id del apartamento en booking
                     $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
-                }else if($data['origen'] == 'Airbnb'){
+                }
+                else if($data['origen'] == 'Airbnb'){
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
-                    switch ($data['apartamento']) {
-                        case 'Atico nueva contruccion en el centro de Algeciras':
-                            $apartamento = (object) ['id'=> 1];
-                            break;
-                        case 'Apartamento interior en el centro de Algeciras 2A':
-                            $apartamento = (object) ['id'=> 2];
-                            break;
-                        case 'Apartamento en el absoluto centro 2B':
-                            $apartamento = (object) ['id'=> 3];
-                            break;
-                        case 'Apartamento interior centro en Algeciras 1º A':
-                            $apartamento = (object) ['id'=> 4];
-                            break;
-                        case 'Apartamento de 2020 a estrenar en pleno centro1B':
-                            $apartamento = (object) ['id'=> 5];
-                            break;
-                        case 'Apartamento interior en el absoluto centro BA':
-                            $apartamento = (object) ['id'=> 6];
-                            break;
-                        case 'Apartamento BB Centro Algeciras':
-                            $apartamento = (object) ['id'=> 7];
-                            break;
+                    $searchQuery = $request->input('apartamento');
+                    $bestMatch = $this->findClosestMatch($searchQuery);
+                
+                    if ($bestMatch) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Apartamento encontrado',
+                            'data' => $bestMatch
+                        ]);
+                    } 
+                    // $apartamentoEncontrado = Apartamento::where('nombre', $data['apartamento'])->first();
+                    $apartamentoEncontrado = $bestMatch;
+                    dd($apartamentoEncontrado);
+                    // switch ($data['apartamento']) {
+                    //     case 'Atico nueva contruccion en el centro de Algeciras':
+                    //         $apartamento = (object) ['id'=> 1];
+                    //         break;
+                    //     case 'Apartamento interior en el centro de Algeciras 2A':
+                    //         $apartamento = (object) ['id'=> 2];
+                    //         break;
+                    //     case 'Apartamento en el absoluto centro 2B':
+                    //         $apartamento = (object) ['id'=> 3];
+                    //         break;
+                    //     case 'Apartamento interior centro en Algeciras 1º A':
+                    //         $apartamento = (object) ['id'=> 4];
+                    //         break;
+                    //     case 'Apartamento de 2020 a estrenar en pleno centro1B':
+                    //         $apartamento = (object) ['id'=> 5];
+                    //         break;
+                    //     case 'Apartamento interior en el absoluto centro BA':
+                    //         $apartamento = (object) ['id'=> 6];
+                    //         break;
+                    //     case 'Apartamento BB Centro Algeciras':
+                    //         $apartamento = (object) ['id'=> 7];
+                    //         break;
 
 
-                        default:
-                            $apartamento = (object) ['id'=> null];
-                            break;
-                    }
+                    //     default:
+                    //         $apartamento = (object) ['id'=> null];
+                    //         break;
+                    // }
                 } else {
                     $apartamento = Apartamento::where('id_web', $data['apartamento'])->first();
 
@@ -280,6 +294,54 @@ class ReservasController extends Controller
             return response('Ya existe la Reserva', 200);
         }
 
+    }
+    function levenshteinDistance($str1, $str2) {
+        $len1 = strlen($str1);
+        $len2 = strlen($str2);
+    
+        $matrix = [];
+    
+        for ($i = 0; $i <= $len1; $i++) {
+            $matrix[$i][0] = $i;
+        }
+    
+        for ($j = 0; $j <= $len2; $j++) {
+            $matrix[0][$j] = $j;
+        }
+    
+        for ($i = 1; $i <= $len1; $i++) {
+            for ($j = 1; $j <= $len2; $j++) {
+                if ($str1[$i - 1] == $str2[$j - 1]) {
+                    $cost = 0;
+                } else {
+                    $cost = 1;
+                }
+                $matrix[$i][$j] = min(
+                    $matrix[$i - 1][$j] + 1,      // deletion
+                    $matrix[$i][$j - 1] + 1,      // insertion
+                    $matrix[$i - 1][$j - 1] + $cost  // substitution
+                );
+            }
+        }
+    
+        return $matrix[$len1][$len2];
+    }
+    public function findClosestMatch($searchQuery) {
+        // Obtener todos los nombres de apartamentos de la base de datos
+        $apartments = Apartamento::all();
+    
+        $closestMatch = null;
+        $shortestDistance = PHP_INT_MAX;
+    
+        foreach ($apartments as $apartment) {
+            $distance = $this->levenshteinDistance($searchQuery, $apartment->nombre);
+            if ($distance < $shortestDistance) {
+                $shortestDistance = $distance;
+                $closestMatch = $apartment;
+            }
+        }
+    
+        return $closestMatch;
     }
 
 	public function cancelarAirBnb($reserva){
