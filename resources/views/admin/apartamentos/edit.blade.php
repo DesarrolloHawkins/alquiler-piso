@@ -19,8 +19,8 @@
                     <label for="edificio" class="form-label">Edificio</label>
                     <select name="edificio" id="edificio" class="form-control @error('edificio') is-invalid @enderror">
                         <option value="{{null}}">Seleccione un Edificio</option>
-                        <option value="{{1}}">Edificio Hawkins</option>
-                        <option value="{{2}}">Edificio Costa</option>
+                        <option @if($apartamento->edificio == 1) selected @endif value="{{1}}">Edificio Hawkins</option>
+                        <option @if($apartamento->edificio == 2) selected @endif value="{{2}}">Edificio Costa</option>
                     </select>
                     
                     @error('edificio')
