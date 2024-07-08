@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Mail\EnvioClavesEmail;
+use App\Models\Apartamento;
 use App\Models\Cliente;
 use App\Models\Huesped;
 use App\Models\MensajeAuto;
@@ -808,105 +809,109 @@ class Kernel extends ConsoleKernel
     }
 
     public function codigoApartamento($habitacion){
-        switch ($habitacion) {
-            case 1:
-                return [
-                        'nombre' => 'ATICO',
-                        'codigo' => '0807'
+        $apartamento = Apartamento::find($habitacion);
+        if ($apartamento) {
+            switch ($habitacion) {
+                case 1:
+                    return [
+                            'nombre' => 'ATICO',
+                            'codigo' => $apartamento->claves
+                        ];
+                    break;
+    
+                case 2:
+                    return [
+                        'nombre' => '2A',
+                        'codigo' => $apartamento->claves
                     ];
-                break;
-
-            case 2:
+                    break;
+    
+                case 3:
+                    return [
+                        'nombre' => '2B',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+    
+                case 4:
+                    return [
+                        'nombre' => '1A',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+    
+                case 5:
+                    return [
+                        'nombre' => '1B',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+    
+                case 6:
+                    return [
+                        'nombre' => 'BA',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+    
+                case 7:
+                    return [
+                        'nombre' => 'BB',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 8:
+                    return [
+                        'nombre' => 'Atico',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 9:
+                    return [
+                        'nombre' => '3A',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 10:
+                    return [
+                        'nombre' => '3B',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 11:
+                    return [
+                        'nombre' => '3C',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 12:
+                    return [
+                        'nombre' => '2A',
+                        'codigo' => '2568'
+                    ];
+                    break;
+                case 13:
+                    return [
+                        'nombre' => '2B',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+                case 14:
+                    return [
+                        'nombre' => '1A',
+                        'codigo' => $apartamento->claves
+                    ];
+                    break;
+    
+                default:
                 return [
-                    'nombre' => '2A',
-                    'codigo' => '5032'
+                    'nombre' => 'Error',
+                    'codigo' => '0000'
                 ];
-                break;
-
-            case 3:
-                return [
-                    'nombre' => '2B',
-                    'codigo' => '2306'
-                ];
-                break;
-
-            case 4:
-                return [
-                    'nombre' => '1A',
-                    'codigo' => '4243'
-                ];
-                break;
-
-            case 5:
-                return [
-                    'nombre' => '1B',
-                    'codigo' => '2304'
-                ];
-                break;
-
-            case 6:
-                return [
-                    'nombre' => 'BA',
-                    'codigo' => '4241'
-                ];
-                break;
-
-            case 7:
-                return [
-                    'nombre' => 'BB',
-                    'codigo' => '2302'
-                ];
-                break;
-            case 8:
-                return [
-                    'nombre' => 'Atico',
-                    'codigo' => '1458'
-                ];
-                break;
-            case 9:
-                return [
-                    'nombre' => '3A',
-                    'codigo' => '7923'
-                ];
-                break;
-            case 10:
-                return [
-                    'nombre' => '3B',
-                    'codigo' => '1679'
-                ];
-                break;
-            case 11:
-                return [
-                    'nombre' => '3C',
-                    'codigo' => '6924'
-                ];
-                break;
-            case 12:
-                return [
-                    'nombre' => '2A',
-                    'codigo' => '2568'
-                ];
-                break;
-            case 13:
-                return [
-                    'nombre' => '2B',
-                    'codigo' => '1479'
-                ];
-                break;
-            case 14:
-                return [
-                    'nombre' => '1A',
-                    'codigo' => '3579'
-                ];
-                break;
-
-            default:
-            return [
-                'nombre' => 'Error',
-                'codigo' => '0000'
-            ];
-                break;
+                    break;
+            }
         }
+        
     }
 
     public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'en'){

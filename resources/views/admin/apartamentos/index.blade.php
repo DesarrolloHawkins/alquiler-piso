@@ -12,7 +12,7 @@
 </style>
 <div class="container-fluid">
     <h2 class="mb-3">{{ __('Nuestros Apartamentos') }}</h2>
-    <a href="{{route('clientes.create')}}" class="btn bg-color-quinto">Crear apartamento</a>
+    <a href="{{route('apartamentos.admin.create')}}" class="btn bg-color-quinto">Crear apartamento</a>
     <hr class="mb-5">
     <div class="row justify-content-center">
 

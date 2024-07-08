@@ -21,6 +21,10 @@ class ApartamentosController extends Controller
         $apartamentos = Apartamento::all();
         return view('admin.apartamentos.index', compact('apartamentos'));
     }
+    public function createAdmin()
+    {
+        return view('admin.apartamentos.create');
+    }
 
     public function editAdmin($id)
     {
@@ -49,6 +53,23 @@ class ApartamentosController extends Controller
         $apartamento->save();
        // Actualizar el cliente con los datos validados
         //    $apartamento->update($validatedData);
+
+       // Redireccionar a una ruta de éxito o devolver una respuesta
+       return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
+    }
+    public function storeAdmin(Request $request)
+    {
+        $rules = [
+                'nombre' => 'required|string|max:255',
+                'id_booking' => 'required|string|max:255',
+                'id_web' => 'required|string|max:255',
+                'titulo' => 'required|string|max:255',
+                'claves' => 'required|string|max:255'
+        ];
+
+        // Validar los datos del formulario
+        $validatedData = $request->validate($rules);
+        $apartamento = Apartamento::create($validatedData);
 
        // Redireccionar a una ruta de éxito o devolver una respuesta
        return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
