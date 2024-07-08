@@ -345,7 +345,7 @@ class Kernel extends ConsoleKernel
                 }else {
                     $codigoPuertaPrincipal = '5543#';
                 }
-                
+                $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
                 // Fecha de Hoy
                 $FechaHoy = new \DateTime();
                 // Formatea la fecha actual a una cadena 'Y-m-d'
@@ -426,7 +426,7 @@ class Kernel extends ConsoleKernel
                         if ($reserva->apartamento_id === 1) {
                             $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
                         }else {
-                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],$apartamentoReservado->edificio);
                         }
                         $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                     }
@@ -1510,7 +1510,9 @@ class Kernel extends ConsoleKernel
         }
 
     }
-    public function clavesEmail($idioma, $cliente, $apartamento, $claveEntrada, $clavePiso){
+    public function clavesEmail($idioma, $cliente, $apartamento, $claveEntrada, $clavePiso, $edificio = 1){
+
+        $enlace = $edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
 
         switch ($idioma) {
             case 'es':
@@ -1520,7 +1522,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Hola '.$cliente.'!! La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Hola '.$cliente.'!! La ubicación de los apartamentos es: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Tu apartamento es el '.$apartamento.', los códigos para entrar al apartamento son: Para la puerta principal '.$claveEntrada.' y para la puerta de tu apartamento '.$clavePiso.'.
@@ -1541,7 +1543,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
@@ -1563,7 +1565,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                مرحبًا '.$cliente.'!! موقع الشقق هو: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                مرحبًا '.$cliente.'!! موقع الشقق هو: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     شقتك هي '.$apartamento.'، رموز الدخول للشقة هي: للباب الرئيسي '.$claveEntrada.' ولباب شقتك '.$clavePiso.'.
@@ -1584,7 +1586,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Hallo '.$cliente.'!! Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Hallo '.$cliente.'!! Die Lage der Apartments ist: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Ihr Apartment ist das '.$apartamento.', die Codes zum Betreten des Apartments sind: Für die Haupteingangstür '.$claveEntrada.' und für die Tür Ihrer Wohnung '.$clavePiso.'.
@@ -1605,7 +1607,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Espero que tenha uma estadia maravilhosa.
@@ -1623,7 +1625,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                    Ciao  '.$cliente.'!! La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                    Ciao  '.$cliente.'!! La posizione degli appartamenti è: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Spero che tu abbia un soggiorno meraviglioso.
@@ -1642,7 +1644,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                    Hello  '.$cliente.'!! The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                    Hello  '.$cliente.'!! The location of the apartments is: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Your apartment is '.$apartamento.', the codes to enter the apartment are: for the main door '.$claveEntrada.' and for the door of your apartment '.$clavePiso.'.
