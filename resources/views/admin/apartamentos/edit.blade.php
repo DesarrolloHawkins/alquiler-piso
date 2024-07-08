@@ -46,6 +46,13 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="mb-3">
+                    <label for="claves" class="form-label">Clave de Acceso</label>
+                    <input type="text" class="form-control @error('claves') is-invalid @enderror" id="claves" name="claves" value="{{ old('claves', $apartamento->claves) }}">
+                    @error('claves')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
                 <button type="submit" class="btn btn-terminar mt-4">Actualizar</button>
             </form>

@@ -17,7 +17,10 @@ class Apartamento extends Model
     protected $fillable = [
         'nombre',
         'id_booking',
-        'id_airbnb'
+        'id_airbnb',
+        'id_web',
+        'titulo',
+        'claves'
     ];
 
     /**
