@@ -20,7 +20,8 @@ class Apartamento extends Model
         'id_airbnb',
         'id_web',
         'titulo',
-        'claves'
+        'claves',
+        'edificio'
     ];
 
     /**

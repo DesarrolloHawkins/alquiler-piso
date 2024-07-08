@@ -16,6 +16,18 @@
             <form action="{{ route('apartamentos.admin.update', $apartamento->id) }}" method="POST">
                 @csrf
                 <div class="mb-3">
+                    <label for="edificio" class="form-label">Edificio</label>
+                    <select name="edificio" id="edificio" class="form-control @error('edificio') is-invalid @enderror">
+                        <option value="{{null}}">Seleccione un Edificio</option>
+                        <option value="{{1}}">Edificio Hawkins</option>
+                        <option value="{{2}}">Edificio Costa</option>
+                    </select>
+                    
+                    @error('edificio')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="mb-3">
                     <label for="titulo" class="form-label">Nombre</label>
                     <input type="text" class="form-control @error('titulo') is-invalid @enderror" id="titulo" name="titulo" value="{{ old('titulo', $apartamento->titulo) }}">
                     @error('titulo')

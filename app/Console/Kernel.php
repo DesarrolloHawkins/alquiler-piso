@@ -105,8 +105,7 @@ class Kernel extends ConsoleKernel
                 Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
             }
         })->everyMinute();
-        
-
+    
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
 
@@ -559,7 +558,7 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de webpol del cliente ejecutada con éxito.");
         })->everyMinute();
 
-         // $schedule->call(function () {
+        // $schedule->call(function () {
 
         //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         // })->everyMinute();
@@ -1521,7 +1520,7 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Hola '.$cliente.'!! La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9"https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
+                Hola '.$cliente.'!! La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">https://goo.gl/maps/qb7AxP1JAxx5yg3N9</a>.
                 </p>
                 <p style="margin: 0 !important">
                     Tu apartamento es el '.$apartamento.', los códigos para entrar al apartamento son: Para la puerta principal '.$claveEntrada.' y para la puerta de tu apartamento '.$clavePiso.'.
