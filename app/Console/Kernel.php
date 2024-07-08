@@ -887,6 +887,18 @@ class Kernel extends ConsoleKernel
                     'codigo' => '2568'
                 ];
                 break;
+            case 13:
+                return [
+                    'nombre' => '2B',
+                    'codigo' => '1479'
+                ];
+                break;
+            case 14:
+                return [
+                    'nombre' => '1A',
+                    'codigo' => '3579'
+                ];
+                break;
 
             default:
             return [
