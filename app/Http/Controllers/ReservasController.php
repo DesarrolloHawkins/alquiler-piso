@@ -222,7 +222,8 @@ class ReservasController extends Controller
                     $bestMatch = $this->findClosestMatch($searchQuery);
                 
                     if ($bestMatch) {
-                        $apartamento = $bestMatch->data;
+                        $apartamento = $bestMatch;
+                        // dd($apartamento);
                         // return response()->json([
                         //     'success' => true,
                         //     'message' => 'Apartamento encontrado',
