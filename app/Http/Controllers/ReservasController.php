@@ -229,8 +229,8 @@ class ReservasController extends Controller
                         ]);
                     } 
                     // $apartamentoEncontrado = Apartamento::where('nombre', $data['apartamento'])->first();
-                    $apartamentoEncontrado = $bestMatch;
-                    dd($apartamentoEncontrado);
+                    $apartamento = $bestMatch['data'];
+                    // dd($apartamentoEncontrado);
                     // switch ($data['apartamento']) {
                     //     case 'Atico nueva contruccion en el centro de Algeciras':
                     //         $apartamento = (object) ['id'=> 1];
