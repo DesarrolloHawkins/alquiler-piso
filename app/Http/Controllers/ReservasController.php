@@ -222,14 +222,14 @@ class ReservasController extends Controller
                     $bestMatch = $this->findClosestMatch($searchQuery);
                 
                     if ($bestMatch) {
-                        return response()->json([
-                            'success' => true,
-                            'message' => 'Apartamento encontrado',
-                            'data' => $bestMatch
-                        ]);
+                        $apartamento = $bestMatch['data'];
+                        // return response()->json([
+                        //     'success' => true,
+                        //     'message' => 'Apartamento encontrado',
+                        //     'data' => $bestMatch
+                        // ]);
                     } 
                     // $apartamentoEncontrado = Apartamento::where('nombre', $data['apartamento'])->first();
-                    $apartamento = $bestMatch['data'];
                     // dd($apartamentoEncontrado);
                     // switch ($data['apartamento']) {
                     //     case 'Atico nueva contruccion en el centro de Algeciras':
