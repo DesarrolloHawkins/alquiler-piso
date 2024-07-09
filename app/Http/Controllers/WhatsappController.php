@@ -140,19 +140,19 @@ class WhatsappController extends Controller
 
             $responseImage = 'Gracias!! recuerda que soy una inteligencia artificial y que no puedo ver lo que me has enviado pero mi supervisora María lo verá en el horario de 09:00 a 18:00 de Lunes a viernes. Si es tu DNI o Pasaporte es suficiente con enviármelo a mi. Mi supervisora lo recibirá. Muchas gracias!!';
             $respuestaImage = $this->chatGptPruebasConImagen($descargarImage);
-            Storage::disk('publico')->put('pruebadelectura.txt', $respuestaImage );
+            Storage::disk('publico')->put('pruebadelectura-'.$idMedia.'.txt', $respuestaImage );
 
             // $respuestaWhatsapp = $this->contestarWhatsapp($phone, $responseImage);
 
-            // $dataRegistrarChat = [
-            //     'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
-            //     'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
-            //     'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
-            //     'respuesta' => $responseImage,
-            //     'status' => 1,
-            //     'type' => 'image'
-            // ];
-            // ChatGpt::create( $dataRegistrarChat );
+            $dataRegistrarChat = [
+                'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
+                'respuesta' => $responseImage,
+                'status' => 1,
+                'type' => 'image'
+            ];
+            ChatGpt::create( $dataRegistrarChat );
         }
     }
 
@@ -785,7 +785,8 @@ class WhatsappController extends Controller
         $response = curl_exec($curl);
         curl_close($curl);
         Storage::disk('local')->put('REspuestaImagenChat.txt', json_encode($response));
-
+        $response_data = json_decode($response, true);
+        return response()->json($response_data);
         // Procesar la respuesta
         if ($response === false) {
             $error = [
