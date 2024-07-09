@@ -744,6 +744,62 @@
 
     });
 
+    function resizeImage(file, maxWidth, maxHeight, callback) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = document.createElement("img");
+            img.onload = function () {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext("2d");
+                
+                let width = img.width;
+                let height = img.height;
 
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob(callback, 'image/jpeg', 0.7); // Ajusta la calidad de la imagen según necesites
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function handleFileUpload(event, index) {
+        const file = event.target.files[0];
+
+        if (!file.type.match('image.*')) {
+            alert("Por favor, selecciona una imagen.");
+            return;
+        }
+
+        resizeImage(file, 800, 600, function (resizedBlob) {
+            // Crear un FormData y añadir la imagen redimensionada
+            let formData = new FormData();
+            formData.append('image', resizedBlob, file.name);
+            
+            // Mostrar vista previa de la imagen redimensionada
+            let url = URL.createObjectURL(resizedBlob);
+            $('#image-preview_' + index).attr('src', url);
+        });
+    }
+
+    $(document).ready(function() {
+        $('.file-input').on('change', function(event) {
+            handleFileUpload(event, $(this).data('info'));
+        });
+    });
 </script>
 @endsection
