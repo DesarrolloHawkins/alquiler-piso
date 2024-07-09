@@ -131,6 +131,7 @@ class WhatsappController extends Controller
             // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
 
             $descargarImage = $this->descargarImage($idMedia);
+            Storage::disk('publico')->put('nombreImagen.txt', $descargarImage );
 
             // if ($descargarImage == true) {
             //     Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
@@ -747,7 +748,7 @@ class WhatsappController extends Controller
             'Authorization: Bearer ' . $token,
             'Content-Type: application/json'
         );
-        
+
         // Construir la URL completa de la imagen
         $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
 
