@@ -749,6 +749,7 @@ class WhatsappController extends Controller
     
         // Obtener el contenido de la imagen
         $imagenContenido = file_get_contents($imagenPath);
+        Storage::disk('local')->put('rutaImagen.txt', $imagenPath);
         $imagenBase64 = base64_encode($imagenContenido);
     
         $data = array(
