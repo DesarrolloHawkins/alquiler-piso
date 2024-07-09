@@ -743,7 +743,7 @@ class WhatsappController extends Controller
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
        
         // Configurar los parámetros de la solicitud
-        $url = 'https://api.openai.com/v1/images/analyze';
+        $url = 'https://api.openai.com/v1/chat/completions';
         $headers = array(
             'Authorization: Bearer ' . $token,
             'Content-Type: application/json'
