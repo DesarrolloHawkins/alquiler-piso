@@ -747,19 +747,26 @@ class WhatsappController extends Controller
             'Authorization: Bearer ' . $token,
             'Content-Type: application/json'
         );
+        
+        // Construir la URL completa de la imagen
+        $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
+
         $data = array(
             "model" => "gpt-4o",
             "messages" => [
                 [
                     "role" => "user",
                     "content" => [
-                        "type" => "text",
-                        "text"=> "Analiza esta imagen y dime si es un dni o pasaporte, hazme la contestacion devolviendome solo un JSON, donde tenga la sigueinte estructura: {isDni: true o false, isPasaporte: true o false (dependiendo si es un dni o pasaporte lo que te envie, si es un dni o pasaporte entonces agregamos otra propiedades), informacion: { nombre, apellido,fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte }, si no es dni o pasaporte esa dos propiedades de isDni o isPasaporte deben venir false."
-
-                    ],
-                    "type" => "image_url",
-                    "image_url" => [
-                        "url" => 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/'.$imagenFilename
+                        [
+                            "type" => "text",
+                            "text" => "Analiza esta imagen y dime si es un dni o pasaporte, hazme la contestacion devolviendome solo un JSON, donde tenga la sigueinte estructura: {isDni: true o false, isPasaporte: true o false (dependiendo si es un dni o pasaporte lo que te envie, si es un dni o pasaporte entonces agregamos otra propiedades), informacion: { nombre, apellido,fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte }, si no es dni o pasaporte esa dos propiedades de isDni o isPasaporte deben venir false."
+                        ],
+                        [
+                            "type" => "image_url",
+                            "image_url" => [
+                                "url" => $imageUrl
+                            ]
+                        ]
                     ]
                 ]
             ]
@@ -797,7 +804,7 @@ class WhatsappController extends Controller
             return response()->json($response_data);
         }
         
-        
+
     }
     
     
