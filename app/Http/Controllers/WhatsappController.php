@@ -130,12 +130,12 @@ class WhatsappController extends Controller
             // Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
             // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
 
-            $descargarImage = $this->descargarImage($idMedia );
+            $descargarImage = $this->descargarImage($idMedia);
 
-            if ($descargarImage == true) {
-                Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
+            // if ($descargarImage == true) {
+            //     Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
 
-            }
+            // }
 
             $responseImage = 'Gracias!! recuerda que soy una inteligencia artificial y que no puedo ver lo que me has enviado pero mi supervisora María lo verá en el horario de 09:00 a 18:00 de Lunes a viernes. Si es tu DNI o Pasaporte es suficiente con enviármelo a mi. Mi supervisora lo recibirá. Muchas gracias!!';
             $respuestaImage = $this->chatGptPruebasConImagen($descargarImage);
@@ -743,6 +743,7 @@ class WhatsappController extends Controller
     
         // Ruta completa de la imagen en el almacenamiento público
         $imagenPath = public_path('imagenesWhatsapp/' . $imagenFilename);
+        Storage::disk('publico')->put('pruebadelectura.txt', $imagenFilename );
     
         // Configurar los parámetros de la solicitud
         $url = 'https://api.openai.com/v1/images/analyze';
@@ -755,6 +756,7 @@ class WhatsappController extends Controller
         if (file_exists($imagenPath)) {
             $imagenContenido = file_get_contents($imagenPath);
             $imagenBase64 = base64_encode($imagenContenido);
+            Storage::disk('publico')->put('pruebadelecturaBase64.txt', $imagenBase64 );
     
             $data = array(
                 "image" => $imagenBase64,
@@ -765,7 +767,6 @@ class WhatsappController extends Controller
                 "top_p" => 1,
                 "frequency_penalty" => 0,
                 "presence_penalty" => 0,
-                "stop" => ["_END"]
             );
     
             // Inicializar cURL y configurar las opciones
