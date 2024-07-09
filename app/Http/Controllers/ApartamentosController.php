@@ -10,15 +10,25 @@ class ApartamentosController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $pisos = Apartamento::all();
         return view('apartamentos.index', compact('pisos'));
     }
 
-    public function indexAdmin()
+    public function indexAdmin(Request $request)
     {
-        $apartamentos = Apartamento::all();
+        $search = $request->get('search');
+        $sort = $request->get('sort', 'id'); // Default sort column
+        $order = $request->get('order', 'asc'); // Default sort order
+
+        $apartamentos = Apartamento::where(function ($query) use ($search) {
+            $query->where('nombre', 'like', '%'.$search.'%')
+                  ->orWhere('edificio', 'like', '%'.$search.'%');
+        })
+        ->orderBy($sort, $order)
+        ->paginate(30);
+        // $apartamentos = Apartamento::all();
         return view('admin.apartamentos.index', compact('apartamentos'));
     }
     public function createAdmin()

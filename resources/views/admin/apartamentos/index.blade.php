@@ -36,7 +36,7 @@
                     <tr>
                         
                         <th scope="col">
-                            <a href="{{ route('clientes.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
                                 ID
                                 @if (request('sort') == 'id')
@@ -44,11 +44,17 @@
                                 @endif
                             </a>
                         </th>
-                        <th>
-                            Edificio
+                        <th scope="col">
+                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'edificio', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                               class="{{ request('sort') == 'edificio' ? 'active-sort' : 'inactive-sort' }}">
+                                Edificio
+                                @if (request('sort') == 'edificio')
+                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
+                                @endif
+                            </a>
                         </th>
                         <th scope="col">
-                            <a href="{{ route('clientes.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'nombre' ? 'active-sort' : 'inactive-sort' }}">
                                 Nombre
                                 @if (request('sort') == 'nombre')
@@ -57,15 +63,7 @@
                             </a>
                         </th>
                         <th scope="col" class="inactive-sort">Id Booking</th>
-                        <th scope="col">
-                            <a href="{{ route('clientes.index', ['sort' => 'idiomas', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'idiomas' ? 'active-sort' : 'inactive-sort' }}">
-                               Id Airbnb
-                                @if (request('sort') == 'idiomas')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
+                        <th scope="col" class="inactive-sort">Id Airbnb</th>
                         <th scope="col" class="inactive-sort">Id Web</th>
                         <th scope="col" class="inactive-sort" style="width: 200px;">Acción</th>
                     </tr>
