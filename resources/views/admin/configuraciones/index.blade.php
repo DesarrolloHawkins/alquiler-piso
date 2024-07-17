@@ -15,14 +15,18 @@
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <div class="row">
-                <label class="">Contraseña Booking</label>
-                <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
-            </div>       
-            <div class="row">
-                <label class="">Contraseña Airbnb</label>
-                <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
-            </div>       
+            <form action="{{route('configuracion.update'), $configuraciones[0]->id}}" method="POST">
+                @csrf
+                <div class="row">
+                    <label class="">Contraseña Booking</label>
+                    <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
+                </div>       
+                <div class="row">
+                    <label class="">Contraseña Airbnb</label>
+                    <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
+                </div>
+                <button type="submit">Actualizar</button>    
+            </form>
 
         </div>
     </div>
