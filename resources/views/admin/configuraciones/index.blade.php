@@ -18,11 +18,11 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-4">Contraseña Booking</div>
-                <div class="col-8">{{$configuracion->password_booking}}</div>
+                <div class="col-8">{{$configuraciones->password_booking}}</div>
             </div>       
             <div class="row">
                 <div class="col-4">Contraseña Airbnb</div>
-                <div class="col-8">{{$configuracion->password_airbnb}}</div>
+                <div class="col-8">{{$configuraciones->password_airbnb}}</div>
             </div>       
 
         </div>
