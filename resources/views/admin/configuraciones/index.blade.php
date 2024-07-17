@@ -15,7 +15,7 @@
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <form action="{{route('configuracion.update'), $configuraciones[0]->id}}" method="POST">
+            <form action="{{route('configuracion.update', $configuraciones[0]->id)}}" method="POST">
                 @csrf
                 <div class="row">
                     <label class="">Contraseña Booking</label>
