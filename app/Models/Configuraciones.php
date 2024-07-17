@@ -23,4 +23,14 @@ class Configuraciones extends Model
         'password_airbnb'
         
     ];
+
+    /**
+     * Mutaciones de fecha.
+     *
+     * @var array
+     */
+    protected $dates = [
+        'created_at', 'updated_at', 'deleted_at', 
+    ];
 }
+
