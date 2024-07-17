@@ -48,6 +48,7 @@
     console.log('Limpieza de Apartamento by Hawkins.');
 
     function resizeImage(event, previewElementId, hiddenInputId) {
+        console.log('redimensionando')
         var file = event.target.files[0];
         var reader = new FileReader();
         reader.onload = function(e) {
@@ -99,7 +100,7 @@
     document.getElementById('image_desague').addEventListener('change', function(event) {
         resizeImage(event, 'image-preview3', 'image_desague_resized');
     });
-    
+
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
         if (imageUrl) {
