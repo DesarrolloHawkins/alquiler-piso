@@ -21,7 +21,7 @@
                     <label class="">Contraseña Booking</label>
                     <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
                 </div>
-                <div>
+                <div class="mt-3 mb-3">
                     <label class="">Contraseña Airbnb</label>
                     <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
                 </div>
