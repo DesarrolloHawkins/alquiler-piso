@@ -89,6 +89,18 @@
         reader.readAsDataURL(file);
     }
 
+    document.getElementById('image_general').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview', 'image_general_resized');
+    });
+
+    document.getElementById('image_almohada').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview2', 'image_almohada_resized');
+    });
+
+    document.getElementById('image_canape').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview3', 'image_canape_resized');
+    });
+
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
         if (imageUrl) {

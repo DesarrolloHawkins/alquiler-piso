@@ -80,7 +80,13 @@
         }
         reader.readAsDataURL(file);
     }
+    document.getElementById('image_general').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview', 'image_general_resized');
+    });
 
+    document.getElementById('image_sofa').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview2', 'image_sofa_resized');
+    });
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
         if (imageUrl) {

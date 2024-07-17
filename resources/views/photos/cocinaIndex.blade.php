@@ -94,6 +94,22 @@
         }
         reader.readAsDataURL(file);
     }
+    document.getElementById('image_general').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview', 'image_general_resized');
+    });
+
+    document.getElementById('image_nevera').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview2', 'image_nevera_resized');
+    });
+
+    document.getElementById('image_microondas').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview3', 'image_microondas_resized');
+    });
+
+    document.getElementById('image_bajos').addEventListener('change', function(event) {
+        resizeImage(event, 'image-preview4', 'image_bajos_resized');
+    });
+
 
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
