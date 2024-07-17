@@ -9,9 +9,15 @@
             <form action="{{ route('reservas.store') }}" method="POST">
                 @csrf
                 <div class="form-group">
-                    <label for="cliente_id">Cliente ID</label>
-                    <input type="number" class="form-control" name="cliente_id" required>
+                  <label for="cliente_id">Cliente ID</label>
+                  <select class="form-control select2" name="cliente_id" id="cliente_id" required>
+                      <option value="">Seleccione un cliente</option>
+                      @foreach($clientes as $cliente)
+                          <option value="{{ $cliente->id }}">{{ $cliente->nombre }} ({{ $cliente->email }})</option>
+                      @endforeach
+                  </select>
                 </div>
+              
                 <div class="form-group">
                     <label for="apartamento_id">Apartamento ID</label>
                     <input type="number" class="form-control" name="apartamento_id" required>
@@ -61,4 +67,14 @@
         </div>
     </div>
 </div>
+@endsection
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            placeholder: "Selecciona un cliente",
+            allowClear: true
+        });
+    });
+</script>
 @endsection
