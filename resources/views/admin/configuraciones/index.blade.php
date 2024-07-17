@@ -18,8 +18,16 @@
             <form action="{{route('configuracion.update', $configuraciones[0]->id)}}" method="POST">
                 @csrf
                 <div class="">
+                    <label class="">User Booking</label>
+                    <input class="form-input" name="user_booking" value="{{$configuraciones[0]->user_booking}}"/>
+                </div>
+                <div class="mt-3 mb-3">
                     <label class="">Contraseña Booking</label>
                     <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
+                </div>
+                <div class="mt-3 mb-3">
+                    <label class="">User Airbnb</label>
+                    <input class="form-input" name="user_airbnb" value="{{$configuraciones[0]->user_airbnb}}"/>
                 </div>
                 <div class="mt-3 mb-3">
                     <label class="">Contraseña Airbnb</label>

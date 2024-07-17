@@ -20,7 +20,9 @@ class Configuraciones extends Model
      */
     protected $fillable = [
         'password_booking',
-        'password_airbnb'
+        'user_booking',
+        'password_airbnb',
+        'user_airbnb',
         
     ];
 
