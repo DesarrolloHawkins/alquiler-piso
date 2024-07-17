@@ -92,7 +92,7 @@
 
 <div class="container-fluid">
     <h2 class="mb-3">{{ __('Reservas') }}</h2>
-    <a href="{{route('clientes.create')}}" class="btn bg-color-quinto">Crear Reserva</a>
+    <a href="{{route('reservas.create')}}" class="btn bg-color-quinto">Crear Reserva</a>
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
