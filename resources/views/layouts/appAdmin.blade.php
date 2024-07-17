@@ -123,13 +123,13 @@
                             </a>
                           </li>
                           <li>
-                            <a href="{{route('configuracion.index')}}" class="nav-link fs-5" aria-current="page">
+                            <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-file-lines me-2"></i>
                               Logs
                             </a>
                           </li>
                           <li>
-                            <a href="#" class="nav-link fs-5" aria-current="page">
+                            <a href="{{route('configuracion.index')}}"  class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-gear me-2"></i>
                               Configuracion
                             </a>

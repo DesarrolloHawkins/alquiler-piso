@@ -14,7 +14,7 @@
     <h2 class="mb-3">{{ __('Configuracion') }}</h2>
     <hr class="mb-5">
     <div class="row justify-content-center">
-        {{dd($configuraciones[0])}}
+        {{-- {{dd($configuraciones[0])}} --}}
         <div class="col-md-12">
             <div class="row">
                 <div class="col-4">Contraseña Booking</div>
