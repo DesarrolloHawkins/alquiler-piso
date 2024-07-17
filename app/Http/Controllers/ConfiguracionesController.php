@@ -16,7 +16,11 @@ class ConfiguracionesController extends Controller
         return view('admin.configuraciones.index', compact('configuraciones'));
     }
     public function update($id, Request $request){
-        Configuraciones::updated($request->all());
+        $confi = Configuraciones::find($id);
+        $confi->password_booking = $request->password_booking;
+        $confi->password_airbnb = $request->password_airbnb;
+        $confi->save();
+        
         return redirect()->route('configuracion.index');
     }
 }
