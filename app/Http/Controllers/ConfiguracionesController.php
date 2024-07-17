@@ -16,7 +16,7 @@ class ConfiguracionesController extends Controller
         return view('admin.configuraciones.index', compact('configuraciones'));
     }
     public function update($id, Request $request){
-        $configuraciones = Configuraciones::all();
-        return view('admin.configuraciones.index', compact('configuraciones'));
+        Configuraciones::updated($request->all());
+        return redirect()->route('configuracion.index');
     }
 }
