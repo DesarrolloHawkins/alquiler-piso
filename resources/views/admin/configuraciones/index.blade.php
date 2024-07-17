@@ -17,11 +17,11 @@
         <div class="col-md-12">
             <div class="row">
                 <label class="">Contraseña Booking</label>
-                <input class="form-input" name="password_booking" value={{$configuraciones[0]->password_booking}}/>
+                <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
             </div>       
             <div class="row">
                 <label class="">Contraseña Airbnb</label>
-                <input class="form-input" name="password_airbnb" value={{$configuraciones[0]->password_airbnb}}/>
+                <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
             </div>       
 
         </div>
