@@ -14,15 +14,15 @@
     <h2 class="mb-3">{{ __('Configuracion') }}</h2>
     <hr class="mb-5">
     <div class="row justify-content-center">
-        {{dd($configuraciones)}}
+        {{dd($configuraciones[0])}}
         <div class="col-md-12">
             <div class="row">
                 <div class="col-4">Contraseña Booking</div>
-                <div class="col-8">{{$configuraciones->password_booking}}</div>
+                <div class="col-8">{{$configuraciones[0]->password_booking}}</div>
             </div>       
             <div class="row">
                 <div class="col-4">Contraseña Airbnb</div>
-                <div class="col-8">{{$configuraciones->password_airbnb}}</div>
+                <div class="col-8">{{$configuraciones[0]->password_airbnb}}</div>
             </div>       
 
         </div>
