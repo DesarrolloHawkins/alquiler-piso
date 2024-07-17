@@ -17,15 +17,11 @@
         <div class="col-md-12">
             <form action="{{route('configuracion.update', $configuraciones[0]->id)}}" method="POST">
                 @csrf
-                <div class="row">
                     <label class="">Contraseña Booking</label>
                     <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
-                </div>       
-                <div class="row">
                     <label class="">Contraseña Airbnb</label>
                     <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
-                </div>
-                <button type="submit">Actualizar</button>    
+                <button type="submit" class="btn btn-primary">Actualizar</button>    
             </form>
 
         </div>
