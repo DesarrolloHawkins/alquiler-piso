@@ -174,6 +174,18 @@
                                     </a>
                                 </th>
                                 <th scope="col">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'apartamento_id', 'direction' => (request()->get('order_by') == 'apartamento_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                        Nombre
+                                        @if(request()->get('order_by') == 'apartamento_id')
+                                            @if(request()->get('direction') == 'asc')
+                                                &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            @else
+                                                &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col">
                                     <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
                                         DNI Entregado
                                         @if(request()->get('order_by') == 'dni_entregado')
@@ -242,6 +254,7 @@
                             @foreach ($reservas as $reserva)
                                 <tr>
                                     <th scope="row">{{$reserva->id}}</th>
+                                    <td>{{$reserva->apartamento->titulo}}</td>
                                     <td>{{$reserva->cliente->alias}}</td>
                                     <td>@if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
                                     <td>{{$reserva->fecha_entrada}}</td>

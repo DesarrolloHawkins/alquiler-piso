@@ -23,4 +23,16 @@ class ConfiguracionesController extends Controller
         
         return redirect()->route('configuracion.index');
     }
+    public function passBooking(){
+        $configuraciones = Configuraciones::first();
+        return response()->json([
+            'pass' => $configuraciones->password_booking
+        ]);
+    }
+    public function passAirbnb(){
+        $configuraciones = Configuraciones::first();
+        return response()->json([
+            'pass' => $configuraciones->password_airbnb
+        ]);
+    }
 }
