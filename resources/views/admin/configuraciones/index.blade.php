@@ -18,20 +18,20 @@
             <form action="{{route('configuracion.update', $configuraciones[0]->id)}}" method="POST">
                 @csrf
                 <div class="">
-                    <label class="">User Booking</label>
-                    <input class="form-input" name="user_booking" value="{{$configuraciones[0]->user_booking}}"/>
+                    <label class="form-label">User Booking</label>
+                    <input class="form-control w-50" name="user_booking" value="{{$configuraciones[0]->user_booking}}"/>
                 </div>
                 <div class="mt-3 mb-3">
-                    <label class="">Contraseña Booking</label>
-                    <input class="form-input" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
+                    <label class="form-label">Contraseña Booking</label>
+                    <input class="form-control w-50" name="password_booking" value="{{$configuraciones[0]->password_booking}}"/>
                 </div>
                 <div class="mt-3 mb-3">
-                    <label class="">User Airbnb</label>
-                    <input class="form-input" name="user_airbnb" value="{{$configuraciones[0]->user_airbnb}}"/>
+                    <label class="form-label">User Airbnb</label>
+                    <input class="form-control w-50" name="user_airbnb" value="{{$configuraciones[0]->user_airbnb}}"/>
                 </div>
                 <div class="mt-3 mb-3">
-                    <label class="">Contraseña Airbnb</label>
-                    <input class="form-input" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
+                    <label class="form-label">Contraseña Airbnb</label>
+                    <input class="form-control w-50" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
                 </div>
                 <button type="submit" class="btn btn-primary">Actualizar</button>    
             </form>
