@@ -52,10 +52,12 @@ class GestionApartamentoController extends Controller
                     'status_id' => 2,
                     'reserva_id' => $id
                 ]);
+                $reserva->fecha_limpieza = Carbon::now();
+                $reserva->save();
             } else {
                 $apartamentoLimpieza = $apartamentoLimpio;
             }
-
+            
         // $apartamento = Apartamento::find($id);
       return view('gestion.edit', compact('apartamentoLimpieza','id'));
     }
