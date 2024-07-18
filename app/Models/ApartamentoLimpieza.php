@@ -168,6 +168,7 @@ class ApartamentoLimpieza extends Model
         $fechaActual = Carbon::now()->format('Y-m-d');
 
         return self::where('status_id', 3)
+                ->whereDate('fecha_comienzo', $fechaActual)
                 ->whereDate('fecha_fin', $fechaActual)
                 ->get();
     }
