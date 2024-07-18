@@ -35,7 +35,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
 
     // Reservas
-    Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
+    // Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
     // Clientes
     Route::get('/clientes', [App\Http\Controllers\ClientesController::class, 'index'])->name('clientes.index');
@@ -48,8 +48,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     // Reservas
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
-    Route::get('/reservas/{reserva}', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
+    Route::get('/reservas/{reserva}/show', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
     Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
+    Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
     Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
 
     // Huespedes

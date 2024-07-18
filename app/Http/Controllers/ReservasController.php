@@ -80,7 +80,8 @@ class ReservasController extends Controller
     public function create()
     {   
         $clientes = Cliente::all();
-        return view('reservas.create', compact('clientes'));
+        $apartamentos = Apartamento::all();
+        return view('reservas.create', compact('clientes','apartamentos'));
     }
 
     /**
@@ -88,7 +89,25 @@ class ReservasController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'cliente_id' => 'required|integer',
+            'apartamento_id' => 'required|integer',
+            'estado_id' => 'required|integer',
+            'origen' => 'nullable|string',
+            'fecha_entrada' => 'required|date',
+            'fecha_salida' => 'required|date',
+            'precio' => 'nullable|string',
+            'verificado' => 'nullable|integer',
+            'dni_entregado' => 'nullable|integer',
+            'enviado_webpol' => 'nullable|integer',
+            'codigo_reserva' => 'nullable|string',
+            'fecha_limpieza' => 'nullable|date'
+        ]);
+    
+        $reserva = new Reserva($request->all());
+        $reserva->save();
+    
+        return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
 
     /**
