@@ -117,7 +117,7 @@
                                 <ol class="list-group list-group-numbered">
                                     @foreach ($reservasSalida as $reservaSalida)
                                     <div class="ms-2 me-auto">
-                                        <div class="fw-bold">{{$reservaSalida->apartamento->id }} - {{ $reservaSalida->apartamento->nombre}} - {{$reservaSalida->origen}}</div>
+                                        <div class="fw-bold">{{$reservaSalida->id }} - {{ $reservaSalida->apartamento->nombre}} - {{$reservaSalida->origen}}</div>
                                         Fecha Salida: {{$reservaSalida->fecha_salida}}
                                     </div>
 
