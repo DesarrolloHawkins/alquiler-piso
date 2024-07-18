@@ -163,7 +163,7 @@
                                 </th>
                                 <th scope="col">
                                     <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
-                                        Nombre
+                                        Apartamento
                                         @if(request()->get('order_by') == 'cliente_id')
                                             @if(request()->get('direction') == 'asc')
                                                 &#9650; {{-- Icono de flecha hacia arriba --}}

@@ -123,6 +123,13 @@
                             </a>
                           </li>
                           <li>
+                          <li>
+                            <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-broom me-2"></i>
+                              Gestion Limpieza
+                            </a>
+                          </li>
+                          <li>
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-file-lines me-2"></i>
                               Logs
