@@ -682,65 +682,54 @@
 
         // Función para normalizar texto
         function normalizeText(text) {
-            // Implementa la lógica de normalización de texto aquí si es necesario
-            return text.trim().toUpperCase();
+            const texto = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return texto.trim().toUpperCase();
         }
 
-        function removeAccents(str) {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
+        // Función para manejar la lógica de selección y actualización de tipos de documento
+        function handleNationalityChange(index) {
+            var selectedValue = $('.nacionalidad').eq(index).val();
+            var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
 
-// Función para manejar la lógica de selección y actualización de tipos de documento
-function handleNationalityChange(index) {
-    var selectedValue = $('.nacionalidad').eq(index).val();
-    var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
+            console.log("Valor seleccionado:", normalizedValue);
 
-    // Eliminar acentos del valor normalizado
-    normalizedValue = removeAccents(normalizedValue);
+            var opciones = @json($optionesTipo);
+            console.log("Opciones del país:", opciones);
 
-    console.log("Valor seleccionado:", normalizedValue);
+            var paisesDni = @json($paisesDni);
+            console.log("Paises del país:", paisesDni);
 
-    var opciones = @json($optionesTipo);
-    console.log("Opciones del país:", opciones);
+            var countryInfo = paisesDni[normalizedValue];
 
-    var paisesDni = @json($paisesDni);
-    console.log("Paises del país:", paisesDni);
+            console.log("Información del país:", countryInfo);
 
-    var countryInfo = paisesDni[normalizedValue];
+            if (countryInfo) {
+                let indices;
+                let nuevasOpciones = [];
 
-    console.log("Información del país:", countryInfo);
+                if (normalizedValue === "ESPAÑA") {
+                    indices = [0, 4, 5];
+                } else if (countryInfo.isEuropean) {
+                    indices = [0, 1, 2, 3];
+                } else {
+                    indices = [0, 1, 2];
+                }
+                console.log(nuevasOpciones)
+                indices.forEach(i => {
+                    nuevasOpciones.push(opciones[i]);
+                });
 
-    if (countryInfo) {
-        let indices;
-        let nuevasOpciones = [];
-
-        if (normalizedValue === "ESPAÑA") {
-            indices = [0, 4, 5];
-        } else if (countryInfo.isEuropean) {
-            indices = [0, 1, 2, 3];
-        } else {
-            indices = [0, 1, 2];
+                $('.tiposDocumentos').eq(index).empty().each(function() {
+                    var select = $(this);
+                    nuevasOpciones.forEach(opcion => {
+                        select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
+                    });
+                });
+            } else {
+                console.log("No se encontró información para:", normalizedValue);
+            }
         }
-        console.log(nuevasOpciones)
-        indices.forEach(i => {
-            nuevasOpciones.push(opciones[i]);
-        });
 
-        $('.tiposDocumentos').eq(index).empty().each(function() {
-            var select = $(this);
-            nuevasOpciones.forEach(opcion => {
-                select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
-            });
-        });
-    } else {
-        console.log("No se encontró información para:", normalizedValue);
-    }
-}
-
-// Función para normalizar texto (puedes agregar más normalizaciones si es necesario)
-function normalizeText(text) {
-    return text.toLowerCase().replace(/\s+/g, '');
-}
         // Evento de cambio en el select de nacionalidad
         $('.nacionalidad').each(function(index) {
             $(this).on('change', function() {
