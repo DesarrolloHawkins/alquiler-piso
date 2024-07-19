@@ -105,7 +105,7 @@
                             {{ session('status') }}
                         </div>
                     @endif
-                    <div class="row mb-4">
+                    <div class="row mb-4 align-items-end">
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <form action="{{ route('reservas.index') }}" method="GET">
@@ -129,21 +129,28 @@
                         <div class="col-md-8">
                             <div class="mb-3">
                                 <form action="{{ route('reservas.index') }}" method="GET">
-                                    <div class="input-group">
-                                        <label for="search" style="width: 100%">Busqueda</label>
-
-                                        <input type="text" class="form-control" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
-                                        <!-- Campos ocultos para mantener el orden y la dirección -->
-                                        <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
-                                        <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
-                                        <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-
-                                        <label for="fecha_entrada" style="width: 100%">Fecha de entrada</label>
-                                        <input type="date" class="form-control" name="fecha_entrada" placeholder="Fecha de Entrada" value="{{ request()->get('fecha_entrada') }}">
-                                        
-                                        <label for="fecha_salida" style="width: 100%">Fecha de salida</label>
-                                        <input type="date" class="form-control" name="fecha_salida" placeholder="Fecha de Salida" value="{{ request()->get('fecha_salida') }}">
-                                        <button type="submit" class="btn btn-terminar">Buscar</button>
+                                    <!-- Campos ocultos para mantener el orden y la dirección -->
+                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
+                                    <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
+                                    <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+                                    <div class="input-groups">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-4">
+                                                <label for="search" class="form-label">Busqueda</label>
+                                                <input type="text" class="form-control" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="fecha_entrada" class="form-label">Fecha de entrada</label>
+                                                <input type="date" class="form-control" name="fecha_entrada" placeholder="Fecha de Entrada" value="{{ request()->get('fecha_entrada') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="fecha_salida" class="form-label">Fecha de salida</label>
+                                                <input type="date" class="form-control" name="fecha_salida" placeholder="Fecha de Salida" value="{{ request()->get('fecha_salida') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="submit" class="btn btn-terminar">Buscar</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
