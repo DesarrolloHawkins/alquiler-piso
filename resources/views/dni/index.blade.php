@@ -686,50 +686,61 @@
             return text.trim().toUpperCase();
         }
 
-        // Función para manejar la lógica de selección y actualización de tipos de documento
-        function handleNationalityChange(index) {
-            var selectedValue = $('.nacionalidad').eq(index).val();
-            var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
+        function removeAccents(str) {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
-            console.log("Valor seleccionado:", normalizedValue);
+// Función para manejar la lógica de selección y actualización de tipos de documento
+function handleNationalityChange(index) {
+    var selectedValue = $('.nacionalidad').eq(index).val();
+    var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
 
-            var opciones = @json($optionesTipo);
-            console.log("Opciones del país:", opciones);
+    // Eliminar acentos del valor normalizado
+    normalizedValue = removeAccents(normalizedValue);
 
-            var paisesDni = @json($paisesDni);
-            console.log("Paises del país:", paisesDni);
+    console.log("Valor seleccionado:", normalizedValue);
 
-            var countryInfo = paisesDni[normalizedValue];
+    var opciones = @json($optionesTipo);
+    console.log("Opciones del país:", opciones);
 
-            console.log("Información del país:", countryInfo);
+    var paisesDni = @json($paisesDni);
+    console.log("Paises del país:", paisesDni);
 
-            if (countryInfo) {
-                let indices;
-                let nuevasOpciones = [];
+    var countryInfo = paisesDni[normalizedValue];
 
-                if (normalizedValue === "ESPAÑA") {
-                    indices = [0, 4, 5];
-                } else if (countryInfo.isEuropean) {
-                    indices = [0, 1, 2, 3];
-                } else {
-                    indices = [0, 1, 2];
-                }
-                console.log(nuevasOpciones)
-                indices.forEach(i => {
-                    nuevasOpciones.push(opciones[i]);
-                });
+    console.log("Información del país:", countryInfo);
 
-                $('.tiposDocumentos').eq(index).empty().each(function() {
-                    var select = $(this);
-                    nuevasOpciones.forEach(opcion => {
-                        select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
-                    });
-                });
-            } else {
-                console.log("No se encontró información para:", normalizedValue);
-            }
+    if (countryInfo) {
+        let indices;
+        let nuevasOpciones = [];
+
+        if (normalizedValue === "ESPAÑA") {
+            indices = [0, 4, 5];
+        } else if (countryInfo.isEuropean) {
+            indices = [0, 1, 2, 3];
+        } else {
+            indices = [0, 1, 2];
         }
+        console.log(nuevasOpciones)
+        indices.forEach(i => {
+            nuevasOpciones.push(opciones[i]);
+        });
 
+        $('.tiposDocumentos').eq(index).empty().each(function() {
+            var select = $(this);
+            nuevasOpciones.forEach(opcion => {
+                select.append($('<option></option>').val(opcion.codigo).text(opcion.descripcion));
+            });
+        });
+    } else {
+        console.log("No se encontró información para:", normalizedValue);
+    }
+}
+
+// Función para normalizar texto (puedes agregar más normalizaciones si es necesario)
+function normalizeText(text) {
+    return text.toLowerCase().replace(/\s+/g, '');
+}
         // Evento de cambio en el select de nacionalidad
         $('.nacionalidad').each(function(index) {
             $(this).on('change', function() {

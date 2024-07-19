@@ -91,9 +91,15 @@
 @section('content')
 
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Reservas') }}</h2>
-    <a href="{{route('reservas.create')}}" class="btn bg-color-quinto">Crear Reserva</a>
-    <hr class="mb-5">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <h2 class="">{{ __('Reservas') }}</h2>
+        </div>
+        <div class="col">
+            <a href="{{route('reservas.create')}}" class="btn bg-color-quinto">Crear Reserva</a>
+        </div>
+    </div>
+    {{-- <hr class="mb-3"> --}}
     <div class="row justify-content-center">
         <div class="col-md-12">
                 {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
