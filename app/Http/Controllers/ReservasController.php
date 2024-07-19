@@ -47,11 +47,11 @@ class ReservasController extends Controller
     
         // Filtrar por fechas de entrada y salida solo si se proporcionan
         if (!empty($fechaEntrada)) {
-            $query->whereDate('fecha_entrada', '>=', $fechaEntrada);
+            $query->whereDate('fecha_entrada', '=', $fechaEntrada);
         }
     
         if (!empty($fechaSalida)) {
-            $query->whereDate('fecha_salida', '<=', $fechaSalida);
+            $query->whereDate('fecha_salida', '=', $fechaSalida);
         }
     
         // Utiliza el valor de $perPage en la función paginate()
