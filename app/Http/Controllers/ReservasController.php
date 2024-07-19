@@ -58,7 +58,9 @@ class ReservasController extends Controller
         $query->whereDate('fecha_salida', '<=', now()->addDay()->format('Y-m-d'));
     }
 
-    // Utiliza el valor de $perPage en la función paginate()
+    // Verifica la consulta generada
+    dd($query->toSql(), $query->getBindings());
+
     $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
         'order_by' => $orderBy,
         'direction' => $direction,
@@ -70,6 +72,7 @@ class ReservasController extends Controller
 
     return view('reservas.index', compact('reservas'));
 }
+
 
 
     /**
