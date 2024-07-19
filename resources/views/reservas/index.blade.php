@@ -137,8 +137,11 @@
                                         <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
                                         <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                                         <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-                                        
+
+                                        <label for="fecha_entrada" style="width: 100%">Fecha de entrada</label>
                                         <input type="date" class="form-control" name="fecha_entrada" placeholder="Fecha de Entrada" value="{{ request()->get('fecha_entrada') }}">
+                                        
+                                        <label for="fecha_salida" style="width: 100%">Fecha de salida</label>
                                         <input type="date" class="form-control" name="fecha_salida" placeholder="Fecha de Salida" value="{{ request()->get('fecha_salida') }}">
                                         <button type="submit" class="btn btn-terminar">Buscar</button>
                                     </div>
