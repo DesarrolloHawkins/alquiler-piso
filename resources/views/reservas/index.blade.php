@@ -137,7 +137,9 @@
                                         <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
                                         <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                                         <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-
+                                        
+                                        <input type="date" class="form-control" name="fecha_entrada" placeholder="Fecha de Entrada" value="{{ request()->get('fecha_entrada') }}">
+                                        <input type="date" class="form-control" name="fecha_salida" placeholder="Fecha de Salida" value="{{ request()->get('fecha_salida') }}">
                                         <button type="submit" class="btn btn-terminar">Buscar</button>
                                     </div>
                                 </form>
@@ -145,12 +147,11 @@
                         </div>
                     </div>
 
-
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         ID
                                         @if(request()->get('order_by') == 'id')
                                             @if(request()->get('direction') == 'asc')
@@ -162,7 +163,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Apartamento
                                         @if(request()->get('order_by') == 'cliente_id')
                                             @if(request()->get('direction') == 'asc')
@@ -174,7 +175,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'apartamento_id', 'direction' => (request()->get('order_by') == 'apartamento_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'apartamento_id', 'direction' => (request()->get('order_by') == 'apartamento_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Nombre
                                         @if(request()->get('order_by') == 'apartamento_id')
                                             @if(request()->get('direction') == 'asc')
@@ -186,7 +187,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         DNI Entregado
                                         @if(request()->get('order_by') == 'dni_entregado')
                                             @if(request()->get('direction') == 'asc')
@@ -198,7 +199,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Fecha de Entrada
                                         @if(request()->get('order_by') == 'fecha_entrada')
                                             @if(request()->get('direction') == 'asc')
@@ -210,7 +211,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Fecha de Salida
                                         @if(request()->get('order_by') == 'fecha_salida')
                                             @if(request()->get('direction') == 'asc')
@@ -222,7 +223,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Origen
                                         @if(request()->get('order_by') == 'origen')
                                             @if(request()->get('direction') == 'asc')
@@ -234,7 +235,7 @@
                                     </a>
                                 </th>
                                 <th scope="col">
-                                    <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage')]) }}">
+                                    <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}">
                                         Codigo de Reserva
                                         @if(request()->get('order_by') == 'codigo_reserva')
                                             @if(request()->get('direction') == 'asc')

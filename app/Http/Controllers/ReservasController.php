@@ -18,40 +18,60 @@ class ReservasController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $orderBy = $request->get('order_by', 'fecha_entrada');
-        $direction = $request->get('direction', 'asc');
-        $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
-        $searchTerm = $request->get('search', '');
+{
+    $orderBy = $request->get('order_by', 'fecha_entrada');
+    $direction = $request->get('direction', 'asc');
+    $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
+    $searchTerm = $request->get('search', '');
 
-        $perPage == '' ? $perPage = 10: $perPage;
-        $direction == '' ? $direction = 'asc': $direction;
-        $orderBy == '' ? $orderBy = 'fecha_entrada': $orderBy;
+    $fechaEntrada = $request->get('fecha_entrada', '');
+    $fechaSalida = $request->get('fecha_salida', '');
 
-        $query = Reserva::with('cliente'); // Asegúrate de que 'cliente' sea el nombre de la relación en el modelo Reserva
+    $perPage == '' ? $perPage = 10 : $perPage;
+    $direction == '' ? $direction = 'asc' : $direction;
+    $orderBy == '' ? $orderBy = 'fecha_entrada' : $orderBy;
 
-        if (!empty($searchTerm)) {
-            $query->where(function($subQuery) use ($searchTerm) {
-                $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
-                    $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
-                })
-                ->orWhere('codigo_reserva', 'LIKE', '%' . $searchTerm . '%')
-                ->orWhere('fecha_entrada', 'LIKE', '%' . $searchTerm . '%')
-                ->orWhere('fecha_salida', 'LIKE', '%' . $searchTerm . '%')
-                ->orWhere('origen', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
+    $query = Reserva::with('cliente'); // Asegúrate de que 'cliente' sea el nombre de la relación en el modelo Reserva
 
-        // Utiliza el valor de $perPage en la función paginate()
-        $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
-            'order_by' => $orderBy,
-            'direction' => $direction,
-            'search' => $searchTerm,
-            'perPage' => $perPage // Asegúrate de adjuntar 'perPage' para mantenerlo durante la paginación
-        ]);
-
-        return view('reservas.index', compact('reservas'));
+    if (!empty($searchTerm)) {
+        $query->where(function($subQuery) use ($searchTerm) {
+            $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
+                $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
+            })
+            ->orWhere('codigo_reserva', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('fecha_entrada', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('fecha_salida', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('origen', 'LIKE', '%' . $searchTerm . '%');
+        });
     }
+
+    // Filtrar por fechas de entrada y salida
+    if (!empty($fechaEntrada)) {
+        $query->whereDate('fecha_entrada', '>=', $fechaEntrada);
+    } else {
+        $query->whereDate('fecha_entrada', '>=', now()->format('Y-m-d'));
+    }
+
+    if (!empty($fechaSalida)) {
+        $query->whereDate('fecha_salida', '<=', $fechaSalida);
+    } else {
+        $query->whereDate('fecha_salida', '<=', now()->addDay()->format('Y-m-d'));
+    }
+
+    // Utiliza el valor de $perPage en la función paginate()
+    $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
+        'order_by' => $orderBy,
+        'direction' => $direction,
+        'search' => $searchTerm,
+        'perPage' => $perPage, // Asegúrate de adjuntar 'perPage' para mantenerlo durante la paginación
+        'fecha_entrada' => $fechaEntrada,
+        'fecha_salida' => $fechaSalida,
+    ]);
+
+    return view('reservas.index', compact('reservas'));
+}
+
+
     /**
      * Display a listing of the resource.
      */
