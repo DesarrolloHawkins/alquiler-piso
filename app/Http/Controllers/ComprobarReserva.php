@@ -44,34 +44,41 @@ class ComprobarReserva extends Controller
     }
     public function obtenerReserva(Request $request)
     {
-
-        $reserva = Reserva::where('codigo_reserva', $request->codigo)->first();
-        if ($reserva) {
-            $cliente = Cliente::find($reserva->cliente_id);
-            if ($cliente) {
-                return response()->json([
-                    "reserva" => $reserva,
-                    "cliente" => $cliente,
-                    "link" => route('dni.index', $reserva->token),
-                    "error" => false
-                ]);
-            }else {
+        if (isset($request->codigo)) {
+            $reserva = Reserva::where('codigo_reserva', $request->codigo)->first();
+            if ($reserva) {
+                $cliente = Cliente::find($reserva->cliente_id);
+                if ($cliente) {
+                    return response()->json([
+                        "reserva" => $reserva,
+                        "cliente" => $cliente,
+                        "link" => route('dni.index', $reserva->token),
+                        "error" => false
+                    ]);
+                }else {
+                    return response()->json([
+                        "error" => true,
+                        "mensaje" => "No se encontro ningun cliente de esa reserva"
+                    ]);
+                }
+                
+            } else {
                 return response()->json([
                     "error" => true,
-                    "mensaje" => "No se encontro ningun cliente de esa reserva"
+                    "mensaje" => "No se encontro ninguna reserva"
                 ]);
             }
-            
-        } else {
+        }else{
             return response()->json([
                 "error" => true,
-                "mensaje" => "No se encontro ninguna reserva"
+                "mensaje" => "No se envio ningun codigo de reserva"
             ]);
         }
+        
 
         // Comprobamos la reserva
        
         // Si no existe la reserva
-        return response('La reserva no existe', 404);
+        //return response('La reserva no existe', 404);
     }
 }
