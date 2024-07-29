@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use App\Models\Reserva;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ComprobarReserva extends Controller
@@ -75,6 +76,24 @@ class ComprobarReserva extends Controller
             ]);
         }
         
+
+        // Comprobamos la reserva
+       
+        // Si no existe la reserva
+        //return response('La reserva no existe', 404);
+    }
+    public function obtenerCodigos()
+    {
+        $hoy = Carbon::now();
+        $reserva = Reserva::whereDate('fecha_entrada','>=' ,$hoy)->get();
+        $data = [];
+        foreach($reserva as $item){
+            array_push($data, $item->codigo_reserva);
+        }
+        return response()->json([
+            "data" => $data,
+            "error" => false
+        ]);
 
         // Comprobamos la reserva
        
