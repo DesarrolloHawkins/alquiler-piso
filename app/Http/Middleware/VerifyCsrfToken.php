@@ -21,6 +21,7 @@ class VerifyCsrfToken extends Middleware
         '/comprobacion-server',
         '/pass-booking',
         '/pass-airbnb',
-        '/obtener-reserva'
+        '/obtener-reserva',
+        '/obtener-codigos'
     ];
 }
