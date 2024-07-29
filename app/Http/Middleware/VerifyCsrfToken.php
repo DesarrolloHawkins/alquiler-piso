@@ -20,6 +20,7 @@ class VerifyCsrfToken extends Middleware
         '/whatsapp',
         '/comprobacion-server',
         '/pass-booking',
-        '/pass-airbnb'
+        '/pass-airbnb',
+        '/obtener-reserva'
     ];
 }
