@@ -488,6 +488,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
+    
     public function recuperarHilo($id_thread)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -523,6 +524,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
+
     public function ejecutarHilo($id_thread){
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/runs';
