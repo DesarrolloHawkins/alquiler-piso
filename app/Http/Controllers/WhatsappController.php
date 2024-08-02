@@ -366,7 +366,9 @@ class WhatsappController extends Controller
                 'date' => Carbon::now()
             ];
             $mensajeCreado = ChatGpt::create($dataRegistrar);
-            $isAveria = $this->chatGchatGpModelopt($mensaje,$id);
+
+            $isAveria = $this->chatGpModelo($mensaje,$id);
+
             if ($isAveria == true || $isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
