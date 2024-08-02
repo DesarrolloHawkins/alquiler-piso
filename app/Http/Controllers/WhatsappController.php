@@ -887,9 +887,9 @@ class WhatsappController extends Controller
             'status' => 'ok',
             'messages' => trim($response_data['choices'][0]['message']['content'])
             ];
-            Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $responseReturn['messages'] );
+            Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $response_data['choices'][0]['message']['content'] );
 
-            return $response;
+            return $response_data['choices'][0]['message']['content'];
         }
     }
     
