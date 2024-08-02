@@ -38,8 +38,7 @@
 
         </div>
     </div>
-    <hr class="mt-5">
-    <h2 class="mb-3">{{ __('Reparaciones') }}</h2>
+    <h2 class="mb-3mt-5">{{ __('Reparaciones') }}</h2>
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
