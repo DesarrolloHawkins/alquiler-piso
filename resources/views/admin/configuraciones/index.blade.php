@@ -43,7 +43,7 @@
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <form action="{{route('reparaciones.updateReparaciones')}}" method="POST">
+            <form action="{{route('configuracion.updateReparaciones')}}" method="POST">
                 @csrf
                 <div class="">
                     <label class="form-label">Nombre de la Persona</label>
