@@ -370,7 +370,7 @@ class WhatsappController extends Controller
             Storage::disk('local')->put('Justo antes de analiar el modelo'.$fecha.'.txt', json_encode($data) );
             $isAveria = $this->chatGpModelo($mensaje);
 
-            if ($isAveria == true || $isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
+            if ($isAveria['messages'] == "true" || $isAveria['messages'] == "True" || $isAveria['messages'] == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
