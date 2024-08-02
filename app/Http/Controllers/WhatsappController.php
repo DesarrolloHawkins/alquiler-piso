@@ -830,7 +830,7 @@ class WhatsappController extends Controller
     public function chatGpModelo( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
-        $url = 'https://api.openai.com/v1/completions';
+        $url = 'https://api.openai.com/v1/chat/completions';
         $headers = array(
             'Content-Type: application/json',
             'Authorization: Bearer '. $token
