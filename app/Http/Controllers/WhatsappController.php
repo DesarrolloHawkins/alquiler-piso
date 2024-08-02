@@ -366,11 +366,29 @@ class WhatsappController extends Controller
                 'date' => Carbon::now()
             ];
             $mensajeCreado = ChatGpt::create($dataRegistrar);
+            $reponseChatGPT = $this->chatGpt($mensaje,$id);
+    
+            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
+            if(isset($respuestaWhatsapp['error'])){
+                dd($respuestaWhatsapp);
+            };
+
+            $mensajeCreado->update([
+                'respuesta'=> $reponseChatGPT
+            ]);
+
+            return response($reponseChatGPT)->header('Content-Type', 'text/plain');
             $isAveria = $this->chatGpModelo($mensaje);
             Storage::disk('local')->put('Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
+            if ($isAveria == 'NULL') {
 
-            if ($isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
+                $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+                return response($mensajeAveria)->header('Content-Type', 'text/plain');
+            }
+
+            if ($isAveria == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
@@ -848,7 +866,7 @@ class WhatsappController extends Controller
                             "type" => "text",
                             "text" => 'Analiza el mensaje de un cliente: 
                             '. $texto .'
-                            . Tenemos dos opciones que el mensaje sea una queja por averia, fallo, rotura, mal funcionamiento. Devuelve un "TRUE",(De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE"). Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE". Tu respuesta debe se solo TRUE o FALSE no me devuelvas nada mas que eso.
+                            . Tenemos dos opciones que el mensaje sea una queja por averia, fallo, rotura, mal funcionamiento. Devuelve un "TRUE",(De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE"). Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE". Si la pregunta o mensaje esta relacionado con el numero de apartamento y edificio devuelveme un "NULL", Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
                             '
                         ]
                     ]
