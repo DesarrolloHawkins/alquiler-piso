@@ -367,8 +367,8 @@ class WhatsappController extends Controller
             ];
             $mensajeCreado = ChatGpt::create($dataRegistrar);
 
-            $isAveria = $this->chatGpModelo($mensaje,$id);
-            Storage::disk('local')->put('Mensaje_Texto_Reicibido-'.$fecha.'.txt', json_encode($data) );
+            Storage::disk('local')->put('Justo antes de analiar el modelo'.$fecha.'.txt', json_encode($data) );
+            $isAveria = $this->chatGpModelo($mensaje);
 
             if ($isAveria == true || $isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
@@ -836,6 +836,7 @@ class WhatsappController extends Controller
             'Authorization: Bearer '. $token
         );
 
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
 
         $data = array(
             "model" => "gpt-4o",
@@ -854,6 +855,7 @@ class WhatsappController extends Controller
                 ]
             ]
         );
+        Storage::disk('local')->put('Justo antes de enviar al modelo'.$fecha.'.txt', json_encode($texto) );
 
         // Inicializar cURL y configurar las opciones
         $curl = curl_init();
@@ -867,7 +869,7 @@ class WhatsappController extends Controller
         $response = curl_exec($curl);
         curl_close($curl);
         $response_data = json_decode($response, true);
-        Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $response_data['messages'] );
+        Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $response_data );
 
         // Procesar la respuesta
         if ($response === false) {
