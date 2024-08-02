@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/configuracion', [App\Http\Controllers\ConfiguracionesController::class, 'index'])->name('configuracion.index');
     Route::get('/configuracion/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('configuracion.edit');
     Route::post('/configuracion/{id}/update', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('configuracion.update');
+    Route::post('/configuracion/updateReparaciones', [App\Http\Controllers\ConfiguracionesController::class, 'updateReparaciones'])->name('configuracion.updateReparaciones');
 
 
     Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');

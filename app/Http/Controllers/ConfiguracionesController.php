@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuraciones;
+use App\Models\Reparaciones;
 use Illuminate\Http\Request;
 
 class ConfiguracionesController extends Controller
 {
     public function index(){
         $configuraciones = Configuraciones::all();
-        return view('admin.configuraciones.index', compact('configuraciones'));
+        $reparaciones = Reparaciones::all();
+        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones'));
     }
     public function edit($id, Request $request){
         $configuraciones = Configuraciones::all();
@@ -23,6 +25,22 @@ class ConfiguracionesController extends Controller
         $confi->user_airbnb = $request->user_airbnb;
         $confi->save();
         
+        return redirect()->route('configuracion.index');
+    }
+    public function updateReparaciones(Request $request){
+        $reparaciones = Reparaciones::all();
+        if (count($reparaciones) > 0 ) {
+            foreach($reparaciones as $reparacion){
+                $reparacion->nombre = $request->nombre;
+                $reparacion->telefono = $request->telefono;
+                $reparacion->save();
+            }
+        } else {
+            Reparaciones::create([
+                'nombre' => $request->nombre,
+                'telefono' => $request->telefono
+            ]);
+        }
         return redirect()->route('configuracion.index');
     }
     public function passBooking(){

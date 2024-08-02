@@ -38,6 +38,26 @@
 
         </div>
     </div>
+    <hr class="mt-5">
+    <h2 class="mb-3">{{ __('Reparaciones') }}</h2>
+    <hr class="mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <form action="{{route('reparaciones.updateReparaciones')}}" method="POST">
+                @csrf
+                <div class="">
+                    <label class="form-label">Nombre de la Persona</label>
+                    <input class="form-control w-50" name="nombre" value="{{$reparaciones[0]->nombre}}"/>
+                </div>
+                <div class="mt-3 mb-3">
+                    <label class="form-label">Telefono de la Persona</label>
+                    <input class="form-control w-50" name="telefono" value="{{$reparaciones[0]->telefono}}"/>
+                </div>
+                <button type="submit" class="btn btn-primary">Actualizar</button>    
+            </form>
+
+        </div>
+    </div>
 </div>
 @endsection
 
