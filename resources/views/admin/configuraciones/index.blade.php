@@ -47,15 +47,15 @@
                 @csrf
                 <div class="">
                     <label class="form-label">Nombre de la Persona</label>
-                    <input class="form-control w-50" name="nombre" value="{{@isset($reparaciones[0]->nombre)
-                        $reparaciones[0]->nombre
-                    @endisset}}"/>
+                    <input class="form-control w-50" name="nombre" value="@isset($reparaciones[0]->nombre)
+                        {{$reparaciones[0]->nombre}}
+                    @endisset"/>
                 </div>
                 <div class="mt-3 mb-3">
                     <label class="form-label">Telefono de la Persona</label>
-                    <input class="form-control w-50" name="telefono" value="{{@isset($reparaciones[0]->telefono)
-                        $reparaciones[0]->telefono
-                    @endisset}}"/>
+                    <input class="form-control w-50" name="telefono" value="@isset($reparaciones[0]->telefono)
+                        {{$reparaciones[0]->telefono}}
+                    @endisset"/>
                 </div>
                 <button type="submit" class="btn btn-primary">Actualizar</button>    
             </form>
