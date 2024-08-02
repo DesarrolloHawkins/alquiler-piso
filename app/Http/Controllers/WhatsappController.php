@@ -869,7 +869,7 @@ class WhatsappController extends Controller
         $response = curl_exec($curl);
         curl_close($curl);
         $response_data = json_decode($response, true);
-        Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $response_data );
+        Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $response );
 
         // Procesar la respuesta
         if ($response === false) {
