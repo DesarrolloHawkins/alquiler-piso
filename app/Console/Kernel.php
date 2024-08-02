@@ -398,6 +398,8 @@ class Kernel extends ConsoleKernel
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
+                        $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+                        $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
                                 $reserva->cliente->nombre,
@@ -405,7 +407,9 @@ class Kernel extends ConsoleKernel
                                 $code['codigo'],
                                 $reserva->cliente->telefono,
                                 $idiomaCliente,
-                                $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico'
+                                $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico',
+                                $url = $enlace,
+                                $url2 = $enlaceLimpio
                             );
                             # code...
                         } else {
@@ -1132,7 +1136,7 @@ class Kernel extends ConsoleKernel
         return $response;
     }
 
-    public function clavesMensajeAtico($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $template){
+    public function clavesMensajeAtico($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $template, $url, $url2){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         $mensajePersonalizado = [
@@ -1150,9 +1154,21 @@ class Kernel extends ConsoleKernel
                             ["type" => "text", "text" => $nombre],
                             ["type" => "text", "text" => $apartamento],
                             ["type" => "text", "text" => $puertaPrincipal],
-                            ["type" => "text", "text" => $codigoApartamento]
+                            ["type" => "text", "text" => $codigoApartamento],
+                            ["type" => "text", "text" => $url]
                         ],
                     ],
+                    [
+                        "type" => "button",
+                        "sub_type" => "url",
+                        "index" => "0",
+                        "parameters" => [
+                            [
+                                "type" => "text",
+                                "text" => $url2
+                            ]
+                        ]
+                    ]
                 ],
             ],
         ];
