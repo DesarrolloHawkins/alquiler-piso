@@ -578,7 +578,6 @@ class Kernel extends ConsoleKernel
         require base_path('routes/console.php');
     }
 
-
     public function webPol($data){
         // $credentials = array(
         //     'user' => 'H11070GEV04',
@@ -705,7 +704,6 @@ class Kernel extends ConsoleKernel
             $responseContent
         ];
     }
-
 
     function limpiarNumeroTelefono($numero) {
         // Eliminar el signo más y cualquier espacio
@@ -966,7 +964,6 @@ class Kernel extends ConsoleKernel
         return $response;
 
     }
-
 
     public function noEntregadoDNIMensaje($nombre, $codigoReserva, $plataforma, $telefono, $telefonoCliente, $url, $idioma = 'es', ){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
@@ -1526,6 +1523,7 @@ class Kernel extends ConsoleKernel
         }
 
     }
+
     public function clavesEmail($idioma, $cliente, $apartamento, $claveEntrada, $clavePiso, $edificio = 1){
 
         $enlace = $edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
@@ -1889,6 +1887,7 @@ class Kernel extends ConsoleKernel
         }
 
     }
+
     public function enviarEmail( $correo, $vista, $data, $asunto, $token, ){
 
         // 'emails.envioClavesEmail'

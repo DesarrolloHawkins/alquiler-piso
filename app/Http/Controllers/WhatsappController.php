@@ -219,162 +219,141 @@ class WhatsappController extends Controller
         if (count($mensajeExiste) > 0) {
 
         }else {
-            $cliente = Cliente::where('telefono', $phone)->first();
-            if ($cliente) {
-                $today = Carbon::today()->toDateString(); // Obtener la fecha actual en formato 'Y-m-d'
+            // $cliente = Cliente::where('telefono', $phone)->first();
+            // if ($cliente) {
+            //     $today = Carbon::today()->toDateString(); // Obtener la fecha actual en formato 'Y-m-d'
 
-                $reservas = Reserva::where('cliente_id', $cliente->id)
-                            ->where('fecha_entrada', '>=', $today)
-                            ->first();
+            //     $reservas = Reserva::where('cliente_id', $cliente->id)
+            //                 ->where('fecha_entrada', '>=', $today)
+            //                 ->first();
 
-                if ($reservas) {
-                    $dniEntregado = $reservas->dni_entregado;
+            //     if ($reservas) {
+            //         $dniEntregado = $reservas->dni_entregado;
 
-                    if ($dniEntregado == 1) {
-                        $dataRegistrar = [
-                            'id_mensaje' => $id,
-                            'id_three' => null,
-                            'cliente_is' => $cliente->id,
-                            'remitente' => $phone,
-                            'mensaje' => $mensaje,
-                            'respuesta' => null,
-                            'status' => 1,
-                            'status_mensaje' => 0,
-                            'type' => 'text',
-                            'estado_id' => 0,
-                            'reserva_id' => $reservas->id,
-                            'date' => Carbon::now()
-                        ];
-                        $mensajeCreado = ChatGpt::create($dataRegistrar);
+            //         if ($dniEntregado == 1) {
+            //             $dataRegistrar = [
+            //                 'id_mensaje' => $id,
+            //                 'id_three' => null,
+            //                 'cliente_is' => $cliente->id,
+            //                 'remitente' => $phone,
+            //                 'mensaje' => $mensaje,
+            //                 'respuesta' => null,
+            //                 'status' => 1,
+            //                 'status_mensaje' => 0,
+            //                 'type' => 'text',
+            //                 'estado_id' => 0,
+            //                 'reserva_id' => $reservas->id,
+            //                 'date' => Carbon::now()
+            //             ];
+            //             $mensajeCreado = ChatGpt::create($dataRegistrar);
             
-                        $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            //             $reponseChatGPT = $this->chatGpt($mensaje,$id);
             
-                        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            //             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
             
-                        if(isset($respuestaWhatsapp['error'])){
-                            return($respuestaWhatsapp);
-                        };
+            //             if(isset($respuestaWhatsapp['error'])){
+            //                 return($respuestaWhatsapp);
+            //             };
             
-                        $mensajeCreado->update([
-                            'respuesta'=> $reponseChatGPT
-                        ]);
+            //             $mensajeCreado->update([
+            //                 'respuesta'=> $reponseChatGPT
+            //             ]);
             
-                        return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-                    } else {
+            //             return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            //         } else {
 
-                        $dataRegistrar = [
-                            'id_mensaje' => $id,
-                            'id_three' => null,
-                            'cliente_is' => $cliente->id,
-                            'remitente' => $phone,
-                            'mensaje' => $mensaje,
-                            'respuesta' => null,
-                            'status' => 1,
-                            'status_mensaje' => null,
-                            'type' => 'text',
-                            'estado_id' => 0,
-                            'reserva_id' => $reservas->id,
-                            'date' => Carbon::now()
-                        ];
-                        $mensajeCreado = ChatGpt::create($dataRegistrar);
+            //             $dataRegistrar = [
+            //                 'id_mensaje' => $id,
+            //                 'id_three' => null,
+            //                 'cliente_is' => $cliente->id,
+            //                 'remitente' => $phone,
+            //                 'mensaje' => $mensaje,
+            //                 'respuesta' => null,
+            //                 'status' => 1,
+            //                 'status_mensaje' => null,
+            //                 'type' => 'text',
+            //                 'estado_id' => 0,
+            //                 'reserva_id' => $reservas->id,
+            //                 'date' => Carbon::now()
+            //             ];
+            //             $mensajeCreado = ChatGpt::create($dataRegistrar);
             
-                        $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            //             $reponseChatGPT = $this->chatGpt($mensaje,$id);
             
-                        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            //             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
             
-                        if(isset($respuestaWhatsapp['error'])){
-                            return($respuestaWhatsapp);
-                        };
+            //             if(isset($respuestaWhatsapp['error'])){
+            //                 return($respuestaWhatsapp);
+            //             };
             
-                        $mensajeCreado->update([
-                            'respuesta'=> $reponseChatGPT
-                        ]);
+            //             $mensajeCreado->update([
+            //                 'respuesta'=> $reponseChatGPT
+            //             ]);
             
-                        return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            //             return response($reponseChatGPT)->header('Content-Type', 'text/plain');
 
                         
-                    }
+            //         }
 
-                    $dataRegistrar = [
-                        'id_mensaje' => $id,
-                        'id_three' => null,
-                        'cliente_is' => $cliente->id,
-                        'remitente' => $phone,
-                        'mensaje' => $mensaje,
-                        'respuesta' => null,
-                        'status' => 1,
-                        'status_mensaje' => null,
-                        'type' => 'text',
-                        'estado_id' => 0,
-                        'reserva_id' => $reservas->id,
-                        'date' => Carbon::now()
-                    ];
-                    $mensajeCreado = ChatGpt::create($dataRegistrar);
+            //         $dataRegistrar = [
+            //             'id_mensaje' => $id,
+            //             'id_three' => null,
+            //             'cliente_is' => $cliente->id,
+            //             'remitente' => $phone,
+            //             'mensaje' => $mensaje,
+            //             'respuesta' => null,
+            //             'status' => 1,
+            //             'status_mensaje' => null,
+            //             'type' => 'text',
+            //             'estado_id' => 0,
+            //             'reserva_id' => $reservas->id,
+            //             'date' => Carbon::now()
+            //         ];
+            //         $mensajeCreado = ChatGpt::create($dataRegistrar);
         
-                    $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            //         $reponseChatGPT = $this->chatGpt($mensaje,$id);
         
-                    $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
         
-                    if(isset($respuestaWhatsapp['error'])){
-                        return($respuestaWhatsapp);
-                    };
+            //         if(isset($respuestaWhatsapp['error'])){
+            //             return($respuestaWhatsapp);
+            //         };
         
-                    $mensajeCreado->update([
-                        'respuesta'=> $reponseChatGPT
-                    ]);
+            //         $mensajeCreado->update([
+            //             'respuesta'=> $reponseChatGPT
+            //         ]);
         
-                    return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-                } else {
-                    $dataRegistrar = [
-                        'id_mensaje' => $id,
-                        'id_three' => null,
-                        'remitente' => $phone,
-                        'mensaje' => $mensaje,
-                        'respuesta' => null,
-                        'status' => 1,
-                        'status_mensaje' => null,
-                        'type' => 'text',
-                        'date' => Carbon::now()
-                    ];
-                    $mensajeCreado = ChatGpt::create($dataRegistrar);
+            //         return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            //     } else {
+            //         $dataRegistrar = [
+            //             'id_mensaje' => $id,
+            //             'id_three' => null,
+            //             'remitente' => $phone,
+            //             'mensaje' => $mensaje,
+            //             'respuesta' => null,
+            //             'status' => 1,
+            //             'status_mensaje' => null,
+            //             'type' => 'text',
+            //             'date' => Carbon::now()
+            //         ];
+            //         $mensajeCreado = ChatGpt::create($dataRegistrar);
 
-                    $reponseChatGPT = $this->chatGpt($mensaje,$id);
+            //         $reponseChatGPT = $this->chatGpt($mensaje,$id);
 
-                    $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
-                    if(isset($respuestaWhatsapp['error'])){
-                        dd($respuestaWhatsapp);
-                    };
+            //         if(isset($respuestaWhatsapp['error'])){
+            //             dd($respuestaWhatsapp);
+            //         };
 
-                    $mensajeCreado->update([
-                        'respuesta'=> $reponseChatGPT
-                    ]);
+            //         $mensajeCreado->update([
+            //             'respuesta'=> $reponseChatGPT
+            //         ]);
 
-                    return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-                } 
-                
+            //         return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            //     } 
+            // }
 
-
-
-                // $mensajesCliente = ChatGpt::where('remitente', $cliente->telefono)->get();
-
-                // if ($mensajesCliente) {
-                //     // Obtén el campo created_at
-                //     $createdAt = $mensajesCliente->created_at;
-                
-                //     // Compara la fecha actual con el created_at
-                //     $now = Carbon::now();
-                //     $difference = $now->diffInMinutes($createdAt);
-                
-                //     if ($difference < 30) {
-                //         // Realiza una acción si la fecha es inferior a 30 minutos
-                //     } else {
-                //         // Realiza otra acción en caso contrario
-                //     }
-                // } else {
-                //     // Manejar el caso en que no se encuentra el mensaje
-                // }
-            }
             $dataRegistrar = [
                 'id_mensaje' => $id,
                 'id_three' => null,
@@ -387,20 +366,27 @@ class WhatsappController extends Controller
                 'date' => Carbon::now()
             ];
             $mensajeCreado = ChatGpt::create($dataRegistrar);
+            $isAveria = $this->chatGchatGpModelopt($mensaje,$id);
+            if ($isAveria == true || $isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
+                $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+                return response($mensajeAveria)->header('Content-Type', 'text/plain');
 
-            $reponseChatGPT = $this->chatGpt($mensaje,$id);
-
-            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-
-            if(isset($respuestaWhatsapp['error'])){
-                dd($respuestaWhatsapp);
-            };
-
-            $mensajeCreado->update([
-                'respuesta'=> $reponseChatGPT
-            ]);
-
-            return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            } else {
+                $reponseChatGPT = $this->chatGpt($mensaje,$id);
+    
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+    
+                if(isset($respuestaWhatsapp['error'])){
+                    dd($respuestaWhatsapp);
+                };
+    
+                $mensajeCreado->update([
+                    'respuesta'=> $reponseChatGPT
+                ]);
+    
+                return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+            }
             
 
         }
@@ -837,7 +823,68 @@ class WhatsappController extends Controller
         
 
     }
-    
+
+    public function chatGpModelo( $texto ) {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        // Configurar los parámetros de la solicitud
+        $url = 'https://api.openai.com/v1/completions';
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token
+        );
+
+
+        $data = array(
+            "model" => "gpt-4o",
+            "messages" => [
+                [
+                    "role" => "user",
+                    "content" => [
+                        [
+                            "type" => "text",
+                            "text" => 'Analiza el mensaje de un cliente: 
+                            '. $texto .'
+                            . Tenemos dos opciones que el mensaje sea una queja por averia, fallo, rotura, mal funcionamiento. Devuelve un "TRUE",(De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE"). Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE". Tu respuesta debe se solo TRUE o FALSE no me devuelvas nada mas que eso.
+                            '
+                        ]
+                    ]
+                ]
+            ]
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+            Storage::disk('local')->put('errorChapt.txt', $error['messages'] );
+
+            return response()->json( $error );
+
+        } else {
+            $response_data = json_decode($response, true);
+            $responseReturn = [
+            'status' => 'ok',
+            'messages' => $response_data['choices'][0]['text']
+            ];
+            Storage::disk('local')->put('respuestaFuncionChaptParaReparaciones.txt', $responseReturn['messages'] );
+
+            return $response_data;
+        }
+    }
     
     public function chatGptPruebas( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -850,19 +897,19 @@ class WhatsappController extends Controller
 
 
         $data = array(
-        "prompt" => $texto .' ->',
-       // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
-       // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
-       // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
-       // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
-       // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
-       "model" => "davinci:ft-personal:apartamentos20octubre-2023-10-20-13-53-04",
-       "temperature" => 0,
-       "max_tokens"=> 200,
-       "top_p"=> 1,
-       "frequency_penalty"=> 0,
-       "presence_penalty"=> 0,
-       "stop"=> ["_END"]
+            "prompt" => $texto .' ->',
+        // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
+        // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
+        // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
+        // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
+        // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
+        "model" => "davinci:ft-personal:apartamentos20octubre-2023-10-20-13-53-04",
+        "temperature" => 0,
+        "max_tokens"=> 200,
+        "top_p"=> 1,
+        "frequency_penalty"=> 0,
+        "presence_penalty"=> 0,
+        "stop"=> ["_END"]
         );
 
         // Inicializar cURL y configurar las opciones
