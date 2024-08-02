@@ -367,8 +367,8 @@ class WhatsappController extends Controller
             ];
             $mensajeCreado = ChatGpt::create($dataRegistrar);
 
-            Storage::disk('local')->put('Justo antes de analiar el modelo'.$fecha.'.txt', json_encode($data) );
             $isAveria = $this->chatGpModelo($mensaje);
+            Storage::disk('local')->put('Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
 
             if ($isAveria == "true" || $isAveria == "True" || $isAveria == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
