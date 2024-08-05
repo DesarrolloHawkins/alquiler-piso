@@ -744,13 +744,40 @@
 
     });
 
+    // 
+
+    function handleFileUpload(event, index) {
+        const file = event.target.files[0];
+
+        if (!file.type.match('image.*')) {
+            alert("Por favor, selecciona una imagen.");
+            return;
+        }
+
+        resizeImage(file, 800, 600, function (resizedBlob) {
+            // Crear un FormData y añadir la imagen redimensionada
+            let formData = new FormData();
+            formData.append('image', resizedBlob, file.name);
+            
+            // Mostrar vista previa de la imagen redimensionada
+            let url = URL.createObjectURL(resizedBlob);
+            $('#image-preview_' + index).attr('src', url);
+        });
+    }
+
+    $(document).ready(function() {
+        $('.file-input').on('change', function(event) {
+            handleFileUpload(event, $(this).data('info'));
+        });
+    });
+
     function resizeImage(file, maxWidth, maxHeight, callback) {
         const reader = new FileReader();
         reader.onload = function (e) {
-            const img = document.createElement("img");
+            const img = new Image();
             img.onload = function () {
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext("2d");
+                let ctx = canvas.getContext('2d');
                 
                 let width = img.width;
                 let height = img.height;
@@ -777,29 +804,5 @@
         reader.readAsDataURL(file);
     }
 
-    function handleFileUpload(event, index) {
-        const file = event.target.files[0];
-
-        if (!file.type.match('image.*')) {
-            alert("Por favor, selecciona una imagen.");
-            return;
-        }
-
-        resizeImage(file, 800, 600, function (resizedBlob) {
-            // Crear un FormData y añadir la imagen redimensionada
-            let formData = new FormData();
-            formData.append('image', resizedBlob, file.name);
-            
-            // Mostrar vista previa de la imagen redimensionada
-            let url = URL.createObjectURL(resizedBlob);
-            $('#image-preview_' + index).attr('src', url);
-        });
-    }
-
-    $(document).ready(function() {
-        $('.file-input').on('change', function(event) {
-            handleFileUpload(event, $(this).data('info'));
-        });
-    });
 </script>
 @endsection
