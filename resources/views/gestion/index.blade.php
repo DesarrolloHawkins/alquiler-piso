@@ -80,14 +80,14 @@
                     </div>
                 </div>
                 <div class="card mt-4">
-                    <div class="accordion" id="accordionLimpio">
+                    <div class="accordion" id="accordionEnLimpieza">
                         <div class="accordion-item ">
                             <h2 class="accordion-header" id="headingOne">
                                 <button class="accordion-button text-uppercase fw-bold @if(count($reservasEnLimpieza) <= 0) collapsed @endif" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTerminar" aria-expanded="true" aria-controls="collapseTerminar">
                                     {{ __('Apartamentos por Terminar') }}
                                 </button>
                             </h2>
-                            <div id="collapseTerminar" class="accordion-collapse collapse @if(count($reservasEnLimpieza) > 0) show @endif" aria-labelledby="headingOne" data-bs-parent="#accordionLimpio">
+                            <div id="collapseTerminar" class="accordion-collapse collapse @if(count($reservasEnLimpieza) > 0) show @endif" aria-labelledby="headingOne" data-bs-parent="#accordionEnLimpieza">
                               <div class="accordion-body">
                                 @if (count($reservasEnLimpieza) > 0)
                                     <ol class="list-group list-group-numbered">
