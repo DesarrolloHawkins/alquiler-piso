@@ -83,7 +83,7 @@
                     <div class="accordion" id="accordionLimpio">
                         <div class="accordion-item ">
                             <h2 class="accordion-header" id="headingOne">
-                                <button class="accordion-button text-uppercase fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTerminar" aria-expanded="true" aria-controls="collapseTerminar">
+                                <button class="accordion-button text-uppercase fw-bold @if(count($reservasEnLimpieza) <= 0) collapsed @endif" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTerminar" aria-expanded="true" aria-controls="collapseTerminar">
                                     {{ __('Apartamentos por Terminar') }}
                                 </button>
                             </h2>
@@ -114,7 +114,7 @@
                     <div class="accordion" id="accordionLimpio">
                         <div class="accordion-item ">
                             <h2 class="accordion-header" id="headingOne">
-                                <button class="accordion-button text-uppercase fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
+                                <button class="accordion-button text-uppercase fw-bold @if(count($reservasEnLimpieza) <= 0) collapsed @endif" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimpios" aria-expanded="true" aria-controls="collapseLimpios">
                                     {{ __('Apartamentos Limpiados HOY') }}
                                 </button>
                             </h2>
