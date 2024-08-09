@@ -135,7 +135,7 @@
                                         @endforeach
                                     </ol>
                                 @else
-                                    <h5>No hay apartamentos pendientes</h5>
+                                    <h5>No hay apartamentos finalizados</h5>
                                 @endif
                               </div>
                             </div>
@@ -165,7 +165,7 @@
                                         @endforeach
                                     </ol>
                                 @else
-                                    <h5>No hay apartamentos pendientes</h5>
+                                    <h5>No hay apartamentos con salida mañana</h5>
                                 @endif
                               </div>
                             </div>
