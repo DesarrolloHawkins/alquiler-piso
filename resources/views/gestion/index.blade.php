@@ -151,7 +151,7 @@
                                     {{-- <span class="badge bg-primary rounded-pill">{{count($reservasSalida)}}</span>  --}}
                                 </button>
                             </h2>
-                            <div id="collapseManania" class="accordion-collapse collapse @if(count($reservasSalida) > 0) {{'show'}} @endif" aria-labelledby="headingOne" data-bs-parent="#accordionManania">
+                            <div id="collapseManania" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionManania">
                               <div class="accordion-body">
                                 @if (count($reservasSalida) > 0)
                                     <ol class="list-group list-group-numbered">
@@ -176,5 +176,5 @@
             </div>
         </div>
     </div>
-    
+
 @endsection
