@@ -18,7 +18,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
-    <div id="app">
+    <div id="app" style="width: 100%;padding: 0 10px;">
         <main class="py-4 contendor">
             @yield('content')
         </main>

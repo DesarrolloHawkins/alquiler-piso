@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
 use App\Models\ApartamentoLimpieza;
+use App\Models\Fichaje;
+use App\Models\Pausa;
 use App\Models\GestionApartamento;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Auth; // Añade esta línea
 
 class GestionApartamentoController extends Controller
 {
@@ -33,8 +36,21 @@ class GestionApartamentoController extends Controller
         // $reservasLimpieza = Reserva::apartamentosLimpiados();
         $reservasLimpieza = ApartamentoLimpieza::apartamentosLimpiados();
         $reservasEnLimpieza = ApartamentoLimpieza::apartamentosEnLimpiados();
+        
+        $hoy = now()->toDateString();
+        $fichajeHoy = Fichaje::where('user_id', Auth::id())
+                                ->whereDate('hora_entrada', $hoy)
+                                ->whereNull('hora_salida')  // Asegúrate de considerar solo los fichajes no finalizados
+                                ->latest()
+                                ->first();
 
-        return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza','reservasEnLimpieza'));
+        $pausaActiva = null;
+        if ($fichajeHoy) {
+            $pausaActiva = $fichajeHoy->pausas()->whereNull('fin_pausa')->latest()->first();
+        }
+
+
+        return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza','reservasEnLimpieza', 'fichajeHoy', 'pausaActiva'));
     }
 
     /**
