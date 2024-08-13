@@ -134,19 +134,19 @@ class GastosController extends Controller
         $tipo = $request->Tipo;
         $importe = $request->Importe;
         $fecha = $request->Fecha;
-        
+
         if($tipo == 0){
             $crearGasto = Gastos::create([
                 'title' => $contenido,
                 'quantity' => $importe,
                 'date' => $fecha,
-                'estado_id' => 0
+                'estado_id' => 1
+            ]);
+            return response()->json([
+                'mensaje' => 'El gasto se añadio correctamente'
             ]);
         }
 
-        return response()->json([
-            'mensaje' => 'El gasto se añadio correctamente'
-        ]);
     }
 
     public function download($id)
