@@ -810,6 +810,7 @@ class WhatsappController extends Controller
                             (De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE").
                             Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE".
                             Si la pregunta o mensaje esta relacionado con la limpieza o suministros, para que los suministros sean validos para devolver un NULL deben ser por casos de incidencias no de ubicacion, si la pregunta esta relacionada con donde estan situados esos suminitros no debes contestar NULL si no FALSE, para casos de incidencias con limpieza o incidencia de suminitros del  devuelveme un "NULL".
+                            Si el mensaje esta relacionado con un limpieza extra, no sobre una queja de poco limpio si no de que deseara alguna limpieza extra devuelveme un FALSE.
                             Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
                             '
                         ]
