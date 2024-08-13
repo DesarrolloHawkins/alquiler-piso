@@ -355,7 +355,7 @@ class WhatsappController extends Controller
 
                 // Enviar la question al asistente
                 $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
-        
+                dd($reponseChatGPT);
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
     
                 if(isset($respuestaWhatsapp['error'])){
@@ -375,17 +375,22 @@ class WhatsappController extends Controller
 
     public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
     {
-        $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
-        
-        if ($mensajeExiste === null) {
-
-            $existeHilo = ChatGpt::find($idMensaje);
-
-            if ($existeHilo->id_three == null) {
+        $existeHilo = ChatGpt::find($idMensaje);
+		$mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
+		
+            if ($mensajeAnterior[1]->id_three == null) {
+				//dd($existeHilo);
                 $three_id = $this->crearHilo();
-                $existeHilo->id_three = $three_id['id'];
+				//dd($three_id);
+				$existeHilo->id_three = $three_id['id'];
                 $existeHilo->save();
+                $mensajeAnterior[1]->id_three = $three_id['id'];
+                $mensajeAnterior[1]->save();
+				dd($existeHilo);
             } else {
+                $three_id = [];
+				$existeHilo->id_three = $three_id['id'];
+                $existeHilo->save();
                 $three_id['id'] = $existeHilo->id_three;
             }
                      
@@ -419,16 +424,9 @@ class WhatsappController extends Controller
                 } else {
                     // Maneja otros estados, por ejemplo, errores
                     //dd($ejecuccionStatus);
-                    return; // Sale del bucle si se encuentra un estado inesperado
+                    //return; // Sale del bucle si se encuentra un estado inesperado
                 }
-            }
-        } else {
-            return;
-            // Usa el id_three existente del mensaje actual
-            //$hilo = $this->mensajeHilo($mensajeExiste->id_three, $mensaje);
-        }
-
-        
+			}
     }
 
     public function crearHilo()
@@ -844,7 +842,7 @@ class WhatsappController extends Controller
                             (De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE").
                             Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE".
                             Si la pregunta o mensaje esta relacionado con la limpieza o suministros, para que los suministros sean validos para devolver un NULL deben ser por casos de incidencias no de ubicacion, si la pregunta esta relacionada con donde estan situados esos suminitros no debes contestar NULL si no FALSE, para casos de incidencias con limpieza o incidencia de suminitros del  devuelveme un "NULL".
-                            Si el mensaje esta relacionado con un limpieza extra, no sobre una queja de poco limpio si no de que deseara alguna limpieza extra devuelveme un FALSE.
+                            Si el mensaje esta relacionado con un limpieza extra, no sobre una queja de poco limpio, si no de que deseara alguna limpieza extra o saber alguna informacion del precio para un limpieza extra devuelveme un FALSE.
                             Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
                             '
                         ]

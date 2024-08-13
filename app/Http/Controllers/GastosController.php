@@ -128,6 +128,12 @@ class GastosController extends Controller
         $categoria->delete();
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto eliminada con éxito!');
     }
+    public function clasificarGastos(Gastos $categoria){
+        
+        return response()->json([
+            'mensaje' => 'El gasto se añadio correctamente'
+        ]);
+    }
 
     public function download($id)
     {
