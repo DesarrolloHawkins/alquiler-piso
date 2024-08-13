@@ -232,14 +232,14 @@ class WhatsappController extends Controller
                 if ($cliente == null) {
                     $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-                    $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora('null', 'null', $phone, '34622440984', $mensaje );
+                    $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
                     $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-                    $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora('null', 'null', $phone, '34622440984', $mensaje );
+                    $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
@@ -265,16 +265,17 @@ class WhatsappController extends Controller
                 $manitas = Reparaciones::all();
 
                 if ($cliente == null) {
-                    $mensajeAveria = 'No existe cliente para este numero de telefono. Muchas gracias';
+                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-                    $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, 'null', 'null', $mensaje , $phone, '34622440984' );
+
+                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
-                    $mensajeAveria = 'No existe reserva para este numero de telefono. Muchas gracias';
+                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-                    $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, 'null', 'null', $mensaje , $phone, '34622440984' );
+                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
@@ -1368,6 +1369,57 @@ class WhatsappController extends Controller
                             ["type" => "text", "text" => $nombreManita],
                             ["type" => "text", "text" => $apartamento],
                             ["type" => "text", "text" => $edificio],
+                            ["type" => "text", "text" => $mensaje],
+                            ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
+    public function mensajesPlantillaNull($nombre, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoManitas,
+            "type" => "template",
+            "template" => [
+                "name" => 'reparaciones_null',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $nombre],
                             ["type" => "text", "text" => $mensaje],
                             ["type" => "text", "text" => $telefono],
                         ],
