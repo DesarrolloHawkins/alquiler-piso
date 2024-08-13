@@ -356,33 +356,20 @@ class WhatsappController extends Controller
             //     } 
             // }
 
-            $dataRegistrar = [
-                'id_mensaje' => $id,
-                'id_three' => null,
-                'remitente' => $phone,
-                'mensaje' => $mensaje,
-                'respuesta' => null,
-                'status' => 1,
-                'status_mensaje' => null,
-                'type' => 'text',
-                'date' => Carbon::now()
-            ];
-            $mensajeCreado = ChatGpt::create($dataRegistrar);
-            $reponseChatGPT = $this->chatGpt($mensaje,$id);
-    
-            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-
-            if(isset($respuestaWhatsapp['error'])){
-                dd($respuestaWhatsapp);
-            };
-
-            $mensajeCreado->update([
-                'respuesta'=> $reponseChatGPT
-            ]);
-
-
             $cliente = Cliente::where('telefono', $phone)->first();
             $reserva = Reserva::where('cliente_id', $cliente->id)->first();
+
+            if ($cliente == null) {
+                $mensajeAveria = 'No existe cliente para este numero de telefono. Muchas gracias';
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+                return response($mensajeAveria)->header('Content-Type', 'text/plain');
+            }
+            if ($reserva == null) {
+                $mensajeAveria = 'No existe reserva para este numero de telefono. Muchas gracias';
+                $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+                return response($mensajeAveria)->header('Content-Type', 'text/plain');
+            }
+
             foreach ($reserva->apartamento->titulo as $string) {
                 if (preg_match('/^(Edificio Hawkins(?: Costa)?)(.*)$/', $string, $matches)) {
                     //echo "Edificio: " . $matches[1] . "\n";
@@ -391,16 +378,19 @@ class WhatsappController extends Controller
                     //echo "Apartamento: " . trim($matches[2]) . "\n\n";
                 }
             }
-            
-            return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-            $isAveria = $this->chatGpModelo($mensaje);
-            Storage::disk('local')->put('Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
-            if ($isAveria == 'NULL') {
 
+
+            // return response($reponseChatGPT)->header('Content-Type', 'text/plain');
+
+
+            $isAveria = $this->chatGpModelo($mensaje);
+            Storage::disk('local')->put( 'Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
+
+            if ($isAveria == 'NULL') {
                 $mensajeAveria = 'Hemos procesado el mensaje a nuestra encargada de los apartamento, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
 
-                $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34600500400', $mensaje );
+                $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34622440984', $mensaje );
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
             }
 
@@ -408,14 +398,26 @@ class WhatsappController extends Controller
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                 $manitas = Reparaciones::all();
-                //$nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas
-                $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, $manitas[0]->telefono );
+                //$nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas $manitas[0]->telefono
+                $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, '34622440984' );
 
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
 
             } else {
+                $dataRegistrar = [
+                    'id_mensaje' => $id,
+                    'id_three' => null,
+                    'remitente' => $phone,
+                    'mensaje' => $mensaje,
+                    'respuesta' => null,
+                    'status' => 1,
+                    'status_mensaje' => null,
+                    'type' => 'text',
+                    'date' => Carbon::now()
+                ];
+                $mensajeCreado = ChatGpt::create($dataRegistrar);
                 $reponseChatGPT = $this->chatGpt($mensaje,$id);
-    
+        
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
     
                 if(isset($respuestaWhatsapp['error'])){
@@ -425,6 +427,17 @@ class WhatsappController extends Controller
                 $mensajeCreado->update([
                     'respuesta'=> $reponseChatGPT
                 ]);
+                // $reponseChatGPT = $this->chatGpt($mensaje,$id);
+    
+                // $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+    
+                // if(isset($respuestaWhatsapp['error'])){
+                //     dd($respuestaWhatsapp);
+                // };
+    
+                // $mensajeCreado->update([
+                //     'respuesta'=> $reponseChatGPT
+                // ]);
     
                 return response($reponseChatGPT)->header('Content-Type', 'text/plain');
             }

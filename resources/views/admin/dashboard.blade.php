@@ -20,17 +20,17 @@
         <div class="col-md-3">
             <div class="row mx-1 bg-primero p-3 rounded-4">
                 <div class="col-9">
-                    <h4>800</h4>
-                    <p>New Booking</p>
+                    <h4>{{$countReservas}}</h4>
+                    <p>Reservas Año Actual</p>
                 </div>
                 <div class="col-3"></div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="row mx-1 bg-success p-3">
+            <div class="row mx-1 bg-success p-3 rounded-4">
                 <div class="col-9">
-                    <h4>800</h4>
-                    <p>New Booking</p>
+                    <h4>{{$sumPrecio}} €</h4>
+                    <p>Ingresos Año Actual</p>
                 </div>
                 <div class="col-3"></div>
             </div>
