@@ -357,54 +357,70 @@ class WhatsappController extends Controller
     public function chatGpt($mensaje, $id, $phone = null)
     {
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
+        
+        if ($mensajeExiste === null) {
 
-        if ($mensajeExiste->id_three === null) {
+            $mensajeExisteNuevo = new ChatGpt;
+            $mensajeExisteNuevo->id_mensaje = $id; // Asegúrate de asignar cualquier otro campo necesario aquí
+            $mensajeExisteNuevo->remitente = $phone;
+            $mensajeExisteNuevo->save();
 
-            $mensajesAnteriores = ChatGpt::where('remitente', $phone)->get();
-            if($mensajesAnteriores == null) {
-                // Crear un nuevo hilo si no existe
+            // Intenta encontrar el mensaje más reciente de ese remitente
+            $mensajesAnteriores = ChatGpt::where('remitente', $phone)
+            ->latest() // Asegura que el mensaje más reciente sea seleccionado
+            ->first();
+
+            if ($mensajesAnteriores == null) {
+                // No hay mensajes anteriores, crea un nuevo hilo
                 $three_id = $this->crearHilo();
-                $mensajeExiste->id_three = $three_id['id'];
-                $mensajeExiste->save();
-            }
-
-            $three_id = ['id' => $mensajesAnteriores->id_three];  // Esto asegura que siempre tienes $
-        }else {
-            $three_id = ['id' => $mensajeExiste->id_three];  // Esto asegura que siempre tienes $
-        }
-
-        // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
-        $hilo = $this->mensajeHilo($mensajeExiste->id_three, $mensaje);
-        $ejecuccion = $this->ejecutarHilo($three_id['id']);
-        $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
-        //dd($ejecuccionStatus);
-        // Inicia un bucle para esperar hasta que el hilo se complete
-        while (true) {
-            //$ejecuccion = $this->ejecutarHilo($three_id['id']);
-
-            if ($ejecuccionStatus['status'] === 'in_progress') {
-                // Espera activa antes de verificar el estado nuevamente
-                sleep(2); // Ajusta este valor según sea necesario
-
-                // Verifica el estado del paso actual del hilo
-                $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
-                if ($pasosHilo['data'][0]['status'] === 'completed') {
-                    // Si el paso se completó, verifica el estado general del hilo
-                    $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
-                }
-            } elseif ($ejecuccionStatus['status'] === 'completed') {
-                // El hilo ha completado su ejecución, obtiene la respuesta final
-                $mensajes = $this->listarMensajes($three_id['id']);
-				//dd($mensajes);
-                if(count($mensajes['data']) > 0){
-                    return $mensajes['data'][0]['content'][0]['text']['value'];
-                }
+                $mensajeExisteNuevo->id_three = $three_id['id'];
+                $mensajeExisteNuevo->save();
             } else {
-                // Maneja otros estados, por ejemplo, errores
-				dd($ejecuccionStatus);
-                break; // Sale del bucle si se encuentra un estado inesperado
+                // Asigna el id_three del mensaje más reciente al mensaje actual
+                $three_id['id'] = $mensajesAnteriores->id_three;
+                $mensajeExisteNuevo->id_three = $mensajesAnteriores->id_three;
+                $mensajeExisteNuevo->save();
+            }            
+    
+            $hilo = $this->mensajeHilo($mensajeExisteNuevo->id_three, $mensaje);
+            // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
+            $ejecuccion = $this->ejecutarHilo($three_id['id']);
+            $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
+            //dd($ejecuccionStatus);
+            // Inicia un bucle para esperar hasta que el hilo se complete
+            while (true) {
+                //$ejecuccion = $this->ejecutarHilo($three_id['id']);
+
+                if ($ejecuccionStatus['status'] === 'in_progress') {
+                    // Espera activa antes de verificar el estado nuevamente
+                    sleep(2); // Ajusta este valor según sea necesario
+
+                    // Verifica el estado del paso actual del hilo
+                    $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
+                    if ($pasosHilo['data'][0]['status'] === 'completed') {
+                        // Si el paso se completó, verifica el estado general del hilo
+                        $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
+                    }
+                } elseif ($ejecuccionStatus['status'] === 'completed') {
+                    // El hilo ha completado su ejecución, obtiene la respuesta final
+                    $mensajes = $this->listarMensajes($three_id['id']);
+                    //dd($mensajes);
+                    if(count($mensajes['data']) > 0){
+                        return $mensajes['data'][0]['content'][0]['text']['value'];
+                    }
+                } else {
+                    // Maneja otros estados, por ejemplo, errores
+                    //dd($ejecuccionStatus);
+                    return; // Sale del bucle si se encuentra un estado inesperado
+                }
             }
+        } else {
+            return;
+            // Usa el id_three existente del mensaje actual
+            //$hilo = $this->mensajeHilo($mensajeExiste->id_three, $mensaje);
         }
+
+        
     }
 
     public function crearHilo()
