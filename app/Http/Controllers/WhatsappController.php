@@ -355,7 +355,7 @@ class WhatsappController extends Controller
 
                 // Enviar la question al asistente
                 $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
-                dd($reponseChatGPT);
+                //dd($reponseChatGPT);
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
     
                 if(isset($respuestaWhatsapp['error'])){
