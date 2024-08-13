@@ -388,8 +388,8 @@ class WhatsappController extends Controller
                 $mensajeAnterior[1]->save();
 				//dd($existeHilo);
             } else {
-                $three_id = [];
-				$existeHilo->id_three = $three_id['id'];
+                $three_id['id'] = $mensajeAnterior[1]->id_three;
+				$existeHilo->id_three = $mensajeAnterior[1]->id_three;
                 $existeHilo->save();
                 $three_id['id'] = $existeHilo->id_three;
             }
