@@ -19,7 +19,8 @@ class Gastos extends Model
         'title',
         'quantity',
         'date',
-        'factura_foto'
+        'factura_foto',
+        'estado_id'
     ];
 
     /**
@@ -48,6 +49,16 @@ class Gastos extends Model
     public function categoria()
     {
         return $this->belongsTo(\App\Models\CategoriaGastos::class,'categoria_id');
+    }
+    
+    /**
+     * Obtener la categoria
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function estado()
+    {
+        return $this->belongsTo(\App\Models\EstadosGastos::class,'estado_id');
     }
     
 }

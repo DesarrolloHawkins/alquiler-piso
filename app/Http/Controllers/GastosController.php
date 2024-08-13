@@ -129,7 +129,21 @@ class GastosController extends Controller
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto eliminada con éxito!');
     }
     public function clasificarGastos(Request $request){
+        $origen = $request->Origen;
+        $contenido  = $request->Contenido;
+        $tipo = $request->Tipo;
+        $importe = $request->Importe;
+        $fecha = $request->Fecha;
         
+        if($tipo == 0){
+            $crearGasto = Gastos::create([
+                'title' => $contenido,
+                'quantity' => $importe,
+                'date' => $fecha,
+                'estado_id' => 0
+            ]);
+        }
+
         return response()->json([
             'mensaje' => 'El gasto se añadio correctamente'
         ]);
