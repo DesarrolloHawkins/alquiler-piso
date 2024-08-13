@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatGpt;
 use App\Models\Cliente;
+use App\Models\Configuraciones;
 use App\Models\Mensaje;
 use App\Models\MensajeAuto;
+use App\Models\Reparaciones;
 use App\Models\Reserva;
 use App\Models\Whatsapp;
 use App\Services\ClienteService;
@@ -378,19 +380,37 @@ class WhatsappController extends Controller
                 'respuesta'=> $reponseChatGPT
             ]);
 
+
+            $cliente = Cliente::where('telefono', $phone)->first();
+            $reserva = Reserva::where('cliente_id', $cliente->id)->first();
+            foreach ($reserva->apartamento->titulo as $string) {
+                if (preg_match('/^(Edificio Hawkins(?: Costa)?)(.*)$/', $string, $matches)) {
+                    //echo "Edificio: " . $matches[1] . "\n";
+                    $edificio = trim($matches[1]);
+                    $apartamento =trim($matches[2]);
+                    //echo "Apartamento: " . trim($matches[2]) . "\n\n";
+                }
+            }
+            
             return response($reponseChatGPT)->header('Content-Type', 'text/plain');
             $isAveria = $this->chatGpModelo($mensaje);
             Storage::disk('local')->put('Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
             if ($isAveria == 'NULL') {
 
-                $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
+                $mensajeAveria = 'Hemos procesado el mensaje a nuestra encargada de los apartamento, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+
+                $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34600500400', $mensaje );
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
             }
 
             if ($isAveria == "TRUE") {
                 $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
+                $manitas = Reparaciones::all();
+                //$nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas
+                $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, $manitas[0]->telefono );
+
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
 
             } else {
@@ -866,7 +886,12 @@ class WhatsappController extends Controller
                             "type" => "text",
                             "text" => 'Analiza el mensaje de un cliente: 
                             '. $texto .'
-                            . Tenemos dos opciones que el mensaje sea una queja por averia, fallo, rotura, mal funcionamiento. Devuelve un "TRUE",(De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE"). Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE". Si la pregunta o mensaje esta relacionado con el numero de apartamento y edificio devuelveme un "NULL", Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
+                            . Tenemos tres opciones que el mensaje sea una queja por (averia, fallo, rotura, mal funcionamiento) o (Limpieza o suministros del apartamento como toallas, papel higenico, champu, etc..).
+                            Devuelve un "TRUE" si esta realacionado con las averias,
+                            (De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE").
+                            Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE".
+                            Si la pregunta o mensaje esta relacionado con la limpieza oa suministros devuelveme un "NULL".
+                            Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
                             '
                         ]
                     ]
@@ -1368,7 +1393,111 @@ class WhatsappController extends Controller
         return $response;
 
     }
+    public function mensajesPlantillaLimpiadora($apartamento, $edificio, $mensaje, $telefono, $telefonoLimpiadora, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoLimpiadora,
+            "type" => "template",
+            "template" => [
+                "name" => '',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $apartamento],
+                            ["type" => "text", "text" => $edificio],
+                            ["type" => "text", "text" => $mensaje],
+                            ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
+    public function mensajesPlantillaAverias($nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoManitas,
+            "type" => "template",
+            "template" => [
+                "name" => 'reparaciones',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $nombreManita],
+                            ["type" => "text", "text" => $apartamento],
+                            ["type" => "text", "text" => $edificio],
+                            ["type" => "text", "text" => $mensaje],
+                            ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
     // Añadir idioma del cliente por coleccion
     public function getIdiomaCliente(){
         // Obtener la fecha de hoy

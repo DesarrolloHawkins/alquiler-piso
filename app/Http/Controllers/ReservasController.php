@@ -23,16 +23,12 @@ class ReservasController extends Controller
         $direction = $request->get('direction', 'asc');
         $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
         $searchTerm = $request->get('search', '');
-    
         $fechaEntrada = $request->get('fecha_entrada', '');
         $fechaSalida = $request->get('fecha_salida', '');
-    
-        $perPage == '' ? $perPage = 10 : $perPage;
-        $direction == '' ? $direction = 'asc' : $direction;
-        $orderBy == '' ? $orderBy = 'fecha_entrada' : $orderBy;
-    
-        $query = Reserva::with('cliente'); // Asegúrate de que 'cliente' sea el nombre de la relación en el modelo Reserva
-    
+
+        $query = Reserva::with('cliente')
+                        ->where('estado_id', '!=', 4); // Filtra las reservas para excluir las canceladas
+
         if (!empty($searchTerm)) {
             $query->where(function($subQuery) use ($searchTerm) {
                 $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
@@ -44,16 +40,16 @@ class ReservasController extends Controller
                 ->orWhere('origen', 'LIKE', '%' . $searchTerm . '%');
             });
         }
-    
+
         // Filtrar por fechas de entrada y salida solo si se proporcionan
         if (!empty($fechaEntrada)) {
             $query->whereDate('fecha_entrada', '=', $fechaEntrada);
         }
-    
+
         if (!empty($fechaSalida)) {
             $query->whereDate('fecha_salida', '=', $fechaSalida);
         }
-    
+
         // Utiliza el valor de $perPage en la función paginate()
         $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
             'order_by' => $orderBy,
@@ -63,9 +59,10 @@ class ReservasController extends Controller
             'fecha_entrada' => $fechaEntrada,
             'fecha_salida' => $fechaSalida,
         ]);
-    
+
         return view('reservas.index', compact('reservas'));
     }
+
     
 
 

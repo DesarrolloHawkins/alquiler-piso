@@ -130,6 +130,24 @@
                             </a>
                           </li>
                           <li>
+                            <a href="{{route('admin.gastos.index')}}" class="nav-link fs-5 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-broom me-2"></i>
+                              Gastos
+                            </a>
+                          </li>
+                          <li>
+                            <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-5 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-broom me-2"></i>
+                              Categoria de Gastos
+                            </a>
+                          </li>
+                          <li>
+                            <a target="blank" href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-broom me-2"></i>
+                              Bancos
+                            </a>
+                          </li>
+                          <li>
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-file-lines me-2"></i>
                               Logs

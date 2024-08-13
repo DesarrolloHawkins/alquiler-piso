@@ -335,6 +335,7 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
 
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
+            ->where('estado_id', '!=', 4)
             // ->where('dni_entregado', '!=', null)
             ->get();
             

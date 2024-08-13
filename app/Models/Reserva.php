@@ -30,7 +30,6 @@ class Reserva extends Model
         'codigo_reserva',
         'fecha_limpieza',
         'token'
-        
     ];
 
     /**
