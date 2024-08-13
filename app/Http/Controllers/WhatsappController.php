@@ -223,7 +223,7 @@ class WhatsappController extends Controller
         }else {
             
             $isAveria = $this->chatGpModelo($mensaje);
-            Storage::disk('local')->put( 'Contestacion del modelo'.$fecha.'.txt', json_encode($isAveria) );
+            Storage::disk('local')->put( 'Contestacion del modelo-'.$fecha.'.txt', json_encode($isAveria) );
 
             if ($isAveria == 'NULL') {
                 $dataRegistrar = [
@@ -285,7 +285,7 @@ class WhatsappController extends Controller
                     'date' => Carbon::now()
                 ];
                 $mensajeCreado = ChatGpt::create($dataRegistrar);
-                
+
                 $cliente = Cliente::where('telefono', $phone)->first();
                 $reserva = Reserva::where('cliente_id', $cliente->id)->first();
                 $manitas = Reparaciones::all();
