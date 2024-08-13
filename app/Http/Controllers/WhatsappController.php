@@ -837,14 +837,24 @@ class WhatsappController extends Controller
                             "type" => "text",
                             "text" => 'Analiza el mensaje de un cliente: 
                             '. $texto .'
-                            . Tenemos tres opciones que el mensaje sea una queja por (averia, fallo, rotura, mal funcionamiento) o (Limpieza o suministros del apartamento como toallas, papel higenico, champu, etc..).
-                            Devuelve un "TRUE" si esta realacionado con las averias,
-                            (De estas opciones excluye si lo que habla esta relacionado con el wifi o con las claves de acceso al apartamento, en caso de que sea algo relacionado con estas dos tu respuesta debe ser un unico boleano "FALSE").
-                            Si la pregunta o mensaje no tiene nada que ver con nada de esto devuleve un "FALSE".
-                            Si la pregunta o mensaje esta relacionado con la limpieza o suministros, para que los suministros sean validos para devolver un NULL deben ser por casos de incidencias no de ubicacion, si la pregunta esta relacionada con donde estan situados esos suminitros no debes contestar NULL si no FALSE, para casos de incidencias con limpieza o incidencia de suminitros del  devuelveme un "NULL".
-                            Si el mensaje esta relacionado con un limpieza extra, no sobre una queja de poco limpio, si no de que deseara alguna limpieza extra o saber alguna informacion del precio para un limpieza extra devuelveme un FALSE.
-                            Tu respuesta debe se solo TRUE, FALSE o NULL en mayusculas no me devuelvas nada mas que eso.
-                            '
+                            . Analiza el contenido del mensaje recibido:
+                            1. Si el mensaje contiene quejas sobre averías, fallos, roturas o mal funcionamiento (excluyendo problemas con WiFi y claves de acceso al apartamento):
+                            - Devuelve "TRUE".
+
+                            2. Si el mensaje es sobre problemas con WiFi o claves de acceso al apartamento:
+                            - Devuelve "FALSE".
+
+                            3. Si el mensaje trata sobre la limpieza o los suministros del apartamento (tales como toallas, papel higiénico, champú, etc.) y se refiere a incidencias (no ubicación o deseos de servicios adicionales):
+                            - Devuelve "NULL".
+
+                            4. Si el mensaje pregunta por la ubicación de los suministros o desea información sobre servicios adicionales de limpieza (por ejemplo, precios o solicitud de limpieza extra):
+                            - Devuelve "FALSE".
+
+                            5. Si el mensaje no está relacionado con ninguno de los temas anteriores:
+                            - Devuelve "FALSE".
+
+                            Recuerda: La respuesta debe ser "TRUE", "FALSE" o "NULL" en mayúsculas. No incluyas ningún otro tipo de respuesta.'
+
                         ]
                     ]
                 ]
