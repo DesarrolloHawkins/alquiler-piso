@@ -333,7 +333,9 @@ class WhatsappController extends Controller
                     'date' => Carbon::now()
                 ];
                 $mensajeCreado = ChatGpt::create($dataRegistrar);
-                $reponseChatGPT = $this->chatGpt($mensaje,$id);
+
+                // Enviar la question al asistente
+                $reponseChatGPT = $this->chatGpt($mensaje,$id,$phone);
         
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
     
@@ -352,15 +354,23 @@ class WhatsappController extends Controller
         }
     }
 
-    public function chatGpt($mensaje, $id)
+    public function chatGpt($mensaje, $id, $phone = null)
     {
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
 
         if ($mensajeExiste->id_three === null) {
-            // Crear un nuevo hilo si no existe
-            $three_id = $this->crearHilo();
-            $mensajeExiste->id_three = $three_id['id'];
-            $mensajeExiste->save();
+
+            $mensajesAnteriores = ChatGpt::where('remitente', $phone)->get();
+            if($mensajesAnteriores == null) {
+                // Crear un nuevo hilo si no existe
+                $three_id = $this->crearHilo();
+                $mensajeExiste->id_three = $three_id['id'];
+                $mensajeExiste->save();
+            }
+
+            $three_id = ['id' => $mensajesAnteriores->id_three];  // Esto asegura que siempre tienes $
+        }else {
+            $three_id = ['id' => $mensajeExiste->id_three];  // Esto asegura que siempre tienes $
         }
 
         // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
