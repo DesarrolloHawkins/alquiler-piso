@@ -131,7 +131,7 @@
                           </li>
                           <li>
                             <a href="{{route('admin.gastos.index')}}" class="nav-link fs-5 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-broom me-2"></i>
+                              <i class="fa-solid fa-file-invoice-dollar"></i>
                               Gastos
                             </a>
                           </li>
@@ -142,7 +142,7 @@
                             </a>
                           </li>
                           <li>
-                            <a target="blank" href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">
+                            <a href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-broom me-2"></i>
                               Bancos
                             </a>

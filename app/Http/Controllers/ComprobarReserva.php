@@ -100,12 +100,12 @@ class ComprobarReserva extends Controller
         // Si no existe la reserva
         //return response('La reserva no existe', 404);
     }
-    
+
     public function obtenerCodigosAirBnb()
     {
         $hoy = Carbon::now();
         $reserva = Reserva::whereDate('fecha_entrada','>=' ,$hoy)->where('origen', 'Airbnb')->get();
-        $
+        
         $data = [];
         foreach($reserva as $item){
             array_push($data, $item->codigo_reserva);
