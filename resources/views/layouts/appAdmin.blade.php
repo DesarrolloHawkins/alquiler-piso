@@ -88,74 +88,74 @@
                         <ul class="nav nav-pills flex-column mb-auto">
                           <li class="nav-item">
                             <a href="{{route('dashboard.index')}}" class="nav-link fs-5 {{ request()->is('dashboard', 'dashboard/*') ? 'active' : '' }}" aria-current="page">
-                                <i class="fa-solid fa-chart-area me-2"></i>
+                                <i class="fa-solid fa-chart-area me-2 fs-4" style=" width:25px"></i>
                                Dashboard
                             </a>
                           </li>
                           <li>
                             <a href="{{route('clientes.index')}}" class="nav-link fs-5 {{ request()->is('clientes', 'clientes/*') ? 'active' : '' }}" aria-current="page">
-                                <i class="fa-solid fa-users me-2"></i>
+                                <i class="fa-solid fa-users me-2 fs-4" style=" width:25px"></i>
                               Clientes
                             </a>
                           </li>
                           <li>
                             <a href="{{route('reservas.index')}}" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
-                                <i class="fa-solid fa-calendar-days me-2"></i>
+                                <i class="fa-solid fa-calendar-days me-2 fs-4" style=" width:25px"></i>
                               Reservas
                             </a>
                           </li>
                           <li>
                             <a href="#" class="nav-link fs-5" aria-current="page">
-                                <i class="fa-solid fa-id-card me-2"></i>
+                                <i class="fa-solid fa-id-card me-2 fs-4" style=" width:25px"></i>
                               DNI
                             </a>
                           </li>
                           <li>
                             <a href="{{route('whatsapp.mensajes')}}" class="nav-link fs-5" aria-current="page">
-                                <i class="fa-solid fa-user-astronaut me-2"></i>
+                                <i class="fa-solid fa-user-astronaut me-2 fs-4" style=" width:25px"></i>
                               Asistente
                             </a>
                           </li>
                           <li>
                             <a href="{{route('apartamentos.admin.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
-                                <i class="fa-solid fa-file-lines me-2"></i>
+                                <i class="fa-solid fa-house me-2 fs-4" style=" width:25px"></i>
                               Apartamentos
                             </a>
                           </li>
                           <li>
                           <li>
                             <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-broom me-2"></i>
+                              <i class="fa-solid fa-broom me-2 fs-4" style=" width:25px"></i>
                               Gestion Limpieza
                             </a>
                           </li>
                           <li>
                             <a href="{{route('admin.gastos.index')}}" class="nav-link fs-5 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-file-invoice-dollar"></i>
+                              <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style=" width:25px"></i>
                               Gastos
                             </a>
                           </li>
                           <li>
                             <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-5 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-broom me-2"></i>
+                              <i class="fa-solid fa-list me-2 fs-4" style=" width:25px"></i>
                               Categoria de Gastos
                             </a>
                           </li>
                           <li>
                             <a href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-broom me-2"></i>
+                              <i class="fa-solid fa-building-columns me-2 fs-4" style=" width:25px"></i>
                               Bancos
                             </a>
                           </li>
                           <li>
                             <a href="#" class="nav-link fs-5" aria-current="page">
-                                <i class="fa-solid fa-file-lines me-2"></i>
+                                <i class="fa-solid fa-file-lines me-2 fs-4" style=" width:25px"></i>
                               Logs
                             </a>
                           </li>
                           <li>
                             <a href="{{route('configuracion.index')}}"  class="nav-link fs-5" aria-current="page">
-                                <i class="fa-solid fa-gear me-2"></i>
+                                <i class="fa-solid fa-gear me-2 fs-4" style=" width:25px"></i>
                               Configuracion
                             </a>
                           </li>
