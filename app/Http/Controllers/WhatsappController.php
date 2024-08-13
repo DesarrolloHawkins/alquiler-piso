@@ -321,21 +321,40 @@ class WhatsappController extends Controller
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
 
             } else {
-                $dataRegistrar = [
-                    'id_mensaje' => $id,
-                    'id_three' => null,
-                    'remitente' => $phone,
-                    'mensaje' => $mensaje,
-                    'respuesta' => null,
-                    'status' => 1,
-                    'status_mensaje' => null,
-                    'type' => 'text',
-                    'date' => Carbon::now()
-                ];
+                $mensajesAnteriores = ChatGpt::where('remitente', $phone)
+                ->latest() // Asegura que el mensaje más reciente sea seleccionado
+                ->first();
+
+                if ($mensajesAnteriores == null) {
+                    $dataRegistrar = [
+                        'id_mensaje' => $id,
+                        'id_three' => null,
+                        'remitente' => $phone,
+                        'mensaje' => $mensaje,
+                        'respuesta' => null,
+                        'status' => 1,
+                        'status_mensaje' => null,
+                        'type' => 'text',
+                        'date' => Carbon::now()
+                    ];
+                } else {
+                    $dataRegistrar = [
+                        'id_mensaje' => $id,
+                        'id_three' => $mensajesAnteriores->id_three,
+                        'remitente' => $phone,
+                        'mensaje' => $mensaje,
+                        'respuesta' => null,
+                        'status' => 1,
+                        'status_mensaje' => null,
+                        'type' => 'text',
+                        'date' => Carbon::now()
+                    ];
+
+                }
                 $mensajeCreado = ChatGpt::create($dataRegistrar);
 
                 // Enviar la question al asistente
-                $reponseChatGPT = $this->chatGpt($mensaje,$id,$phone);
+                $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
         
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
     
@@ -354,35 +373,24 @@ class WhatsappController extends Controller
         }
     }
 
-    public function chatGpt($mensaje, $id, $phone = null)
+    public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
     {
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->first();
         
         if ($mensajeExiste === null) {
 
-            $mensajeExisteNuevo = new ChatGpt;
-            $mensajeExisteNuevo->id_mensaje = $id; // Asegúrate de asignar cualquier otro campo necesario aquí
-            $mensajeExisteNuevo->remitente = $phone;
-            $mensajeExisteNuevo->save();
+            $existeHilo = ChatGpt::find($idMensaje);
 
-            // Intenta encontrar el mensaje más reciente de ese remitente
-            $mensajesAnteriores = ChatGpt::where('remitente', $phone)
-            ->latest() // Asegura que el mensaje más reciente sea seleccionado
-            ->first();
-
-            if ($mensajesAnteriores == null) {
-                // No hay mensajes anteriores, crea un nuevo hilo
+            if ($existeHilo->id_three == null) {
                 $three_id = $this->crearHilo();
-                $mensajeExisteNuevo->id_three = $three_id['id'];
-                $mensajeExisteNuevo->save();
+                $existeHilo->id_three = $three_id['id'];
+                $existeHilo->save();
             } else {
-                // Asigna el id_three del mensaje más reciente al mensaje actual
-                $three_id['id'] = $mensajesAnteriores->id_three;
-                $mensajeExisteNuevo->id_three = $mensajesAnteriores->id_three;
-                $mensajeExisteNuevo->save();
-            }            
+                $three_id['id'] = $existeHilo->id_three;
+            }
+                     
     
-            $hilo = $this->mensajeHilo($mensajeExisteNuevo->id_three, $mensaje);
+            $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
             // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
             $ejecuccion = $this->ejecutarHilo($three_id['id']);
             $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
