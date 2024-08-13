@@ -243,14 +243,14 @@ class WhatsappController extends Controller
                 $reserva = Reserva::where('cliente_id', $cliente->id)->first();
 
                 if ($cliente == null) {
-                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
-                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
@@ -289,7 +289,7 @@ class WhatsappController extends Controller
                 $manitas = Reparaciones::all();
 
                 if ($cliente == null) {
-                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
 
                     $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
@@ -297,7 +297,7 @@ class WhatsappController extends Controller
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
-                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
 
