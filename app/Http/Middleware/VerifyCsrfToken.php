@@ -23,6 +23,8 @@ class VerifyCsrfToken extends Middleware
         '/pass-airbnb',
         '/obtener-reserva',
         '/obtener-codigos',
-        '/obtener-codigos-airbnb'
+        '/obtener-codigos-airbnb',
+        '/cancelar-booking/*',
+        '/cancelar-booking'
     ];
 }
