@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('gastos', function (Blueprint $table) {
             // $table->unsignedInteger('estado_id')->nullable();
             // $table->unsignedBigInteger('reserva_id')->nullable();
-            $table->unsignedInteger('estado_id')->nullable();
+            $table->unsignedBigInteger('estado_id')->nullable();
 
             $table->foreign('estado_id')->references('id')->on('estados_gastos');
             // $table->foreign('reserva_id')->references('id')->on('reservas');
