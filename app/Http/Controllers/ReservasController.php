@@ -398,17 +398,20 @@ class ReservasController extends Controller
         // return $reserva;
         // Conprobamos la reserva con el codigo de reserva
 		$reservaCancelar = Reserva::where('codigo_reserva', $reserva)->first();
+
+        if ($reservaCancelar != null && $reservaCancelar->estado_id === 4) {
+            return response('La reserva ya esta cancelada', 201);
+        }
+
         // Si la reserva no existe
         if ($reservaCancelar== null) {
             return response('La reserva no existe', 404);
+        } else {
+            // Cambiamos el estado a CAncelado
+            $reservaCancelar->estado_id = 4;
+            $reservaCancelar->save();
+            return response('La reserva de ha cancelado', 200);
         }
-        // Si la reserva existe
-        // Cambiamos el estado a CAncelado
-		$reservaCancelar->estado_id = 4;
-		$reservaCancelar->save();
-
-        return response('La reserva de ha cancelado', 200);
-
 	}
 }
 
