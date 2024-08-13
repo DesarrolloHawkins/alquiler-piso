@@ -835,8 +835,7 @@ class WhatsappController extends Controller
                     "content" => [
                         [
                             "type" => "text",
-                            "text" => 'Analiza el mensaje de un cliente: 
-                            '. $texto .'
+                            "text" => '
                             . Analiza el contenido del mensaje recibido:
                             1. Si el mensaje contiene quejas sobre averías, fallos, roturas o mal funcionamiento (excluyendo problemas con WiFi y claves de acceso al apartamento):
                             - Devuelve "TRUE".
@@ -853,8 +852,10 @@ class WhatsappController extends Controller
                             5. Si el mensaje no está relacionado con ninguno de los temas anteriores:
                             - Devuelve "FALSE".
 
-                            Recuerda: La respuesta debe ser "TRUE", "FALSE" o "NULL" en mayúsculas. No incluyas ningún otro tipo de respuesta.'
-
+                            Recuerda: La respuesta debe ser "TRUE", "FALSE" o "NULL" en mayúsculas. No incluyas ningún otro tipo de respuesta.
+                            
+                            Este es el mensaje: '. $texto
+                            
                         ]
                     ]
                 ]
