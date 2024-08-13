@@ -243,14 +243,14 @@ class WhatsappController extends Controller
                 $reserva = Reserva::where('cliente_id', $cliente->id)->first();
 
                 if ($cliente == null) {
-                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
-                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
 
@@ -270,9 +270,7 @@ class WhatsappController extends Controller
 
                 $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34622440984', $mensaje );
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            }
-
-            if ($isAveria == "TRUE") {
+            } elseif ($isAveria == "TRUE") {
                 $dataRegistrar = [
                     'id_mensaje' => $id,
                     'id_three' => null,
@@ -291,7 +289,7 @@ class WhatsappController extends Controller
                 $manitas = Reparaciones::all();
 
                 if ($cliente == null) {
-                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
 
                     $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
@@ -299,7 +297,7 @@ class WhatsappController extends Controller
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
-                    $mensajeAveria = 'Su numero de telefono no aparece en la base de datos de la reserva, el departamento tecnico le contactara en breve. Muchas Gracias.';
+                    $mensajeAveria = 'Acabo de registrar su incidencia y el tecnico le contactara en breve. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                     $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
 
