@@ -11,8 +11,8 @@
     }
 </style>
 <div class="container-fluid">
-  <h2 class="mb-3">{{ __('Editando categoria: ' . $categoria->nombre) }}</h2>
-  {{-- <a href="{{route('apartamentos.admin.create')}}" class="btn bg-color-quinto">Crear banco</a> --}}
+    <h2 class="mb-3">{{ __('Editando categoria: ' . $categoria->nombre) }}</h2>
+    {{-- <a href="{{route('apartamentos.admin.create')}}" class="btn bg-color-quinto">Crear banco</a> --}}
     <hr class="mb-5">
     <div class="row justify-content-center">
       <div class="col-md-12">
@@ -22,7 +22,7 @@
             </div>
         @endif
         <!-- Formulario de búsqueda -->
-        <form action="{{ route('admin.categoriaGastos.update', $categoria->id) }}" method="POST" class="mb-4">
+        <form action="{{ route('admin.categoriaIngresos.update', $categoria->id) }}" method="POST" class="mb-4">
           @csrf
             <div class="form-grup mb-5">
               <label for="form-label">Nombre del Banco</label>

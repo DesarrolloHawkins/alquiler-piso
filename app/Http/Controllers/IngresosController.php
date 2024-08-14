@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bancos;
-use App\Models\CategoriaGastos;
-use App\Models\EstadosGastos;
-use App\Models\Gastos;
+use App\Models\CategoriaIngresos;
+use App\Models\EstadosIngresos;
+use App\Models\Ingresos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,7 +20,7 @@ class IngresosController extends Controller
         $perPage = $request->get('perPage', 10);
         $estado_id = $request->get('estado_id');  // Nuevo parámetro para la categoría
 
-        $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
+        $query = Ingresos::where(function ($query) use ($search, $month, $category, $estado_id) {
             $query->where('title', 'like', '%'.$search.'%');
             if ($month) {
                 $query->whereMonth('date', $month);
@@ -34,21 +34,21 @@ class IngresosController extends Controller
         });
     
         $totalQuantity = $query->sum('quantity');
-        $gastos = $query->orderBy($sort, $order)->paginate($perPage);
+        $ingresos = $query->orderBy($sort, $order)->paginate($perPage);
     
         // Pasamos también las categorías a la vista para el selector
-        $categorias = CategoriaGastos::all();
-        $estados = EstadosGastos::all();
+        $categorias = CategoriaIngresos::all();
+        $estados = EstadosIngresos::all();
 
-        return view('admin.gastos.index', compact('gastos', 'totalQuantity', 'categorias', 'estados'));
+        return view('admin.ingresos.index', compact('ingresos', 'totalQuantity', 'categorias', 'estados'));
     }   
 
     public function create(){
-        $categorias = CategoriaGastos::all();
+        $categorias = CategoriaIngresos::all();
         $bancos = Bancos::all();
-        $estados = EstadosGastos::all();
+        $estados = EstadosIngresos::all();
 
-        return view('admin.gastos.create', compact('categorias','bancos', 'estados'));
+        return view('admin.ingresos.create', compact('categorias','bancos', 'estados'));
     }
 
     public function store(Request $request){
@@ -65,7 +65,7 @@ class IngresosController extends Controller
         $validatedData = $request->validate($rules);
     
         // Crear el gasto en la base de datos sin la foto
-        $gasto = Gastos::create($validatedData);
+        $gasto = Ingresos::create($validatedData);
         
         // Manejar la carga de la foto si existe
         if ($request->hasFile('factura_foto')) {
@@ -81,22 +81,22 @@ class IngresosController extends Controller
         }
     
         // Redireccionar al índice de gastos con un mensaje de éxito
-        return redirect()->route('admin.gastos.index')->with('status', 'Gasto creado con éxito!');
+        return redirect()->route('admin.ingresos.index')->with('status', 'Ingreso creado con éxito!');
     }
     
     
     public function edit($id)
     {
-        $gasto = Gastos::findOrFail($id);  // Asegúrate de usar findOrFail para manejar errores si el ID no existe
-        $categorias = CategoriaGastos::all();
+        $ingreso = Ingresos::findOrFail($id);  // Asegúrate de usar findOrFail para manejar errores si el ID no existe
+        $categorias = CategoriaIngresos::all();
         $bancos = Bancos::all();  // Asegúrate de tener el modelo y controlador para Bancos también
-        $estados = EstadosGastos::all();
-        return view('admin.gastos.edit', compact('gasto', 'categorias', 'bancos', 'estados'));
+        $estados = EstadosIngresos::all();
+        return view('admin.ingresos.edit', compact('ingreso', 'categorias', 'bancos', 'estados'));
     }
 
     public function update(Request $request, $id)
     {
-        $gasto = Gastos::findOrFail($id); // Asegúrate de obtener el gasto existente
+        $gasto = Ingresos::findOrFail($id); // Asegúrate de obtener el gasto existente
     
         $rules = [
             'estado_id' => 'required|exists:estados_gastos,id',
@@ -132,37 +132,36 @@ class IngresosController extends Controller
         }
     
         // Redireccionar al índice de gastos con un mensaje de éxito
-        return redirect()->route('admin.gastos.index')->with('status', 'Gasto actualizado con éxito!');
+        return redirect()->route('admin.ingresos.index')->with('status', 'Ingreso actualizado con éxito!');
     }
     
-    public function destroy(Gastos $categoria){
-        $categoria->delete();
-        return redirect()->route('admin.gastos.index')->with('status', 'Gasto eliminada con éxito!');
+    public function destroy(Ingresos $ingreso){
+        $ingreso->delete();
+        return redirect()->route('admin.ingresos.index')->with('status', 'Ingreso eliminado con éxito!');
     }
-    public function clasificarGastos(Request $request){
+
+    public function clasificarIngresos(Request $request){
         $origen = $request->Origen;
         $contenido  = $request->Contenido;
-        $tipo = $request->Tipo;
+        // $tipo = $request->Tipo;
         $importe = $request->Importe;
         $fecha = $request->Fecha;
 
-        if($tipo == 0){
-            $crearGasto = Gastos::create([
-                'title' => $contenido,
-                'quantity' => $importe,
-                'date' => $fecha,
-                'estado_id' => 1
-            ]);
-            return response()->json([
-                'mensaje' => 'El gasto se añadio correctamente'
-            ]);
-        }
+        $crearGasto = Ingresos::create([
+            'title' => $contenido,
+            'quantity' => $importe,
+            'date' => $fecha,
+            'estado_id' => 1
+        ]);
+        return response()->json([
+            'mensaje' => 'El ingreso se añadio correctamente'
+        ]);
 
     }
 
     public function download($id)
     {
-        $gasto = Gastos::findOrFail($id);
+        $gasto = Ingresos::findOrFail($id);
         if (!$gasto->factura_foto) {
             return abort(404);
         }

@@ -92,93 +92,103 @@
                                Dashboard
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="{{route('clientes.index')}}" class="nav-link fs-5 {{ request()->is('clientes', 'clientes/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-users me-2 fs-4" style=" width:25px"></i>
                               Clientes
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
+                            <a href="{{route('reservas.calendar')}}" class="nav-link fs-5 {{ request()->is('reservas-calendar', 'reservas-calendar/*') ? 'active' : '' }}" aria-current="page">
+                                <i class="fa-solid fa-calendar-days me-2 fs-4" style=" width:25px"></i>
+                              Calendario
+                            </a>
+                          </li>
+                          <li class="nav-item">
                             <a href="{{route('reservas.index')}}" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-calendar-days me-2 fs-4" style=" width:25px"></i>
                               Reservas
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-id-card me-2 fs-4" style=" width:25px"></i>
                               DNI
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="{{route('whatsapp.mensajes')}}" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-user-astronaut me-2 fs-4" style=" width:25px"></i>
                               Asistente
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="{{route('apartamentos.admin.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
                                 <i class="fa-solid fa-house me-2 fs-4" style=" width:25px"></i>
                               Apartamentos
                             </a>
                           </li>
-                          <li>
-                          <li>
-                            <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
+                          <li class="nav-item">
+                              <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-broom me-2 fs-4" style=" width:25px"></i>
                               Gestion Limpieza
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="#submenuIngresos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('ingresos*', 'categoria-ingresos*') ? 'collapsed' : 'collapse' }}" aria-expanded="{{ request()->is('ingresos*', 'categoria-ingresos*') ? 'true' : 'false' }}">
-                                <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style="width:25px"></i>
-                                Ingresos
-                            </a>
-                            <ul class="nav flex-column ms-1 {{ request()->is('ingresos*', 'categoria-ingresos*') ? 'show' : 'collapse' }}" id="submenuIngresos">
-                                <li class="nav-item">
-                                    <a href="{{route('admin.ingresos.index')}}" class="nav-link fs-6 {{ request()->is('ingresos', 'ingresos/*') ? 'active' : '' }}">
-                                        Ver todo
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
-                                        Categoría de Gastos
-                                    </a>
-                                </li>
-                            </ul>
+                              <!-- El enlace principal para Gastos, que controla el despliegue del submenú -->
+                              <a href="#submenuIngresos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('ingresos*', 'categoria-ingresos*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('ingresos*', 'categoria-ingresos*') ? 'true' : 'false' }}">
+                                  <i class="fa-solid fa-sack-dollar me-2 fs-4" style="width:25px"></i>
+                                  Ingresos
+                              </a>
+                              <!-- Submenú para Gastos, siempre se renderiza pero se muestra/oculta basado en la ruta -->
+                              <ul class="collapse nav flex-column ms-1 {{ request()->is('ingresos*', 'categoria-ingresos*') ? 'show' : '' }}" id="submenuIngresos">
+                                  <li class="nav-item">
+                                      <a href="{{ route('admin.ingresos.index') }}" class="nav-link fs-6 {{ request()->is('ingresos', 'ingresos/*') ? 'active' : '' }}">
+                                          Ver todo
+                                      </a>
+                                  </li>
+                                  <li class="nav-item">
+                                      <a href="{{ route('admin.categoriaIngresos.index') }}" class="nav-link fs-6 {{ request()->is('categoria-ingresos', 'categoria-ingresos/*') ? 'active' : '' }}">
+                                          Categoría de Ingresos
+                                      </a>
+                                  </li>
+                              </ul>
                           </li>
                           
                           <li class="nav-item">
-                            <a href="#submenuGastos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('gastos*', 'categoria-gastos*') ? 'collapsed' : 'collapse' }}" aria-expanded="{{ request()->is('gastos*', 'categoria-gastos*') ? 'true' : 'false' }}">
-                                <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style="width:25px"></i>
-                                Gastos
-                            </a>
-                            <ul class="nav flex-column ms-1 {{ request()->is('gastos*', 'categoria-gastos*') ? 'show' : 'collapse' }}" id="submenuGastos">
-                                <li class="nav-item">
-                                    <a href="{{route('admin.gastos.index')}}" class="nav-link fs-6 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}">
-                                        Ver todo
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
-                                        Categoría de Gastos
-                                    </a>
-                                </li>
-                            </ul>
+                              <!-- El enlace principal para Gastos, que controla el despliegue del submenú -->
+                              <a href="#submenuGastos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('gastos*', 'categoria-gastos*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('gastos*', 'categoria-gastos*') ? 'true' : 'false' }}">
+                                  <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style="width:25px"></i>
+                                  Gastos
+                              </a>
+                              <!-- Submenú para Gastos, siempre se renderiza pero se muestra/oculta basado en la ruta -->
+                              <ul class="collapse nav flex-column ms-1 {{ request()->is('gastos*', 'categoria-gastos*') ? 'show' : '' }}" id="submenuGastos">
+                                  <li class="nav-item">
+                                      <a href="{{ route('admin.gastos.index') }}" class="nav-link fs-6 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}">
+                                          Ver todo
+                                      </a>
+                                  </li>
+                                  <li class="nav-item">
+                                      <a href="{{ route('admin.categoriaGastos.index') }}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
+                                          Categoría de Gastos
+                                      </a>
+                                  </li>
+                              </ul>
                           </li>
-                          <li>
+                        
+                          <li class="nav-item">
                             <a href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-building-columns me-2 fs-4" style=" width:25px"></i>
                               Bancos
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-file-lines me-2 fs-4" style=" width:25px"></i>
                               Logs
                             </a>
                           </li>
-                          <li>
+                          <li class="nav-item">
                             <a href="{{route('configuracion.index')}}"  class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-gear me-2 fs-4" style=" width:25px"></i>
                               Configuracion

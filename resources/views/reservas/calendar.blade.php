@@ -1,4 +1,4 @@
-@extends('layouts.appPersonal')
+@extends('layouts.appAdmin')
 
 @section('scriptHead')
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js"></script>
@@ -24,8 +24,9 @@
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'listWeek',
+            initialView: 'dayGridMonth',
             locale: 'es',
+            firstDay: 1, // Establece el lunes como el primer día de la semana
             events: function(fetchInfo, successCallback, failureCallback) {
                 fetch('/get-reservas')
                     .then(response => response.json())
@@ -122,7 +123,7 @@
     <h4 class="mb-3">Calendario</h4>
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-12">
             <div class="card">
                 {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
                 <div class="card-body" style="display: flex;flex-direction: column;">
