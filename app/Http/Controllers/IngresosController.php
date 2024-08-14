@@ -9,7 +9,7 @@ use App\Models\Gastos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class GastosController extends Controller
+class IngresosController extends Controller
 {
     public function index(Request $request) {
         $search = $request->get('search');
@@ -147,14 +147,12 @@ class GastosController extends Controller
         $fecha = $request->Fecha;
 
         if($tipo == 0){
-
             $crearGasto = Gastos::create([
                 'title' => $contenido,
                 'quantity' => $importe,
                 'date' => $fecha,
                 'estado_id' => 1
             ]);
-
             return response()->json([
                 'mensaje' => 'El gasto se añadio correctamente'
             ]);

@@ -26,6 +26,18 @@
                 {{-- @method('PUT') <!-- Importante para indicar que es una actualización --> --}}
 
                 <div class="form-group mb-3">
+                    <label for="estado_id">Estado</label>
+                    <select name="estado_id" id="estado_id" class="form-select">
+                        <option value="">Seleccione un estado</option>
+                        @foreach ($estados as $estado)
+                            <option value="{{$estado->id}}" {{ $gasto->estado_id == $estado->id ? 'selected' : '' }}>{{$estado->nombre}}</option>
+                        @endforeach
+                    </select>
+                    @error('estado_id')
+                        <div class="alert alert-danger">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="form-group mb-3">
                     <label for="categoria_id">Categoría</label>
                     <select name="categoria_id" id="categoria_id" class="form-select">
                         <option value="">Seleccione una categoría</option>

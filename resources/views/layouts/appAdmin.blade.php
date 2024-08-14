@@ -129,17 +129,42 @@
                               Gestion Limpieza
                             </a>
                           </li>
-                          <li>
-                            <a href="{{route('admin.gastos.index')}}" class="nav-link fs-5 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style=" width:25px"></i>
-                              Gastos
+                          <li class="nav-item">
+                            <a href="#submenuIngresos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('ingresos*', 'categoria-ingresos*') ? 'collapsed' : 'collapse' }}" aria-expanded="{{ request()->is('ingresos*', 'categoria-ingresos*') ? 'true' : 'false' }}">
+                                <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style="width:25px"></i>
+                                Ingresos
                             </a>
+                            <ul class="nav flex-column ms-1 {{ request()->is('ingresos*', 'categoria-ingresos*') ? 'show' : 'collapse' }}" id="submenuIngresos">
+                                <li class="nav-item">
+                                    <a href="{{route('admin.ingresos.index')}}" class="nav-link fs-6 {{ request()->is('ingresos', 'ingresos/*') ? 'active' : '' }}">
+                                        Ver todo
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
+                                        Categoría de Gastos
+                                    </a>
+                                </li>
+                            </ul>
                           </li>
-                          <li>
-                            <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-5 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}" aria-current="page">
-                              <i class="fa-solid fa-list me-2 fs-4" style=" width:25px"></i>
-                              Categoria de Gastos
+                          
+                          <li class="nav-item">
+                            <a href="#submenuGastos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('gastos*', 'categoria-gastos*') ? 'collapsed' : 'collapse' }}" aria-expanded="{{ request()->is('gastos*', 'categoria-gastos*') ? 'true' : 'false' }}">
+                                <i class="fa-solid fa-file-invoice-dollar me-2 fs-4" style="width:25px"></i>
+                                Gastos
                             </a>
+                            <ul class="nav flex-column ms-1 {{ request()->is('gastos*', 'categoria-gastos*') ? 'show' : 'collapse' }}" id="submenuGastos">
+                                <li class="nav-item">
+                                    <a href="{{route('admin.gastos.index')}}" class="nav-link fs-6 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}">
+                                        Ver todo
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{route('admin.categoriaGastos.index')}}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
+                                        Categoría de Gastos
+                                    </a>
+                                </li>
+                            </ul>
                           </li>
                           <li>
                             <a href="{{route('admin.bancos.index')}}" class="nav-link fs-5 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" aria-current="page">

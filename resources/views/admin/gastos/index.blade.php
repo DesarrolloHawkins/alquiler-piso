@@ -50,10 +50,19 @@
                             <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                             <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
                             <div class="input-group mb-5 justify-content-around">
-                                <div class="col-md-4 px-3">
+                                <div class="col-md-3 px-3">
                                     <label for="search" class="form-label">Busqueda</label>
                                     <input type="text" class="form-control" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
                                 </div>   
+                                <div class="col-md-2 px-3">
+                                    <label for="estado_id" class="form-label">Estados</label>
+                                    <select class="form-control" name="estado_id">
+                                        <option value="">Todos los estados</option>
+                                        @foreach ($estados as $estado)
+                                            <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="col-md-3 px-3">
                                     <label for="category" class="form-label">Categoría</label>
                                     <select class="form-control" name="category">
@@ -64,7 +73,7 @@
                                     </select>
                                 </div>
                                                              
-                                <div class="col-md-3 px-3">
+                                <div class="col-md-2 px-3">
                                     <label for="search" class="form-label">Mes</label>
                                     <select class="form-control" name="month">
                                         <option value="">Todos los meses</option>
@@ -92,6 +101,15 @@
                                class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
                                 ID
                                 @if (request('sort') == 'id')
+                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ route('admin.gastos.index', ['sort' => 'estado_id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                               class="{{ request('sort') == 'estado_id' ? 'active-sort' : 'inactive-sort' }}">
+                                Estado
+                                @if (request('sort') == 'estado_id')
                                     <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
                                 @endif
                             </a>
@@ -142,7 +160,29 @@
                     @foreach ($gastos as $gasto)
                         <tr>
                             <th scope="row">{{$gasto->id}}</th>
-                            <td>{{$gasto->categoria->nombre}}</td>
+                            <td>
+                                @if ($gasto->estado_id)
+                                    @if ($gasto->estado_id == 1)
+                                        <span class="badge bg-warning text-dark fs-6">{{$gasto->estado->nombre}}</span>
+                                    @elseif ($gasto->estado_id == 2)
+                                        <span class="badge bg-primary fs-6">{{$gasto->estado->nombre}}</span>
+                                    @elseif ($gasto->estado_id == 3)
+                                        <span class="badge bg-success fs-6">{{$gasto->estado->nombre}}</span>
+                                    @else
+                                        <span class="badge bg-danger fs-6">{{$gasto->estado->nombre}}</span>
+                                    @endif
+                                    
+                                @else
+                                    <strong>{{'Sin Estado'}}</strong>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($gasto->categoria_id != null)
+                                    {{$gasto->categoria->nombre}}
+                                @else
+                                    {{'Sin Categoria'}}
+                                @endif
+                            </td>
                             <td>{{$gasto->title}}</td>
                             <td>{{ !empty($gasto->date) ? \Carbon\Carbon::parse($gasto->date)->format('d-m-Y') : 'Sin fecha establecida' }}</td>
                             <td>{{$gasto->quantity}} €</td>
