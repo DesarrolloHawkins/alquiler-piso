@@ -21,6 +21,18 @@
                 5: ['#DFD8C0', 'black'], // Color para apartamento_id 5
                 6: ['#8FC1A9', 'white'], // Color para apartamento_id 6
                 7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
+                7: ['#7CAA98', 'white'], // Color para apartamento_id 7
                 // ... más mapeos de colores para diferentes IDs de apartamento
             };
           var calendar = new FullCalendar.Calendar(calendarEl, {
