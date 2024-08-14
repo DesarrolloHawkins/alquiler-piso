@@ -135,11 +135,13 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="#submenuContabilidad" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('contabilidad/*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('contabilidad/*') ? 'true' : 'false' }}">
+                            <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
+                            <a href="#submenuContabilidad" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'true' : 'false' }}">
                                 <i class="fa-solid fa-calculator me-2 fs-4" style="width:25px"></i>
                                 Contabilidad
                             </a>
-                            <ul class="collapse nav flex-column ms-1 {{ request()->is('contabilidad/*') ? 'show' : '' }}" id="submenuContabilidad">
+                            <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
+                            <ul class="collapse nav flex-column ms-1 {{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'show' : '' }}" id="submenuContabilidad">
                                 <li class="nav-item">
                                     <a href="{{ route('admin.cuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('cuentas-contables', 'cuentas-contables/*') ? 'active' : '' }}">
                                         Cuentas Contables

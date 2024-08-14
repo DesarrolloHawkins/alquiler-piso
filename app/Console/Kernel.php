@@ -344,7 +344,7 @@ class Kernel extends ConsoleKernel
                     $codigoPuertaPrincipal = '7589#';
                     # code...
                 }else {
-                    $codigoPuertaPrincipal = '5543#';
+                    $codigoPuertaPrincipal = '8642#';
                 }
                 $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
                 // Fecha de Hoy

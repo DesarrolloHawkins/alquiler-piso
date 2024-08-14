@@ -39,9 +39,9 @@
               <thead>
                 <tr>
                     <th scope="col">
-                        <a href="{{ route('admin.subGrupoContabilidad.index', array_merge(request()->query(), ['sort' => 'sub_grupo_id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc'])) }}">
+                        <a href="{{ route('admin.subGrupoContabilidad.index', array_merge(request()->query(), ['sort' => 'grupo_id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc'])) }}">
                             Grupo
-                            @if (request('sort') == 'sub_grupo_id')
+                            @if (request('sort') == 'grupo_id')
                                 <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
                             @endif
                         </a>
