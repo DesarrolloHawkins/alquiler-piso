@@ -26,6 +26,7 @@ class VerifyCsrfToken extends Middleware
         '/obtener-codigos-airbnb',
         '/cancelar-booking/*',
         '/cancelar-booking',
-        'gastos-introducir'
+        'gastos-introducir',
+        'ingresos-introducir'
     ];
 }
