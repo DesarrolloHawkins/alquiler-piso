@@ -292,14 +292,14 @@ class WhatsappController extends Controller
                     $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
 
-                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
+                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
                 if ($reserva == null) {
                     $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
                     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, '34622440984' );
+                    $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono );
 
                     return response($mensajeAveria)->header('Content-Type', 'text/plain');
                 }
@@ -316,7 +316,7 @@ class WhatsappController extends Controller
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
                 // $manitas = Reparaciones::all();
                 //$nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas $manitas[0]->telefono
-                $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, '34622440984' );
+                $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, $manitas[0]->telefono );
 
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
 
@@ -370,6 +370,24 @@ class WhatsappController extends Controller
             }
             
 
+        }
+    }
+
+    public function envioAutoVoz(Request $request){
+        $manitas = Reparaciones::all();
+        $mensaje = $request->mensaje;
+        $phone = $request->phone;
+        $tipo = $request->tipo;
+
+        // Leticia  y Saray
+
+        if ($tipo == 1) {
+            $enviarMensajeLimpiadora = $this->mensajesPlantillaNull( 'Leticia o Saray', $mensaje, $phone, '34633065237' );
+            return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
+
+        } elseif ($tipo == 2){
+            $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono);
+            return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
         }
     }
 
