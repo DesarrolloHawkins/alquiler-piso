@@ -45,14 +45,14 @@
                     .then(data => {
                         var events = data.map(function(reserva) {
                             console.log(reserva)
-                            console.log(apartmentColors[reserva.apartamento_id][1])
+                            console.log(apartmentColors[reserva.apartamento_id])
                             return {
                             title: reserva.cliente.alias + ' - ' + reserva.apartamento.titulo, // o cualquier otro campo que quieras usar como título
                             start: reserva.fecha_entrada,
                             end: reserva.fecha_salida,
-                            backgroundColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
-                            borderColor: apartmentColors[reserva.apartamento_id][0] || '#378006', // Color por defecto si no se encuentra un mapeo
-                            textColor: apartmentColors[reserva.apartamento_id][1] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            backgroundColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            borderColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
+                            textColor: apartmentColors[reserva.apartamento_id] || '#378006', // Color por defecto si no se encuentra un mapeo
                             ...reserva
                             // Aquí puedes añadir más propiedades según necesites
                             };
