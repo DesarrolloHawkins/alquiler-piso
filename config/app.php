@@ -171,6 +171,7 @@ return [
         //leifermendez\police\PoliceProvider::class,
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
         App\Providers\ClienteServiceProvider::class,
+        Yajra\DataTables\DataTablesServiceProvider::class,
 
 
     ])->toArray(),
@@ -190,6 +191,9 @@ return [
         'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
         // 'Example' => App\Facades\Example::class,
         'PoliceHotel'  => leifermendez\police\PoliceHotelFacade::class,
+        'Validator' => Illuminate\Support\Facades\Validator::class,
+        'DataTables' => Yajra\DataTables\DataTablesServiceProvider::class,
+
     ])->toArray(),
 
 ];

@@ -30,7 +30,8 @@ class Reserva extends Model
         'codigo_reserva',
         'fecha_limpieza',
         'token',
-        'numero_personas'
+        'numero_personas',
+        'numero_personas_plataforma'
     ];
 
     /**

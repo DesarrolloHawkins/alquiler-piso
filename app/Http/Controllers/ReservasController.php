@@ -313,6 +313,7 @@ class ReservasController extends Controller
                     'apartamento_id' => $apartamento->id,
                     'cliente_id' => $cliente->id,
                     'estado_id' => 1,
+                    //'numero_personas_plataforma' => $data['adultos'],
                     // 'numero_personas' => $data['numero_personas']
                 ]);
                 $reserva = $crearReserva;

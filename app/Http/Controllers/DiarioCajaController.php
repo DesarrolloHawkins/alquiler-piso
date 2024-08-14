@@ -2,7 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CuentasContable;
+use App\Models\DiarioCaja;
+use App\Models\GrupoContable;
+use App\Models\Ingresos;
+use App\Models\SubCuentaContable;
+use App\Models\SubCuentaHijo;
+use App\Models\SubGrupoContable;
 use Illuminate\Http\Request;
+use DataTables;
+use Carbon\Carbon;
+// use Illuminate\Support\Carbon;
+use Validator;
 
 class DiarioCajaController extends Controller
 {
@@ -97,7 +108,7 @@ class DiarioCajaController extends Controller
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $invoice = Invoice::where('created_at', $anio)->get();
+        $invoice = Ingresos::where('created_at', $anio)->get();
         $response = [];
         $data = [];
         $indice = 0;
@@ -139,7 +150,7 @@ class DiarioCajaController extends Controller
                                 'subCuentasHija' => []
                             ]);
 
-                            $sub_cuenta = SubcuentaHijo::where('sub_cuenta_id', $subCuenta->id)->get();
+                            $sub_cuenta = SubCuentaHijo::where('sub_cuenta_id', $subCuenta->id)->get();
                             if (count($sub_cuenta) > 0) {
                                 foreach ($sub_cuenta as $subCuenta) {
                                     array_push($dataSub[$indice]['subGrupo'][$i]['cuentas'][$index]['subCuentas'][$indices]['subCuentasHija'], $subCuenta );
@@ -187,7 +198,7 @@ class DiarioCajaController extends Controller
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $invoice = Invoice::where('created_at', $anio)->get();
+        $invoice = Ingresos::where('created_at', $anio)->get();
         $response = [];
         $data = [];
         $indice = 0;
@@ -386,7 +397,7 @@ class DiarioCajaController extends Controller
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $invoice = Invoice::where('created_at', $anio)->get();
+        $invoice = Ingresos::where('created_at', $anio)->get();
 
         $response = [];
         $data = [];

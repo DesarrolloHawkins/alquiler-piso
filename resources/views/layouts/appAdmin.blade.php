@@ -135,6 +135,39 @@
                             </a>
                           </li>
                           <li class="nav-item">
+                            <a href="#submenuContabilidad" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('contabilidad/*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('contabilidad/*') ? 'true' : 'false' }}">
+                                <i class="fa-solid fa-calculator me-2 fs-4" style="width:25px"></i>
+                                Contabilidad
+                            </a>
+                            <ul class="collapse nav flex-column ms-1 {{ request()->is('contabilidad/*') ? 'show' : '' }}" id="submenuContabilidad">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.cuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('cuentas-contables', 'cuentas-contables/*') ? 'active' : '' }}">
+                                        Cuentas Contables
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.subCuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('sub-cuentas-contables', 'sub-cuentas-contables/*') ? 'active' : '' }}">
+                                        Sub-Cuentas Contables
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.subCuentasHijaContables.index') }}" class="nav-link fs-6 {{ request()->is('sub-cuentas-hijas-contables', 'sub-cuentas-hijas-contables/*') ? 'active' : '' }}">
+                                        Sub-Cuentas Hijas Contables
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.grupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('grupo-contable', 'grupo-contable/*') ? 'active' : '' }}">
+                                        Grupos Contables
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.subGrupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('sub-grupo-contable', 'sub-grupo-contable/*') ? 'active' : '' }}">
+                                        Sub-Grupos Contables
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                          <li class="nav-item">
                               <!-- El enlace principal para Gastos, que controla el despliegue del submenú -->
                               <a href="#submenuIngresos" data-bs-toggle="collapse" class="nav-link fs-5 {{ request()->is('ingresos*', 'categoria-ingresos*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('ingresos*', 'categoria-ingresos*') ? 'true' : 'false' }}">
                                   <i class="fa-solid fa-sack-dollar me-2 fs-4" style="width:25px"></i>

@@ -341,7 +341,7 @@ class Kernel extends ConsoleKernel
             
             foreach($reservas as $reserva){
                 if ($reserva->apartamento_id > 7) {
-                    $codigoPuertaPrincipal = '1048#';
+                    $codigoPuertaPrincipal = '7589#';
                     # code...
                 }else {
                     $codigoPuertaPrincipal = '5543#';
