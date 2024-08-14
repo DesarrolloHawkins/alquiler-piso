@@ -29,7 +29,8 @@ class Reserva extends Model
         'enviado_webpol',
         'codigo_reserva',
         'fecha_limpieza',
-        'token'
+        'token',
+        'numero_personas'
     ];
 
     /**
@@ -124,5 +125,13 @@ class Reserva extends Model
         $hoy = Carbon::now();
         return self::whereDate('fecha_limpieza', $hoy)->get();
     }
+     // Aquí agregamos la función para obtener la siguiente reserva
+     public function siguienteReserva()
+     {
+         return self::where('apartamento_id', $this->apartamento_id)
+                    ->where('fecha_entrada', '>', $this->fecha_salida)
+                    ->orderBy('fecha_entrada', 'asc')
+                    ->first();
+     }
 }
 
