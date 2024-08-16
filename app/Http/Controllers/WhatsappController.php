@@ -1546,7 +1546,7 @@ class WhatsappController extends Controller
         return $response;
 
     }
-    public function mensajesPlantillaAlerta($telefonoManitas, $origen, $idioma = 'es'){
+    public function mensajesPlantillaAlerta($telefonoManitas, $origen, $idioma = 'en'){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         $mensajePersonalizado = [
