@@ -373,7 +373,7 @@ class WhatsappController extends Controller
         }
     }
 
-    public function envioAutoVoz(Request $request){
+    public function envioAlerta(Request $request){
         
         $tipo = $request->tipo;
 

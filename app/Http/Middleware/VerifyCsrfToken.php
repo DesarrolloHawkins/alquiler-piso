@@ -28,6 +28,7 @@ class VerifyCsrfToken extends Middleware
         '/cancelar-booking',
         'gastos-introducir',
         'ingresos-introducir',
-        '/whatsapp-envio'
+        '/whatsapp-envio',
+        '/whatsapp-alerta'
     ];
 }
