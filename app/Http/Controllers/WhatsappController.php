@@ -374,19 +374,36 @@ class WhatsappController extends Controller
     }
 
     public function envioAutoVoz(Request $request){
-        $manitas = Reparaciones::all();
-        $mensaje = $request->mensaje;
-        $phone = $request->phone;
+        
         $tipo = $request->tipo;
 
         // Leticia  y Saray
 
         if ($tipo == 1) {
+            $manitas = Reparaciones::all();
+            $mensaje = $request->mensaje;
+            $phone = $request->phone;
             $enviarMensajeLimpiadora = $this->mensajesPlantillaNull( 'Leticia o Saray', $mensaje, $phone, '34633065237' );
             return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
 
         } elseif ($tipo == 2){
+            $manitas = Reparaciones::all();
+            $mensaje = $request->mensaje;
+            $phone = $request->phone;
             $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono);
+            return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
+
+        } elseif ($tipo == 3){
+            $telefonos = [
+                '34622440984',
+                '34664368232',
+                '34605621704'
+            ];
+            $origen = $request->origen;
+            foreach ($telefonos as $key => $telefono) {
+                $enviarMensajeAverias = $this->mensajesPlantillaAlerta( $telefono,$origen );
+                # code...
+            }
             return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
         }
     }
@@ -1496,6 +1513,55 @@ class WhatsappController extends Controller
                             ["type" => "text", "text" => $nombre],
                             ["type" => "text", "text" => $mensaje],
                             ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
+    public function mensajesPlantillaAlerta($telefonoManitas, $origen, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoManitas,
+            "type" => "template",
+            "template" => [
+                "name" => 'averias_scrapping',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $origen],
                         ],
                     ],
                 ],
