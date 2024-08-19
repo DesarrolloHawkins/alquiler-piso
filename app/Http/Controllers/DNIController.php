@@ -1305,7 +1305,7 @@ class DNIController extends Controller
                         ->where('photo_categoria_id', 13)
                         ->first();
                         if (!$frontal) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
+                            //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
                         }
                     }
 
@@ -1326,7 +1326,7 @@ class DNIController extends Controller
                         ->where('photo_categoria_id', 14)
                         ->first();
                         if (!$trasera) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
+                            //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
                         }
                     }
 
@@ -1348,7 +1348,7 @@ class DNIController extends Controller
                         ->where('photo_categoria_id', 15)
                         ->first();
                         if (!$pasaporte) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
+                            //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
                         }
                     }
                 }
@@ -1399,7 +1399,7 @@ class DNIController extends Controller
                                 ->where('photo_categoria_id', 13)
                                 ->first();
                                 if (!$frontal) {
-                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
+                                    //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen frontal del DNI');
                                 }
 
                             }
@@ -1422,7 +1422,7 @@ class DNIController extends Controller
                                 ->where('photo_categoria_id', 14)
                                 ->first();
                                 if (!$trasera) {
-                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
+                                    //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen trasera del DNI');
                                 }
                             }
                         }
@@ -1446,7 +1446,7 @@ class DNIController extends Controller
                                 ->where('photo_categoria_id', 15)
                                 ->first();
                                 if (!$pasaporte) {
-                                    return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
+                                    //return redirect(route('dni.index', $reserva->token))->with('alerta', 'No adjuntaste la imagen del Pasaporte');
                                 }
                             }
                         }
