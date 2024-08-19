@@ -313,6 +313,8 @@
         for (let i = 0; i < data.length; i++) {
             if (data[i].tipo_documento == 1) {
                 var divPhotos = document.getElementById('dniUploaed_' + i);
+                console.log(divPhotos)
+
                 divPhotos.style.display = 'block';
                 //console.log('DNI')
 
@@ -336,6 +338,7 @@
                 }
             } else {
                 var divPhotos = document.getElementById('pasaporteUpload_' + i);
+                console.log(divPhotos)
                 divPhotos.style.display = 'block';
                 //console.log('pasaporte_'+i)
                 //document.getElementById('pasaporte_'+i).required = true;
