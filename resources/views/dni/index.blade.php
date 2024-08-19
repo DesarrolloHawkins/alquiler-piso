@@ -168,98 +168,152 @@
                                 @csrf
                                 <input type="hidden" name="id" value="{{$id}}">
                                 @for ($i = 0; $i < $reserva->numero_personas; $i++)
-                                <div class="card-body">
-                                    @if ($i == 0)
-                                        <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Huesped.Principal']}}</h3>
-                                    @else
-                                        <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Acompañante']}} {{$i}}</h3>
-                                    @endif
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="{{$textos['Nombre']}}" value="{{ old('nombre_'.$i) }}" required>
-                                            <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['nombre_obli']}}</div>
-                                        </div> 
+                                    <div class="card-body">
+                                        @if ($i == 0)
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Huesped.Principal']}}</h3>
+                                        @else
+                                            <h3 class="fw-bold bg-color-quinto titulo-dni p-3 text-center">{{$textos['Acompañante']}} {{$i}}</h3>
+                                        @endif
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="{{$textos['Nombre']}}" value="{{ old('nombre_'.$i) }}" required>
+                                                <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['nombre_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" value="{{ old('apellido1_'.$i) }}" placeholder="{{$textos['Primer.Apellido']}}" required>
+                                                <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" value="{{ old('apellido2_'.$i) }}" placeholder="{{$textos['Segundo.Apellido']}}">
+                                                <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" value="{{ old('fecha_nacimiento_'.$i) }}" placeholder="{{$textos['Fecha.Nacimiento']}}" required>
+                                                <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['fecha_naci_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3 ">
+                                                <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}} nacionalidad" aria-label="Pais">
+                                                    @foreach ($paises as $pais)
+                                                        <option value="{{$pais}}" {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
+                                                    @endforeach
+                                                </select>
+                                                <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <select name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select" aria-label="Tipo de documento">
+                                                    <option value="" {{ old('tipo_documento_'.$i) == '' ? 'selected' : '' }}>Seleccione tipo</option>
+                                                    <option value="DNI" {{ old('tipo_documento_'.$i) == 'DNI' ? 'selected' : '' }}>DNI</option>
+                                                    <option value="Pasaporte" {{ old('tipo_documento_'.$i) == 'Pasaporte' ? 'selected' : '' }}>Pasaporte</option>
+                                                </select>
+                                                <label for="tipo_documento_{{$i}}">Tipo de Documento</label>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" value="{{ old('num_identificacion_'.$i) }}" placeholder="Número de Identificación" required>
+                                                <label for="num_identificacion_{{$i}}">Número de Identificación</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['numero_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" value="{{ old('fecha_expedicion_doc_'.$i) }}" placeholder="Fecha de Expedición" required>
+                                                <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['fecha_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" required>
+                                                    <option value="Masculino" {{ old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}>Masculino</option>
+                                                    <option value="Femenino" {{ old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}>Femenino</option>
+                                                </select>
+                                                <label for="sexo_{{$i}}">Sexo</label>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <input name="email_{{$i}}" type="email" class="form-control" id="email_{{$i}}" value="{{ old('email_'.$i) }}" placeholder="Correo Electrónico" required>
+                                                <label for="email_{{$i}}">Correo Electrónico</label>
+                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
+                                                <div class="invalid-feedback">{{$textos['email_obli']}}</div>
+                                            </div> 
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating mb-3">
+                                                <div id="dniUploaed_{{$i}}" style="display: none">
+                                                    <h4>{{$textos['Imagen.Frontal']}}</h4>
+                                                    <div class="files mt-3">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="fontal_{{$i}}" id="fontal_{{$i}}" onchange="previewImage({{$i}},event)">
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('fontal_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
+                                                        <img data-info="{{$i}}" id="image-preview_frontal_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
+                                                        <div class="valid-feedback">
+                                                            {{$textos['Correcto']}}
+                                                        </div>
+                                                        <div class="invalid-feedback">
+                                                            {{$textos['dni_front_obli']}}
+                                                        </div>
+                                                        @error('fontal_{{$i}}')
+                                                            <div class="alert alert-danger">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                    <h4>{{$textos['Imagen.Trasera']}}</h4>
+
+                                                    <div class="files mt-3">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="trasera_{{$i}}" id="trasera_{{$i}}" onchange="previewImage2({{$i}},event)">
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('trasera_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Trasera']}}</button>
+                                                        <img data-info="{{$i}}" id="image-preview_trasera_{{$i}}" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
+                                                        <div class="valid-feedback">
+                                                            {{$textos['Correcto']}}
+                                                        </div>
+                                                        <div class="invalid-feedback">
+                                                            {{$textos['dni_front_obli']}}
+                                                        </div>
+                                                        @error('trasera_{{$i}}')
+                                                            <div class="alert alert-danger">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div id="pasaporteUpload_{{$i}}" style="display: none">
+                                                    <h4>{{$textos['Imagen.Pasaporte']}}</h4>
+                                                    <div class="files mt-3">
+                                                        <input type="file" accept="image/*" class="file-input" capture="camera" name="pasaporte_{{$i}}" id="pasaporte_{{$i}}" onchange="previewImage3({{$i}},event)">
+                                                        <button type="button" class="btn btn-secundario fs-5 w-100" onclick="document.getElementById('pasaporte_{{$i}}').click()"><i class="fa-solid fa-camera me-2"></i> {{$textos['Frontal']}}</button>
+                                                        <img data-info="{{$i}}" id="image-preview_pasaporte_{{$i}}" style="max-width: 65%; max-height: auto; margin-top: 10px;"/>
+                                                        <div class="valid-feedback">
+                                                            {{$textos['Correcto']}}
+                                                        </div>
+                                                        <div class="invalid-feedback">
+                                                            {{$textos['pasaporte_obli']}}
+                                                        </div>
+                                                        @error('fontal_{{$i}}')
+                                                            <div class="alert alert-danger">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div> 
+                                        </div>
                                     </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" value="{{ old('apellido1_'.$i) }}" placeholder="{{$textos['Primer.Apellido']}}" required>
-                                            <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" value="{{ old('apellido2_'.$i) }}" placeholder="{{$textos['Segundo.Apellido']}}">
-                                            <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" value="{{ old('fecha_nacimiento_'.$i) }}" placeholder="{{$textos['Fecha.Nacimiento']}}" required>
-                                            <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['fecha_naci_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3 ">
-                                            <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}} nacionalidad" aria-label="Pais">
-                                                @foreach ($paises as $pais)
-                                                    <option value="{{$pais}}" {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
-                                                @endforeach
-                                            </select>
-                                            <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <select name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select" aria-label="Tipo de documento">
-                                                <option value="" {{ old('tipo_documento_'.$i) == '' ? 'selected' : '' }}>Seleccione tipo</option>
-                                                <option value="DNI" {{ old('tipo_documento_'.$i) == 'DNI' ? 'selected' : '' }}>DNI</option>
-                                                <option value="Pasaporte" {{ old('tipo_documento_'.$i) == 'Pasaporte' ? 'selected' : '' }}>Pasaporte</option>
-                                            </select>
-                                            <label for="tipo_documento_{{$i}}">Tipo de Documento</label>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" value="{{ old('num_identificacion_'.$i) }}" placeholder="Número de Identificación" required>
-                                            <label for="num_identificacion_{{$i}}">Número de Identificación</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['numero_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" value="{{ old('fecha_expedicion_doc_'.$i) }}" placeholder="Fecha de Expedición" required>
-                                            <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['fecha_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" required>
-                                                <option value="Masculino" {{ old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}>Masculino</option>
-                                                <option value="Femenino" {{ old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}>Femenino</option>
-                                            </select>
-                                            <label for="sexo_{{$i}}">Sexo</label>
-                                        </div> 
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-floating mb-3">
-                                            <input name="email_{{$i}}" type="email" class="form-control" id="email_{{$i}}" value="{{ old('email_'.$i) }}" placeholder="Correo Electrónico" required>
-                                            <label for="email_{{$i}}">Correo Electrónico</label>
-                                            <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                            <div class="invalid-feedback">{{$textos['email_obli']}}</div>
-                                        </div> 
-                                    </div>
-                                </div>
                                 @endfor  
                                 <div class="mb-3">
                                     <button class="btn btn-terminar w-100">{{$textos['Enviar']}}</button>
