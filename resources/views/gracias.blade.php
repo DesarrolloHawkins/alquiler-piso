@@ -24,7 +24,7 @@
             <div class="col-12 mt-4">
                 <p>{{$textos['info']}} <a href="{{route('gracias.contacto')}}">{{$textos['contacto']}}</a> {{$textos['telefono']}} <a href="tel:+34605379329">+34 605 37 93 29</a> {{$textos['horario']}}</p>
                 <p>{{$textos['horaario2']}}
-                    <button onclick="window.open("https://wa.me/34605379329", "_blank")" class="btn btn-primary d-block w-100 my-3">{{$textos['ir']}}</button>
+                    <button onclick="window.open('https://wa.me/34605379329', '_blank')" class="btn btn-primary d-block w-100 my-3">{{$textos['ir']}}</button>
                     {{$textos['ia']}}</p>
             </div>
         </div>
