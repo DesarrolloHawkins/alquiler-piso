@@ -138,6 +138,8 @@
             </div>
         </div> 
     @endif
+
+
     @if ($reserva->numero_personas != 0 || $reserva->numero_personas != null)
 
         <div class="row">
@@ -649,7 +651,7 @@
                     var output = document.getElementById('image-preview_frontal_' + i);
                     output.src = '/' + data[i].frontal.url;
                     output.style.display = 'block';
-                    document.getElementById('fontal_'+i).required = true;
+                    //document.getElementById('fontal_'+i).required = true;
                 }
 
                 // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
@@ -658,14 +660,14 @@
                     var output = document.getElementById('image-preview_trasera_' + i);
                     output.src = '/' + data[i].trasera.url;
                     output.style.display = 'block';
-                    document.getElementById('trasera_'+i).required = true;
+                    //document.getElementById('trasera_'+i).required = true;
 
                 }
             } else {
                 var divPhotos = document.getElementById('pasaporteUpload_' + i);
                 divPhotos.style.display = 'block';
                 //console.log('pasaporte_'+i)
-                document.getElementById('pasaporte_'+i).required = true;
+                //document.getElementById('pasaporte_'+i).required = true;
                 // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
                 if (data[i].pasaporte && data[i].pasaporte.url) {
                     //console.log(data[i].pasaporte.url);
