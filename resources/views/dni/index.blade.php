@@ -7,7 +7,7 @@
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid">
-    <div class="row" style="display: none">
+    {{-- <div class="row" style="display: none">
         <div class="col-sm-12 text-center">
             <img src="https://apartamentosalgeciras.com/wp-content/uploads/2022/09/Logo-Hawkins-Suites.svg" alt="" class="img-fluid mb-3 w-50 m-auto">
         </div>
@@ -105,7 +105,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     @if ($reserva->numero_personas == 0 || $reserva->numero_personas == null)
         <div class="row">
             <div class="col-sm-12 text-center">
@@ -405,14 +405,15 @@
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <input 
-                                                name="email_{{$i}}" 
-                                                type="text" 
-                                                class="form-control" 
-                                                id="email_{{$i}}"
-                                                value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
-                                                placeholder="{{$textos['Correo.Electronico']}}" 
-                                                aria-label="Correo Electronico" 
-                                                required>
+                                                    name="email_{{$i}}" 
+                                                    type="text" 
+                                                    class="form-control" 
+                                                    id="email_{{$i}}"
+                                                    value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
+                                                    placeholder="{{$textos['Correo.Electronico']}}" 
+                                                    aria-label="Correo Electronico" 
+                                                    required
+                                                >
                                                 <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
                                                 <div class="valid-feedback">
                                                     {{$textos['Correcto']}}
@@ -560,29 +561,29 @@
         });
 
         var tipoDocumento = document.querySelectorAll('.tiposDocumentos')
-        console.log('NODOS: ',tipoDocumento)
+        //console.log('NODOS: ',tipoDocumento)
         tipoDocumento.forEach( function(tipo){
-            console.log('TIPOS: ', tipo)
+            //console.log('TIPOS: ', tipo)
             tipo.addEventListener('change', function(e) {
-                console.log(e)
+                //console.log(e)
                 var valor = this.value;
                 var info = this.getAttribute('data-info')
-                console.log(valor)
-                console.log(info)
+                //console.log(valor)
+                //console.log(info)
                 if (valor === 'I' || valor === 'N' || valor === 'X' || valor === 'C' || valor === 'D') {
                     // dniUploaed - pasaporteUpload
                     document.getElementById('dniUploaed_'+info).style.display = 'block';
-                    document.getElementById('fontal_'+info).required = true;
+                    /*document.getElementById('fontal_'+info).required = true;
                     document.getElementById('trasera_'+info).required = true;
-                    document.getElementById('pasaporte_'+info).required = false;
+                    document.getElementById('pasaporte_'+info).required = false;*/
                     document.getElementById('pasaporteUpload_'+info).style.display = 'none';
                 } else if (valor === 'P') {
                     document.getElementById('dniUploaed_'+info).style.display = 'none';
                     document.getElementById('pasaporteUpload_'+info).style.display = 'block';
-                    document.getElementById('fontal_'+info).required = false;
+                    /*document.getElementById('fontal_'+info).required = false;
                     document.getElementById('trasera_'+info).required = false;
                     // document.getElementById('frontal_'+info).required = true;
-                    document.getElementById('pasaporte_'+info).required = true;
+                    document.getElementById('pasaporte_'+info).required = true;*/
                 } else {
 
                 }
@@ -596,7 +597,7 @@
     Array.prototype.slice.call(forms)
     .forEach(function (form) {
     form.addEventListener('submit', function (event) {
-        console.log(form.checkValidity())
+        //console.log(form.checkValidity())
         if (!form.checkValidity()) {
         event.preventDefault()
         event.stopPropagation()
@@ -607,7 +608,7 @@
     }, false)
     })
     function previewImage(info, event) {
-        console.log(info)
+        //console.log(info)
         var reader = new FileReader();
         reader.onload = function(){
             var output = document.getElementById('image-preview_frontal_'+info);
@@ -640,11 +641,11 @@
             if (data[i].tipo_documento == 1) {
                 var divPhotos = document.getElementById('dniUploaed_' + i);
                 divPhotos.style.display = 'block';
-                console.log('DNI')
+                //console.log('DNI')
 
                 // Check if `data[i].frontal` is not null before accessing `data[i].frontal.url`
                 if (data[i].frontal && data[i].frontal.url) {
-                    console.log(data[i].frontal.url);
+                    //console.log(data[i].frontal.url);
                     var output = document.getElementById('image-preview_frontal_' + i);
                     output.src = '/' + data[i].frontal.url;
                     output.style.display = 'block';
@@ -653,7 +654,7 @@
 
                 // Check if `data[i].trasera` is not null before accessing `data[i].trasera.url`
                 if (data[i].trasera && data[i].trasera.url) {
-                    console.log(data[i].trasera.url);
+                    //console.log(data[i].trasera.url);
                     var output = document.getElementById('image-preview_trasera_' + i);
                     output.src = '/' + data[i].trasera.url;
                     output.style.display = 'block';
@@ -663,11 +664,11 @@
             } else {
                 var divPhotos = document.getElementById('pasaporteUpload_' + i);
                 divPhotos.style.display = 'block';
-                console.log('pasaporte_'+i)
+                //console.log('pasaporte_'+i)
                 document.getElementById('pasaporte_'+i).required = true;
                 // Check if `data[i].pasaporte` is not null before accessing `data[i].pasaporte.url`
                 if (data[i].pasaporte && data[i].pasaporte.url) {
-                    console.log(data[i].pasaporte.url);
+                    //console.log(data[i].pasaporte.url);
                     var output = document.getElementById('image-preview_pasaporte_' + i);
                     output.src = '/' + data[i].pasaporte.url;
                     output.style.display = 'block';
@@ -691,17 +692,17 @@
             var selectedValue = $('.nacionalidad').eq(index).val();
             var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
 
-            console.log("Valor seleccionado:", normalizedValue);
+            //console.log("Valor seleccionado:", normalizedValue);
 
             var opciones = @json($optionesTipo);
-            console.log("Opciones del país:", opciones);
+            //console.log("Opciones del país:", opciones);
 
             var paisesDni = @json($paisesDni);
-            console.log("Paises del país:", paisesDni);
+            //console.log("Paises del país:", paisesDni);
 
             var countryInfo = paisesDni[normalizedValue];
 
-            console.log("Información del país:", countryInfo);
+            //console.log("Información del país:", countryInfo);
 
             if (countryInfo) {
                 let indices;
@@ -714,7 +715,7 @@
                 } else {
                     indices = [0, 1, 2];
                 }
-                console.log(nuevasOpciones)
+                //console.log(nuevasOpciones)
                 indices.forEach(i => {
                     nuevasOpciones.push(opciones[i]);
                 });

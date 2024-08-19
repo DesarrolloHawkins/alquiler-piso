@@ -401,7 +401,7 @@ class WhatsappController extends Controller
             ];
             $origen = $request->origen;
             foreach ($telefonos as $key => $telefono) {
-                $enviarMensajeAverias = $this->mensajesPlantillaAlerta( $telefono,$origen );
+                $enviarMensajeAverias = $this->mensajesPlantillaAlerta( $telefono, $origen );
                 # code...
             }
             return response('Mensaje Enviado')->header('Content-Type', 'text/plain');
