@@ -176,87 +176,263 @@
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="nombre_{{$i}}" type="text" class="form-control" id="nombre_{{$i}}" placeholder="{{$textos['Nombre']}}" value="{{ old('nombre_'.$i) }}" required>
+                                                <input 
+                                                name="nombre_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="nombre_{{$i}}" 
+                                                placeholder="{{$textos['Nombre']}}" 
+                                                value="{{ $i == 0 || isset($data[$i]) ? $data[$i]->nombre : '' }}" 
+                                                required>
                                                 <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['nombre_obli']}}</div>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['nombre_obli']}}
+                                                </div>
+                                                @error('nombre_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido1_{{$i}}" type="text" class="form-control" id="apellido1_{{$i}}" value="{{ old('apellido1_'.$i) }}" placeholder="{{$textos['Primer.Apellido']}}" required>
+                                                <input 
+                                                name="apellido1_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="apellido1_{{$i}}"  
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->primer_apellido : (isset($data[$i]->apellido1) ? $data[$i]->apellido1 : '') }}" 
+                                                placeholder="{{$textos['Primer.Apellido']}}" required>
                                                 <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['apellido_obli']}}
+                                                </div>
+                                                @error('apellido1_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+                                        
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="apellido2_{{$i}}" type="text" class="form-control" id="apellido2_{{$i}}" value="{{ old('apellido2_'.$i) }}" placeholder="{{$textos['Segundo.Apellido']}}">
+                                                <input 
+                                                name="apellido2_{{$i}}" 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="apellido2_{{$i}}"
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->segundo_apellido : (isset($data[$i]->apellido2) ? $data[$i]->apellido2 : '') }}"                                                 
+                                                placeholder="{{$textos['Segundo.Apellido']}}">
                                                 <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['apellido_obli']}}</div>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    El primer apellido es obligatorio.
+                                                </div>
+                                                @error('apellido2_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_nacimiento_{{$i}}" type="date" class="form-control" id="fecha_nacimiento_{{$i}}" value="{{ old('fecha_nacimiento_'.$i) }}" placeholder="{{$textos['Fecha.Nacimiento']}}" required>
+                                                <input 
+                                                name="fecha_nacimiento_{{$i}}" 
+                                                type="date" 
+                                                class="form-control" 
+                                                id="fecha_nacimiento_{{$i}}" 
+                                                value="{{ isset($data[$i]) ? $data[$i]->fecha_nacimiento : '' }}"
+                                                placeholder="{{$textos['Fecha.Nacimiento']}}" 
+                                                aria-label="Fecha de Nacimiento" 
+                                                required>
                                                 <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['fecha_naci_obli']}}</div>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['fecha_naci_obli']}}
+                                                </div>
+                                                @error('fecha_nacimiento_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3 ">
-                                                <select name="nacionalidad_{{$i}}" id="nacionalidad_{{$i}}" class="form-select js-example-basic-single{{$i}} nacionalidad" aria-label="Pais">
+                                                {{-- {{dd($nacionalidadComun)}} --}}
+                                                <select 
+                                                name="nacionalidad_{{$i}}" 
+                                                id="nacionalidad_{{$i}}" 
+                                                class="form-select js-example-basic-single{{$i}} nacionalidad" 
+                                                aria-label="Pais" 
+                                                placeholder="{{$textos['Pais']}}">
                                                     @foreach ($paises as $pais)
-                                                        <option value="{{$pais}}" {{ (old('nacionalidad_'.$i) == $pais ? 'selected' : '') }}>{{$pais}}</option>
+                                                        <option value="{{$pais}}"
+                                                            {{
+                                                                (isset($nacionalidadComun) && $nacionalidadComun == $pais) ||
+                                                                (old('nacionalidad_'.$i) == $pais) ||
+                                                                (empty(old('nacionalidad_'.$i)) && !isset($nacionalidadComun) && $pais == 'España')
+                                                                ? 'selected' : ''
+                                                            }}
+                                                        >
+                                                            {{$pais}}
+                                                        </option>
                                                     @endforeach
                                                 </select>
-                                                <label for="nacionalidad_{{$i}}">{{$textos['Pais']}}</label>
+                                                <label for="nacionalidad_{{$i}}">
+                                                    {{$textos['Pais']}}
+                                                </label>
+
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['pais_obli']}}
+                                                </div>
+                                                @error('nacionalidad_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select" aria-label="Tipo de documento">
-                                                    <option value="" {{ old('tipo_documento_'.$i) == '' ? 'selected' : '' }}>Seleccione tipo</option>
-                                                    <option value="DNI" {{ old('tipo_documento_'.$i) == 'DNI' ? 'selected' : '' }}>DNI</option>
-                                                    <option value="Pasaporte" {{ old('tipo_documento_'.$i) == 'Pasaporte' ? 'selected' : '' }}>Pasaporte</option>
+                                                <select required data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
+                                                    <option value="{{null}}" selected>Seleccion el tipo</option>
+                                                    {{-- <option 
+                                                    value="1"
+                                                    {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
+                                                     >{{$textos['Dni']}}</option>
+                                                    <option 
+                                                    value="2"
+                                                    {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
+                                                     >{{$textos['Pasaporte']}}</option> --}}
                                                 </select>
-                                                <label for="tipo_documento_{{$i}}">Tipo de Documento</label>
+                                                <label for="tipo_documento_{{$i}}">
+                                                    {{$textos['Tipo.Documento']}}
+                                                </label>
+
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['tipo_obli']}}
+                                                </div>
+                                                @error('tipo_documento_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="num_identificacion_{{$i}}" type="text" class="form-control" id="num_identificacion_{{$i}}" value="{{ old('num_identificacion_'.$i) }}" placeholder="Número de Identificación" required>
-                                                <label for="num_identificacion_{{$i}}">Número de Identificación</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['numero_obli']}}</div>
+                                                <input 
+                                                    name="num_identificacion_{{$i}}" 
+                                                    type="text" 
+                                                    class="form-control" 
+                                                    id="num_identificacion_{{$i}}"
+                                                    value="{{ isset($data[$i]) ? ($i == 0 ? $data[$i]->num_identificacion : $data[$i]->numero_identificacion) : '' }}"
+                                                    placeholder="{{$textos['Numero.Identificacion']}}" 
+                                                    aria-label="Numero Identificación" 
+                                                    required
+                                                >
+                                                <label for="num_identificacion_{{$i}}">
+                                                    {{$textos['Numero.Identificacion']}}
+                                                </label>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['numero_obli']}}
+                                                </div>
+                                                @error('num_identificacion_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="fecha_expedicion_doc_{{$i}}" type="date" class="form-control" id="fecha_expedicion_doc_{{$i}}" value="{{ old('fecha_expedicion_doc_'.$i) }}" placeholder="Fecha de Expedición" required>
-                                                <label for="fecha_expedicion_doc_{{$i}}">Fecha de Expedición</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['fecha_obli']}}</div>
+                                                <input 
+                                                name="fecha_expedicion_doc_{{$i}}" 
+                                                type="date" 
+                                                class="form-control" 
+                                                id="fecha_expedicion_doc_{{$i}}" 
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->fecha_expedicion : (isset($data[$i]->fecha_expedicion_doc) ? $data[$i]->fecha_expedicion_doc : '') }}"
+                                                placeholder="{{$textos['Fecha.Expedicion']}}" 
+                                                aria-label="Fecha de Expedición" 
+                                                required>
+                                                <label for="fecha_expedicion_doc_{{$i}}">{{$textos['Fecha.Expedicion']}}</label>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['fecha_obli']}}
+                                                </div>
+                                                @error('fecha_expedicion_doc_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" required>
-                                                    <option value="Masculino" {{ old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}>Masculino</option>
-                                                    <option value="Femenino" {{ old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}>Femenino</option>
+                                                <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="{{$textos['Sexo']}}" required>
+                                                    <option 
+                                                    value="Masculino" 
+                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Masculino') || old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}
+                                                    >{{$textos['Masculino']}}
+                                                    </option>
+                                                    <option 
+                                                    value="Femenino" 
+                                                    {{ (isset($data[$i]) && $data[$i]->sexo == 'Femenino') || old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}
+                                                    >
+                                                    {{$textos['Femenino']}}
+                                                    </option>
                                                 </select>
-                                                <label for="sexo_{{$i}}">Sexo</label>
+                                                <label for="sexo_{{$i}}">{{$textos['Sexo']}}</label>
+
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['sexo_obli']}}
+                                                    
+                                                </div>
+                                                @error('sexo_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input name="email_{{$i}}" type="email" class="form-control" id="email_{{$i}}" value="{{ old('email_'.$i) }}" placeholder="Correo Electrónico" required>
-                                                <label for="email_{{$i}}">Correo Electrónico</label>
-                                                <div class="valid-feedback">{{$textos['Correcto']}}</div>
-                                                <div class="invalid-feedback">{{$textos['email_obli']}}</div>
+                                                <input 
+                                                    name="email_{{$i}}" 
+                                                    type="text" 
+                                                    class="form-control" 
+                                                    id="email_{{$i}}"
+                                                    value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
+                                                    placeholder="{{$textos['Correo.Electronico']}}" 
+                                                    aria-label="Correo Electronico" 
+                                                    required
+                                                >
+                                                <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
+                                                <div class="valid-feedback">
+                                                    {{$textos['Correcto']}}
+                                                </div>
+                                                <div class="invalid-feedback">
+                                                    {{$textos['email_obli']}}
+                                                </div>
+                                                @error('email_{{$i}}')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                             </div> 
                                         </div>
                                         <div class="col-12">
