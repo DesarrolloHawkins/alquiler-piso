@@ -10,7 +10,10 @@ class JornadaController extends Controller
 {
     public function index(Request $request) {
         $anio = app('anio'); // Obtiene el año global
-        $users = User::where('role', 'USER')->where('inactive', '!=', 1)->get();
+        $users = User::where('role', 'USER')->where(function($query) {
+            $query->where('inactive', '=', 0)
+                  ->orWhereNull('inactive');
+        })->get();
         
         // Obtener los parámetros de la solicitud
         $fecha_inicio = $request->fecha_inicio;
