@@ -218,13 +218,23 @@ Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoCon
 
 // Fotos
 Route::get('/fotos-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'indexDormitorio'])->name('fotos.dormitorio');
-Route::post('/fotos-dormitorio-store/{id}', [App\Http\Controllers\PhotoController::class, 'dormitorioStore'])->name('fotos.dormitorioStore');
+Route::post('/actualizar-fotos-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarDormitorio'])->name('actualizar.fotos.dormitorio');
+// Route::post('/fotos-dormitorio-store/{id}', [App\Http\Controllers\PhotoController::class, 'dormitorioStore'])->name('fotos.dormitorioStore');
 Route::get('/fotos-salon/{id}', [App\Http\Controllers\PhotoController::class, 'indexSalon'])->name('fotos.salon');
 Route::post('/fotos-salon-store/{id}', [App\Http\Controllers\PhotoController::class, 'salonStore'])->name('fotos.salonStore');
+Route::post('/actualizar-fotos-salin/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarSalon'])->name('actualizar.fotos.salon');
+
+
 Route::get('/fotos-cocina/{id}', [App\Http\Controllers\PhotoController::class, 'indexCocina'])->name('fotos.cocina');
 Route::post('/fotos-cocina-store/{id}', [App\Http\Controllers\PhotoController::class, 'cocinaStore'])->name('fotos.cocinaStore');
+Route::post('/actualizar-fotos-cocina/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarCocina'])->name('actualizar.fotos.cocina');
+
+
 Route::get('/fotos-banio/{id}', [App\Http\Controllers\PhotoController::class, 'indexBanio'])->name('fotos.banio');
 Route::post('/fotos-banio-store/{id}', [App\Http\Controllers\PhotoController::class, 'banioStore'])->name('fotos.banioStore');
+Route::post('/actualizar-fotos-banio/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarBanio'])->name('actualizar.fotos.banio');
+
+Route::post('/upload-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'dormitorioStore'])->name('fotos.dormitorioStore');
 
 // Obtener DNI
 Route::get('/dni-user/{token}', [App\Http\Controllers\DNIController::class, 'index'])->name('dni.index');

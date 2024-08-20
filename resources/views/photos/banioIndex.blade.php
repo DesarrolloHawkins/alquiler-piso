@@ -18,8 +18,8 @@
         @csrf
         <div class="filesc card p-2">
             <h3 class="text-center text-uppercase fw-bold">Baños General</h3>
-            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general" id="image_general">
-            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
+            <input type="file" accept="image/*" class="file-input"  capture="camera" name="image_general_banio" id="image_general_banio">
+            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general_banio').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
             <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
             <input type="hidden" name="image_general_resized" id="image_general_resized">
         </div>
@@ -38,12 +38,14 @@
             <input type="hidden" name="image_desague_resized" id="image_desague_resized">
         </div>
         
-        <button class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="submit">Subir Imagenes</button>
+        <button id="btn_continuar" class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="submit">Continuar</button>
     </form>
 </div>
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     console.log('Limpieza de Apartamento by Hawkins.');
 
@@ -89,18 +91,184 @@
         reader.readAsDataURL(file);
     }
 
-    document.getElementById('image_general').addEventListener('change', function(event) {
+    document.getElementById('image_general_banio').addEventListener('change', function(event) {
         resizeImage(event, 'image-preview', 'image_general_resized');
+        var inputFile = document.getElementById('image_general_banio');
+        var file = inputFile.files[0]; // Accede al primer archivo
+
+        if (file) {
+            var formData = new FormData();
+            formData.append('image', file); // Asegúrate de que la clave 'image' coincida con lo que espera tu backend
+            formData.append('elementId', 'image_general_banio'); // Añade el ID del elemento al FormData
+            formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
+            var url = "{{ route('fotos.dormitorioStore', $id) }}"; 
+
+            $.ajax({
+                url: url, // Reemplaza con la URL de tu servidor
+                type: 'POST',
+                data: formData,
+                processData: false,  // Evita que jQuery procese los datos
+                contentType: false,  // Evita que jQuery establezca el tipo de contenido
+                success: function(data) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "Imagen subida con exito"
+                    });
+                    //window.location.href = data.redirect_url;
+                    // console.log('Archivo enviado con éxito:', data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al enviar el archivo:', error);
+                }
+            });
+        } else {
+            console.log('No se ha cargado ningún archivo.');
+        }
     });
 
     document.getElementById('image_inodoro').addEventListener('change', function(event) {
         resizeImage(event, 'image-preview2', 'image_inodoro_resized');
+        var inputFile = document.getElementById('image_inodoro');
+        var file = inputFile.files[0]; // Accede al primer archivo
+
+        if (file) {
+            var formData = new FormData();
+            formData.append('image', file); // Asegúrate de que la clave 'image' coincida con lo que espera tu backend
+            formData.append('elementId', 'image_inodoro'); // Añade el ID del elemento al FormData
+            formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
+            var url = "{{ route('fotos.dormitorioStore', $id) }}"; 
+
+            $.ajax({
+                url: url, // Reemplaza con la URL de tu servidor
+                type: 'POST',
+                data: formData,
+                processData: false,  // Evita que jQuery procese los datos
+                contentType: false,  // Evita que jQuery establezca el tipo de contenido
+                success: function(data) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "Imagen subida con exito"
+                    });
+                    //window.location.href = data.redirect_url;
+                    // console.log('Archivo enviado con éxito:', data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al enviar el archivo:', error);
+                }
+            });
+        } else {
+            console.log('No se ha cargado ningún archivo.');
+        }
     });
 
     document.getElementById('image_desague').addEventListener('change', function(event) {
         resizeImage(event, 'image-preview3', 'image_desague_resized');
+        var inputFile = document.getElementById('image_desague');
+        var file = inputFile.files[0]; // Accede al primer archivo
+
+        if (file) {
+            var formData = new FormData();
+            formData.append('image', file); // Asegúrate de que la clave 'image' coincida con lo que espera tu backend
+            formData.append('elementId', 'image_desague'); // Añade el ID del elemento al FormData
+            formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
+            var url = "{{ route('fotos.dormitorioStore', $id) }}"; 
+
+            $.ajax({
+                url: url, // Reemplaza con la URL de tu servidor
+                type: 'POST',
+                data: formData,
+                processData: false,  // Evita que jQuery procese los datos
+                contentType: false,  // Evita que jQuery establezca el tipo de contenido
+                success: function(data) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "Imagen subida con exito"
+                    });
+                    //window.location.href = data.redirect_url;
+                    // console.log('Archivo enviado con éxito:', data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al enviar el archivo:', error);
+                }
+            });
+        } else {
+            console.log('No se ha cargado ningún archivo.');
+        }
     });
 
+    document.getElementById('btn_continuar').addEventListener('click', function(event) {
+        event.preventDefault();
+        var url = "{{ route('actualizar.fotos.banio', $id) }}"; 
+        var formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
+        //console.log('Click')
+        $.ajax({
+            url: url, // Reemplaza con la URL de tu servidor
+            type: 'POST',
+            data: formData,
+            processData: false,  // Evita que jQuery procese los datos
+            contentType: false,  // Evita que jQuery establezca el tipo de contenido
+            success: function(data) {
+
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    },
+                    didDestroy: () => {
+                        // Aquí puedes colocar la acción que desees realizar después de que el toast desaparezca
+                        window.location.href = data.redirect_url;
+                    }
+                });
+                Toast.fire({
+                    icon: "success",
+                    title: data.message
+                });
+                // console.log('Archivo enviado con éxito:', data);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al enviar el archivo:', error);
+            }
+        });
+    });
     window.onload = function() {
         var imageUrl = "{{ $imageUrl }}";
         if (imageUrl) {
