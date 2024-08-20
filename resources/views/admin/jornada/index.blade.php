@@ -53,6 +53,15 @@
         @if (count($users) > 0)
             @foreach ($users as $user)
                 <h3>{{$user->name}}</h3>
+                <ul>
+                  @isset($user->jornada)
+                  @foreach ($user->jornada as  $itemJornada)
+                    <li>
+                      {{$itemJornada->fecha_inicio}}
+                    </li>
+                  @endforeach
+                  @endisset
+                </ul>
                 {{var_dump($user)}}
             @endforeach
         @endif
