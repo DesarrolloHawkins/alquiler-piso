@@ -2,16 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anio;
 use App\Models\Configuraciones;
 use App\Models\Reparaciones;
 use Illuminate\Http\Request;
+use RealRashid\SweetAlert\Facades\Alert;
 
 class ConfiguracionesController extends Controller
 {
     public function index(){
         $configuraciones = Configuraciones::all();
         $reparaciones = Reparaciones::all();
-        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones'));
+        $anio = app('anio'); // Obtiene el año global
+
+        // Obtener el año actual
+        $anioActual = date('Y');
+
+        // Inicializar el array de años
+        $anios = [];
+
+        // Añadir el año actual y los cinco años anteriores al array
+        for ($i = 0; $i <= 5; $i++) {
+            $anios[] = strval($anioActual - $i);
+        }
+
+        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones', 'anio', 'anios'));
     }
     public function edit($id, Request $request){
         $configuraciones = Configuraciones::all();
@@ -56,5 +71,14 @@ class ConfiguracionesController extends Controller
             'user' => $configuraciones->user_airbnb,
             'pass' => $configuraciones->password_airbnb
         ]);
+    }
+    public function updateAnio(Request $request){
+        $anio = Anio::first();
+        $anio->anio = $request->anio;
+        $anio->save();
+
+        Alert::toast('Actualizado', 'success');
+
+        return redirect()->route('configuracion.index');
     }
 }
