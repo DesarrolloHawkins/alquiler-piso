@@ -77,7 +77,7 @@
     <div id="app">
         <div class="container-fluid h-100">
             <div class="row h-100">
-                <div class="col-2 bg-light sidebar p-3" style="height: 100vh; overflow-y: auto;"> <!-- Sidebar -->
+                <div class="col-auto bg-light sidebar p-3" style="height: 100vh; overflow-y: auto; max-width: 300px"> <!-- Sidebar -->
                     <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
                         <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
                           {{-- <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg> --}}
@@ -106,7 +106,7 @@
                           </li>
                           <li class="nav-item">
                             <a href="{{route('reservas.index')}}" class="nav-link fs-5 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}" aria-current="page">
-                                <i class="fa-solid fa-calendar-days me-2 fs-4" style=" width:25px"></i>
+                                <i class="fa-solid fa-table me-2 fs-4" style=" width:25px"></i>
                               Reservas
                             </a>
                           </li>
@@ -255,7 +255,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-10 p-4 contenedor-principal">
+                <div class="col p-4 contenedor-principal">
                     <div class="nav-top">
                         <h3 class="fw-bold font-titulo">
                             @yield('tituloSeccion')
