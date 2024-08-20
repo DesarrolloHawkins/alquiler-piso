@@ -268,7 +268,7 @@ class WhatsappController extends Controller
                 $mensajeAveria = 'Hemos procesado el mensaje a nuestra encargada de los apartamento, en el mayor tiempo posible se pondra en contacto con usted. Muchas gracias';
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
 
-                $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34622440984', $mensaje );
+                $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34633065237', $mensaje );
                 return response($mensajeAveria)->header('Content-Type', 'text/plain');
             } elseif ($isAveria == "TRUE") {
                 $dataRegistrar = [

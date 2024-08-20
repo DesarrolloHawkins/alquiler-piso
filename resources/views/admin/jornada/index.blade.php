@@ -57,12 +57,12 @@
                   @isset($user->jornada)
                   @foreach ($user->jornada as  $itemJornada)
                     <li>
-                      {{$itemJornada->fecha_inicio}}
+                      {{$itemJornada->hora_entrada}}
                     </li>
                   @endforeach
                   @endisset
                 </ul>
-                {{var_dump($user)}}
+                {{-- {{var_dump($user)}} --}}
             @endforeach
         @endif
       </div>
