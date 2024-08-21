@@ -520,11 +520,22 @@
             </div>
         </div>
     </div>
-    @if ($fotos != null)
-        @foreach ($fotos as $foto)
-            <img src="/{{$foto->url}}" alt="{{$foto->categoria->nombre}}" class="w-50 img-fluid" />
-        @endforeach
-    @endif
+
+    <!-- Sección IMAGENES -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4 class="titulo mb-0">Imagenes</h4>
+        </div>
+        <!-- Todos los controles de AMENITIES -->
+        <div class="col-md-3">
+            @if ($fotos != null)
+                @foreach ($fotos as $foto)
+                    <img src="/{{$foto->url}}" alt="{{$foto->categoria->nombre}}" class="img-fluid" />
+                @endforeach
+            @endif
+        </div>
+    </div>
+    
 
 </div>
 @endsection
