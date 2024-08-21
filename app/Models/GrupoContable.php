@@ -34,4 +34,9 @@ class GrupoContable extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at', 
     ];
+
+    public function subGrupos()
+    {
+        return $this->hasMany(SubGrupoContable::class, 'grupo_id')->orderBy('numero', 'asc');
+    }
 }

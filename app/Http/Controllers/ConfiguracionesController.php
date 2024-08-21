@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Anio;
 use App\Models\Configuraciones;
+use App\Models\FormasPago;
 use App\Models\Reparaciones;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -20,13 +21,13 @@ class ConfiguracionesController extends Controller
 
         // Inicializar el array de años
         $anios = [];
-
+        $formasPago = FormasPago::all();
         // Añadir el año actual y los cinco años anteriores al array
         for ($i = 0; $i <= 5; $i++) {
             $anios[] = strval($anioActual - $i);
         }
 
-        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones', 'anio', 'anios'));
+        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones', 'anio', 'anios','formasPago'));
     }
     public function edit($id, Request $request){
         $configuraciones = Configuraciones::all();
@@ -81,4 +82,6 @@ class ConfiguracionesController extends Controller
 
         return redirect()->route('configuracion.index');
     }
+
+    
 }

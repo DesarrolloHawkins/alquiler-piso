@@ -141,7 +141,22 @@
                                 Contabilidad
                             </a>
                             <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                            <ul class="collapse nav flex-column ms-1 {{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'show' : '' }}" id="submenuContabilidad">
+                            <ul class="collapse nav flex-column ms-1 {{ request()->is('cuentas-contables*', 'plan-contable', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'show' : '' }}" id="submenuContabilidad">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.planContable.index') }}" class="nav-link fs-6 {{ request()->is('plan-contable', 'plan-contable/*') ? 'active' : '' }}">
+                                        Plan General Contable
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.grupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('grupo-contable', 'grupo-contable/*') ? 'active' : '' }}">
+                                        Grupos Contables
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.subGrupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('sub-grupo-contable', 'sub-grupo-contable/*') ? 'active' : '' }}">
+                                        Sub-Grupos Contables
+                                    </a>
+                                </li>
                                 <li class="nav-item">
                                     <a href="{{ route('admin.cuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('cuentas-contables', 'cuentas-contables/*') ? 'active' : '' }}">
                                         Cuentas Contables
@@ -157,16 +172,8 @@
                                         Sub-Cuentas Hijas Contables
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.grupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('grupo-contable', 'grupo-contable/*') ? 'active' : '' }}">
-                                        Grupos Contables
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.subGrupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('sub-grupo-contable', 'sub-grupo-contable/*') ? 'active' : '' }}">
-                                        Sub-Grupos Contables
-                                    </a>
-                                </li>
+                                
+                                
                             </ul>
                         </li>
                           <li class="nav-item">

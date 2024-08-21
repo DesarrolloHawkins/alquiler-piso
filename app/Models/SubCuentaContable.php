@@ -44,4 +44,9 @@ class SubCuentaContable extends Model
     {
         return $this->belongsTo(CuentasContable::class,'cuenta_id');
     }
+    
+    public function cuentasHijas()
+    {
+        return $this->hasMany(SubCuentaHijo::class, 'sub_cuenta_id')->orderBy('numero', 'asc');
+    }
 }
