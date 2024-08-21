@@ -2,23 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApartamentoLimpieza;
 use App\Models\Fichaje;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 use App\Models\User;
 
 class JornadaController extends Controller
 {
     public function index(Request $request) {
-        $anio = app('anio'); // Obtiene el año global
-        $users = User::where('role', 'USER')->where(function($query) {
-            $query->where('inactive', '=', 0)
-                  ->orWhereNull('inactive');
-        })->get();
-        
-        // Obtener los parámetros de la solicitud
-        $fecha_inicio = $request->fecha_inicio;
-        $mes = $request->mes;
-
+        $anio = app('anio'); // Obtiene el año global usando el Service Provider
+    
+        // Obtener todos los usuarios activos
+        $users = User::where('role', 'USER')
+                     ->where(function($query) {
+                         $query->where('inactive', '=', 0)
+                               ->orWhereNull('inactive');
+                     })->get();
+    
+        // Usar la fecha y mes del request o, si no se proporcionan, usar valores por defecto
+        $fecha_inicio = $request->input('fecha_inicio');
+        $mes = $request->input('mes');
+    
         foreach ($users as $user) {
             // Iniciar la consulta para fichajes del usuario
             $query = Fichaje::where('user_id', $user->id);
@@ -29,15 +34,31 @@ class JornadaController extends Controller
             } elseif (!empty($mes)) {
                 // Filtrar fichajes por mes dentro del año actual
                 $query->whereMonth('created_at', '=', $mes);
+            } else {
+                // Si no se proporciona fecha ni mes, se usan los valores actuales del día/mes
+                $query->whereDate('created_at', '=', date('Y-m-d'));
             }
-    
+            
             // Asegurar que solo se consideren fichajes dentro del año actual
             $query->whereYear('created_at', '=', $anio);
-    
+            
             // Ejecutar la consulta y asignar resultados
             $user->jornada = $query->get();
-        }
+    
+            // Añadir los datos de ApartamentoLimpieza a cada jornada
+            foreach ($user->jornada as $jornada) {
+                $jornada->limpiezas = ApartamentoLimpieza::where('user_id', $user->id)
+                                                         ->whereDate('created_at', '=', $jornada->created_at)
+                                                         ->get();
 
-        return view('admin.jornada.index', compact('users'));
+            }
+
+            
+        }
+    
+        // Devolver la vista con los usuarios y sus fichajes
+        return view('admin.jornada.index', compact('users', 'request'));
     }
+    
+    
 }

@@ -1622,7 +1622,10 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
+                    Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    "Seu apartamento é o '.$apartamento.', os códigos para entrar no apartamento são: Para a porta principal '.$claveEntrada.' e para a porta do seu apartamento '.$clavePiso.'."                
                 </p>
                 <p style="margin: 0 !important">
                     Espero que tenha uma estadia maravilhosa.
@@ -1641,6 +1644,9 @@ class Kernel extends ConsoleKernel
 
                 <p style="margin: 0 !important">
                     Ciao  '.$cliente.'!! La posizione degli appartamenti è: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
+                </p>
+                <p style="margin: 0 !important">
+                    "Il tuo appartamento è il '.$apartamento.', i codici per entrare nell ´ appartamento sono: per la porta principale '.$claveEntrada.' e per la porta del tuo appartamento '.$clavePiso.'."        
                 </p>
                 <p style="margin: 0 !important">
                     Spero che tu abbia un soggiorno meraviglioso.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApartamentoLimpieza;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 
 class ApartamentoLimpiezaController extends Controller
@@ -34,9 +35,14 @@ class ApartamentoLimpiezaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ApartamentoLimpieza $apartamentoLimpieza)
+    public function show($id)
     {
-        //
+        $apartamento = ApartamentoLimpieza::find($id);
+
+        $photos = Photo::where('limpieza_id', $apartamento->id)->get();
+        $fotos = $photos;
+        
+        return view('admin.apartamentos.limpieza-show', compact('apartamento', 'fotos'));
     }
 
     /**

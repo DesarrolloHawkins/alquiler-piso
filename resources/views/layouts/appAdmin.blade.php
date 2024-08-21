@@ -111,9 +111,9 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="#" class="nav-link fs-5" aria-current="page">
-                                <i class="fa-solid fa-id-card me-2 fs-4" style=" width:25px"></i>
-                              DNI
+                            <a href="{{route('admin.jornada.index')}}" class="nav-link fs-5 {{ request()->is('jornada', 'jornada/*') ? 'active' : '' }}" aria-current="page">
+                                <i class="fa-solid fa-house me-2 fs-4" style=" width:25px"></i>
+                              Jornada
                             </a>
                           </li>
                           <li class="nav-item">

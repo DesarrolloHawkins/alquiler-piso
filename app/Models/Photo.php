@@ -41,4 +41,9 @@ class Photo extends Model
         'created_at', 'updated_at', 'deleted_at', 
     ];
 
+    public function categoria()
+    {
+        return $this->belongsTo(\App\Models\PhotoCategoria::class,'photo_categoria_id');
+    }
+
 }
