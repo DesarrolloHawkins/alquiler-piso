@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use Database\Seeders\PlanContableSeeder as SeedersPlanContableSeeder;
 use Illuminate\Database\Seeder;
 use PlanContableSeeder;
 
@@ -15,7 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             // Otros seeders
-            PlanContableSeeder::class,
+            SeedersPlanContableSeeder::class,
         ]);
     }
 }
