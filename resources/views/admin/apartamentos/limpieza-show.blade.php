@@ -527,13 +527,13 @@
             <h4 class="titulo mb-0">Imagenes</h4>
         </div>
         <!-- Todos los controles de AMENITIES -->
-        <div class="col-md-3">
-            @if ($fotos != null)
-                @foreach ($fotos as $foto)
+        @if ($fotos != null)
+            @foreach ($fotos as $foto)
+                <div class="col-md-3">
                     <img src="/{{$foto->url}}" alt="{{$foto->categoria->nombre}}" class="img-fluid" />
-                @endforeach
-            @endif
-        </div>
+                </div>
+            @endforeach
+        @endif
     </div>
     
 
