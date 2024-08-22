@@ -73,7 +73,7 @@
                                         <option value="">-- Seleccione Ingreo --</option>
                                         @if($ingresos)
                                             @foreach($ingresos as $grupo)
-                                                <option value="{{$grupo->reference}}">{{$grupo->reference .'. '. $grupo->concept}}</option>
+                                                <option value="{{$grupo->id}}">{{$grupo->title}}</option>
                                             @endforeach
                                         @endif
                                     
