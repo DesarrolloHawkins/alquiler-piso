@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CuentasContable;
 use App\Models\DiarioCaja;
+use App\Models\FormasPago;
+use App\Models\Gastos;
 use App\Models\GrupoContable;
 use App\Models\Ingresos;
 use App\Models\SubCuentaContable;
@@ -35,19 +37,18 @@ class DiarioCajaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function createIngreso()
     {
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $invoice = Ingresos::where('created_at', $anio)->get();
+        $ingresos = Ingresos::where('created_at', $anio)->get();
         $response = [];
         $data = [];
         $indice = 0;
         $dataSub = [];
-        $grupos = GrupoContable::all();
+        $grupos = GrupoContable::orderBy('numero', 'asc')->get();
         foreach($grupos as $grupo){
-
             array_push($dataSub, [
                 'grupo' => $grupo,
                 'subGrupo' => []
@@ -56,14 +57,12 @@ class DiarioCajaController extends Controller
             $subGrupos = SubGrupoContable::where('grupo_id', $grupo->id)->get();
             $i = 0;
             foreach ($subGrupos as $subGrupo) {
-
                 array_push($dataSub[$indice]['subGrupo'], [
                     'item' => $subGrupo,
                     'cuentas' => []
                 ]);
 
                 $cuentas = CuentasContable::where('sub_grupo_id', $subGrupo->id)->get();
-
                 $index = 0;
                 foreach ($cuentas as $cuenta) {
                     array_push($dataSub[$indice]['subGrupo'][$i]['cuentas'], [
@@ -114,8 +113,87 @@ class DiarioCajaController extends Controller
             $numeroAsiento = '00001' . '/' . $anio;
 
         }
+        $formasPago = FormasPago::all();
+        return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento'));
+    }
+    public function createGasto()
+    {
+        $date = Carbon::now();
+        $anio = $date->format('Y');
 
-        return view('admin.contabilidad.diarioCaja.create', compact('invoice','grupos','response','numeroAsiento'));
+        $gastos = Gastos::where('created_at', $anio)->get();
+        $response = [];
+        $data = [];
+        $indice = 0;
+        $dataSub = [];
+        $grupos = GrupoContable::orderBy('numero', 'asc')->get();
+        foreach($grupos as $grupo){
+            array_push($dataSub, [
+                'grupo' => $grupo,
+                'subGrupo' => []
+            ]) ;
+
+            $subGrupos = SubGrupoContable::where('grupo_id', $grupo->id)->get();
+            $i = 0;
+            foreach ($subGrupos as $subGrupo) {
+                array_push($dataSub[$indice]['subGrupo'], [
+                    'item' => $subGrupo,
+                    'cuentas' => []
+                ]);
+
+                $cuentas = CuentasContable::where('sub_grupo_id', $subGrupo->id)->get();
+                $index = 0;
+                foreach ($cuentas as $cuenta) {
+                    array_push($dataSub[$indice]['subGrupo'][$i]['cuentas'], [
+                        'item' => $cuenta,
+                        'subCuentas' => []
+                    ]);
+
+                    $subCuentas = SubCuentaContable::where('cuenta_id', $cuenta->id)->get();
+
+                    if (count($subCuentas) > 0) {
+                        $indices = 0;
+                        foreach ($subCuentas as $subCuenta ) {
+
+                            array_push($dataSub[$indice]['subGrupo'][$i]['cuentas'][$index]['subCuentas'],[
+                                'item' => $subCuenta,
+                                'subCuentasHija' => []
+                            ]);
+
+                            $sub_cuenta = SubCuentaHijo::where('sub_cuenta_id', $subCuenta->id)->get();
+                            if (count($sub_cuenta) > 0) {
+                                foreach ($sub_cuenta as $subCuenta) {
+                                    array_push($dataSub[$indice]['subGrupo'][$i]['cuentas'][$index]['subCuentas'][$indices]['subCuentasHija'], $subCuenta );
+                                }
+
+                            }
+
+                        }
+                    }
+                    $index++;
+                }
+
+                $i++;
+            }
+            $indice++;
+
+        }
+        array_push($response, $dataSub);
+        $now = Carbon::now();
+        $anio = $now->format('Y');
+        $asiento = DiarioCaja::orderBy('id', 'desc')->first();
+        $numeroAsiento;
+        if ($asiento != null) {
+            $asientoTemporal = explode("/", $asiento->asiento_contable);
+            $numeroAsientos = $asientoTemporal[0] + 1;
+            $numeroConCeros = str_pad($numeroAsientos, 4, "0", STR_PAD_LEFT);
+            $numeroAsiento =  $numeroConCeros. '/' . $anio;
+        }else{
+            $numeroAsiento = '00001' . '/' . $anio;
+
+        }
+        $formasPago = FormasPago::all();
+        return view('admin.contabilidad.diarioCaja.createGasto', compact('gastos','grupos','response','numeroAsiento'));
     }
 
     /**
@@ -207,6 +285,44 @@ class DiarioCajaController extends Controller
     * @return \Illuminate\Http\Response
     */
     public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            // 'invoice_id' => 'required',
+            'asiento_contable' => 'required',
+            'cuenta_id' => 'required',
+            'date' => 'required',
+            'concepto' => 'required',
+            // 'debe' => 'required',
+            // 'haber' => 'required',
+            'formas_pago' => 'required',
+
+        ]);
+         $this->validate(request(), [
+            'asiento_contable' => 'required',
+            'cuenta_id' => 'required',
+            'date' => 'required',
+            'concepto' => 'required',
+            // 'debe' => 'required',
+            // 'haber' => 'required',
+            'formas_pago' => 'required',
+
+        ]);
+
+        if ($validator->passes()) {
+            DiarioCaja::create($request->all());
+            return AjaxForm::custom([
+                'message' => 'Asiento Creado.',
+                'entryUrl' => route('admin.diarioCaja.index'),
+             ])->jsonResponse();
+        }
+
+         // Si la validacion no a sido pasada se muestra esta alerta.
+
+         return AjaxForm::custom([
+            'message' => $validator->errors()->all(),
+         ])->jsonResponse();    
+    }
+    public function storeGasto(Request $request)
     {
         $validator = Validator::make($request->all(), [
             // 'invoice_id' => 'required',

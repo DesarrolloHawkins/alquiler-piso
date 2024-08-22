@@ -129,9 +129,15 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                              <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}" aria-current="page">
+                              <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('gestion', 'gestion/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-broom me-2 fs-4" style=" width:25px"></i>
                               Gestion Limpieza
+                            </a>
+                          </li>
+                          <li class="nav-item">
+                              <a target="blank" href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-5 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
+                              Diario de Caja
                             </a>
                           </li>
                           <li class="nav-item">

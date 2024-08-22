@@ -6,6 +6,7 @@ use App\Models\Anio;
 use App\Models\Configuraciones;
 use App\Models\FormasPago;
 use App\Models\Reparaciones;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -80,6 +81,33 @@ class ConfiguracionesController extends Controller
 
         Alert::toast('Actualizado', 'success');
 
+        return redirect()->route('configuracion.index');
+    }
+
+    public function cierreAnio(Request $request){
+        $anio = Anio::first();
+        $anio->anio = $request->anio;
+        $anio->save();
+
+        Alert::toast('Actualizado', 'success');
+
+        return redirect()->route('configuracion.index');
+    }
+    public function saldoInicial(Request $request){
+        $anio = Anio::first();
+        $saldo = $request->saldo_inicial;
+
+        if (!$anio) {
+            $nuevoAnio = Anio::create([
+                'anio' => Carbon::now()->format('Y'),
+                'saldo_inicial' => $saldo,
+            ]);
+        }else {
+            $anio->saldo_inicial = $saldo;
+            $anio->save();
+        }
+
+        Alert::toast('Actualizado', 'success');
         return redirect()->route('configuracion.index');
     }
 
