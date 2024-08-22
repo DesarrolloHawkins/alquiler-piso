@@ -81,6 +81,22 @@
                                 </div>
                             </div>
 
+                            {{-- Formas de Pago --}}
+                            <div class="col-12 form-group mb-3">
+                                <label for="formas_pago_id">Forma de Pago</label>
+                                <div class="input-group">
+                                    <select name="formas_pago_id" id="formas_pago_id" class="selectpicker form-control" data-show-subtext="true" data-live-search="true">
+                                        <option value="">-- Seleccione Gasto --</option>
+                                        @if($formasPago)
+                                            @foreach($formasPago as $forma)
+                                                <option value="{{$forma->id}}">{{$forma->nombre}}</option>
+                                            @endforeach
+                                        @endif
+                                    
+                                    </select>
+                                </div>
+                            </div>
+
                             {{-- Fecha --}}
                             <div class="col-12 form-group mb-3">
                                 <label for="date">Fecha</label>

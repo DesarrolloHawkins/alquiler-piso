@@ -193,7 +193,7 @@ class DiarioCajaController extends Controller
 
         }
         $formasPago = FormasPago::all();
-        return view('admin.contabilidad.diarioCaja.createGasto', compact('gastos','grupos','response','numeroAsiento'));
+        return view('admin.contabilidad.diarioCaja.createGasto', compact('gastos','grupos','response','numeroAsiento', 'formasPago'));
     }
 
     /**
