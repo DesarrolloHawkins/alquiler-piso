@@ -42,7 +42,7 @@ class DiarioCajaController extends Controller
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $ingresos = Ingresos::where('created_at', $anio)->get();
+        $ingresos = Ingresos::whereYear('created_at', $anio)->get();
         $response = [];
         $data = [];
         $indice = 0;
@@ -121,7 +121,7 @@ class DiarioCajaController extends Controller
         $date = Carbon::now();
         $anio = $date->format('Y');
 
-        $gastos = Gastos::where('created_at', $anio)->get();
+        $gastos = Gastos::whereYear('created_at', $anio)->get();
         $response = [];
         $data = [];
         $indice = 0;
