@@ -1093,7 +1093,7 @@ class Kernel extends ConsoleKernel
         return $response;
     }
 
-    public function clavesMensaje($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en'){
+    public function clavesMensaje($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $url){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         $data = [
             ["type" => "text", "text" => $nombre],
