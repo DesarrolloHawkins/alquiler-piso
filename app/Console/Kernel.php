@@ -1095,6 +1095,14 @@ class Kernel extends ConsoleKernel
 
     public function clavesMensaje($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+        $data = [
+            ["type" => "text", "text" => $nombre],
+            ["type" => "text", "text" => $apartamento],
+            ["type" => "text", "text" => $puertaPrincipal],
+            ["type" => "text", "text" => $codigoApartamento],
+            ["type" => "text", "text" => $url]
+        ];
+        Storage::disk('local')->put('Mensaje_claves_variables'.$nombre.'.txt', $data );
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
@@ -1147,15 +1155,7 @@ class Kernel extends ConsoleKernel
 
     public function clavesMensajeAtico($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $template, $url, $url2){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-        $data = [
-            ["type" => "text", "text" => $nombre],
-            ["type" => "text", "text" => $apartamento],
-            ["type" => "text", "text" => $puertaPrincipal],
-            ["type" => "text", "text" => $codigoApartamento],
-            ["type" => "text", "text" => $url]
-        ];
-        Storage::disk('local')->put('Mensaje_claves_variables'.$nombre.'.txt', $data );
-
+        
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
