@@ -417,7 +417,7 @@ class Kernel extends ConsoleKernel
                             );
                             # code...
                         } else {
-                            $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $phoneCliente, $idiomaCliente );
+                            $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $phoneCliente, $idiomaCliente, $enlace);
                             Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                         
                         }
