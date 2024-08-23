@@ -1102,7 +1102,7 @@ class Kernel extends ConsoleKernel
             ["type" => "text", "text" => $codigoApartamento],
             ["type" => "text", "text" => $url]
         ];
-        Storage::disk('local')->put('Mensaje_claves_variables'.$nombre.'.txt', $data );
+        Storage::disk('local')->put('Mensaje_claves_variables'.$nombre.'.txt', json_encode($data) );
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
