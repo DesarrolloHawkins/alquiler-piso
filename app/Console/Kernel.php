@@ -1120,7 +1120,9 @@ class Kernel extends ConsoleKernel
                             ["type" => "text", "text" => $nombre],
                             ["type" => "text", "text" => $apartamento],
                             ["type" => "text", "text" => $puertaPrincipal],
-                            ["type" => "text", "text" => $codigoApartamento]
+                            ["type" => "text", "text" => $codigoApartamento],
+                            ["type" => "text", "text" => $url]
+
                         ],
                     ],
                 ],
