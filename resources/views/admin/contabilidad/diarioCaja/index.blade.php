@@ -9,6 +9,10 @@
     .active-sort {
         color: #757191;
     }
+    .custom-tooltip {
+        --bs-tooltip-bg: var(--bd-violet-bg);
+        --bs-tooltip-color: var(--bs-white);
+    }
 </style>
 <!-- Incluir jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -50,11 +54,12 @@
                     <div class="col-md-6">
                     </div>
                     <div class="table-responsive">                   
-                      <table id="cuentas" class="data-table table table-hover table-striped table-bordered " style="width:100%">
+                      <table id="cuentas" class="table table-striped table-hover" style="width:100%">
                           <thead>
                               <tr>
                                   <th>Asiento</th>
                                   {{-- <th>Nº Factura</th> --}}
+                                  <th>Estado</th>
                                   <th>Cuenta</th>
                                   <th>Fecha</th>
                                   <th>Concepto</th>
@@ -68,17 +73,28 @@
                           <tbody>
                             @if (count($response) > 0)
                                 @foreach ($response as $linea)
-                                {{-- <tr>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                    <td>{{}}</td>
-                                </tr> --}}
+                                <tr>
+                                    <td>{{$linea->asiento_contable}}</td>
+                                    <td>{{$linea->estado->nombre}}</td>
+                                    <td 
+                                        style="cursor: pointer"
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top"
+                                        data-bs-title="{{$linea->determineCuenta()->nombre}}">
+                                        {{$linea->determineCuenta()->numero}}
+                                    </td>
+                                    <td>{{$linea->date}}</td>
+                                    <td>{{$linea->concepto}}</td>
+                                    <td>{{$linea->forma_pago}}</td>
+                                    <td>{{$linea->debe}} €</td>
+                                    <td>{{$linea->haber}} €</td>
+                                    <td></td>
+                                    <td>
+                                        <button class="btn btn-warning">Editar</button>
+                                        <button class="btn btn-danger">Eliminar</button>
+                                    </td>
+                                    {{-- <td>{{}}</td> --}}
+                                </tr>
                                 @endforeach
                             @endif
                           </tbody>
@@ -101,6 +117,8 @@
           console.error('SweetAlert2 is not loaded');
           return;
       }
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
       // Botones de eliminar
       const deleteButtons = document.querySelectorAll('.delete-btn');

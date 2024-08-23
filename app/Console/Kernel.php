@@ -285,7 +285,7 @@ class Kernel extends ConsoleKernel
 
                         // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
-                        Storage::disk('local')->put('enviaMensaje.txt', $enviarMensaje );
+                        Storage::disk('local')->put('enviaMensaje'.$reserva->cliente_id.'.txt', $enviarMensaje );
 
                         // Data para guardar Mensaje enviado
                         $dataMensaje = [
@@ -372,13 +372,15 @@ class Kernel extends ConsoleKernel
                 $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
                 $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
                 $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
+                $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
 
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                     // Enviamos el mensaje
-                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
+                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
+                    Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
 
                     // Creamos la data para guardar el mensaje
                     $dataMensaje = [
@@ -406,7 +408,7 @@ class Kernel extends ConsoleKernel
                                 $reserva->cliente->nombre,
                                 $code['nombre'], $codigoPuertaPrincipal,
                                 $code['codigo'],
-                                $reserva->cliente->telefono,
+                                $phoneCliente,
                                 $idiomaCliente,
                                 $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico',
                                 $url = $enlace,
@@ -414,7 +416,9 @@ class Kernel extends ConsoleKernel
                             );
                             # code...
                         } else {
-                            $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $reserva->cliente->telefono, $idiomaCliente );
+                            $data = $this->clavesMensaje($reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $phoneCliente, $idiomaCliente );
+                            Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+                        
                         }
 
                         // Creamos la data para guardar el mensaje
@@ -430,8 +434,12 @@ class Kernel extends ConsoleKernel
 
                         if ($reserva->apartamento_id === 1) {
                             $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+                            
                         }else {
                             $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],$apartamentoReservado->edificio);
+                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+                            
                         }
                         $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
                     }
@@ -443,7 +451,8 @@ class Kernel extends ConsoleKernel
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
-                        $data = $this->consultaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente );
+                        $data = $this->consultaMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
+                        Storage::disk('local')->put('Mensaje_claves2'.$reserva->cliente_id.'.txt', $data );
 
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
@@ -463,7 +472,8 @@ class Kernel extends ConsoleKernel
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
-                        $data = $this->ocioMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
+                        $data = $this->ocioMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente);
+                        Storage::disk('local')->put('Mensaje_ocio'.$reserva->cliente_id.'.txt', $data );
 
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [

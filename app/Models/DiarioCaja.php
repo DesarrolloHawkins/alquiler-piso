@@ -46,17 +46,17 @@ class DiarioCaja extends Model
     // Definición de relaciones
     public function cuentaContable()
     {
-        return $this->belongsTo(CuentasContable::class, 'cuenta_id');
+        return $this->belongsTo(CuentasContable::class, 'cuenta_id', 'numero');
     }
 
     public function subCuentaContable()
     {
-        return $this->belongsTo(SubCuentaContable::class, 'cuenta_id');
+        return $this->belongsTo(SubCuentaContable::class, 'cuenta_id', 'numero');
     }
 
     public function subCuentaHijo()
     {
-        return $this->belongsTo(SubCuentaHijo::class, 'cuenta_id');
+        return $this->belongsTo(SubCuentaHijo::class, 'cuenta_id', 'numero');
     }
 
     /**
@@ -83,6 +83,31 @@ class DiarioCaja extends Model
         }
 
         // Devolver nulo si no se encuentra ninguna coincidencia
+        return;
+    }
+
+    public function determineCuenta()
+    {
+        // Intentar encontrar en CuentasContable
+        if ($this->cuentaContable) {
+            return $this->cuentaContable;
+        }
+
+        // Intentar encontrar en SubCuentaContable
+        if ($this->subCuentaContable) {
+            return $this->subCuentaContable;
+        }
+
+        // Intentar encontrar en SubCuentaHijo
+        if ($this->subCuentaHijo) {
+            return $this->subCuentaHijo;
+        }
+
+        // Devolver nulo si no se encuentra ninguna coincidencia
         return null;
+    }
+    public function estado(){
+        return $this->belongsTo(EstadosDiario::class, 'estado_id');
+        
     }
 }

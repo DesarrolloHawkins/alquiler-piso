@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CuentasContable;
 use App\Models\DiarioCaja;
+use App\Models\EstadosDiario;
 use App\Models\FormasPago;
 use App\Models\Gastos;
 use App\Models\GrupoContable;
@@ -12,9 +13,10 @@ use App\Models\SubCuentaContable;
 use App\Models\SubCuentaHijo;
 use App\Models\SubGrupoContable;
 use Illuminate\Http\Request;
+use RealRashid\SweetAlert\Facades\Alert;
+
 use DataTables;
 use Carbon\Carbon;
-// use Illuminate\Support\Carbon;
 use Validator;
 
 class DiarioCajaController extends Controller
@@ -114,7 +116,8 @@ class DiarioCajaController extends Controller
 
         }
         $formasPago = FormasPago::all();
-        return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento'));
+        $estados = EstadosDiario::all();
+        return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento','estados'));
     }
     public function createGasto()
     {
@@ -189,11 +192,13 @@ class DiarioCajaController extends Controller
             $numeroConCeros = str_pad($numeroAsientos, 4, "0", STR_PAD_LEFT);
             $numeroAsiento =  $numeroConCeros. '/' . $anio;
         }else{
-            $numeroAsiento = '00001' . '/' . $anio;
+            $numeroAsiento = '0001' . '/' . $anio;
 
         }
         $formasPago = FormasPago::all();
-        return view('admin.contabilidad.diarioCaja.createGasto', compact('gastos','grupos','response','numeroAsiento', 'formasPago'));
+        $estados = EstadosDiario::all();
+
+        return view('admin.contabilidad.diarioCaja.createGasto', compact('gastos','grupos','response','numeroAsiento', 'formasPago', 'estados'));
     }
 
     /**
@@ -286,79 +291,81 @@ class DiarioCajaController extends Controller
     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            // 'invoice_id' => 'required',
-            'asiento_contable' => 'required',
+
+        $messages = [
+            'cuenta_id.required' => 'Debe seleccionar una cuenta contable.',
+            'estado_id.required' => 'Debe seleccionar un estado.',
+            'date.required' => 'La fecha es obligatoria.',
+            'concepto.required' => 'El concepto es obligatorio.',
+            'haber.required' => 'El campo importe es obligatorio.',
+            'haber.numeric' => 'El importe debe ser un número.',
+        ];
+    
+        $rules = [
             'cuenta_id' => 'required',
-            'date' => 'required',
-            'concepto' => 'required',
-            // 'debe' => 'required',
-            // 'haber' => 'required',
-            'formas_pago' => 'required',
+            'estado_id' => 'required',
+            'date' => 'required|date',
+            'concepto' => 'required|string|max:255',
+            'haber' => 'required|numeric',
+            'estado_id' => 'required'
+        ];
+        
+    
+        $validatedData = $request->validate($rules, $messages);
 
+        $crearIngreso = DiarioCaja::create([
+            'asiento_contable' => $request['asiento_contable'],
+            'cuenta_id' => $validatedData['cuenta_id'],
+            'ingreso_id' => $request['ingreso_id'] == null ? null : $request['ingreso_id'],
+            'date' => Carbon::createFromDate($validatedData['date']),
+            'concepto' => $validatedData['concepto'],
+            'haber' => $validatedData['haber'],
+            'estado_id' => $request['ingreso_id'] == null ? 1 : $validatedData['estado_id']
         ]);
-         $this->validate(request(), [
-            'asiento_contable' => 'required',
-            'cuenta_id' => 'required',
-            'date' => 'required',
-            'concepto' => 'required',
-            // 'debe' => 'required',
-            // 'haber' => 'required',
-            'formas_pago' => 'required',
 
-        ]);
 
-        if ($validator->passes()) {
-            DiarioCaja::create($request->all());
-            return AjaxForm::custom([
-                'message' => 'Asiento Creado.',
-                'entryUrl' => route('admin.diarioCaja.index'),
-             ])->jsonResponse();
-        }
+        Alert::success('Guardado con Exito', 'Ingreso añadido correctamente');
+        
+        return redirect()->route('admin.diarioCaja.index')->with('status', 'Cliente creado con éxito!');
 
-         // Si la validacion no a sido pasada se muestra esta alerta.
-
-         return AjaxForm::custom([
-            'message' => $validator->errors()->all(),
-         ])->jsonResponse();    
     }
     public function storeGasto(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            // 'invoice_id' => 'required',
-            'asiento_contable' => 'required',
+        $messages = [
+            'cuenta_id.required' => 'Debe seleccionar una cuenta contable.',
+            'estado_id.required' => 'Debe seleccionar un estado.',
+            'date.required' => 'La fecha es obligatoria.',
+            'concepto.required' => 'El concepto es obligatorio.',
+            'debe.required' => 'El campo importe es obligatorio.',
+            'debe.numeric' => 'El importe debe ser un número.',
+        ];
+    
+        $rules = [
             'cuenta_id' => 'required',
-            'date' => 'required',
-            'concepto' => 'required',
-            // 'debe' => 'required',
-            // 'haber' => 'required',
-            'formas_pago' => 'required',
+            'estado_id' => 'required',
+            'date' => 'required|date',
+            'concepto' => 'required|string|max:255',
+            'debe' => 'required|numeric',
+            'estado_id' => 'required'
+        ];
+        
+    
+        $validatedData = $request->validate($rules, $messages);
 
+        $crearIngreso = DiarioCaja::create([
+            'asiento_contable' => $request['asiento_contable'],
+            'cuenta_id' => $validatedData['cuenta_id'],
+            'gasto_id' => $request['gasto_id'] == null ? null : $request['gasto_id'],
+            'date' => Carbon::createFromDate($validatedData['date']),
+            'concepto' => $validatedData['concepto'],
+            'debe' => $validatedData['debe'],
+            'estado_id' => $request['gasto_id'] == null ? 1 : $validatedData['estado_id']
         ]);
-         $this->validate(request(), [
-            'asiento_contable' => 'required',
-            'cuenta_id' => 'required',
-            'date' => 'required',
-            'concepto' => 'required',
-            // 'debe' => 'required',
-            // 'haber' => 'required',
-            'formas_pago' => 'required',
 
-        ]);
 
-        if ($validator->passes()) {
-            DiarioCaja::create($request->all());
-            return AjaxForm::custom([
-                'message' => 'Asiento Creado.',
-                'entryUrl' => route('admin.diarioCaja.index'),
-             ])->jsonResponse();
-        }
-
-         // Si la validacion no a sido pasada se muestra esta alerta.
-
-         return AjaxForm::custom([
-            'message' => $validator->errors()->all(),
-         ])->jsonResponse();    
+        Alert::success('Guardado con Exito', 'Gasto añadido correctamente');
+        
+        return redirect()->route('admin.diarioCaja.index')->with('status', 'Cliente creado con éxito!');
     }
 
 
