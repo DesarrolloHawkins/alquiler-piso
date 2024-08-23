@@ -1100,7 +1100,8 @@ class Kernel extends ConsoleKernel
             ["type" => "text", "text" => $apartamento],
             ["type" => "text", "text" => $puertaPrincipal],
             ["type" => "text", "text" => $codigoApartamento],
-            ["type" => "text", "text" => $url]
+            ["type" => "text", "text" => $url],
+            ["type" => "text", "text" => $idioma]
         ];
         Storage::disk('local')->put('Mensaje_claves_variables'.$nombre.'.txt', json_encode($data) );
 
