@@ -43,10 +43,10 @@
 </div>
 @endsection
 
-@include('sweetalert::alert')
+{{-- @include('sweetalert::alert') --}}
 
-@section('scripts')
 {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
+@section('scripts')
 
 <script>
     console.log('Limpieza de Apartamento by Hawkins.')
