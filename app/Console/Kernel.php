@@ -1044,6 +1044,7 @@ class Kernel extends ConsoleKernel
         // $responseJson = json_decode($response);
         return $response;
     }
+    
     public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 

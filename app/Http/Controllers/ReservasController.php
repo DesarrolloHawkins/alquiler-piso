@@ -414,5 +414,41 @@ class ReservasController extends Controller
             return response('La reserva de ha cancelado', 200);
         }
 	}
+
+
+    public function getData() {
+        $hoy = Carbon::now();
+        $reserva = Reserva::whereDate('fecha_entrada', $hoy)
+                          ->where(function($query) {
+                              $query->where('dni_entregado', false)
+                                    ->orWhereNull('dni_entregado');
+                          })
+                          ->where(function($query) {
+                              $query->where('enviado_webpol', false)
+                                    ->orWhereNull('enviado_webpol');
+                          })
+                          ->get();
+    
+        return response()->json($reserva, 200);
+    }
+
+    public function changeState(Request $request) {
+        if (isset($request->id)) {
+
+            $id = $request->id;
+            $reserva = Reserva::find($id);
+            $reserva->dni_entregado = true;
+            $reserva->save();
+
+        } else{
+
+            return response()->json('No se encontro la propiedad ID en la petición.', 400);
+        }
+
+
+        return response()->json('Se actualizo el estado correctamente', 200);
+    }
+    
+    
 }
 
