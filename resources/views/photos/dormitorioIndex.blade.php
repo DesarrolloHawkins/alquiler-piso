@@ -38,7 +38,7 @@
             <input type="hidden" name="image_canape_resized" id="image_canape_resized">
         </div>
         
-        <button id="btn_continuar" class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="submit">Continuar</button>
+        <button id="btn_continuar" class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="button">Continuar</button>
     </form>
 </div>
 @endsection
@@ -46,7 +46,7 @@
 @include('sweetalert::alert')
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
 
 <script>
     console.log('Limpieza de Apartamento by Hawkins.')

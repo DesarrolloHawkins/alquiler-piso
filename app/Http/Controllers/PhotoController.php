@@ -79,6 +79,7 @@ class PhotoController extends Controller
         $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
         $limpiezaBano->dormitorio_photo = true;
         $limpiezaBano->save();
+        
         return response()->json([
             'status' => 'success',
             'message' => 'Guardado con correctamente',
