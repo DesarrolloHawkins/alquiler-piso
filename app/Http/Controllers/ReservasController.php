@@ -441,7 +441,7 @@ class ReservasController extends Controller
 
             $id = $request->id;
             $reserva = Reserva::find($id);
-            $reserva->dni_entregado = 1;
+            $reserva->enviado_webpol = 1;
             $reserva->save();
 
         } else{
