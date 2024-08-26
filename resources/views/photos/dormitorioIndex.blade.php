@@ -236,7 +236,7 @@
         var url = "{{ route('actualizar.fotos.dormitorio', $id) }}"; 
         var formData = new FormData();
         formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
-        //console.log('Click')
+        console.log('Envio de actualizacion dormitorio')
         $.ajax({
             url: url, // Reemplaza con la URL de tu servidor
             type: 'POST',
