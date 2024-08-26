@@ -29,6 +29,8 @@ class VerifyCsrfToken extends Middleware
         'gastos-introducir',
         'ingresos-introducir',
         '/whatsapp-envio',
-        '/whatsapp-alerta'
+        '/whatsapp-alerta',
+        '/get-data',
+        '/change-state'
     ];
 }
