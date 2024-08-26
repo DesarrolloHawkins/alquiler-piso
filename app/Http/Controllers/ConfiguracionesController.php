@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Anio;
 use App\Models\Configuraciones;
+use App\Models\EmailNotificaciones;
 use App\Models\FormasPago;
+use App\Models\PromptAsistente;
 use App\Models\Reparaciones;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -27,8 +29,21 @@ class ConfiguracionesController extends Controller
         for ($i = 0; $i <= 5; $i++) {
             $anios[] = strval($anioActual - $i);
         }
+        // Prompr del Asistente IA
+        $prompt =  PromptAsistente::all();
+        
+        // Emails para notificaciones
+        $emailsNotificaciones = EmailNotificaciones::all();
 
-        return view('admin.configuraciones.index', compact('configuraciones', 'reparaciones', 'anio', 'anios','formasPago'));
+        return view('admin.configuraciones.index', compact(
+            'configuraciones',
+            'reparaciones',
+            'anio',
+            'anios',
+            'formasPago',
+            'prompt',
+            'emailsNotificaciones'
+        ));
     }
     public function edit($id, Request $request){
         $configuraciones = Configuraciones::all();
@@ -93,6 +108,7 @@ class ConfiguracionesController extends Controller
 
         return redirect()->route('configuracion.index');
     }
+
     public function saldoInicial(Request $request){
         $anio = Anio::first();
         $saldo = $request->saldo_inicial;
@@ -109,6 +125,25 @@ class ConfiguracionesController extends Controller
 
         Alert::toast('Actualizado', 'success');
         return redirect()->route('configuracion.index');
+    }
+
+    public function actualizarPrompt(Request  $request) {
+        $prompt = PromptAsistente::first();
+        if ($prompt != null) {
+            $prompt->prompt = $request->prompt;
+            $prompt->save();
+            Alert::toast('Actualizado', 'success');
+            return redirect()->route('configuracion.index');
+
+        }else {
+            $promprNew = PromptAsistente::create([
+                'prompt' => $request->prompt
+            ]);
+            Alert::toast('Actualizado', 'success');
+            return redirect()->route('configuracion.index');
+        }
+
+
     }
 
     

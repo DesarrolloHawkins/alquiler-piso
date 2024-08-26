@@ -17,7 +17,7 @@
     <hr class="mb-2">
     <ul class="nav nav-pills mb-3 mt-3" id="pills-tab" role="tablist">
         <li class="nav-item mx-2" role="presentation">
-          <button class="nav-link active" id="pills-user-tab" data-bs-toggle="pill" data-bs-target="#pills-user" type="button" role="tab" aria-controls="pills-user" aria-selected="true">Credenciales Usuarios</button>
+          <button class="nav-link" id="pills-user-tab" data-bs-toggle="pill" data-bs-target="#pills-user" type="button" role="tab" aria-controls="pills-user" aria-selected="true">Credenciales Usuarios</button>
         </li>
         <li class="nav-item mx-2" role="presentation">
           <button class="nav-link" id="pills-contabilidad-tab" data-bs-toggle="pill" data-bs-target="#pills-contabilidad" type="button" role="tab" aria-controls="pills-contabilidad" aria-selected="false">Contabilidad y Gestion</button>
@@ -26,11 +26,14 @@
           <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Reparaciones</button>
         </li>
         <li class="nav-item mx-2" role="presentation">
-          <button class="nav-link" id="pills-disabled-tab" data-bs-toggle="pill" data-bs-target="#pills-disabled" type="button" role="tab" aria-controls="pills-disabled" aria-selected="false">Otros</button>
+          <button class="nav-link active" id="pills-disabled-tab" data-bs-toggle="pill" data-bs-target="#pills-disabled" type="button" role="tab" aria-controls="pills-disabled" aria-selected="false">Otros</button>
+        </li>
+        <li class="nav-item mx-2" role="presentation">
+          <button class="nav-link" id="pills-prompt-tab" data-bs-toggle="pill" data-bs-target="#pills-prompt" type="button" role="tab" aria-controls="pills-prompt" aria-selected="false">Prompt Asistente</button>
         </li>
     </ul>
     <div class="tab-content bg-body-secondary p-4 bg-opacity-75 rounded-2" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="pills-user" role="tabpanel" aria-labelledby="pills-user-tab" tabindex="0">
+        <div class="tab-pane fade" id="pills-user" role="tabpanel" aria-labelledby="pills-user-tab" tabindex="0">
             <form action="{{route('configuracion.update', $configuraciones[0]->id)}}" method="POST">
                 @csrf
                 <div class="px-2">
@@ -154,11 +157,24 @@
                 <button type="submit" class="btn btn-primary">Actualizar</button>    
             </form>
         </div>
-        <div class="tab-pane fade" id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab" tabindex="0">
-            <form action="" method="POST">
+        <div class="tab-pane fade show active" id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab" tabindex="0">
+            <h4>Notificaciones</h4>
+            @if (count($emailsNotificaciones) > 0)
+                @foreach ($emailsNotificaciones as $person)
+                    
+                @endforeach
+            @else
+                <h6>No se añadieron personas para recibir las notificaciones</h6>
+                <button class="btn btn-secundario text-white">Añadir persona</button>
+            @endif
+        </div>
+        <div class="tab-pane fade" id="pills-prompt" role="tabpanel" aria-labelledby="pills-prompt-tab" tabindex="0">
+            <form action="{{route('configuracion.actualizarPrompt')}}" method="POST">
                 @csrf
-                <label for="email_notificaciones">Emails para notificaciones</label>
-                <input type="text" name="email_notificaciones" id="email_notificaciones" class="form-control">
+                <label class="form-label" for="prompt">Prompt - Asistente de la Inteligencia Artificial</label>
+              
+                <textarea rows="25" type="text" name="prompt" id="prompt" class="form-control">@if (count($prompt) > 0) {{ $prompt[0]->prompt }} @else {{ '' }} @endif</textarea>
+                <button class="btn btn-guardar mt-3 text-uppercase">Actualizar</button>
             </form>
         </div>
     </div>

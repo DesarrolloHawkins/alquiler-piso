@@ -178,6 +178,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     Route::get('/plan-contable', [App\Http\Controllers\PlanContableController::class, 'index'])->name('admin.planContable.index');
 
+    Route::post('/actualizar-prompt', [App\Http\Controllers\ConfiguracionesController::class, 'actualizarPrompt'])->name('configuracion.actualizarPrompt');
 
 });
 
