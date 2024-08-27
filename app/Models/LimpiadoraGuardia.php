@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Reparaciones extends Model
+class LimpiadoraGuardia extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
-    protected $table = 'reparacion';
+    protected $table = 'limpiadora_guardia';
 
      /**
      * The attributes that are mass assignable.
@@ -17,8 +19,9 @@ class Reparaciones extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'nombre',
+        'user_id',
         'telefono',
+        'email',
         'lunes',
         'martes',
         'miercoles',
@@ -28,8 +31,7 @@ class Reparaciones extends Model
         'domingo',
         'hora_inicio',
         'hora_fin',
-        'dias'
-        
+         
     ];
 
      /**
@@ -40,4 +42,14 @@ class Reparaciones extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at', 
     ];
+
+    /**
+     * Obtener el usuario
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function usuario()
+    {
+        return $this->belongsTo(\App\Models\User::class,'user_id');
+    }
 }

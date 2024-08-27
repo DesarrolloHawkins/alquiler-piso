@@ -6,8 +6,10 @@ use App\Models\Anio;
 use App\Models\Configuraciones;
 use App\Models\EmailNotificaciones;
 use App\Models\FormasPago;
+use App\Models\LimpiadoraGuardia;
 use App\Models\PromptAsistente;
 use App\Models\Reparaciones;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -35,6 +37,9 @@ class ConfiguracionesController extends Controller
         // Emails para notificaciones
         $emailsNotificaciones = EmailNotificaciones::all();
 
+        $limpiadorasUsers = User::where('inactive', null)->where('role', 'USER')->get();
+        $limpiadorasGuardia = LimpiadoraGuardia::all();
+
         return view('admin.configuraciones.index', compact(
             'configuraciones',
             'reparaciones',
@@ -42,7 +47,9 @@ class ConfiguracionesController extends Controller
             'anios',
             'formasPago',
             'prompt',
-            'emailsNotificaciones'
+            'emailsNotificaciones',
+            'limpiadorasUsers',
+            'limpiadorasGuardia'
         ));
     }
 
@@ -63,28 +70,100 @@ class ConfiguracionesController extends Controller
         return redirect()->route('configuracion.index');
     }
 
+    // Crear reparador
+    public function storeReparaciones(Request $request){
+        //dd($request->all());
+        $data = [
+            'nombre' => $request->nombre,
+            'telefono' => $request->telefono,
+            'hora_inicio' => $request->hora_inicio,
+            'hora_fin' => $request->hora_fin,
+            'lunes' => isset($request->lunes) ? true : null,
+            'martes' => isset($request->martes) ? true : null,
+            'miercoles' => isset($request->miercoles) ? true : null,
+            'jueves' => isset($request->jueves) ? true : null,
+            'viernes' => isset($request->viernes) ? true : null,
+            'sabado' => isset($request->sabado) ? true : null,
+            'domingo' => isset($request->domingo) ? true : null
+        ];
+
+        $tecnicoNuevo = Reparaciones::create($data);
+
+        Alert::toast('Tecnico de reparaciones creado correctamente', 'success');
+        return redirect()->route('configuracion.index');
+    }
     // Actualizar los reparadores
-    public function updateReparaciones(Request $request){
-        $reparaciones = Reparaciones::all();
-        if (count($reparaciones) > 0 ) {
-            foreach($reparaciones as $reparacion){
-                $reparacion->nombre = $request->nombre;
-                $reparacion->telefono = $request->telefono;
-                $reparacion->save();
-            }
-            Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
+    public function updateReparaciones($id, Request $request){
+        $data = [
+            'nombre' => $request->nombre,
+            'telefono' => $request->telefono,
+            'hora_inicio' => $request->hora_inicio,
+            'hora_fin' => $request->hora_fin,
+            'lunes' => isset($request->lunes) ? true : null,
+            'martes' => isset($request->martes) ? true : null,
+            'miercoles' => isset($request->miercoles) ? true : null,
+            'jueves' => isset($request->jueves) ? true : null,
+            'viernes' => isset($request->viernes) ? true : null,
+            'sabado' => isset($request->sabado) ? true : null,
+            'domingo' => isset($request->domingo) ? true : null
+        ];
 
-        } else {
-            Reparaciones::create([
-                'nombre' => $request->nombre,
-                'telefono' => $request->telefono
-            ]);
-            Alert::toast('Tecnico de reparaciones creado correctamente', 'success');
+        $reparaciones = Reparaciones::find($id);
+        $reparaciones->update($data);
+        Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
+        return redirect()->route('configuracion.index');
+    }
+    // Crear reparador
+    public function storeLimpiadora(Request $request){
+        //dd($request->all());
+        $data = [
+            'user_id' => $request->user_id,
+            'telefono' => $request->telefono,
+            'hora_inicio' => $request->hora_inicio,
+            'hora_fin' => $request->hora_fin,
+            'lunes' => isset($request->lunes) ? true : null,
+            'martes' => isset($request->martes) ? true : null,
+            'miercoles' => isset($request->miercoles) ? true : null,
+            'jueves' => isset($request->jueves) ? true : null,
+            'viernes' => isset($request->viernes) ? true : null,
+            'sabado' => isset($request->sabado) ? true : null,
+            'domingo' => isset($request->domingo) ? true : null
+        ];
 
-        }
+        $limpiadoraNueva = LimpiadoraGuardia::create($data);
+
+        Alert::toast('Limpiadora de guardia creado correctamente', 'success');
+        return redirect()->route('configuracion.index');
+    }
+    // Actualizar los reparadores
+    public function updateLimpiadora($id, Request $request){
+        $data = [
+            'user_id' => $request->user_id,
+            'telefono' => $request->telefono,
+            'hora_inicio' => $request->hora_inicio,
+            'hora_fin' => $request->hora_fin,
+            'lunes' => isset($request->lunes) ? true : null,
+            'martes' => isset($request->martes) ? true : null,
+            'miercoles' => isset($request->miercoles) ? true : null,
+            'jueves' => isset($request->jueves) ? true : null,
+            'viernes' => isset($request->viernes) ? true : null,
+            'sabado' => isset($request->sabado) ? true : null,
+            'domingo' => isset($request->domingo) ? true : null
+        ];
+
+        $limpiadora = LimpiadoraGuardia::find($id);
+        $limpiadora->update($data);
+        Alert::toast('Limpiadora de guardia actualizado correctamente', 'success');
         return redirect()->route('configuracion.index');
     }
 
+    // Obtener User y Pass de Booking
+    public function deleteReparaciones($id){
+        $reparaciones = Reparaciones::find($id);
+        $reparaciones->delete();
+        Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
+        return redirect()->route('configuracion.index');
+    }
     // Obtener User y Pass de Booking
     public function passBooking(){
         $configuraciones = Configuraciones::first();

@@ -23,7 +23,10 @@
           <button class="nav-link" id="pills-contabilidad-tab" data-bs-toggle="pill" data-bs-target="#pills-contabilidad" type="button" role="tab" aria-controls="pills-contabilidad" aria-selected="false">Contabilidad y Gestion</button>
         </li>
         <li class="nav-item mx-2" role="presentation">
-          <button class="nav-link active" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Reparaciones</button>
+          <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Reparaciones</button>
+        </li>
+        <li class="nav-item mx-2" role="presentation">
+          <button class="nav-link active" id="pills-limpiadoras-tab" data-bs-toggle="pill" data-bs-target="#pills-limpiadoras" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Limpiadoras Guardia</button>
         </li>
         <li class="nav-item mx-2" role="presentation">
           <button class="nav-link" id="pills-disabled-tab" data-bs-toggle="pill" data-bs-target="#pills-disabled" type="button" role="tab" aria-controls="pills-disabled" aria-selected="false">Otros</button>
@@ -143,19 +146,19 @@
                 <button type="submit" class="btn btn-primary mt-3">Cierre del año</button>    
             </form>
         </div>
-        <div class="tab-pane fade show active" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab" tabindex="0">
-            <form action="{{route('configuracion.updateReparaciones')}}" method="POST">
-                @csrf
-                <h4>Reparaciones (Tecnicos)</h4>
-                @if (count($reparaciones) > 0)
-                    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addTecnico">Añadir tecnico</button>
-                    @foreach ($reparaciones as $reparacion)
-                        <div class="row align-items-end px-2 py-4 bg-light">
-                            <div class="col-lg-3 col-sm-12">
+        <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab" tabindex="0">
+            <h4>Reparaciones (Tecnicos)</h4>
+            @if (count($reparaciones) > 0)
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addTecnico">Añadir tecnico</button>
+                @foreach ($reparaciones as $reparacion)
+                    <div class="">
+                        <form class="row align-items-end px-2 py-4 bg-light rounded" action="{{route('configuracion.updateReparaciones',$reparacion->id )}}" method="POST">
+                            @csrf
+                            <div class="col-lg-2 col-sm-12">
                                 <label class="form-label">Nombre de la Persona</label>
                                 <input class="form-control w-100" name="nombre" value="@isset($reparacion->nombre){{$reparacion->nombre}}@endisset"/>
                             </div>
-                            <div class="col-lg-3 col-sm-12">
+                            <div class="col-lg-2 col-sm-12">
                                 <label class="form-label">Teléfono de la Persona</label>
                                 <input class="form-control w-100" name="telefono" value="@isset($reparacion->telefono){{$reparacion->telefono}}@endisset"/>
                             </div>
@@ -185,46 +188,318 @@
                                     @endfor
                                 </select>
                             </div>
-                            <div class="col-lg-2 col-sm-12 mt-sm-3">
-                                <button type="submit" class="btn btn-danger w-100">Eliminar</button>    
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Días</label>
+                                <div class="row">
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="lunes" id="lunes" value="1" @if($reparacion->lunes == true) checked @endif >
+                                        <label class="form-check-label" for="lunes">Lunes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="martes" id="martes" value="2" @if($reparacion->martes == true) checked @endif>
+                                        <label class="form-check-label" for="martes">Martes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="miercoles" id="miercoles" value="3" @if($reparacion->miercoles == true) checked @endif>
+                                        <label class="form-check-label" for="miercoles">Miércoles</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="jueves" id="jueves" value="4" @if($reparacion->jueves == true) checked @endif>
+                                        <label class="form-check-label" for="jueves">Jueves</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="viernes" id="viernes" value="5" @if($reparacion->viernes == true) checked @endif>
+                                        <label class="form-check-label" for="viernes">Viernes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="sabado" id="sabado" value="6" @if($reparacion->sabado == true) checked @endif>
+                                        <label class="form-check-label" for="sabado">Sábado</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="domingo" id="domingo" value="7" @if($reparacion->domingo == true) checked @endif>
+                                        <label class="form-check-label" for="domingo">Domingo</label>
+                                    </div>
+                                </div>
                             </div>
-                        </div>                    
-                    @endforeach
+                            <div class="col-lg-2 col-sm-12 mt-sm-3">
+                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>    
+                                <button  data-id="{{$reparacion->id}}" id="eliminarTecnico" type="button" class="btn btn-danger w-100">Eliminar</button>    
+                            </div>
+                        </form>
+                    </div>             
+                @endforeach
                     
-                @else
-                    <h6>No se añadieron tecnicos</h6>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTecnico">Añadir tecnico</button>
-                @endif
+            @else
+                <h6>No se añadieron tecnicos</h6>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTecnico">Añadir tecnico</button>
+            @endif
 
-            </form>
             <div class="modal fade" id="addTecnico" tabindex="-1" aria-labelledby="addTecnicoLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="addTecnicoLabel">Añadir Persona para Notificaciones</h5>
+                            <h5 class="modal-title" id="addTecnicoLabel">Añadir Tecnico</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form method="POST" action="{{route('configuracion.emails.add')}}">
+                            <form method="POST" action="{{route('configuracion.storeReparaciones')}}">
                                 @csrf
                                 <div class="mb-3">
                                     <label for="nombre" class="form-label">Nombre</label>
                                     <input type="text" class="form-control" id="nombre" name="nombre" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="telefono" class="form-label">Telefono</label>
+                                    <label for="telefono" class="form-label">Teléfono</label>
                                     <input type="text" class="form-control" id="telefono" name="telefono" placeholder="34600600600">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="emailAddress" class="form-label">Dirección de Email</label>
-                                    <input type="email" class="form-control" id="emailAddress" name="email" required>
+                                    <label for="hora_inicio" class="form-label">Hora Inicio</label>
+                                    <select class="form-control" id="hora_inicio" name="hora_inicio" required>
+                                        @for ($hour = 0; $hour < 24; $hour++)
+                                            @php
+                                                $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                                $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                            @endphp
+                                            <option value="{{ $hora1 }}">{{ $hora1 }}</option>
+                                            <option value="{{ $hora2 }}">{{ $hora2 }}</option>
+                                        @endfor
+                                    </select>
                                 </div>
-                                <button id="addEmailForm" type="button" class="btn btn-primary">Añadir</button>
+                                <div class="mb-3">
+                                    <label for="hora_fin" class="form-label">Hora Fin</label>
+                                    <select class="form-control" id="hora_fin" name="hora_fin" required>
+                                        @for ($hour = 0; $hour < 24; $hour++)
+                                            @php
+                                                $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                                $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                            @endphp
+                                            <option value="{{ $hora1 }}">{{ $hora1 }}</option>
+                                            <option value="{{ $hora2 }}">{{ $hora2 }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dias" class="form-label">Días</label>
+                                    <div class="row">
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="lunes" id="lunes" value="1">
+                                            <label class="form-check-label" for="lunes">Lunes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="martes" id="martes" value="2">
+                                            <label class="form-check-label" for="martes">Martes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="miercoles" id="miercoles" value="3">
+                                            <label class="form-check-label" for="miercoles">Miércoles</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="jueves" id="jueves" value="4">
+                                            <label class="form-check-label" for="jueves">Jueves</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="viernes" id="viernes" value="5">
+                                            <label class="form-check-label" for="viernes">Viernes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="sabado" id="sabado" value="6">
+                                            <label class="form-check-label" for="sabado">Sábado</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="domingo" id="domingo" value="7">
+                                            <label class="form-check-label" for="domingo">Domingo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Añadir</button>
+                                </div>
                             </form>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>            
+        </div>
+        <div class="tab-pane fade show active" id="pills-limpiadoras" role="tabpanel" aria-labelledby="pills-limpiadoras-tab" tabindex="0">
+            <h4>Limpiadoras de Guardia</h4>
+            @if (count($limpiadorasGuardia) > 0)
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addLimpiadora">Añadir limpiadora</button>
+                @foreach ($limpiadorasGuardia as $limpiadora)
+                    <div class="">
+                        <form class="row align-items-end px-2 py-4 bg-light rounded" action="{{route('configuracion.updateLimpiadora',$limpiadora->id )}}" method="POST">
+                            @csrf
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Nombre de la Persona</label>
+                                <input disabled class="form-control w-100" name="nombre" value="@isset($limpiadora->usuario->name){{$limpiadora->usuario->name}} @else {{'Usuario no encontrado'}} @endisset"/>
+                            </div>
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Teléfono de la Persona</label>
+                                <input class="form-control w-100" name="telefono" value="@isset($limpiadora->telefono){{$limpiadora->telefono}}@endisset"/>
+                            </div>
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Hora Inicio</label>
+                                <select class="form-control w-100" name="hora_inicio">
+                                    @for ($hour = 0; $hour < 24; $hour++)
+                                        @php
+                                            $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                            $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                        @endphp
+                                        <option value="{{ $hora1 }}" @isset($limpiadora->hora_inicio) @if($limpiadora->hora_inicio == $hora1) selected @endif @endisset>{{ $hora1 }}</option>
+                                        <option value="{{ $hora2 }}" @isset($limpiadora->hora_inicio) @if($limpiadora->hora_inicio == $hora2) selected @endif @endisset>{{ $hora2 }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Hora Fin</label>
+                                <select class="form-control w-100" name="hora_fin">
+                                    @for ($hour = 0; $hour < 24; $hour++)
+                                        @php
+                                            $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                            $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                        @endphp
+                                        <option value="{{ $hora1 }}" @isset($reparacion->hora_fin) @if($limpiadora->hora_fin == $hora1) selected @endif @endisset>{{ $hora1 }}</option>
+                                        <option value="{{ $hora2 }}" @isset($reparacion->hora_fin) @if($limpiadora->hora_fin == $hora2) selected @endif @endisset>{{ $hora2 }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-sm-12">
+                                <label class="form-label">Días</label>
+                                <div class="row">
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="lunes" id="lunes" value="1" @if($limpiadora->lunes == true) checked @endif >
+                                        <label class="form-check-label" for="lunes">Lunes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="martes" id="martes" value="2" @if($limpiadora->martes == true) checked @endif>
+                                        <label class="form-check-label" for="martes">Martes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="miercoles" id="miercoles" value="3" @if($limpiadora->miercoles == true) checked @endif>
+                                        <label class="form-check-label" for="miercoles">Miércoles</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="jueves" id="jueves" value="4" @if($limpiadora->jueves == true) checked @endif>
+                                        <label class="form-check-label" for="jueves">Jueves</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="viernes" id="viernes" value="5" @if($limpiadora->viernes == true) checked @endif>
+                                        <label class="form-check-label" for="viernes">Viernes</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="sabado" id="sabado" value="6" @if($limpiadora->sabado == true) checked @endif>
+                                        <label class="form-check-label" for="sabado">Sábado</label>
+                                    </div>
+                                    <div class="form-check col">
+                                        <input class="form-check-input" type="checkbox" name="domingo" id="domingo" value="7" @if($limpiadora->domingo == true) checked @endif>
+                                        <label class="form-check-label" for="domingo">Domingo</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-sm-12 mt-sm-3">
+                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>    
+                                <button  data-id="{{$limpiadora->id}}" id="eliminarLimpiadora" type="button" class="btn btn-danger w-100">Eliminar</button>    
+                            </div>
+                        </form>
+                    </div>             
+                @endforeach
+                    
+            @else
+                <h6>No se añadieron limpiadoras</h6>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLimpiadora">Añadir limpiadora</button>
+            @endif
+
+            <div class="modal fade" id="addLimpiadora" tabindex="-1" aria-labelledby="addLimpiadoraLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addLimpiadoraLabel">Añadir Tecnico</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST" action="{{route('configuracion.storeLimpiadora')}}">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Limpiadora</label>
+                                    <select name="user_id" id="user_id" class="form-select" required>
+                                        @if (count($limpiadorasUsers) > 0)
+                                            @foreach ($limpiadorasUsers as $item)
+                                                <option value="{{$item->id}}">{{$item->name}}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    {{-- <input type="text" class="form-control" id="nombre" name="nombre" required> --}}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="telefono" class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="telefono" name="telefono" placeholder="34600600600">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="hora_inicio" class="form-label">Hora Inicio</label>
+                                    <select class="form-control" id="hora_inicio" name="hora_inicio" required>
+                                        @for ($hour = 0; $hour < 24; $hour++)
+                                            @php
+                                                $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                                $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                            @endphp
+                                            <option value="{{ $hora1 }}">{{ $hora1 }}</option>
+                                            <option value="{{ $hora2 }}">{{ $hora2 }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="hora_fin" class="form-label">Hora Fin</label>
+                                    <select class="form-control" id="hora_fin" name="hora_fin" required>
+                                        @for ($hour = 0; $hour < 24; $hour++)
+                                            @php
+                                                $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
+                                                $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
+                                            @endphp
+                                            <option value="{{ $hora1 }}">{{ $hora1 }}</option>
+                                            <option value="{{ $hora2 }}">{{ $hora2 }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="dias" class="form-label">Días</label>
+                                    <div class="row">
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="lunes" id="lunes" value="1">
+                                            <label class="form-check-label" for="lunes">Lunes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="martes" id="martes" value="2">
+                                            <label class="form-check-label" for="martes">Martes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="miercoles" id="miercoles" value="3">
+                                            <label class="form-check-label" for="miercoles">Miércoles</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="jueves" id="jueves" value="4">
+                                            <label class="form-check-label" for="jueves">Jueves</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="viernes" id="viernes" value="5">
+                                            <label class="form-check-label" for="viernes">Viernes</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="sabado" id="sabado" value="6">
+                                            <label class="form-check-label" for="sabado">Sábado</label>
+                                        </div>
+                                        <div class="form-check col">
+                                            <input class="form-check-input" type="checkbox" name="domingo" id="domingo" value="7">
+                                            <label class="form-check-label" for="domingo">Domingo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Añadir</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>            
         </div>
         <div class="tab-pane fade " id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab" tabindex="0">
             <h4>Notificaciones</h4>
@@ -509,6 +784,65 @@
                                     Toast.fire({
                                         icon: "success",
                                         title: 'Persona de contacto eliminada correctamente'
+                                    });
+                                    // console.log('Archivo enviado con éxito:', data);
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error al enviar el archivo:', error);
+                                }
+                            });                    }
+                    });
+                    
+                })
+            })
+            const botonesDeleteTecnico = document.querySelectorAll('#eliminarTecnico')
+            botonesDeleteTecnico.forEach(function(nodo){
+                $(nodo).on('click', function(){
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "¡No podrás revertir esto!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, eliminar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            var id = $(this).attr('data-id'); // Corregido: ahora correctamente obtiene el atributo data-id
+                            var baseUrl = "{{ route('configuracion.deleteReparaciones', ['id' => ':id']) }}"; // Genera una URL base con un placeholder
+                            var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
+
+                            var formData = new FormData();
+                    
+                            formData.append('_token', '{{ csrf_token() }}');
+
+                            $.ajax({
+                                url: url, // Reemplaza con la URL de tu servidor
+                                type: 'POST',
+                                data: formData,
+                                processData: false,  // Evita que jQuery procese los datos
+                                contentType: false,  // Evita que jQuery establezca el tipo de contenido
+                                success: function(data) {
+
+                                    const Toast = Swal.mixin({
+                                        toast: true,
+                                        position: "top-end",
+                                        showConfirmButton: false,
+                                        timer: 2000,
+                                        timerProgressBar: true,
+                                        didOpen: (toast) => {
+                                            toast.onmouseenter = Swal.stopTimer;
+                                            toast.onmouseleave = Swal.resumeTimer;
+                                        },
+                                        didDestroy: () => {
+                                            // Aquí puedes colocar la acción que desees realizar después de que el toast desaparezca
+                                            location.reload();
+                                        }
+                                    });
+                                    Toast.fire({
+                                        icon: "success",
+                                        title: 'Tecnico de contacto eliminada correctamente'
                                     });
                                     // console.log('Archivo enviado con éxito:', data);
                                 },
