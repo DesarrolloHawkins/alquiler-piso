@@ -110,7 +110,8 @@ class ApartamentoLimpieza extends Model
         'amenities_',
         'observacion',
         'fecha_comienzo',
-        'fecha_fin'
+        'fecha_fin',
+        'user_id'
     ];
 
     /**

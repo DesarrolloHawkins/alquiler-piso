@@ -66,7 +66,8 @@ class GestionApartamentoController extends Controller
                     'apartamento_id' => $reserva->apartamento_id,
                     'fecha_comienzo' => Carbon::now(),
                     'status_id' => 2,
-                    'reserva_id' => $id
+                    'reserva_id' => $id,
+                    'user_id' => Auth::user()->id
                 ]);
                 $reserva->fecha_limpieza = Carbon::now();
                 $reserva->save();
@@ -168,6 +169,9 @@ class GestionApartamentoController extends Controller
 
         // isset($request->status) ? $apartamento->status = $request->status : $apartamento->status = 0;
         $apartamento->observacion = $request->observacion;
+        if ($apartamento->user_id = '' || $apartamento->user_id = null) {
+            $apartamento->user_id = Auth::user()->id;
+        }
         $response = $apartamento->save();
 
         Alert::success('Guardado con Exito', 'Apartamento actualizado correctamente');

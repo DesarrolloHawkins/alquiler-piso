@@ -31,7 +31,7 @@ class ConfiguracionesController extends Controller
         }
         // Prompr del Asistente IA
         $prompt =  PromptAsistente::all();
-        
+
         // Emails para notificaciones
         $emailsNotificaciones = EmailNotificaciones::all();
 
@@ -45,10 +45,13 @@ class ConfiguracionesController extends Controller
             'emailsNotificaciones'
         ));
     }
+
     public function edit($id, Request $request){
         $configuraciones = Configuraciones::all();
         return view('admin.configuraciones.index', compact('configuraciones'));
     }
+
+    // Actualizar usuarios de AIRBNB y BOOKING
     public function update($id, Request $request){
         $confi = Configuraciones::find($id);
         $confi->password_booking = $request->password_booking;
@@ -59,6 +62,8 @@ class ConfiguracionesController extends Controller
         
         return redirect()->route('configuracion.index');
     }
+
+    // Actualizar los reparadores
     public function updateReparaciones(Request $request){
         $reparaciones = Reparaciones::all();
         if (count($reparaciones) > 0 ) {
@@ -67,14 +72,20 @@ class ConfiguracionesController extends Controller
                 $reparacion->telefono = $request->telefono;
                 $reparacion->save();
             }
+            Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
+
         } else {
             Reparaciones::create([
                 'nombre' => $request->nombre,
                 'telefono' => $request->telefono
             ]);
+            Alert::toast('Tecnico de reparaciones creado correctamente', 'success');
+
         }
         return redirect()->route('configuracion.index');
     }
+
+    // Obtener User y Pass de Booking
     public function passBooking(){
         $configuraciones = Configuraciones::first();
         return response()->json([
@@ -82,6 +93,8 @@ class ConfiguracionesController extends Controller
             'pass' => $configuraciones->password_booking
         ]);
     }
+
+    // Obtener User y Pass de Airbnb
     public function passAirbnb(){
         $configuraciones = Configuraciones::first();
         return response()->json([
@@ -89,6 +102,8 @@ class ConfiguracionesController extends Controller
             'pass' => $configuraciones->password_airbnb
         ]);
     }
+
+    // Actualizar año de gestion
     public function updateAnio(Request $request){
         $anio = Anio::first();
         $anio->anio = $request->anio;
@@ -99,6 +114,7 @@ class ConfiguracionesController extends Controller
         return redirect()->route('configuracion.index');
     }
 
+    // Cierre del año
     public function cierreAnio(Request $request){
         $anio = Anio::first();
         $anio->anio = $request->anio;
@@ -109,6 +125,7 @@ class ConfiguracionesController extends Controller
         return redirect()->route('configuracion.index');
     }
 
+    // Establecer el Saldo inicial
     public function saldoInicial(Request $request){
         $anio = Anio::first();
         $saldo = $request->saldo_inicial;
@@ -127,6 +144,7 @@ class ConfiguracionesController extends Controller
         return redirect()->route('configuracion.index');
     }
 
+    // Actualizar Prompt
     public function actualizarPrompt(Request  $request) {
         $prompt = PromptAsistente::first();
         if ($prompt != null) {
@@ -142,8 +160,64 @@ class ConfiguracionesController extends Controller
             Alert::toast('Actualizado', 'success');
             return redirect()->route('configuracion.index');
         }
+    }
+
+    // Añadir personas de notificaciones
+    public function addEmailNotificaciones(Request $request) {
+        // dd($request);
+        $crearPersona = EmailNotificaciones::create([
+            'email' => $request->email,
+            'nombre' => $request->nombre,
+            'telefono' => $request->telefono,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Guardado con correctamente',
+            'redirect_url' => route('configuracion.index')
+        ]);
+    }
+
+    // Borrar Persona de Notificaciones
+    public function deleteEmailNotificaciones($id) {
+        $persona = EmailNotificaciones::find($id);
+        $persona ->delete();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Eliminada con correctamente',
+            'redirect_url' => route('configuracion.index')
+        ]);
+    }
+
+    // Actualizar persona de notificaciones
+    public function updateEmailNotificaciones($id, Request $request) {
+        $persona = EmailNotificaciones::find($id);
+        if (isset($request->telefono)) {
+            //dd($request->telefono);
+            $telefonoLimpio = $this->preformatPhone($request->telefono);
+            $persona->update([
+                'telefono' => $telefonoLimpio
+            ]);
+
+        } else {
+            $persona->update($request->all());
+        }
+        //$persona ->delete();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Eliminada con correctamente',
+            'redirect_url' => route('configuracion.index')
+        ]);
+    }
 
 
+
+    // Preformatear el numero de telefono
+    public function preformatPhone($phone)
+    {
+        // Remove any non-digit characters from the phone number
+        $phone = preg_replace('/\D+/', '', $phone);
+        return $phone;
     }
 
     
