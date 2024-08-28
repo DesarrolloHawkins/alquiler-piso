@@ -151,7 +151,7 @@
                                         {{-- href="{{route('gestion.create', $reservaLimpieza->id)}}" --}}
                                             <a data-id="{{$reservaLimpieza->id}}" class=" list-group-item d-flex justify-content-between align-items-start">
                                                 <div class="ms-2 me-auto">
-                                                    <div class="fw-bold">{{$reservaLimpieza->id}} - {{$reservaLimpieza->apartamento->nombre}} - {{$reservaLimpieza->origenReserva->origen}}</div>
+                                                    <div class="fw-bold">{{$reservaLimpieza->id}} - {{$reservaLimpieza->apartamento->nombre}}</div>
                                                     Fecha Salida: {{$reservaLimpieza->origenReserva->fecha_salida}}
                                                 </div>
                                             </a>
@@ -182,7 +182,7 @@
                                     <ol class="list-group list-group-numbered">
                                         @foreach ($reservasSalida as $reservaSalida)
                                         <div class="ms-2 me-auto">
-                                            <div class="fw-bold">{{$reservaSalida->id }} - {{ $reservaSalida->apartamento->nombre}} - {{$reservaSalida->origen}}</div>
+                                            <div class="fw-bold">{{$reservaSalida->id }} - {{ $reservaSalida->apartamento->nombre}}</div>
                                             Fecha Salida: {{$reservaSalida->fecha_salida}}
                                         </div>
     

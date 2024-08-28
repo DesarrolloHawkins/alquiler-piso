@@ -1,7 +1,7 @@
 @extends('layouts.appPersonal')
 
 @section('title')
-{{ __('Realizando el Apartamento - ') . $apartamentoLimpieza->apartamento->nombre}}
+    {{ __('Realizando el Apartamento - ') . $apartamentoLimpieza->apartamento->nombre}}
 @endsection
 
 @section('bienvenido')

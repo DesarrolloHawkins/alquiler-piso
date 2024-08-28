@@ -31,4 +31,9 @@ class Edificio extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at', 
     ];
+
+    public function checklists()
+    {
+        return $this->hasMany(Checklist::class);
+    }
 }
