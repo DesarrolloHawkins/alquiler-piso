@@ -129,9 +129,21 @@
                             </a>
                           </li>
                           <li class="nav-item">
+                            <a href="{{route('admin.edificios.index')}}" class="nav-link fs-5 {{ request()->is('edificios', 'edificios/*','edificio/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-building me-2 fs-4" style=" width:25px"></i>
+                              Edificios
+                            </a>
+                          </li>
+                          <li class="nav-item">
                               <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-5 {{ request()->is('gestion', 'gestion/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-broom me-2 fs-4" style=" width:25px"></i>
                               Gestion Limpieza
+                            </a>
+                          </li>
+                          <li class="nav-item">
+                            <a href="{{route('admin.limpiezaFondo.index')}}" class="nav-link fs-5 {{ request()->is('limpieza-apartamento', 'limpieza-apartamento/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-hand-sparkles me-2 fs-4" style=" width:25px"></i>
+                              Limpieza Fondo
                             </a>
                           </li>
                           <li class="nav-item">
@@ -230,6 +242,7 @@
                               Bancos
                             </a>
                           </li>
+                         
                           <li class="nav-item">
                             <a href="#" class="nav-link fs-5" aria-current="page">
                                 <i class="fa-solid fa-file-lines me-2 fs-4" style=" width:25px"></i>
