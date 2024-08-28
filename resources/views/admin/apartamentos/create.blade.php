@@ -13,7 +13,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('apartamentos.admin.store', $apartamento->id) }}" method="POST">
+            <form action="{{ route('apartamentos.admin.store') }}" method="POST">
                 @csrf
                 <div class="mb-3">
                     <label for="edificio" class="form-label">Edificio</label>
