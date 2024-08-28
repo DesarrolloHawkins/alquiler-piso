@@ -16,14 +16,16 @@
             <form action="{{ route('apartamentos.admin.update', $apartamento->id) }}" method="POST">
                 @csrf
                 <div class="mb-3">
-                    <label for="edificio" class="form-label">Edificio</label>
-                    <select name="edificio" id="edificio" class="form-control @error('edificio') is-invalid @enderror">
-                        <option value="{{null}}">Seleccione un Edificio</option>
-                        <option @if($apartamento->edificio == 1) selected @endif value="{{1}}">Edificio Hawkins</option>
-                        <option @if($apartamento->edificio == 2) selected @endif value="{{2}}">Edificio Costa</option>
+                    <label for="edificio_id" class="form-label">Edificio</label>
+                    <select name="edificio_id" id="edificio_id" class="form-control @error('edificio_id') is-invalid @enderror">
+                        @if (count($edificios) > 0)
+                            @foreach ($edificios as $edificio)
+                                <option @if($apartamento->edificio == $edificio->id) selected @endif value="{{$edificio->id}}">{{$edificio->nombre}}</option>
+                            @endforeach
+                        @endif
                     </select>
                     
-                    @error('edificio')
+                    @error('edificio_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

@@ -17,13 +17,16 @@
                 @csrf
                 <div class="mb-3">
                     <label for="edificio" class="form-label">Edificio</label>
-                    <select name="edificio" id="edificio" class="form-control @error('edificio') is-invalid @enderror">
+                    <select name="edificio_id" id="edificio_id" class="form-control @error('edificio_id') is-invalid @enderror">
                         <option value="{{null}}">Seleccione un Edificio</option>
-                        <option value="{{1}}">Edificio Hawkins</option>
-                        <option value="{{2}}">Edificio Costa</option>
+                        @if (count($edificios) > 0)
+                            @foreach ($edificios as $edificio)
+                                <option value="{{$edificio->id}}">{{$edificio->nombre}}</option>
+                            @endforeach
+                        @endif
                     </select>
                     
-                    @error('edificio')
+                    @error('edificio_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

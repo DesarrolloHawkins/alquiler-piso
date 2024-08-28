@@ -33,7 +33,7 @@ class FormasDePagoController extends Controller
 
         if($formaDePago){
             $formaDePago->delete();
-            return response()->redirect(route('configuracion.index'));
+            return redirect(route('configuracion.index'));
         }
 
     }

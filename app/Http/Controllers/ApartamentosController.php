@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
+use App\Models\Edificio;
 use Illuminate\Http\Request;
 
 class ApartamentosController extends Controller
@@ -33,13 +34,16 @@ class ApartamentosController extends Controller
     }
     public function createAdmin()
     {
-        return view('admin.apartamentos.create');
+        $edificios = Edificio::all();
+        
+        return view('admin.apartamentos.create', compact('edificios'));
     }
 
     public function editAdmin($id)
     {
         $apartamento = Apartamento::find($id);
-        return view('admin.apartamentos.edit', compact('apartamento'));
+        $edificios = Edificio::all();
+        return view('admin.apartamentos.edit', compact('apartamento','edificios'));
     }
 
     public function updateAdmin(Request $request, $id)
@@ -49,7 +53,8 @@ class ApartamentosController extends Controller
                 'nombre' => 'required|string|max:255',
                 'id_booking' => 'required|string|max:255',
                 'id_web' => 'required|string|max:255',
-                'titulo' => 'required|string|max:255'
+                'titulo' => 'required|string|max:255',
+                'edificio_id' => 'required'
         ];
 
         // Validar los datos del formulario
@@ -60,7 +65,7 @@ class ApartamentosController extends Controller
         $apartamento->id_web = $validatedData['id_web'];
         $apartamento->nombre = $validatedData['nombre'];
         $apartamento->claves = $request['claves'];
-        $apartamento->edificio = $request['edificio'];
+        $apartamento->edificio_id = $request['edificio_id'];
         $apartamento->save();
        // Actualizar el cliente con los datos validados
         //    $apartamento->update($validatedData);
@@ -76,7 +81,7 @@ class ApartamentosController extends Controller
                 'id_web' => 'required|string|max:255',
                 'titulo' => 'required|string|max:255',
                 'claves' => 'required|string|max:255',
-                'edificio' => 'required'
+                'edificio_id' => 'required'
         ];
 
         // Validar los datos del formulario

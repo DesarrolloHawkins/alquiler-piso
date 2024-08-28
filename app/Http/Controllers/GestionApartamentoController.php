@@ -7,6 +7,7 @@ use App\Models\ApartamentoLimpieza;
 use App\Models\Fichaje;
 use App\Models\Pausa;
 use App\Models\GestionApartamento;
+use App\Models\LimpiezaFondo;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -38,6 +39,8 @@ class GestionApartamentoController extends Controller
         $reservasEnLimpieza = ApartamentoLimpieza::apartamentosEnLimpiados();
         
         $hoy = now()->toDateString();
+        $limpiezaFondo = LimpiezaFondo::whereDate('fecha', $hoy)->get();
+
         $fichajeHoy = Fichaje::where('user_id', Auth::id())
                                 ->whereDate('hora_entrada', $hoy)
                                 ->whereNull('hora_salida')  // Asegúrate de considerar solo los fichajes no finalizados
@@ -50,7 +53,7 @@ class GestionApartamentoController extends Controller
         }
 
 
-        return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza','reservasEnLimpieza', 'fichajeHoy', 'pausaActiva'));
+        return view('gestion.index', compact('reservasPendientes','reservasOcupados','reservasSalida','reservasLimpieza','reservasEnLimpieza', 'fichajeHoy', 'pausaActiva','limpiezaFondo'));
     }
 
     /**
@@ -58,22 +61,40 @@ class GestionApartamentoController extends Controller
      */
     public function create($id)
     {
-        $reserva = Reserva::find($id);
-        $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $reserva->apartamento_id)->first();
+        if (strpos($id, 'null') !== false) {
+            preg_match('/-?\d+/', $id, $matches);
+            $nuevoID = $matches[0];
+            $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $nuevoID)->first();
 
             if ($apartamentoLimpio == null) {
                 $apartamentoLimpieza = ApartamentoLimpieza::create([
-                    'apartamento_id' => $reserva->apartamento_id,
+                    'apartamento_id' => $nuevoID,
                     'fecha_comienzo' => Carbon::now(),
                     'status_id' => 2,
-                    'reserva_id' => $id,
+                    'reserva_id' => null,
                     'user_id' => Auth::user()->id
                 ]);
-                $reserva->fecha_limpieza = Carbon::now();
-                $reserva->save();
             } else {
                 $apartamentoLimpieza = $apartamentoLimpio;
             }
+        } else {
+            $reserva = Reserva::find($id);
+            $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $reserva->apartamento_id)->first();
+    
+                if ($apartamentoLimpio == null) {
+                    $apartamentoLimpieza = ApartamentoLimpieza::create([
+                        'apartamento_id' => $reserva->apartamento_id,
+                        'fecha_comienzo' => Carbon::now(),
+                        'status_id' => 2,
+                        'reserva_id' => $id,
+                        'user_id' => Auth::user()->id
+                    ]);
+                    $reserva->fecha_limpieza = Carbon::now();
+                    $reserva->save();
+                } else {
+                    $apartamentoLimpieza = $apartamentoLimpio;
+                }
+        }
             
         // $apartamento = Apartamento::find($id);
       return view('gestion.edit', compact('apartamentoLimpieza','id'));
@@ -327,4 +348,47 @@ class GestionApartamentoController extends Controller
 
         return redirect()->route('gestion.index');
     }
+
+    public function limpiezaFondo(Request $request) {
+        $apartamentos = LimpiezaFondo::all();
+        return view('admin.limpieza.index', compact('apartamentos'));
+
+    }
+    
+    public function limpiezaFondoDestroy($id) {
+        $limpieza = LimpiezaFondo::find($id);
+        $limpieza->delete();
+        return redirect(route('admin.limpiezaFondo.index'));
+
+    }
+
+    public function limpiezaCreate(Request $request) {
+        $apartamentos = Apartamento::all();
+        return view('admin.limpieza.create', compact('apartamentos'));
+
+    }  
+    public function limpiezaFondoEdit($id) {
+        $limpieza = LimpiezaFondo::find($id);
+        $apartamentos = Apartamento::all();
+
+        return view('admin.limpieza.edit', compact('apartamentos', 'limpieza'));
+
+    }  
+
+    public function limpiezaFondoStore(Request $request) {
+        $rules = [
+            'fecha' => 'required|date',
+            'apartamento_id' => 'required'
+        ];
+
+        // Validar los datos del formulario
+        $validatedData = $request->validate($rules);
+        $limpiezaAFondo = LimpiezaFondo::create([
+            'apartamento_id' => $request->apartamento_id,
+            'fecha' => $request->fecha
+        ]);
+        Alert::success('Fizalizado con Exito', 'Apartamento Fizalizado correctamente');
+
+        return redirect()->route('admin.limpiezaFondo.index');
+    }   
 }

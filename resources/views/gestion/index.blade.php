@@ -61,7 +61,10 @@
                                 @if ($reservasPendientes != null)
                                     <ol class="list-group list-group-numbered">
                                         @foreach ($reservasPendientes as $reservaPendiente)
-                                            <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $reservaPendiente->id)}}">
+                                            @php
+                                                $routeId = isset($reservaPendiente->id) ? $reservaPendiente->id : 'null - '.$reservaPendiente->apartamento_id;
+                                            @endphp
+                                            <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $routeId )}}">
                                                 <div class="ms-2 me-auto">
                                                     <div class="fw-bold" data-id="{{$reservaPendiente->id}}">{{$reservaPendiente->apartamento->titulo}}</div>
                                                     {{-- <div class="fw-bold">{{$reservaPendiente->id}} - {{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div> --}}

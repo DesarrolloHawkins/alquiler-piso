@@ -11,8 +11,8 @@
     }
 </style>
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Nuestros Apartamentos') }}</h2>
-    <a href="{{route('apartamentos.admin.create')}}" class="btn bg-color-quinto">Crear apartamento</a>
+    <h2 class="mb-3">{{ __('Nuestros Edificios') }}</h2>
+    <a href="{{route('admin.edificio.create')}}" class="btn bg-color-quinto">Crear edificio</a>
     <hr class="mb-5">
     <div class="row justify-content-center">
 
@@ -23,9 +23,9 @@
                 </div>
             @endif
             <!-- Formulario de búsqueda -->
-            <form action="{{ route('clientes.index') }}" method="GET" class="mb-4">
+            <form action="{{ route('admin.edificios.index') }}" method="GET" class="mb-4">
                 <div class="input-group mb-5">
-                    <input type="text" class="form-control" name="search" placeholder="Buscar apartamento" value="{{ request()->get('search') }}">
+                    <input type="text" class="form-control" name="search" placeholder="Buscar banco" value="{{ request()->get('search') }}">
                     <button type="submit" class="btn bg-color-primero">Buscar</button>
                 </div>
             </form>
@@ -36,7 +36,7 @@
                     <tr>
                         
                         <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                            <a href="{{ route('admin.edificios.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
                                 ID
                                 @if (request('sort') == 'id')
@@ -45,16 +45,7 @@
                             </a>
                         </th>
                         <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'edificio', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'edificio' ? 'active-sort' : 'inactive-sort' }}">
-                                Edificio
-                                @if (request('sort') == 'edificio')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                            <a href="{{ route('admin.edificios.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'nombre' ? 'active-sort' : 'inactive-sort' }}">
                                 Nombre
                                 @if (request('sort') == 'nombre')
@@ -62,29 +53,27 @@
                                 @endif
                             </a>
                         </th>
-                        <th scope="col" class="inactive-sort">Id Booking</th>
-                        <th scope="col" class="inactive-sort">Id Airbnb</th>
-                        <th scope="col" class="inactive-sort">Id Web</th>
+                        <th scope="col">
+                                Clave
+                            </a>
+                        </th>
                         <th scope="col" class="inactive-sort" style="width: 200px;">Acción</th>
                     </tr>
                 </thead>
 
 
                 <tbody>
-                    @foreach ($apartamentos as $apartamento)
+                    @foreach ($edificios as $edificio)
                         <tr>
-                            <th scope="row">{{$apartamento->id}}</th>
-                            <th scope="row">@if($apartamento->edificio != null) {{$apartamento->edificioName->nombre}} @endif</th>
-                            <td>{{$apartamento->titulo}}</td>
-                            <td>{{$apartamento->id_booking}}</td>
-                            <td>{{$apartamento->nombre}}</td>
-                            <td>{{$apartamento->id_web}}</td>
+                            <th scope="row">{{$edificio->id}}</th>
+                            <td>{{$edificio->nombre}}</td>
+                            <td>{{$edificio->clave}}</td>
                             <td style="width:auto;">
-                                <a href="{{route('apartamentos.admin.edit', $apartamento->id)}}" class="btn btn-secundario">Editar</a>
-                                {{-- <form action="{{ route('clientes.destroy', $apartamento->id) }}" method="POST" style="display: inline;" class="delete-form">
+                                <a href="{{route('admin.edificio.edit', $edificio->id)}}" class="btn btn-secundario">Editar</a>
+                                <form action="{{ route('admin.edificio.destroy', $edificio->id) }}" method="POST" style="display: inline;" class="delete-form">
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
-                                </form> --}}
+                                </form>
                                 {{-- <a href="{{route('clientes.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> --}}
                             </td>
                         </tr>

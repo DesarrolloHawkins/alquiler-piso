@@ -87,7 +87,9 @@
                 <button type="submit" class="btn btn-primary mt-3">Actualizar Año</button>    
             </form>
             <hr class="mt-4">
+            <h5 class="form-label">Formas de Pago</h5>
             @if (count($formasPago) > 0 )
+
                 <button class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#createForma">Crear Metodo</button>
 
                 <ul class="list-group">
@@ -357,8 +359,8 @@
                                             $hora1 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00';
                                             $hora2 = str_pad($hour, 2, '0', STR_PAD_LEFT) . ':30';
                                         @endphp
-                                        <option value="{{ $hora1 }}" @isset($reparacion->hora_fin) @if($limpiadora->hora_fin == $hora1) selected @endif @endisset>{{ $hora1 }}</option>
-                                        <option value="{{ $hora2 }}" @isset($reparacion->hora_fin) @if($limpiadora->hora_fin == $hora2) selected @endif @endisset>{{ $hora2 }}</option>
+                                        <option value="{{ $hora1 }}" @isset($limpiadora->hora_fin) @if($limpiadora->hora_fin == $hora1) selected @endif @endisset>{{ $hora1 }}</option>
+                                        <option value="{{ $hora2 }}" @isset($limpiadora->hora_fin) @if($limpiadora->hora_fin == $hora2) selected @endif @endisset>{{ $hora2 }}</option>
                                     @endfor
                                 </select>
                             </div>
@@ -795,6 +797,7 @@
                     
                 })
             })
+
             const botonesDeleteTecnico = document.querySelectorAll('#eliminarTecnico')
             botonesDeleteTecnico.forEach(function(nodo){
                 $(nodo).on('click', function(){
@@ -811,6 +814,66 @@
                         if (result.isConfirmed) {
                             var id = $(this).attr('data-id'); // Corregido: ahora correctamente obtiene el atributo data-id
                             var baseUrl = "{{ route('configuracion.deleteReparaciones', ['id' => ':id']) }}"; // Genera una URL base con un placeholder
+                            var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
+
+                            var formData = new FormData();
+                    
+                            formData.append('_token', '{{ csrf_token() }}');
+
+                            $.ajax({
+                                url: url, // Reemplaza con la URL de tu servidor
+                                type: 'POST',
+                                data: formData,
+                                processData: false,  // Evita que jQuery procese los datos
+                                contentType: false,  // Evita que jQuery establezca el tipo de contenido
+                                success: function(data) {
+
+                                    const Toast = Swal.mixin({
+                                        toast: true,
+                                        position: "top-end",
+                                        showConfirmButton: false,
+                                        timer: 2000,
+                                        timerProgressBar: true,
+                                        didOpen: (toast) => {
+                                            toast.onmouseenter = Swal.stopTimer;
+                                            toast.onmouseleave = Swal.resumeTimer;
+                                        },
+                                        didDestroy: () => {
+                                            // Aquí puedes colocar la acción que desees realizar después de que el toast desaparezca
+                                            location.reload();
+                                        }
+                                    });
+                                    Toast.fire({
+                                        icon: "success",
+                                        title: 'Tecnico de contacto eliminada correctamente'
+                                    });
+                                    // console.log('Archivo enviado con éxito:', data);
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error al enviar el archivo:', error);
+                                }
+                            });                    }
+                    });
+                    
+                })
+            })
+
+            const botonesDeleteLimpiadora = document.querySelectorAll('#eliminarLimpiadora')
+            botonesDeleteLimpiadora.forEach(function(nodo){
+                $(nodo).on('click', function(){
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "¡No podrás revertir esto!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, eliminar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            var id = $(this).attr('data-id'); // Corregido: ahora correctamente obtiene el atributo data-id
+                            var baseUrl = "{{ route('configuracion.deleteLimpiadora', ['id' => ':id']) }}"; // Genera una URL base con un placeholder
                             var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                             var formData = new FormData();

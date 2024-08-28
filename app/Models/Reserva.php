@@ -80,20 +80,44 @@ class Reserva extends Model
      */
     public static function apartamentosPendiente()
     {
-        $hoy = Carbon::now();
-        // $apartamentos = self::where('fecha_limpieza', null)->whereDate('fecha_salida', $hoy)->get();
-        $apartamentos = self::whereDate('fecha_salida', $hoy)->get();
-        $apartamentoLimpieza = [];
-        if (count($apartamentos) > 0) {
-            foreach($apartamentos as $item){
-                $apartamento = ApartamentoLimpieza::where('reserva_id',$item->id)->first();
-                if($apartamento == null){
-                    $apartamentoLimpieza[] = $item;
-                }
+        $hoy = Carbon::now()->toDateString(); // Asegurarse de obtener la fecha en formato adecuado
+    
+        // Obtener las reservas cuya fecha de salida es hoy y no tienen asignada fecha de limpieza
+        $reservasPendientes = self::whereNull('fecha_limpieza')->whereDate('fecha_salida', $hoy)->get();
+    
+        // Obtener las limpiezas de fondo programadas para hoy
+        $limpiezasDeFondo = LimpiezaFondo::whereDate('fecha', $hoy)->get();
+    
+        // Obtener los apartamentos que ya tienen una limpieza registrada hoy en ApartamentosLimpieza
+        $apartamentosLimpieza = ApartamentoLimpieza::whereDate('fecha_comienzo', $hoy)->pluck('apartamento_id')->toArray();
+    
+        $apartamentos = collect(); // Colección para almacenar todos los resultados
+    
+        // Agregar las reservas pendientes, excluyendo los que ya tienen una limpieza registrada
+        foreach ($reservasPendientes as $reserva) {
+            if (!in_array($reserva->apartamento_id, $apartamentosLimpieza)) {
+                $apartamentos->push($reserva);
             }
         }
-        return self::where('fecha_limpieza', null)->whereDate('fecha_salida', $hoy)->get();
+    
+        // Agregar los apartamentos de limpieza de fondo si no están ya considerados ni ya limpiados
+        foreach ($limpiezasDeFondo as $limpieza) {
+            if (!in_array($limpieza->apartamento_id, $apartamentosLimpieza) && !$apartamentos->contains('apartamento_id', $limpieza->apartamento_id)) {
+                // Simular un objeto Reserva para mantener la compatibilidad
+                $simulatedReserva = new self;
+                $simulatedReserva->apartamento_id = $limpieza->apartamento_id;
+                $simulatedReserva->fecha_salida = $hoy; // Asumir la fecha de salida igual a hoy
+                $simulatedReserva->fecha_limpieza = $hoy; // Asumir que la limpieza está programada para hoy
+                $simulatedReserva->limpieza_fondo = true; // Indicar que es una limpieza de fondo
+    
+                // Añadir al resultado
+                $apartamentos->push($simulatedReserva);
+            }
+        }
+    
+        return $apartamentos;
     }
+    
     /**
      * Obtener apartamentos ocupados para el dia de hoy
      * 

@@ -138,7 +138,7 @@ class ConfiguracionesController extends Controller
     // Actualizar los reparadores
     public function updateLimpiadora($id, Request $request){
         $data = [
-            'user_id' => $request->user_id,
+            // 'user_id' => $request->user_id,
             'telefono' => $request->telefono,
             'hora_inicio' => $request->hora_inicio,
             'hora_fin' => $request->hora_fin,
@@ -158,10 +158,18 @@ class ConfiguracionesController extends Controller
     }
 
     // Obtener User y Pass de Booking
+    public function deleteLimpiadora($id){
+        $limpiadora = LimpiadoraGuardia::find($id);
+        $limpiadora->delete();
+        Alert::toast('Limpiadora de guardia eliminada correctamente', 'success');
+        return redirect()->route('configuracion.index');
+    }
+
+    // Obtener User y Pass de Booking
     public function deleteReparaciones($id){
         $reparaciones = Reparaciones::find($id);
         $reparaciones->delete();
-        Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
+        Alert::toast('Tecnico de reparaciones eliminada correctamente', 'success');
         return redirect()->route('configuracion.index');
     }
     // Obtener User y Pass de Booking

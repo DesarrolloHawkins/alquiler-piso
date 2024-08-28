@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class LimpiadoraGuardia extends Model
+class LimpiezaFondo extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $table = 'limpiadora_guardia';
+    protected $table = 'limpieza_fondo';
 
      /**
      * The attributes that are mass assignable.
@@ -19,18 +19,9 @@ class LimpiadoraGuardia extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id',
-        'telefono',
-        'email',
-        'lunes',
-        'martes',
-        'miercoles',
-        'jueves',
-        'viernes',
-        'sabado',
-        'domingo',
-        'hora_inicio',
-        'hora_fin'
+        'apartamento_id',
+        'fecha',
+       
          
     ];
 
@@ -48,8 +39,8 @@ class LimpiadoraGuardia extends Model
      * 
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function usuario()
+    public function apartamentoName()
     {
-        return $this->belongsTo(\App\Models\User::class,'user_id');
+        return $this->belongsTo(\App\Models\Apartamento::class,'apartamento_id');
     }
 }
