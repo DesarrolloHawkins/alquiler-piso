@@ -74,7 +74,7 @@
                     @foreach ($apartamentos as $apartamento)
                         <tr>
                             <th scope="row">{{$apartamento->id}}</th>
-                            <th scope="row">@if($apartamento->edificio != null) {{$apartamento->edificioName->nombre}} @endif</th>
+                            <th scope="row">@if($apartamento->edificio_id != null) {{$apartamento->edificioName->nombre}} @endif</th>
                             <td>{{$apartamento->titulo}}</td>
                             <td>{{$apartamento->id_booking}}</td>
                             <td>{{$apartamento->nombre}}</td>

@@ -20,7 +20,7 @@
                     <select name="edificio_id" id="edificio_id" class="form-control @error('edificio_id') is-invalid @enderror">
                         @if (count($edificios) > 0)
                             @foreach ($edificios as $edificio)
-                                <option @if($apartamento->edificio == $edificio->id) selected @endif value="{{$edificio->id}}">{{$edificio->nombre}}</option>
+                                <option @if($apartamento->edificio_id == $edificio->id) selected @endif value="{{$edificio->id}}">{{$edificio->nombre}}</option>
                             @endforeach
                         @endif
                     </select>
