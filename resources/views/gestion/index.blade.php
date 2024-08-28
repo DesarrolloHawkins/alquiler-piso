@@ -64,19 +64,31 @@
                                             @php
                                                 $routeId = isset($reservaPendiente->id) ? $reservaPendiente->id : 'null - '.$reservaPendiente->apartamento_id;
                                             @endphp
-                                            <a class=" list-group-item d-flex justify-content-between align-items-start" href="{{route('gestion.create', $routeId )}}">
+                                            <a class=" list-group-item d-flex justify-content-between align-items-start @if(isset($reservaPendiente->limpieza_fondo)) bg-info text-white @else bg-warning @endif"  href="{{route('gestion.create', $routeId )}}">
                                                 <div class="ms-2 me-auto">
-                                                    <div class="fw-bold" data-id="{{$reservaPendiente->id}}">{{$reservaPendiente->apartamento->titulo}}</div>
+                                                    <div class="fw-bold " data-id="{{$reservaPendiente->id}}">{{$reservaPendiente->apartamento->titulo}}</div>
                                                     {{-- <div class="fw-bold">{{$reservaPendiente->id}} - {{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div> --}}
                                                     {{-- Fecha Salida: {{$reservaPendiente->fecha_salida}} --}}
                                                     @if ($reservaPendiente->siguienteReserv != null)
                                                         @if ($reservaPendiente->siguienteReserva->numero_personas != null)
-                                                            Numero de Adultos del siguiente Huesped: {{$reservaPendiente->siguienteReserva->numero_personas}}
+                                                            @if (isset($reservaPendiente->limpieza_fondo))
+                                                                Limpieza a fondo
+                                                            @else
+                                                                Numero de Adultos del siguiente Huesped: {{$reservaPendiente->siguienteReserva->numero_personas}}
+                                                            @endif
                                                         @else
-                                                            No tenemos información de la siguiente reserva
+                                                            @if (isset($reservaPendiente->limpieza_fondo))
+                                                                Limpieza a fondo
+                                                            @else 
+                                                                No tenemos información de la siguiente reserva
+                                                            @endif
                                                         @endif
                                                     @else
-                                                        No tenemos información de la siguiente reserva
+                                                        @if (isset($reservaPendiente->limpieza_fondo))
+                                                            Limpieza a fondo
+                                                        @else 
+                                                            No tenemos información de la siguiente reserva
+                                                        @endif
                                                     @endif
                                                 </div>
                                             </a>
