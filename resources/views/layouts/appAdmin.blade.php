@@ -147,6 +147,12 @@
                             </a>
                           </li>
                           <li class="nav-item">
+                            <a href="{{route('admin.checklists.index')}}" class="nav-link fs-5 {{ request()->is('checklists', 'checklists/*','items_checklist', 'items_checklist/*') ? 'active' : '' }}" aria-current="page">
+                              <i class="fa-solid fa-hand-sparkles me-2 fs-4" style=" width:25px"></i>
+                              Categorias de Limpieza
+                            </a>
+                          </li>
+                          <li class="nav-item">
                               <a target="blank" href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-5 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}" aria-current="page">
                               <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
                               Diario de Caja
