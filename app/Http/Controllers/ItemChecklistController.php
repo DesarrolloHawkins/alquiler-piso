@@ -59,11 +59,12 @@ class ItemChecklistController extends Controller
         return redirect()->route('admin.itemsChecklist.index', ['id' => $request->checklistId])->with('success', 'Item actualizado con éxito.');
     }
 
-    public function destroy($checklistId, $id)
+    public function destroy($id)
     {
         $item = ItemChecklist::findOrFail($id);
+        $checklistId = $item->checklist_id;
         $item->delete();
 
-        return redirect()->route('admin.itemsChecklist.index', $checklistId)->with('success', 'Item eliminado con éxito.');
+        return redirect()->route('admin.itemsChecklist.index', ['id' => $checklistId])->with('success', 'Item eliminado con éxito.');
     }
 }
