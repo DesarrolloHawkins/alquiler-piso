@@ -23,14 +23,14 @@
         @endif
         <h4>Categoria: {{$checklist->nombre}}</h4>
         <!-- Formulario de búsqueda -->
-        <form action="{{ route('admin.bancos.update', $item->id) }}" method="POST" class="mb-4">
+        <form action="{{ route('admin.itemsChecklist.update', $item->id) }}" method="POST" class="mb-4">
           @csrf
           <input type="hidden" name="checklistId" value="{{$checklist->id}}">
             <div class="form-grup mb-5">
               <label for="form-label">Nombre de la Comprobación</label>
                 <input type="text" class="form-control" name="nombre" placeholder="Nombre banco" value="{{$item->nombre}}">
             </div>
-              <button type="submit" class="btn bg-color-primero">Actualizar Banco</button>
+              <button type="submit" class="btn bg-color-primero">Actualizar Item</button>
         </form>
 
         </div>
