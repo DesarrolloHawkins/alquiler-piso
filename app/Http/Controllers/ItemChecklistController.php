@@ -40,8 +40,8 @@ class ItemChecklistController extends Controller
 
     public function edit($id)
     {
-        $checklist = Checklist::all();
         $item = ItemChecklist::findOrFail($id);
+        $checklist = Checklist::find($item->checklist_id);
         return view('admin.itemsChecklist.edit', compact('checklist', 'item'));
     }
 
