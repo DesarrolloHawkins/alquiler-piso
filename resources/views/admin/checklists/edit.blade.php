@@ -22,7 +22,7 @@
             </div>
         @endif
         <!-- Formulario de búsqueda -->
-        <form action="{{ route('admin.bancos.update', $checklist->id) }}" method="POST" class="mb-4">
+        <form action="{{ route('admin.checklists.update', $checklist->id) }}" method="POST" class="mb-4">
           @csrf
             <div class="form-grup mb-2">
               <label for="form-label">Edificio</label>
