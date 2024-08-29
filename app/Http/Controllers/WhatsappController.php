@@ -396,8 +396,8 @@ class WhatsappController extends Controller
         } elseif ($tipo == 3){
             $telefonos = [
                 '34622440984',
-                '34664368232',
-                '34605621704'
+                // '34664368232',
+                // '34605621704'
             ];
             $origen = $request->origen;
             foreach ($telefonos as $key => $telefono) {
