@@ -21,6 +21,7 @@
                 {{ session('status') }}
             </div>
         @endif
+        <h4>Categoria: {{$checklist->nombre}}</h4>
         <!-- Formulario de búsqueda -->
         <form action="{{ route('admin.bancos.update', $item->id) }}" method="POST" class="mb-4">
           @csrf
