@@ -30,7 +30,7 @@
                   <label for="form-label">Nombre de la Comprobacion</label>
                     <input type="text" class="form-control" name="nombre" placeholder="Nombre banco">
                 </div>
-                  <button type="submit" class="btn bg-color-primero">Crear Banco</button>
+                  <button type="submit" class="btn bg-color-primero">Crear Item</button>
               </form>
 
         </div>

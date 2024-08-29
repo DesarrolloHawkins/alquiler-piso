@@ -10,6 +10,7 @@ class ItemChecklistController extends Controller
 {
     public function index(Request $request)
     {
+        // dd($request->all());
         if (isset($request->id)) {
             $checklist = Checklist::findOrFail($request->id);
             $items = ItemChecklist::where('checklist_id', $request->id)->get();
@@ -47,6 +48,7 @@ class ItemChecklistController extends Controller
 
     public function update(Request $request, $id)
     {
+        // dd($request->checklistId);
         $request->validate([
             'nombre' => 'required',
         ]);
@@ -54,7 +56,7 @@ class ItemChecklistController extends Controller
         $item = ItemChecklist::findOrFail($id);
         $item->update($request->all());
 
-        return redirect()->route('admin.itemsChecklist.index', ['id' => $request->checklist])->with('success', 'Item actualizado con éxito.');
+        return redirect()->route('admin.itemsChecklist.index', ['id' => $request->checklistId])->with('success', 'Item actualizado con éxito.');
     }
 
     public function destroy($checklistId, $id)
