@@ -121,12 +121,12 @@
                             <div class="row">
                                 <div class="col-6">
                                     <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="DNI Frente">
-                                        <img src="{{ asset($photos[0]->url) }}" alt="DNI Frente" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                        <img src="{{ asset($photos[0]->url) }}" alt="DNI Frente" style="object-fit: cover; object-position: center; max-height: 200px; width: 100%;">
                                     </a>
                                 </div>
                                 <div class="col-6">
                                     <a href="{{ asset($photos[1]->url) }}" data-fancybox="gallery" data-caption="DNI Reverso">
-                                        <img src="{{ asset($photos[1]->url) }}" alt="DNI Reverso" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                        <img src="{{ asset($photos[1]->url) }}" alt="DNI Reverso" style="object-fit: cover; object-position: center; max-height: 200px; width: 100%;">
                                     </a>
                                 </div>
                             </div>
@@ -134,7 +134,7 @@
                             <h4><i class="fa-regular fa-address-card"></i> Pasaporte</h4>
                             <hr>
                             <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="Pasaporte">
-                                <img src="{{ asset($photos[0]->url) }}" alt="Pasaporte" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                <img src="{{ asset($photos[0]->url) }}" alt="Pasaporte" style="object-fit: cover; object-position: center; max-height: 200px; width: 100%;">
                             </a>
                         @else
                             <h4><i class="fa-regular fa-address-card"></i> DNI o Pasaporte</h4>
@@ -143,8 +143,6 @@
                         @endif
                     </div>
                 </div>
-                
-                
         </div>
     </div>
 </div>
