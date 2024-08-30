@@ -113,7 +113,6 @@
             <i class="fa-solid fa-plus me-2"></i>
             Crear Reserva
         </a>
-
     </div>
     <hr class="mb-3">
     <div class="row justify-content-center">
@@ -139,7 +138,6 @@
                                     <input type="hidden" name="search" value="{{ request()->get('search') }}">
                                     <label for="perPage">Registros por página:</label>
                                     <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
-                                        <option value="5" {{ request()->get('perPage') == 5 ? 'selected' : '' }}>5</option>
                                         <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
                                         <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
                                         <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
@@ -299,7 +297,7 @@
                                 <td>{{$reserva->fecha_salida}}</td>
                                 <td>{{$reserva->origen}}</td>
                                 <td>{{$reserva->codigo_reserva}}</td>
-                                <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn btn-primary">Ver</a></td>
+                                <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a></td>
                             </tr>
                         @endforeach
                     </tbody>

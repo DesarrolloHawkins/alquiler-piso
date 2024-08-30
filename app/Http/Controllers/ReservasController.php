@@ -107,14 +107,14 @@ class ReservasController extends Controller
             'cliente_id' => 'required|integer',
             'apartamento_id' => 'required|integer',
             'estado_id' => 'required|integer',
-            'origen' => 'nullable|string',
+            'origen' => 'required|string',
             'fecha_entrada' => 'required|date',
             'fecha_salida' => 'required|date',
-            'precio' => 'nullable|string',
+            'codigo_reserva' => 'required|string',
+            'precio' => 'required|string',
             'verificado' => 'nullable|integer',
             'dni_entregado' => 'nullable|integer',
             'enviado_webpol' => 'nullable|integer',
-            'codigo_reserva' => 'nullable|string',
             'fecha_limpieza' => 'nullable|date'
         ]);
     

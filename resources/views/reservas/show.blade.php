@@ -3,8 +3,9 @@
 @section('content')
 
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Información de la Reserva :') }} <span class="fs-6 text-primary align-baseline">{{$reserva->codigo_reserva}}</span></h2>
-    <hr class="mb-5">
+    <div class="d-flex flex-colum mb-3">
+        <h2 class="mb-0 me-3 encabezado_top">{{ __('Información de la Reserva: ') }}<span class="text-primary align-baseline">{{$reserva->codigo_reserva}}</span></h2>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-12">
                 {{-- Titulo --}}
@@ -16,7 +17,13 @@
                         <tr>
                             <th style="width: 140px" scope="row">Apartamento</th>
                             <td>
-                                {{$reserva->apartamento->nombre}}
+                                {{$reserva->apartamento->titulo}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="width: 140px" scope="row">Edificio</th>
+                            <td>
+                                {{$reserva->apartamento->edificioName->nombre}}
                             </td>
                         </tr>
                         <tr>
@@ -39,13 +46,13 @@
                         </tr>
                         <tr>
                             <th style="width: 140px" scope="row">Cliente</th>
-                            <td>{{$reserva->cliente->alias}} <a href="{{route('clientes.show', $reserva->cliente_id)}}" class="btn btn-primary ms-3"><i class="fa-regular fa-eye"></i> </a></td>
+                            <td>{{$reserva->cliente->alias}} <a href="{{route('clientes.show', $reserva->cliente_id)}}" class="btn bg-color-quinto ms-3"><i class="fa-regular fa-eye"></i> </a></td>
                         </tr>
                         <tr>
                             <th style="width: 140px" scope="row">Huespeds</th>
                             {{-- {{dd($huespedes)}} --}}
                             @foreach ($huespedes as $index => $huesped)
-                                <td>Huesped {{$index+1}} <a href="{{route('huespedes.show', $huesped->id)}}" class="btn btn-primary ms-3"><i class="fa-regular fa-eye"></i> </a></td>
+                                <td>Huesped {{$index+1}} <a href="{{route('huespedes.show', $huesped->id)}}" class="btn bg-color-quinto ms-3"><i class="fa-regular fa-eye"></i> </a></td>
                             @endforeach
                         </tr>
                         <tr>
