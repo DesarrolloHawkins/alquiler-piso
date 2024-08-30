@@ -1,11 +1,12 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<!-- Incluir el CSS de Lightbox2 -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<!-- Incluir el CSS de Lightbox2 desde un CDN confiable -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
 
-<!-- Incluir el JavaScript de Lightbox2 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<!-- Incluir el JavaScript de Lightbox2 desde un CDN confiable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+
 
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
