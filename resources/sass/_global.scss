@@ -25,6 +25,19 @@
     background-color: $color-quinto;
     color:  white;
 }
+.bg-color-quinto:hover {
+    background-color: #514f69;
+    color:  white;
+
+}
+.bg-color-sexto {
+    background-color: $color-sexto;
+    color:  white;
+}
+.bg-color-sexto:hover {
+    background-color: #e3e5e9 ;
+    color:  $color-sexto;
+}
 .btn-guardar {
     --bs-btn-color: #fff;
     --bs-btn-bg: #3B3F64;
@@ -102,4 +115,88 @@
 .form-check-input:checked {
     background-color: #3B3F64;
     border-color: #3B3F64;
+}
+
+.encabezado_top {
+    font-weight: bold;
+    font-size: 2rem;
+}
+.page-link.active, .active > .page-link {
+    color: white;
+    background-color: $color-primero;
+    border-color: $color-primero;
+}
+
+.page-link {
+    color: $color-primero;
+}
+
+.bg-color-primero-table th{
+    background-color: $color-primero;
+    color: white;
+}
+
+.fondo_dropdraw {
+    background-color: #1a2657;
+}
+
+.font-titulo{
+    font-family:Arial, Helvetica, sans-serif;
+}
+.nav-pills .nav-link{
+    color: #cecece
+}
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link{
+    background-color: #3B3F64;
+    color: white;
+    border-color: #3B3F64;
+}
+.nav-pills .nav-link:hover{
+    background-color: #3B3F64;
+    color: white !important;
+    border-color: #3B3F64;
+}
+ /* Estilos para mantener fijo el sidebar y permitir el scroll en contenedor principal */
+.sidebar {
+    //position: fixed; /* Hace el sidebar fijo */
+    // width: 20%; /* Ajusta el ancho del sidebar */
+    height: 100vh; /* Altura completa de la ventana */
+    overflow-y: auto; /* Permite scroll solo si es necesario */
+}
+.contenedor-principal {
+    //margin-left: 20%; /* Desplaza el contenedor principal para no solaparse con el sidebar */
+    //width: 80%; /* Ajusta el ancho del contenedor principal */
+    overflow-y: auto; /* Permite scroll en el contenedor principal */
+    height: 100vh; /* Altura completa de la ventana */
+}
+
+.nav-pills li {
+    margin: 3px 0;
+}
+.nav-pills {
+    padding-right: 8px
+}
+.nav-pills::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+.nav-pills::-webkit-scrollbar:vertical {
+    width: 5px;
+}
+
+.nav-pills::-webkit-scrollbar-button:increment,.contenedor::-webkit-scrollbar-button {
+    display: none;
+} 
+
+.nav-pills::-webkit-scrollbar:horizontal {
+    height: 10px;
+}
+
+.nav-pills::-webkit-scrollbar-thumb {
+    background-color: #ffffff;
+    border-radius: 20px;
+}
+
+.nav-pills::-webkit-scrollbar-track {
+    border-radius: 10px;  
 }

@@ -3,17 +3,25 @@
 @section('content')
 <style>
     .inactive-sort {
-        color: #0F1739;
+        color: #ffffff;
         text-decoration: none;
     }
     .active-sort {
-        color: #757191;
+        color: #ffa3fa;
+        font-weight: bold;
+        text-decoration: none;
     }
 </style>
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Nuestros Clientes') }}</h2>
-    <a href="{{route('clientes.create')}}" class="btn bg-color-quinto">Crear cliente</a>
-    <hr class="mb-5">
+    <div class="d-flex flex-colum mb-3">
+        <h2 class="mb-0 me-3 encabezado_top">{{ __('Nuestros Clientes') }}</h2>
+        <a href="{{route('clientes.create')}}" class="btn bg-color-sexto text-uppercase">
+            <i class="fa-solid fa-plus me-2"></i>
+            Crear cliente
+        </a>
+
+    </div>
+    <hr class="mb-3">
     <div class="row justify-content-center">
 
         <div class="col-md-12">
@@ -22,18 +30,20 @@
                     {{ session('status') }}
                 </div>
             @endif
+            <h6 class="text-uppercase"><i class="fa-solid fa-filter me-1"></i> Filtros</h6>
             <!-- Formulario de búsqueda -->
-            <form action="{{ route('clientes.index') }}" method="GET" class="mb-4">
-                <div class="input-group mb-5">
-                    <input type="text" class="form-control" name="search" placeholder="Buscar cliente" value="{{ request()->get('search') }}">
+            <form action="{{ route('clientes.index') }}" method="GET" class="mb-3" id="search_form">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Buscar cliente" value="{{ request()->get('search') }}">
+                    <button type="button" onclick="limpiar()" class="btn bg-color-segundo">Eliminar filtros</button>
                     <button type="submit" class="btn bg-color-primero">Buscar</button>
                 </div>
             </form>
 
             <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">
+                <thead >
+                    <tr class="bg-color-primero-table">
+                        {{-- <th scope="col">
                             <a href="{{ route('clientes.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
                                 ID
@@ -41,7 +51,7 @@
                                     <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
                                 @endif
                             </a>
-                        </th>
+                        </th> --}}
                         <th scope="col">
                             <a href="{{ route('clientes.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'nombre' ? 'active-sort' : 'inactive-sort' }}">
@@ -53,15 +63,15 @@
                         </th>
                         <th scope="col" class="inactive-sort">Apellidos</th>
                         <th scope="col">
-                            <a href="{{ route('clientes.index', ['sort' => 'idiomas', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'idiomas' ? 'active-sort' : 'inactive-sort' }}">
+                            <a href="{{ route('clientes.index', ['sort' => 'idioma', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                               class="{{ request('sort') == 'idioma' ? 'active-sort' : 'inactive-sort' }}">
                                 Idioma
-                                @if (request('sort') == 'idiomas')
+                                @if (request('sort') == 'idioma')
                                     <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
                                 @endif
                             </a>
                         </th>
-                        <th scope="col" class="inactive-sort">DNI</th>
+                        {{-- <th scope="col" class="inactive-sort">DNI</th> --}}
                         <th scope="col" class="inactive-sort" style="width: 200px;">Acción</th>
                     </tr>
                 </thead>
@@ -70,13 +80,13 @@
                 <tbody>
                     @foreach ($clientes as $cliente)
                         <tr>
-                            <th scope="row">{{$cliente->id}}</th>
-                            <td>{{$cliente->alias != null ? $cliente->alias : $cliente->nombre}}</td>
+                            {{-- <th scope="row">{{$cliente->id}}</th> --}}
+                            <td scope="row">{{$cliente->alias != null ? $cliente->alias : $cliente->nombre}}</td>
                             <td>{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
-                            <td>{{$cliente->idiomas}}</td>
-                            <td>{{$cliente->tipo_documento_str}}</td>
+                            <td>{{$cliente->idioma}}</td>
+                            {{-- <td>{{$cliente->num_identificacion}}</td> --}}
                             <td style="width:auto;">
-                                <a href="{{route('clientes.edit', $cliente->id)}}" class="btn btn-secundario">Editar</a>
+                                <a href="{{route('clientes.edit', $cliente->id)}}" class="btn bg-color-quinto">Editar</a>
                                 <form action="{{ route('clientes.destroy', $cliente->id) }}" method="POST" style="display: inline;" class="delete-form">
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
@@ -95,7 +105,7 @@
 </div>
 @endsection
 
-@include('sweetalert::alert')
+{{-- @include('sweetalert::alert') --}}
 
 @section('scripts')
 <script>
@@ -128,7 +138,14 @@
                 });
             });
         });
+        
     });
+    function limpiar() {
+            document.getElementById("search").value = "";
+            const form = document.getElementById("search_form");
+            form.submit();
+
+        }
 </script>
 @endsection
 
