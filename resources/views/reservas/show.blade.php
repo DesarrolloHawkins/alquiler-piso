@@ -1,6 +1,11 @@
 @extends('layouts.appAdmin')
 
 @section('content')
+<!-- Incluir el CSS de Lightbox2 -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+
+<!-- Incluir el JavaScript de Lightbox2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
@@ -113,17 +118,22 @@
                             <hr>
                             <div class="row">
                                 <div class="col-6">
-                                    <img src="{{asset($photos[0]->url)}}" alt="" style="width: 100%">
+                                    <a href="{{ asset($photos[0]->url) }}" data-lightbox="dni-gallery">
+                                        <img src="{{ asset($photos[0]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                    </a>
                                 </div>
                                 <div class="col-6">
-                                    <img src="{{asset($photos[1]->url)}}" alt="" style="width: 100%">
+                                    <a href="{{ asset($photos[1]->url) }}" data-lightbox="dni-gallery">
+                                        <img src="{{ asset($photos[1]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                    </a>
                                 </div>
                             </div>
                         @elseif (count($photos) == 1)
                             <h4><i class="fa-regular fa-address-card"></i> Pasaporte</h4>
                             <hr>
-
-                            <img src="{{asset($photos[0]->url)}}" alt="" style="width: 100%">
+                            <a href="{{ asset($photos[0]->url) }}" data-lightbox="passport">
+                                <img src="{{ asset($photos[0]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                            </a>
                         @else
                             <h4><i class="fa-regular fa-address-card"></i> DNI o Pasaporte</h4>
                             <hr>
@@ -131,6 +141,7 @@
                         @endif
                     </div>
                 </div>
+                
         </div>
     </div>
 </div>
