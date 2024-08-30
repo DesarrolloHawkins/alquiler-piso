@@ -1,11 +1,12 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<!-- Incluir el CSS de Lightbox2 desde un CDN confiable -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
+<!-- Fancybox CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4.0.27/dist/fancybox.min.css">
 
-<!-- Incluir el JavaScript de Lightbox2 desde un CDN confiable -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+<!-- Fancybox JS -->
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4.0.27/dist/fancybox.umd.js"></script>
+
 
 
 <div class="container-fluid">
@@ -119,21 +120,21 @@
                             <hr>
                             <div class="row">
                                 <div class="col-6">
-                                    <a href="{{ asset($photos[0]->url) }}" data-lightbox="dni-gallery">
-                                        <img src="{{ asset($photos[0]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                    <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="DNI Frente">
+                                        <img src="{{ asset($photos[0]->url) }}" alt="DNI Frente" style="object-fit: cover; max-height: 200px; width: 100%;">
                                     </a>
                                 </div>
                                 <div class="col-6">
-                                    <a href="{{ asset($photos[1]->url) }}" data-lightbox="dni-gallery">
-                                        <img src="{{ asset($photos[1]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                                    <a href="{{ asset($photos[1]->url) }}" data-fancybox="gallery" data-caption="DNI Reverso">
+                                        <img src="{{ asset($photos[1]->url) }}" alt="DNI Reverso" style="object-fit: cover; max-height: 200px; width: 100%;">
                                     </a>
                                 </div>
                             </div>
                         @elseif (count($photos) == 1)
                             <h4><i class="fa-regular fa-address-card"></i> Pasaporte</h4>
                             <hr>
-                            <a href="{{ asset($photos[0]->url) }}" data-lightbox="passport">
-                                <img src="{{ asset($photos[0]->url) }}" alt="" style="object-fit: cover; max-height: 200px; width: 100%;">
+                            <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="Pasaporte">
+                                <img src="{{ asset($photos[0]->url) }}" alt="Pasaporte" style="object-fit: cover; max-height: 200px; width: 100%;">
                             </a>
                         @else
                             <h4><i class="fa-regular fa-address-card"></i> DNI o Pasaporte</h4>
@@ -142,6 +143,7 @@
                         @endif
                     </div>
                 </div>
+                
                 
         </div>
     </div>
