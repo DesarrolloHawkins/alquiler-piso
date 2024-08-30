@@ -24,8 +24,13 @@ class ReservasController extends Controller
     $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
     $searchTerm = $request->get('search', '');
 
-    // Obtener las fechas del request o establecerlas a la fecha actual si no están presentes
-    $fechaEntrada = $request->get('fecha_entrada', date('Y-m-d'));
+    // Verificar si la fecha de entrada está presente en la solicitud
+    $fechaEntrada = $request->get('fecha_entrada');
+    if (empty($fechaEntrada)) {
+        $fechaEntrada = date('Y-m-d'); // Establecer la fecha actual
+        $request->merge(['fecha_entrada' => $fechaEntrada]); // Añadir a la request
+    }
+
     $fechaSalida = $request->get('fecha_salida', date('Y-m-d'));
 
     $query = Reserva::with('cliente')
@@ -43,11 +48,12 @@ class ReservasController extends Controller
         });
     }
 
-    // Filtrar por fechas de entrada y salida solo si se proporcionan
+    // Filtrar por fecha de entrada
     if (!empty($fechaEntrada)) {
         $query->whereDate('fecha_entrada', '=', $fechaEntrada);
     }
 
+    // Filtrar por fecha de salida
     if (!empty($fechaSalida)) {
         $query->whereDate('fecha_salida', '=', $fechaSalida);
     }
@@ -64,6 +70,7 @@ class ReservasController extends Controller
 
     return view('reservas.index', compact('reservas'));
 }
+
 
 
     
