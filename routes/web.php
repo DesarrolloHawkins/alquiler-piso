@@ -222,6 +222,14 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/items_checklist/{id}/edit', [App\Http\Controllers\ItemChecklistController::class, 'edit'])->name('admin.itemsChecklist.edit');
     Route::post('/items_checklist/{id}/update', [App\Http\Controllers\ItemChecklistController::class, 'update'])->name('admin.itemsChecklist.update');
     Route::post('/items_checklist/{id}/destroy', [App\Http\Controllers\ItemChecklistController::class, 'destroy'])->name('admin.itemsChecklist.destroy');
+    
+    // Proveedores
+    Route::get('/proveedores', [App\Http\Controllers\ProveedoresController::class, 'index'])->name('admin.proveedores.index');
+    Route::get('/proveedores/create', [App\Http\Controllers\ProveedoresController::class, 'create'])->name('admin.proveedores.create');
+    Route::post('/proveedores/store', [App\Http\Controllers\ProveedoresController::class, 'store'])->name('admin.proveedores.store');
+    Route::get('/proveedores/{id}/edit', [App\Http\Controllers\ProveedoresController::class, 'edit'])->name('admin.proveedores.edit');
+    Route::post('/proveedores/{id}/update', [App\Http\Controllers\ProveedoresController::class, 'update'])->name('admin.proveedores.update');
+    Route::post('/proveedores/{id}/destroy', [App\Http\Controllers\ProveedoresController::class, 'destroy'])->name('admin.proveedores.destroy');
 });
 
 // Rutas de usuarios logueados

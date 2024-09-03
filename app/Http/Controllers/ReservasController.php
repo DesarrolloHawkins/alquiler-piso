@@ -43,12 +43,13 @@ class ReservasController extends Controller
         });
     }
 
-    // Filtrar solo por fecha de entrada si se proporciona o usar la fecha de hoy por defecto
-    $query->whereDate('fecha_entrada', '=', $fechaEntrada);
-
     // Filtrar por fecha de salida solo si se proporciona en la request
     if (!empty($fechaSalida)) {
         $query->whereDate('fecha_salida', '=', $fechaSalida);
+
+    }else {
+        // Filtrar solo por fecha de entrada si se proporciona o usar la fecha de hoy por defecto
+        $query->whereDate('fecha_entrada', '=', $fechaEntrada);
     }
 
     // Utiliza el valor de $perPage en la función paginate()
@@ -63,12 +64,6 @@ class ReservasController extends Controller
 
     return view('reservas.index', compact('reservas'));
 }
-    
-
-
-
-    
-
 
     /**
      * Display a listing of the resource.
