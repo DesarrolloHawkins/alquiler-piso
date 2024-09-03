@@ -21,15 +21,14 @@ class ReservasController extends Controller
 {
     $orderBy = $request->get('order_by', 'fecha_entrada');
     $direction = $request->get('direction', 'asc');
-    $perPage = $request->get('perPage', 10); // Valor por defecto de 10 si no se especifica
+    $perPage = $request->get('perPage', 10);
     $searchTerm = $request->get('search', '');
 
-    // Obtener las fechas del request o establecer fecha de hoy si no se proporciona fecha_entrada
-    $fechaEntrada = $request->get('fecha_entrada', Carbon::today()->format('Y-m-d'));
+    // Obtener fechas del request, usando null como predeterminado si no se especifican
+    $fechaEntrada = $request->get('fecha_entrada');
     $fechaSalida = $request->get('fecha_salida');
 
-    $query = Reserva::with('cliente')
-                    ->where('estado_id', '!=', 4); // Filtra las reservas para excluir las canceladas
+    $query = Reserva::with('cliente')->where('estado_id', '!=', 4);
 
     if (!empty($searchTerm)) {
         $query->where(function($subQuery) use ($searchTerm) {
@@ -43,27 +42,26 @@ class ReservasController extends Controller
         });
     }
 
-    // Filtrar por fecha de salida solo si se proporciona en la request
-    if (!empty($fechaSalida)) {
-        $query->whereDate('fecha_salida', '=', $fechaSalida);
-
-    }else {
-        // Filtrar solo por fecha de entrada si se proporciona o usar la fecha de hoy por defecto
+    // Aplicar filtros de fechas solo si se proporcionan
+    if (!empty($fechaEntrada)) {
         $query->whereDate('fecha_entrada', '=', $fechaEntrada);
     }
+    if (!empty($fechaSalida)) {
+        $query->whereDate('fecha_salida', '=', $fechaSalida);
+    }
 
-    // Utiliza el valor de $perPage en la función paginate()
     $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
         'order_by' => $orderBy,
         'direction' => $direction,
         'search' => $searchTerm,
-        'perPage' => $perPage, // Asegúrate de adjuntar 'perPage' para mantenerlo durante la paginación
+        'perPage' => $perPage,
         'fecha_entrada' => $fechaEntrada,
         'fecha_salida' => $fechaSalida,
     ]);
 
     return view('reservas.index', compact('reservas'));
 }
+
 
     /**
      * Display a listing of the resource.
