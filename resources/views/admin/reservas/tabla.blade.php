@@ -29,7 +29,7 @@
 </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.5/fullcalendar.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar-resource-timeline/6.1.5/resourceTimeline.min.css" />
-  @vite(['resources/js/calendar.js'])
+  {{-- @vite(['resources/js/calendar.js']) --}}
   <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Verificar si SweetAlert2 está definido
