@@ -77,14 +77,14 @@
                                         Reservas
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('reservas*', 'reservas') ? 'show' : '' }}" id="submenuReservas">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('reservas*', 'reservas','tabla-reservas', 'tabla-reservas/*') ? 'show' : '' }}" id="submenuReservas">
                                         <li class="nav-item">
                                             <a href="{{ route('reservas.index') }}" class="nav-link fs-6 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}">
                                                 Ver Reservas
                                             </a>
                                         </li>
                                         <li class="nav-item">
-                                            <a href="{{ route('admin.grupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('grupo-contable', 'grupo-contable/*') ? 'active' : '' }}">
+                                            <a href="{{ route('admin.tablaReservas.index') }}" class="nav-link fs-6 {{ request()->is('tabla-reservas', 'tabla-reservas/*') ? 'active' : '' }}">
                                                 Tabla de Reservas
                                             </a>
                                         </li>
