@@ -55,7 +55,7 @@
                         {{-- {{var_dump($itemReserva)}} --}}
                         <td class="bg-warning">{{ $day }}</td>
                       @else
-                        <td>{{ $day }}</td>
+                        {{-- <td>{{ $day }}</td> --}}
                       @endif
                     @endforeach
                   @else
