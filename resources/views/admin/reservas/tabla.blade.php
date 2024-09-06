@@ -44,24 +44,23 @@
           </thead>
           <tbody>
             @foreach ($apartamentos as $apartmento)
-            <tr>
-              <td>
-                {{ $apartmento->titulo }}
-              </td>
-              @for ($day = 1; $day <= $daysInMonth; $day++)
-                @if (count($apartmento->reservas) > 0 )
-                  @foreach ( $apartmento->reservas as $itemReserva)
-                  @if ($itemReserva->fecha_entrada->day == $day)
+              <tr>
+                <td>
+                  {{ $apartmento->titulo }}
+                </td>
+                @for ($day = 1; $day <= $daysInMonth; $day++)
+                  @if (count($apartmento->reservas) > 0 )
+                    @foreach ( $apartmento->reservas as $itemReserva)
+                      @if ($itemReserva->fecha_entrada->day == $day)
                         {{-- {{var_dump($itemReserva)}} --}}
                         <td>{{ $day }}</td>
-                  @else
-                    <td></td>
+                      @else
+                        <td></td>
+                      @endif
+                    @endforeach
                   @endif
-                  @endforeach
-                @endif
-              @endfor
-
-            </tr>
+                @endfor
+              </tr>
             @endforeach
           </tbody>
       </table>
