@@ -54,7 +54,49 @@
                           @foreach ($apartamento->reservas as $itemReserva)
                               @if ($itemReserva->fecha_entrada->day == $day)
                                   <td class="bg-warning">
-                                      {{ $itemReserva->cliente->nombre }} 
+                                      {{-- {{ $itemReserva->cli<table>
+    <thead>
+        <tr>
+            <th>Apartamentos</th>
+            @for ($day = 1; $day <= $daysInMonth; $day++)
+                <th>{{ $day }}</th>
+            @endfor
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($apartamentos as $apartamento)
+            <tr>
+                <td>{{ $apartamento->titulo }}</td>
+                
+                @for ($day = 1; $day <= $daysInMonth; $day++)
+                    @php
+                        $found = false;
+                    @endphp
+                    
+                    {{-- Buscar si hay una reserva que coincida con este día --}}
+                    @foreach ($apartamento->reservas as $itemReserva)
+                        @if ($itemReserva->fecha_entrada->day == $day)
+                            <td class="bg-warning">
+                                {{-- {{ $itemReserva->cliente->nombre }}  --}}
+                                ({{ $itemReserva->fecha_entrada->format('d/m') }})
+                            </td>
+                            @php
+                                $found = true;
+                            @endphp
+                            @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
+                        @endif
+                    @endforeach
+
+                    {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
+                    @if (!$found)
+                        <td></td>
+                    @endif
+                @endfor
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+ente->nombre }}  --}}
                                       ({{ $itemReserva->fecha_entrada->format('d/m') }})
                                   </td>
                                   @php
