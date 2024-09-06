@@ -30,6 +30,7 @@ class TablaReservasController extends Controller
 
             foreach ($reservas as $reserva) {
                 $reserva->fecha_entrada = Carbon::parse($reserva->fecha_entrada);
+                $reserva->fecha_salida = Carbon::parse($reserva->fecha_salida);
 
                 // if (!$reserva->fecha_entrada instanceof Carbon) {
                 //     $reserva->fecha_entrada = Carbon::parse($reserva->fecha_entrada);

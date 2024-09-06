@@ -1,6 +1,7 @@
 @extends('layouts.appAdmin')
 
 @section('content')
+
 <style>
     .inactive-sort {
         color: #0F1739;
@@ -28,10 +29,10 @@
         <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->subMonth()->format('Y-m')]) }}" class="nav-link">Mes Anterior</a>
         <h1>Calendario de Reservas para {{ $monthName  }}</h1>
         <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->addMonth()->format('Y-m')]) }}" class="nav-link">Mes Siguiente</a>
-    </div>
+      </div>
       @if ($apartamentos)
         {{-- <div id="calendar"></div> --}}
-        <table>
+        <table class="table table-bordered">
           <thead>
               <tr>
                   <th>Apartamentos</th>
@@ -53,9 +54,11 @@
                           {{-- Buscar si hay una reserva que coincida con este día --}}
                           @foreach ($apartamento->reservas as $itemReserva)
                               @if ($itemReserva->fecha_entrada->day == $day)
-                                  <td class="bg-warning">
-                                      {{-- {{ $itemReserva->cliente->nombre }}  --}}
+                                  <td>
+
+                                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
                                       ({{ $itemReserva->fecha_entrada->format('d/m') }})
+                                    </button>
                                   </td>
                                   @php
                                       $found = true;
@@ -72,28 +75,39 @@
                   </tr>
               @endforeach
           </tbody>
-      </table>
+        </table>
       
-      
+        @foreach ($apartamentos as $apartamento)
+            @foreach ($apartamento->reservas as $itemReserva)
+              <!-- Modal -->
+              <div class="modal fade" id="modalReserva{{ $itemReserva->id }}" tabindex="-1" aria-labelledby="modalReserva{{ $itemReserva->id }}"      aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="modalLabel{{ $itemReserva->id }}">Detalles de la Reserva</h5>
+                      <button type="button" class="close btn" data-bs-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p><strong>Cliente:</strong> {{ $itemReserva->cliente->nombre }}</p>
+                      <p><strong>Fecha de Entrada:</strong> {{ $itemReserva->fecha_entrada->format('d/m/Y') }}</p>
+                      <p><strong>Fecha de Salida:</strong> {{ $itemReserva->fecha_salida->format('d/m/Y') }}</p>
+                      <p><strong>Detalles adicionales:</strong> {{ $itemReserva->detalles }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+        @endforeach
       @endif
     </div>
 </div>
 @endsection
 
 @section('scripts')
-<script>
-  window.apartamentos = @json($apartamentos);
-</script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.5/fullcalendar.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar-resource-timeline/6.1.5/resourceTimeline.min.css" />
-  {{-- @vite(['resources/js/calendar.js']) --}}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Verificar si SweetAlert2 está definido
-        if (typeof Swal === 'undefined') {
-            console.error('SweetAlert2 is not loaded');
-            return;
-        }
-    });
-  </script>
+
 @endsection
