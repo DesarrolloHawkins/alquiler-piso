@@ -17,7 +17,6 @@
   th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
   th { background-color: #f2f2f2; }
   .header { background-color: #4CAF50; color: white; padding: 10px; }
-  /* .nav-link { color: white; text-decoration: none; padding: 5px 10px; background-color: #4CAF50; border-radius: 5px; } */
 </style>
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
@@ -27,11 +26,10 @@
     <div class="row justify-content-center">
       <div class="header">
         <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->subMonth()->format('Y-m')]) }}" class="nav-link">Mes Anterior</a>
-        <h1>Calendario de Reservas para {{ $monthName  }}</h1>
+        <h1>Calendario de Reservas para {{ $monthName }}</h1>
         <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->addMonth()->format('Y-m')]) }}" class="nav-link">Mes Siguiente</a>
       </div>
       @if ($apartamentos)
-        {{-- <div id="calendar"></div> --}}
         <table class="table table-bordered">
           <thead>
               <tr>
@@ -54,11 +52,23 @@
                           {{-- Buscar si hay una reserva que coincida con este día --}}
                           @foreach ($apartamento->reservas as $itemReserva)
                               @if ($itemReserva->fecha_entrada->day == $day)
-                                  <td>
+                                  @php
+                                      // Comparar la fecha con la fecha de hoy
+                                      $fechaHoy = \Carbon\Carbon::now();
+                                      $claseBoton = '';
 
-                                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                      ({{ $itemReserva->fecha_entrada->format('d/m') }})
-                                    </button>
+                                      if ($itemReserva->fecha_entrada->isPast()) {
+                                          $claseBoton = 'btn-warning'; // Pasado
+                                      } elseif ($itemReserva->fecha_entrada->isToday()) {
+                                          $claseBoton = 'btn-success'; // Hoy
+                                      } else {
+                                          $claseBoton = 'btn-info'; // Futuro
+                                      }
+                                  @endphp
+                                  <td class="p-0">
+                                      <button type="button" class="rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                          ({{ $itemReserva->fecha_entrada->format('d/m') }})
+                                      </button>
                                   </td>
                                   @php
                                       $found = true;
@@ -80,14 +90,12 @@
         @foreach ($apartamentos as $apartamento)
             @foreach ($apartamento->reservas as $itemReserva)
               <!-- Modal -->
-              <div class="modal fade" id="modalReserva{{ $itemReserva->id }}" tabindex="-1" aria-labelledby="modalReserva{{ $itemReserva->id }}"      aria-hidden="true">
+              <div class="modal fade" id="modalReserva{{ $itemReserva->id }}" tabindex="-1" aria-labelledby="modalReserva{{ $itemReserva->id }}" aria-hidden="true">
                 <div class="modal-dialog">
                   <div class="modal-content">
                     <div class="modal-header">
                       <h5 class="modal-title" id="modalLabel{{ $itemReserva->id }}">Detalles de la Reserva</h5>
-                      <button type="button" class="close btn" data-bs-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                      </button>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                       <p><strong>Cliente:</strong> {{ $itemReserva->cliente->nombre }}</p>
@@ -106,8 +114,4 @@
       @endif
     </div>
 </div>
-@endsection
-
-@section('scripts')
-
 @endsection
