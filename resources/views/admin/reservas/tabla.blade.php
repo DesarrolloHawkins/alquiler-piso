@@ -93,7 +93,7 @@
 
                                         {{-- Renderizar la celda con colspan --}}
                                         <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }}">
-                                            <button type="button" class="rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                            <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
                                                 ({{ $itemReserva->fecha_entrada->format('d') }} - {{ $itemReserva->fecha_salida->format('d') }})
                                             </button>
                                         </td>
