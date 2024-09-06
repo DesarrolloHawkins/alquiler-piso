@@ -144,10 +144,50 @@ class ReservasController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        // Buscar la reserva por su ID
+        $reserva = Reserva::find($id);
+        
+        // Validar que la reserva existe
+        if (!$reserva) {
+            return response()->json(['success' => false, 'message' => 'Reserva no encontrada'], 404);
+        }
+        
+        // Intentar parsear la nueva fecha
+        try {
+            $newDate = Carbon::createFromFormat('Y-m-d', $request->new_date);
+        } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+            return response()->json(['success' => false, 'message' => 'Formato de fecha inválido'], 400);
+        }
+    
+        // Revisar si estamos actualizando la fecha de entrada o de salida
+        if ($request->drag_type == 'start') {
+            // Actualizar la fecha de entrada (se puede sumar o restar días)
+            // Asegúrate de que la nueva fecha de entrada no sea posterior a la fecha de salida
+            if ($newDate->lessThanOrEqualTo($reserva->fecha_salida)) {
+                $reserva->fecha_entrada = $newDate;
+            } else {
+                return response()->json(['success' => false, 'message' => 'La fecha de entrada no puede ser posterior a la fecha de salida'], 400);
+            }
+        } elseif ($request->drag_type == 'end') {
+            // Actualizar la fecha de salida (se puede sumar o restar días)
+            // Asegúrate de que la nueva fecha de salida no sea anterior a la fecha de entrada
+            if ($newDate->greaterThanOrEqualTo($reserva->fecha_entrada)) {
+                $reserva->fecha_salida = $newDate;
+            } else {
+                return response()->json(['success' => false, 'message' => 'La fecha de salida no puede ser anterior a la fecha de entrada'], 400);
+            }
+        }
+    
+        // Guardar los cambios en la base de datos
+        $reserva->save();
+    
+        // Devolver una respuesta JSON indicando éxito
+        return response()->json(['success' => true, 'message' => 'Reserva actualizada correctamente']);
     }
+    
+
 
     /**
      * Remove the specified resource from storage.

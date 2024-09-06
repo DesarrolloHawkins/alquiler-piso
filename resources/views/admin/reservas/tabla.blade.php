@@ -14,14 +14,38 @@
     table { width: 100%; border-collapse: collapse; white-space: nowrap; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
-    .header { background-color: #0f1739; color: white; padding: 20px 10px; margin-bottom: 1rem }
+    .header { background-color: #0f1739; color: white; padding: 20px 20px; margin-bottom: 1rem }
     .fondo_verde {
       background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
     }
-    /* Evitar salto de línea en la columna de apartamentos */
+    /* Hacer sticky la primera columna (Apartamentos) */
     .apartments-column {
         white-space: nowrap;
         width: auto;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        background-color: white;
+    }
+
+    /* Drag handles for resizing */
+    .drag-right, .drag-left {
+        width: 10px;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        cursor: ew-resize;
+        z-index: 5;
+    }
+
+    .drag-right {
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .drag-left {
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.1);
     }
 
     /* Establecer el scroll horizontal */
@@ -92,10 +116,19 @@
                                         @endphp
 
                                         {{-- Renderizar la celda con colspan --}}
-                                        <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }}">
-                                            <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                                ({{ $itemReserva->fecha_entrada->format('d') }} - {{ $itemReserva->fecha_salida->format('d') }})
-                                            </button>
+                                        <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
+                                            <div class="w-100 d-flex justify-content-between align-items-center">
+                                                {{-- Botón con detalles de la reserva --}}
+                                                <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                                    ({{ $itemReserva->fecha_entrada->format('d') }} - {{ $itemReserva->fecha_salida->format('d') }})
+                                                </button>
+
+                                                {{-- Drag handle para modificar la fecha de salida (lado derecho) --}}
+                                                <div class="drag-right" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'end')"></div>
+                                                
+                                                {{-- Drag handle para modificar la fecha de entrada (lado izquierdo) --}}
+                                                <div class="drag-left" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'start')"></div>
+                                            </div>
                                         </td>
 
                                         {{-- Saltar los días que ya están cubiertos por el colspan --}}
@@ -107,9 +140,9 @@
                                     @endif
                                 @endforeach
                             
-                                {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
+                                {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
                                 @if (!$found)
-                                    <td data-apartamento="{{$apartamento->id}}" data-dia="{{$day}}" class="{{ $claseDiaHoy }}"></td>
+                                    <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
                                 @endif
                             @endfor
                         </tr>
@@ -117,10 +150,46 @@
                 </tbody>
             </table>
         </div>
-        
+
+        {{-- Modal para crear nueva reserva --}}
+        <div class="modal fade" id="modalCrearReserva" tabindex="-1" aria-labelledby="modalCrearReservaLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCrearReservaLabel">Crear Nueva Reserva</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCrearReserva" method="POST" action="{{ route('reservas.store') }}">
+                            @csrf
+                            <input type="hidden" id="apartamentoId" name="apartamento_id" value="">
+                            <input type="hidden" id="fechaReserva" name="fecha_reserva" value="">
+
+                            <div class="mb-3">
+                                <label for="cliente" class="form-label">Cliente</label>
+                                <input type="text" class="form-control" id="cliente" name="cliente" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="fecha_entrada" class="form-label">Fecha de Entrada</label>
+                                <input type="date" class="form-control" id="fecha_entrada" name="fecha_entrada" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="fecha_salida" class="form-label">Fecha de Salida</label>
+                                <input type="date" class="form-control" id="fecha_salida" name="fecha_salida" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Crear Reserva</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @foreach ($apartamentos as $apartamento)
             @foreach ($apartamento->reservas as $itemReserva)
-              <!-- Modal -->
+              <!-- Modal para visualizar reserva existente -->
               <div class="modal fade" id="modalReserva{{ $itemReserva->id }}" tabindex="-1" aria-labelledby="modalReserva{{ $itemReserva->id }}" aria-hidden="true">
                 <div class="modal-dialog">
                   <div class="modal-content">
@@ -145,4 +214,92 @@
       @endif
     </div>
 </div>
+<script>
+  let dragType = '';  // Para saber si estamos ajustando la fecha de entrada o de salida
+let reservaId = ''; // Para saber qué reserva estamos ajustando
+let dragging = false; // Variable para saber si estamos arrastrando
+
+// Función que se ejecuta cuando comenzamos a arrastrar
+function startDrag(event, type) {
+    event.dataTransfer.effectAllowed = 'move';
+    dragType = type;  // Puede ser 'start' para fecha de entrada o 'end' para fecha de salida
+    reservaId = event.target.getAttribute('data-reserva-id');
+    dragging = true; // Estamos arrastrando
+}
+
+// Función para soltar el arrastre
+document.addEventListener('drop', function(event) {
+    event.preventDefault();
+    if (!dragging) return; // Verificamos si estamos arrastrando
+
+    // Obtener el nuevo día de la reserva basado en la celda en la que se soltó el elemento
+    let targetCell = event.target.closest('td');
+    let newDay = targetCell ? targetCell.getAttribute('data-dia') : null;
+    if (!newDay || !reservaId) return;
+
+    // Generar la fecha completa con año y mes
+    const year = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->year }};
+    const month = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->month }};
+    const fechaCompleta = `${year}-${String(month).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`;
+
+    // Debug: Verificar la fecha antes de enviar
+    console.log("Nueva fecha: ", fechaCompleta, "Reserva ID: ", reservaId, "Drag Type: ", dragType);
+
+    // Hacer una llamada AJAX para actualizar la fecha de la reserva
+    let url = `/reservas/update/${reservaId}`;
+    let data = {
+        '_token': '{{ csrf_token() }}',
+        'reserva_id': reservaId,
+        'new_date': fechaCompleta,  // Enviar la fecha completa (año-mes-día)
+        'drag_type': dragType  // 'start' para cambiar la fecha de entrada, 'end' para cambiar la fecha de salida
+    };
+
+    // Realizamos la solicitud AJAX para actualizar la fecha
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recargar la página para reflejar los cambios
+            location.reload();
+        } else {
+            alert('Error al actualizar la reserva: ' + data.message);
+        }
+    });
+    dragging = false; // Reiniciar la variable de arrastre
+});
+
+// Evitar el comportamiento por defecto en el dragover
+document.addEventListener('dragover', function(event) {
+    event.preventDefault();
+});
+
+
+
+</script>
+<script>
+    
+
+
+    // Función para abrir el modal de crear reserva con los datos de apartamento y día
+    function openCrearReservaModal(apartamentoId, dia) {
+        const year = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->year }};
+        const month = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->month }};
+        
+        // Generar la fecha completa
+        const fechaCompleta = `${year}-${String(month).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        
+        // Setear los valores en los inputs ocultos del formulario
+        document.getElementById('apartamentoId').value = apartamentoId;
+        document.getElementById('fechaReserva').value = fechaCompleta;
+        document.getElementById('fecha_entrada').value = fechaCompleta;
+
+        // Abrir el modal
+        $('#modalCrearReserva').modal('show');
+    }
+</script>
+
 @endsection
