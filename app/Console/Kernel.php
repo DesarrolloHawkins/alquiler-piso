@@ -56,15 +56,15 @@ class Kernel extends ConsoleKernel
             foreach($reservasEntrada as $reserva){
                 $resultado = $clienteService->getIdiomaClienteID($reserva->cliente_id);
             }
-            $code = $this->codigoApartamento(15);
-            if ($reserva->apartamento_id > 7) {
-                $codigoPuertaPrincipal = '7589#';
-                # code...
-            }else {
-            }
-            $codigoPuertaPrincipal = '8642#';
-           $mensaje = $this->clavesEmail('es', 'david', $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],"Hawkins Costa");
-           $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
+        //     $code = $this->codigoApartamento(15);
+        //     if ($reserva->apartamento_id > 7) {
+        //         $codigoPuertaPrincipal = '7589#';
+        //         # code...
+        //     }else {
+        //     }
+        //     $codigoPuertaPrincipal = '8642#';
+        //    $mensaje = $this->clavesEmail('es', 'david', $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],"Hawkins Costa");
+        //    $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
