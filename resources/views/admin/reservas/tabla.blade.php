@@ -15,7 +15,9 @@
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
     .header { background-color: #4CAF50; color: white; padding: 10px; }
-
+    .fondo_verde {
+      background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
+    }
     /* Evitar salto de línea en la columna de apartamentos */
     .apartments-column {
         white-space: nowrap;
@@ -48,7 +50,11 @@
                     <tr>
                         <th class="apartments-column">Apartamentos</th>
                         @for ($day = 1; $day <= $daysInMonth; $day++)
-                            <th>{{ $day }}</th>
+                            @php
+                                $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
+                                $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Agregar la clase si es el día de hoy
+                            @endphp
+                            <th class="{{ $claseDiaHoy }}">{{ $day }}</th> <!-- Encabezado del día -->
                         @endfor
                     </tr>
                 </thead>
@@ -60,21 +66,18 @@
                             @for ($day = 1; $day <= $daysInMonth; $day++)
                                 @php
                                     $found = false;
+                                    $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
                                 @endphp
                             
                                 {{-- Buscar si hay una reserva que coincida con este día --}}
                                 @foreach ($apartamento->reservas as $itemReserva)
                                     @if ($itemReserva->fecha_entrada->day == $day)
                                         @php
-                                            // Comparar la fecha con la fecha de hoy
-                                            $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
-                            
-                                            // Obtener la fecha del día de la reserva en el mismo formato
+                                            // Obtener la fecha de la reserva en formato Carbon
                                             $fechaReserva = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
                             
+                                            // Definir el color del botón según la fecha de reserva
                                             $claseBoton = '';
-                            
-                                            // Comparar si la fecha de entrada de la reserva es pasada, hoy o futura
                                             if ($fechaReserva->isPast() && !$fechaReserva->isToday()) {
                                                 $claseBoton = 'btn-warning'; // Pasado
                                             } elseif ($fechaReserva->isToday()) {
@@ -83,7 +86,7 @@
                                                 $claseBoton = 'btn-info'; // Futuro
                                             }
                                         @endphp
-                                        <td>
+                                        <td class="p-0 {{ $claseDiaHoy }}">
                                             <button type="button" class="rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
                                                 ({{ $itemReserva->fecha_entrada->format('d') }})
                                             </button>
@@ -97,7 +100,7 @@
                             
                                 {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
                                 @if (!$found)
-                                    <td></td>
+                                    <td class="{{ $claseDiaHoy }}"></td>
                                 @endif
                             @endfor
                         </tr>
