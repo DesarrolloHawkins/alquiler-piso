@@ -58,6 +58,8 @@
                         <td>-</td>
                       @endif
                     @endforeach
+                  @else
+                  <td>-</td>
                   @endif
                 @endfor
               </tr>
