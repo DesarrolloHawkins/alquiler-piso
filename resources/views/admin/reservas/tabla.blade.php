@@ -53,13 +53,13 @@
                     @foreach ( $apartmento->reservas as $itemReserva)
                       @if ($itemReserva->fecha_entrada->day == $day)
                         {{-- {{var_dump($itemReserva)}} --}}
-                        <td>{{ $day }}</td>
+                        <td class="bg-warning">{{ $day }}</td>
                       @else
-                        <td>-</td>
+                        <td>{{ $day }}</td>
                       @endif
                     @endforeach
                   @else
-                  <td>-</td>
+                  <td>{{ $day }}</td>
                   @endif
                 @endfor
               </tr>
