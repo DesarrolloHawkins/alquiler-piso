@@ -14,7 +14,7 @@
     table { width: 100%; border-collapse: collapse; white-space: nowrap; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
-    .header { background-color: #4CAF50; color: white; padding: 10px; }
+    .header { background-color: #0f1739; color: white; padding: 20px 10px; margin-bottom: 1rem }
     .fondo_verde {
       background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
     }
@@ -36,15 +36,15 @@
     </div>
     <hr class="mb-5">
     <div class="row justify-content-center">
-        <div class="header">
-            <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->subMonth()->format('Y-m')]) }}" class="nav-link">Mes Anterior</a>
-            <h1>Calendario de Reservas para {{ $monthName }}</h1>
-            <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->addMonth()->format('Y-m')]) }}" class="nav-link">Mes Siguiente</a>
+        <div class="header d-flex justify-content-between align-items-center">
+            <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->subMonth()->format('Y-m')]) }}" class="btn bg-color-quinto">Mes Anterior</a>
+            <h3>{{ $monthName }}</h3>
+            <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->addMonth()->format('Y-m')]) }}" class="btn bg-color-quinto">Mes Siguiente</a>
         </div>
 
         @if ($apartamentos)
         <!-- Contenedor con scroll horizontal -->
-        <div class="table-responsive">
+        <div class="table-responsive p-0">
             <table class="table table-bordered">
                 <thead>
                     <tr>
