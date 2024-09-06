@@ -54,8 +54,8 @@
                       @if ($itemReserva->fecha_entrada->day == $day)
                         {{-- {{var_dump($itemReserva)}} --}}
                         <td>{{ $day }}</td>
-                      @else
-                        <td></td>
+                      {{-- @else
+                        <td></td> --}}
                       @endif
                     @endforeach
                   @endif
