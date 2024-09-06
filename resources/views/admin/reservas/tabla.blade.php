@@ -45,43 +45,49 @@
                       <td>{{ $apartamento->titulo }}</td>
                       
                       @for ($day = 1; $day <= $daysInMonth; $day++)
-                          @php
-                              $found = false;
-                          @endphp
-                          
-                          {{-- Buscar si hay una reserva que coincida con este día --}}
-                          @foreach ($apartamento->reservas as $itemReserva)
-                              @if ($itemReserva->fecha_entrada->day == $day)
-                                  @php
-                                      // Comparar la fecha con la fecha de hoy
-                                      $fechaHoy = \Carbon\Carbon::now();
-                                      $claseBoton = '';
-
-                                      if ($itemReserva->fecha_entrada->isPast()) {
-                                          $claseBoton = 'btn-warning'; // Pasado
-                                      } elseif ($itemReserva->fecha_entrada->isToday()) {
-                                          $claseBoton = 'btn-success'; // Hoy
-                                      } else {
-                                          $claseBoton = 'btn-info'; // Futuro
-                                      }
-                                  @endphp
-                                  <td class="p-0">
-                                      <button type="button" class="rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                          ({{ $itemReserva->fecha_entrada->format('d/m') }})
-                                      </button>
-                                  </td>
-                                  @php
-                                      $found = true;
-                                  @endphp
-                                  @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
-                              @endif
-                          @endforeach
-      
-                          {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
-                          @if (!$found)
-                              <td></td>
+                      @php
+                          $found = false;
+                      @endphp
+                  
+                      {{-- Buscar si hay una reserva que coincida con este día --}}
+                      @foreach ($apartamento->reservas as $itemReserva)
+                          @if ($itemReserva->fecha_entrada->day == $day)
+                              @php
+                                  // Comparar la fecha con la fecha de hoy
+                                  $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
+                  
+                                  // Obtener la fecha del día de la reserva en el mismo formato
+                                  $fechaReserva = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+                  
+                                  $claseBoton = '';
+                  
+                                  // Comparar si la fecha de entrada de la reserva es pasada, hoy o futura
+                                  if ($fechaReserva->isPast() && !$fechaReserva->isToday()) {
+                                      $claseBoton = 'btn-warning'; // Pasado
+                                  } elseif ($fechaReserva->isToday()) {
+                                      $claseBoton = 'btn-success'; // Hoy (verde)
+                                  } else {
+                                      $claseBoton = 'btn-info'; // Futuro
+                                  }
+                              @endphp
+                              <td>
+                                  <button type="button" class="btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                      ({{ $itemReserva->fecha_entrada->format('d/m') }})
+                                  </button>
+                              </td>
+                              @php
+                                  $found = true;
+                              @endphp
+                              @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
                           @endif
-                      @endfor
+                      @endforeach
+                  
+                      {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
+                      @if (!$found)
+                          <td></td>
+                      @endif
+                  @endfor
+                  
                   </tr>
               @endforeach
           </tbody>
