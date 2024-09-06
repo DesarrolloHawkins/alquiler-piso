@@ -74,24 +74,33 @@
                                     @if ($itemReserva->fecha_entrada->day == $day)
                                         @php
                                             // Obtener la fecha de la reserva en formato Carbon
-                                            $fechaReserva = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                            
+                                            $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+                                            $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+
+                                            // Calcular la diferencia en días entre la entrada y la salida
+                                            $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida);
+
                                             // Definir el color del botón según la fecha de reserva
                                             $claseBoton = '';
-                                            if ($fechaReserva->isPast() && !$fechaReserva->isToday()) {
+                                            if ($fechaEntrada->isPast() && !$fechaEntrada->isToday()) {
                                                 $claseBoton = 'btn-warning'; // Pasado
-                                            } elseif ($fechaReserva->isToday()) {
+                                            } elseif ($fechaEntrada->isToday()) {
                                                 $claseBoton = 'btn-success'; // Hoy (verde)
                                             } else {
                                                 $claseBoton = 'btn-info'; // Futuro
                                             }
                                         @endphp
-                                        <td class="p-0 {{ $claseDiaHoy }}">
+
+                                        {{-- Renderizar la celda con colspan --}}
+                                        <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }}">
                                             <button type="button" class="rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                                ({{ $itemReserva->fecha_entrada->format('d') }})
+                                                ({{ $itemReserva->fecha_entrada->format('d') }} - {{ $itemReserva->fecha_salida->format('d') }})
                                             </button>
                                         </td>
+
+                                        {{-- Saltar los días que ya están cubiertos por el colspan --}}
                                         @php
+                                            $day += $diasDiferencia - 1; // Avanzar el contador de días
                                             $found = true;
                                         @endphp
                                         @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
@@ -100,7 +109,7 @@
                             
                                 {{-- Si no se encontró ninguna reserva, agregar una celda vacía --}}
                                 @if (!$found)
-                                    <td class="{{ $claseDiaHoy }}"></td>
+                                    <td data-apartamento="{{$apartamento->id}}" data-dia="{{$day}}" class="{{ $claseDiaHoy }}"></td>
                                 @endif
                             @endfor
                         </tr>
