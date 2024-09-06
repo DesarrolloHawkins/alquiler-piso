@@ -4,21 +4,22 @@ import esLocale from '@fullcalendar/core/locales/es';  // Importa el idioma espa
 
 document.addEventListener('DOMContentLoaded', function() {
   var calendarEl = document.getElementById('calendar');
+  if (calendarEl) {
+    var resources = window.apartamentos || [];
   
-  var resources = window.apartamentos || [];
-
-  var formattedResources = resources.map(element => ({
-    id: element.id,
-    title: element.titulo
-  }));
-
-  var calendar = new Calendar(calendarEl, {
-    plugins: [resourceTimelinePlugin],
-    initialView: 'resourceTimelineMonth',
-    schedulerLicenseKey: '<YOUR-LICENSE-KEY-GOES-HERE>',
-    locale: esLocale,  // Establece el idioma a español
-    resources: formattedResources,
-  });
-
-  calendar.render();
+    var formattedResources = resources.map(element => ({
+      id: element.id,
+      title: element.titulo
+    }));
+  
+    var calendar = new Calendar(calendarEl, {
+      plugins: [resourceTimelinePlugin],
+      initialView: 'resourceTimelineMonth',
+      schedulerLicenseKey: '<YOUR-LICENSE-KEY-GOES-HERE>',
+      locale: esLocale,  // Establece el idioma a español
+      resources: formattedResources,
+    });
+  
+    calendar.render();
+  }
 });
