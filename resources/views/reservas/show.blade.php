@@ -84,6 +84,16 @@
                             <th style="width: 140px" scope="row">Enlace para DNI</th>
                             <td><a href="http://crm.apartamentosalgeciras.com/dni-user/{{$reserva->token}}">http://crm.apartamentosalgeciras.com/dni-user/{{$reserva->token}}</a></td>
                         </tr>
+                        <tr>
+                            <th style="width: 140px" scope="row">Facturado</th>
+                            <td>
+                                @if (count($factura)> 0)
+                                    <span>Reserva Facturada: {{$factura->fecha}}</span>
+                                @else
+                                    <button class="btn btn-info">Facturar</button>
+                                @endif
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
 

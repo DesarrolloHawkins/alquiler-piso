@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apartamento;
 use App\Models\Cliente;
 use App\Models\Huesped;
+use App\Models\Invoices;
 use App\Models\MensajeAuto;
 use App\Models\Photo;
 use App\Models\Reserva;
@@ -129,7 +130,8 @@ class ReservasController extends Controller
         $huespedes = Huesped::where('reserva_id', $reserva->id)->get();
         $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
         $photos = Photo::where('reserva_id', $reserva->id)->get();
-        return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes'));
+        $factura = Invoices::where('reserva_id', $reserva->id)->first();
+        return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes', 'factura'));
 
     }
 
