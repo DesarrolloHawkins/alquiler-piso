@@ -83,70 +83,64 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($apartamentos as $apartamento)
-                        <tr>
-                            <td class="apartments-column">{{ $apartamento->titulo }}</td>
-                            
-                            @for ($day = 1; $day <= $daysInMonth; $day++)
-                                @php
-                                    $found = false;
-                                    $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
-                                @endphp
-                            
-                                {{-- Buscar si hay una reserva que coincida con este día --}}
-                                @foreach ($apartamento->reservas as $itemReserva)
-                                    @if ($itemReserva->fecha_entrada->day == $day)
-                                        @php
-                                            // Obtener la fecha de la reserva en formato Carbon
-                                            $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                                            $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
-
-                                            // Calcular la diferencia en días entre la entrada y la salida
-                                            $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida);
-
-                                            // Definir el color del botón según la fecha de reserva
-                                            $claseBoton = '';
-                                            if ($fechaEntrada->isPast() && !$fechaEntrada->isToday()) {
-                                                $claseBoton = 'btn-warning'; // Pasado
-                                            } elseif ($fechaEntrada->isToday()) {
-                                                $claseBoton = 'btn-success'; // Hoy (verde)
-                                            } else {
-                                                $claseBoton = 'btn-info'; // Futuro
-                                            }
-                                        @endphp
-
-                                        {{-- Renderizar la celda con colspan --}}
-                                        <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
-                                            <div class="w-100 d-flex justify-content-between align-items-center">
-                                                {{-- Botón con detalles de la reserva --}}
-                                                <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                                    ({{ $itemReserva->fecha_entrada->format('d') }} - {{ $itemReserva->fecha_salida->format('d') }})
-                                                </button>
-
-                                                {{-- Drag handle para modificar la fecha de salida (lado derecho) --}}
-                                                <div class="drag-right" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'end')"></div>
-                                                
-                                                {{-- Drag handle para modificar la fecha de entrada (lado izquierdo) --}}
-                                                <div class="drag-left" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'start')"></div>
-                                            </div>
-                                        </td>
-
-                                        {{-- Saltar los días que ya están cubiertos por el colspan --}}
-                                        @php
-                                            $day += $diasDiferencia - 1; // Avanzar el contador de días
-                                            $found = true;
-                                        @endphp
-                                        @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
-                                    @endif
-                                @endforeach
-                            
-                                {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
-                                @if (!$found)
-                                    <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
-                                @endif
-                            @endfor
-                        </tr>
-                    @endforeach
+                  @foreach ($apartamentos as $apartamento)
+                  <tr>
+                      <td class="apartments-column">{{ $apartamento->titulo }}</td>
+                      
+                      @for ($day = 1; $day <= $daysInMonth; $day++)
+                          @php
+                              $found = false;
+                              $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
+                          @endphp
+                  
+                          {{-- Buscar si hay una reserva que coincida con este día --}}
+                          @foreach ($apartamento->reservas as $itemReserva)
+                              @php
+                                  // Obtener la fecha de la reserva en formato Carbon
+                                  $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+                                  $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+                                  $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
+                              @endphp
+                  
+                              {{-- Si el día coincide con el inicio de la reserva --}}
+                              @if ($day == $fechaEntrada->day)
+                                  @php
+                                      $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
+                                  @endphp
+                  
+                                  {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
+                                  <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
+                                      <div class="w-100 d-flex justify-content-between align-items-center">
+                                          {{-- Botón con detalles de la reserva --}}
+                                          <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                              {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
+                                          </button>
+                  
+                                          {{-- Drag handle para modificar la fecha de salida (lado derecho) --}}
+                                          <div class="drag-right" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'end')"></div>
+                                          
+                                          {{-- Drag handle para modificar la fecha de entrada (lado izquierdo) --}}
+                                          <div class="drag-left" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'start')"></div>
+                                      </div>
+                                  </td>
+                  
+                                  @php
+                                      // Saltar los días cubiertos por el colspan
+                                      $day += $diasDiferencia - 1; 
+                                      $found = true;
+                                  @endphp
+                                  @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
+                              @endif
+                          @endforeach
+                  
+                          {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
+                          @if (!$found)
+                              <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
+                          @endif
+                      @endfor
+                  </tr>
+                  @endforeach
+                  
                 </tbody>
             </table>
         </div>
@@ -215,27 +209,34 @@
     </div>
 </div>
 <script>
-  let dragType = '';  // Para saber si estamos ajustando la fecha de entrada o de salida
+let dragType = '';  // Para saber si estamos ajustando la fecha de entrada o de salida
 let reservaId = ''; // Para saber qué reserva estamos ajustando
+let originalDay = ''; // Día original de la fecha de salida o entrada
 let dragging = false; // Variable para saber si estamos arrastrando
 
 // Función que se ejecuta cuando comenzamos a arrastrar
 function startDrag(event, type) {
+    console.log('startDrag event:', event, 'type:', type); // Debug
     event.dataTransfer.effectAllowed = 'move';
     dragType = type;  // Puede ser 'start' para fecha de entrada o 'end' para fecha de salida
     reservaId = event.target.getAttribute('data-reserva-id');
+    originalDay = event.target.closest('td').getAttribute('data-dia'); // Guardar el día original
     dragging = true; // Estamos arrastrando
+    console.log('dragType:', dragType, 'reservaId:', reservaId, 'originalDay:', originalDay); // Debug
 }
 
-// Función para soltar el arrastre
-document.addEventListener('drop', function(event) {
+// Función para permitir el evento drop en los divs invisibles
+function allowDrop(event) {
     event.preventDefault();
-    if (!dragging) return; // Verificamos si estamos arrastrando
+    console.log('allowDrop event:', event.target); // Debug para ver el elemento
+}
 
-    // Obtener el nuevo día de la reserva basado en la celda en la que se soltó el elemento
-    let targetCell = event.target.closest('td');
-    let newDay = targetCell ? targetCell.getAttribute('data-dia') : null;
-    if (!newDay || !reservaId) return;
+// Función para manejar el evento drop cuando se suelta en un div invisible
+function handleDrop(event, newDay) {
+    event.preventDefault();
+    console.log('handleDrop event:', event, 'newDay:', newDay); // Debug
+
+    if (!dragging) return; // Verificamos si estamos arrastrando
 
     // Generar la fecha completa con año y mes
     const year = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->year }};
@@ -244,6 +245,17 @@ document.addEventListener('drop', function(event) {
 
     // Debug: Verificar la fecha antes de enviar
     console.log("Nueva fecha: ", fechaCompleta, "Reserva ID: ", reservaId, "Drag Type: ", dragType);
+
+    // Verificar si estamos adelantando o reduciendo la fecha de salida
+    if (dragType === 'end') {
+        if (parseInt(newDay) < parseInt(originalDay)) {
+            console.log("Estamos reduciendo la fecha de salida");
+        } else {
+            console.log("Estamos aumentando la fecha de salida");
+        }
+    } else if (dragType === 'start') {
+        console.log("Cambiando la fecha de entrada");
+    }
 
     // Hacer una llamada AJAX para actualizar la fecha de la reserva
     let url = `/reservas/update/${reservaId}`;
@@ -269,14 +281,16 @@ document.addEventListener('drop', function(event) {
             alert('Error al actualizar la reserva: ' + data.message);
         }
     });
+
     dragging = false; // Reiniciar la variable de arrastre
-});
+}
+
 
 // Evitar el comportamiento por defecto en el dragover
 document.addEventListener('dragover', function(event) {
     event.preventDefault();
+    console.log('dragover event:', event); // Debug
 });
-
 
 
 </script>
