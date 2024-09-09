@@ -87,7 +87,7 @@
                         <tr>
                             <th style="width: 140px" scope="row">Facturado</th>
                             <td>
-                                @if (count($factura)> 0)
+                                @if (isset($factura))
                                     <span>Reserva Facturada: {{$factura->fecha}}</span>
                                 @else
                                     <button class="btn btn-info">Facturar</button>
