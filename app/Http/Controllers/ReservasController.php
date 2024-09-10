@@ -609,6 +609,9 @@ class ReservasController extends Controller
    public function getReservaIA($codigo){
         $reserva = Reserva::where('codigo_reserva', $codigo)->first();
         $reserva['cliente'] = $reserva->cliente;
+        $reserva['apartamento'] = $reserva->apartamento;
+        $reserva['edificio'] = $reserva->apartamento->edificio->nombre;
+
         return response()->json($reserva);
    }
 }
