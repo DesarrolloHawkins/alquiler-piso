@@ -95,11 +95,12 @@
                   
                           {{-- Buscar si hay una reserva que coincida con este día --}}
                           @foreach ($apartamento->reservas as $itemReserva)
-                            {{
-                            if($itemReserva->id == 1397){
-                                dd($itemReserva)
-                            }
-                            }}
+
+                          @if ($itemReserva->id == 1397)
+                            {{dd($itemReserva)}}
+                              
+                          @endif
+                     
 
                               @php
                                   // Obtener la fecha de la reserva en formato Carbon
