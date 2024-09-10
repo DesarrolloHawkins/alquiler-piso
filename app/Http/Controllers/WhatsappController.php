@@ -221,6 +221,47 @@ class WhatsappController extends Controller
         if (count($mensajeExiste) > 0) {
 
         }else {
+
+            $dataRegistrar = [
+                'id_mensaje' => $id,
+                'id_three' => $mensajesAnteriores->id_three,
+                'remitente' => $phone,
+                'mensaje' => $mensaje,
+                'respuesta' => null,
+                'status' => 1,
+                'status_mensaje' => null,
+                'type' => 'text',
+                'date' => Carbon::now()
+            ];
+
+        }
+            $mensajeCreado = ChatGpt::create($dataRegistrar);
+
+            $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
+            if($reponseChatGPT->aviso == 2){
+
+                $reserva == Reserva::where('codigo_reserva', $reponseChatGPT->código)->first();
+                if (!$reserva) {
+                    $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, 'No tenemos informacion de esa reserva, dile al cliente que o el codigo es erroneo o que se ponga en contacto con la encargada.');
+
+                }else{
+                    $data = [
+                        'codigo_reserva' => $reserva->codigo_reserva,
+                        'cliente' => $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre .' ' . $reserva->cliente->apellido1,
+                        'apartamento' => $reserva->apartamento->titulo,
+                        'edificio' => $reserva->apartamento->edificioName->nombre,
+                        'fecha_entrada' => $reserva->fecha_entrada,
+                        'fecha_salida' => $reserva->fecha_salida,
+                    ];
+                    $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, json_encode($data));
+
+                }
+
+            }
+            
+            $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
+
+            return;
             
             $isAveria = $this->chatGpModelo($mensaje);
             Storage::disk('local')->put( 'Contestacion del modelo-'.$fecha.'.txt', json_encode($isAveria) );
@@ -549,7 +590,9 @@ class WhatsappController extends Controller
         );
 
         $body = [
-            "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
+            // codigoasistente
+            // "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
+            "assistant_id" => 'asst_tm1HTdOUuMtN20JhP9PDmUb2'
         ];
         // Inicializar cURL y configurar las opciones
         $curl = curl_init();

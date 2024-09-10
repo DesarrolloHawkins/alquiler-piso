@@ -405,7 +405,8 @@ class WhatsappController extends Controller
          ];
          Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages'] );
 
-         return $responseReturn;
+         return $response_data;
+         //return $responseReturn;
      }
     }
 
