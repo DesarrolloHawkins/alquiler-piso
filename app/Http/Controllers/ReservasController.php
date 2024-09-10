@@ -608,6 +608,7 @@ class ReservasController extends Controller
 
    public function getReservaIA($codigo){
         $reserva = Reserva::where('codigo_reserva', $codigo)->first();
+        $reserva['cliente'] = $reserva->cliente;
         return response()->json($reserva);
    }
 }
