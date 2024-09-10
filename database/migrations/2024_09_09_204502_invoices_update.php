@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('invoices', function (Blueprint $table) {
             
             $table->string('reference')->unique()->nullable();
-            $table->string('reference_autoincrement_id')->unique()->nullable();
+            $table->unsignedBigInteger('reference_autoincrement_id')->unique()->nullable();
             
             $table->foreign('reference_autoincrement_id')->references('id')->on('invoices_reference');
 
