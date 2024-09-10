@@ -142,23 +142,23 @@ class GastosController extends Controller
     public function clasificarGastos(Request $request){
         $origen = $request->Origen;
         $contenido  = $request->Contenido;
-        $tipo = $request->Tipo;
+        // $tipo = $request->Tipo;
         $importe = $request->Importe;
         $fecha = $request->Fecha;
+        $crearGasto = Gastos::create([
+            'title' => $contenido,
+            'quantity' => $importe,
+            'date' => $fecha,
+            'estado_id' => 1
+        ]);
 
-        if($tipo == 0){
+        return response()->json([
+            'mensaje' => 'El gasto se añadio correctamente'
+        ]);
 
-            $crearGasto = Gastos::create([
-                'title' => $contenido,
-                'quantity' => $importe,
-                'date' => $fecha,
-                'estado_id' => 1
-            ]);
+        // if($tipo == 0){
 
-            return response()->json([
-                'mensaje' => 'El gasto se añadio correctamente'
-            ]);
-        }
+        // }
 
     }
 
