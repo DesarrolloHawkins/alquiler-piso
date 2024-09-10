@@ -491,7 +491,13 @@ class ReservasController extends Controller
 
         return response()->json('Se actualizo el estado correctamente', 200);
     }
-    
+    public function facturarReservas(){
+        $hoy = Carbon::now()->addDay(-5);
+        $reservas = Reserva::whereDate('fecha_salida', '>=', $hoy );
+
+        //Log::info("Facturar: ". json_encode($reservas));
+        return $reservas;
+    }
     
 }
 
