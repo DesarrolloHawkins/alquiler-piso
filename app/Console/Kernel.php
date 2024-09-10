@@ -123,7 +123,7 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             //$hoy = Carbon::now();
             $hoy = Carbon::now()->addDay(-5);
-            $reservas = Reserva::whereDate('fecha_salida', '=>', $hoy );
+            $reservas = Reserva::whereDate('fecha_salida', '>=', $hoy );
 
             Log::info("Facturar: ". json_encode($reservas));
             return;
