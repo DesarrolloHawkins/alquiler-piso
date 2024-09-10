@@ -119,6 +119,38 @@ class Kernel extends ConsoleKernel
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
 
+        // Generamos Factura
+        $schedule->call(function () {
+            //$hoy = Carbon::now();
+            $hoy = Carbon::now()->addDay(-5);
+            $reservas = Reserva::whereDate('fecha_salida', '=>', $hoy );
+
+            Log::info("Facturar: ". json_encode($reservas));
+            return;
+
+            $data = [
+                'budget_id' => null,
+                'cliente_id' => $request->cliente_id,
+                'reserva_id' => $request->reserva_id,
+                'reserva_id' => $request->reserva_id,
+                'reserva_id' => $request->reserva_id,
+                'invoice_status_id ' => 1,
+                'concepto' => $request->concepto,
+                'description' => $request->descripcion,
+                'fecha' => $request->fecha,
+                'fecha_cobro' => null,
+                'base' => $request->precio,
+                'iva' => $request->precio * 0.10,
+                'descuento' => isset($request->descuento) ? $request->descuento : null,
+                'total' => $request->precio,
+            ];
+            $crear = Invoices::create($data);
+            $referencia = $this->generateBudgetReference($crear);
+            $crear->reference = $referencia['reference'];
+            $crear->reference_autoincrement_id = $referencia['id'];
+            $crear->budget_status_id = 3;
+            $crear->save();    
+        })->everyMinute();
         
         // $schedule->call(function (ClienteService $clienteService) {
         //     // Obtener la fecha de hoy

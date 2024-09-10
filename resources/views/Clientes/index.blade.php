@@ -81,11 +81,12 @@
                     @foreach ($clientes as $cliente)
                         <tr>
                             {{-- <th scope="row">{{$cliente->id}}</th> --}}
-                            <td scope="row">{{$cliente->alias != null ? $cliente->alias : $cliente->nombre}}</td>
-                            <td>{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
-                            <td>{{$cliente->idioma}}</td>
+                            <td scope="row" style="width: 40%">{{$cliente->alias != null ? $cliente->alias : $cliente->nombre}}</td>
+                            <td style="width: 20%">{{$cliente->apellido1}} {{$cliente->apellido2}}</td>
+                            <td style="width: 10%">{{$cliente->idioma}}</td>
                             {{-- <td>{{$cliente->num_identificacion}}</td> --}}
-                            <td style="width:auto;">
+                            <td style="width:30%;">
+                                <a href="{{route('clientes.show', $cliente->id)}}" class="btn bg-color-cuarto text-black">Ver</a>
                                 <a href="{{route('clientes.edit', $cliente->id)}}" class="btn bg-color-quinto">Editar</a>
                                 <form action="{{ route('clientes.destroy', $cliente->id) }}" method="POST" style="display: inline;" class="delete-form">
                                     @csrf
