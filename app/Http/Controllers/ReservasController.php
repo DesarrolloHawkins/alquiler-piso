@@ -610,7 +610,7 @@ class ReservasController extends Controller
         $reserva = Reserva::where('codigo_reserva', $codigo)->first();
         $reserva['cliente'] = $reserva->cliente;
         $reserva['apartamento'] = $reserva->apartamento;
-        $reserva['edificio'] = $reserva->apartamento->edificio->nombre;
+        $reserva['edificio'] = $reserva->apartamento->edificioName->nombre;
 
         return response()->json($reserva);
    }
