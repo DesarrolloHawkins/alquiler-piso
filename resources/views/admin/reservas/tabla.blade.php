@@ -95,6 +95,12 @@
                   
                           {{-- Buscar si hay una reserva que coincida con este día --}}
                           @foreach ($apartamento->reservas as $itemReserva)
+                            {{
+                            if($itemReserva->id == 1397){
+                                dd($itemReserva)
+                            }
+                            }}
+
                               @php
                                   // Obtener la fecha de la reserva en formato Carbon
                                   $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);

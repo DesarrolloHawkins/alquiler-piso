@@ -90,7 +90,7 @@
                                 @if (isset($factura))
                                     <span>Reserva Facturada: {{$factura->fecha}}</span>
                                 @else
-                                    <button class="btn btn-info">Facturar</button>
+                                    <button class="btn btn-info text-white">Facturar</button>
                                 @endif
                             </td>
                         </tr>
