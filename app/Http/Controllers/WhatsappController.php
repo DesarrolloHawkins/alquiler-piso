@@ -585,7 +585,7 @@ class WhatsappController extends Controller
 
     public function ejecutarHilo($id_thread){
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v2/threads/'.$id_thread.'/runs';
+        $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/runs';
 
         $headers = array(
             'Content-Type: application/json',
