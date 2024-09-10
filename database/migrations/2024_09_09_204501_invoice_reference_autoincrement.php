@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices_reference', function (Blueprint $table) {
+        Schema::create('invoices_reference', function (Blueprint $table) {
             $table->id();
             
             $table->string('reference_autoincrement')->nullable();
