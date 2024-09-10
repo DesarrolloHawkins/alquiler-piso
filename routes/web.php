@@ -235,6 +235,10 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Tabla de Reservas
     Route::get('/tabla-reservas', [App\Http\Controllers\TablaReservasController::class, 'index'])->name('admin.tablaReservas.index');
 
+
+    // Facturas
+    Route::get('/facturas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.facturas.index');
+    Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
 });
 
 // Rutas de usuarios logueados
@@ -348,3 +352,4 @@ Route::post('/ingresos-introducir', [App\Http\Controllers\IngresosController::cl
 Route::post('/get-data', [App\Http\Controllers\ReservasController::class, 'getData'])->name('admin.ingresos.getData');
 Route::post('/change-state', [App\Http\Controllers\ReservasController::class, 'changeState'])->name('admin.ingresos.changeState');
 Route::get('/facturar-reservas', [App\Http\Controllers\ReservasController::class, 'facturarReservas'])->name('admin.reservas.facturarReservas');
+Route::post('/get-reserva-ia/{codigo}', [App\Http\Controllers\ReservasController::class, 'getReservaIA'])->name('admin.reservas.getReservaIA');

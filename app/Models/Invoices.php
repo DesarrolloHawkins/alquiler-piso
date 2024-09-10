@@ -24,8 +24,7 @@ class Invoices extends Model
         'base',
         'iva',
         'descuento',
-        'total',
-
+        'total'
     ];
 
     /**
@@ -36,4 +35,16 @@ class Invoices extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at', 
     ];
+    
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+     // Relación con el modelo Client (Cliente)
+     public function client()
+     {
+         return $this->belongsTo(Cliente::class, 'cliente_id'); // cliente_id es la clave foránea en la tabla invoices
+     }
+ 
+     
 }

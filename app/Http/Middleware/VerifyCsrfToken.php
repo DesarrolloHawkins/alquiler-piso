@@ -31,6 +31,7 @@ class VerifyCsrfToken extends Middleware
         '/whatsapp-envio',
         '/whatsapp-alerta',
         '/get-data',
-        '/change-state'
+        '/change-state',
+        '/get-reserva-ia/*'
     ];
 }

@@ -6,6 +6,7 @@ use App\Models\Apartamento;
 use App\Models\Cliente;
 use App\Models\Huesped;
 use App\Models\Invoices;
+use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\MensajeAuto;
 use App\Models\Photo;
 use App\Models\Reserva;
@@ -492,12 +493,122 @@ class ReservasController extends Controller
         return response()->json('Se actualizo el estado correctamente', 200);
     }
     public function facturarReservas(){
-        $hoy = Carbon::now()->addDay(-5);
-        $reservas = Reserva::whereDate('fecha_salida', '>=', $hoy );
+        
+        $hoy = Carbon::now()->subDay(1); // La fecha actual
+        $juevesPasado = Carbon::now()->subDays(5); // Restar 5 días para obtener el jueves de la semana pasada
+        
+        // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
+        $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
+            ->whereDate('fecha_salida', '<=', $hoy)
+            ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
+            ->get();
+        foreach( $reservas as $reserva){
+            $data = [
+                'budget_id' => null,
+                'cliente_id' => $reserva->cliente_id,
+                'reserva_id' => $reserva->id,
+                // 'invoice_status_id' => 1,
+                'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
+                'description' => '',
+                'fecha' => $reserva->fecha_salida,
+                'fecha_cobro' => null,
+                'base' => $reserva->precio - ($reserva->precio * 0.10),
+                'iva' => $reserva->precio * 0.10,
+                'descuento' => null,
+                'total' => $reserva->precio,
+            ];
+            $crear = Invoices::create($data);
+            $referencia = $this->generateBudgetReference($crear);
+            $crear->reference = $referencia['reference'];
+            $crear->reference_autoincrement_id = $referencia['id'];
+            $crear->invoice_status_id = 1;
+            // $crear->budget_status_id = 3;
+            $crear->save();    
+            $reserva->estado_id = 5;
+            $reserva->save();
+            // return;
 
-        //Log::info("Facturar: ". json_encode($reservas));
-        return $reservas;
+        }
+        return response()->json($reservas);
     }
     
+
+    public function generateReferenceTemp($reference){
+
+        // Extrae los dos dígitos del final de la cadena usando expresiones regulares
+        preg_match('/temp_(\d{2})/', $reference, $matches);
+       // Incrementa el número primero
+       if(count($matches) >= 1){
+           $incrementedNumber = intval($matches[1]) + 1;
+           // Asegura que el número tenga dos dígitos
+           $formattedNumber = str_pad($incrementedNumber, 2, '0', STR_PAD_LEFT);
+           // Concatena con la cadena "temp_"
+           return "temp_" . $formattedNumber;
+       }
+   }
+   private function generateReferenceDelete($reference){
+        // Extrae los dos dígitos del final de la cadena usando expresiones regulares
+        preg_match('/delete_(\d{2})/', $reference, $matches);
+       // Incrementa el número primero
+       if(count($matches) >= 1){
+           $incrementedNumber = intval($matches[1]) + 1;
+           // Asegura que el número tenga dos dígitos
+           $formattedNumber = str_pad($incrementedNumber, 2, '0', STR_PAD_LEFT);
+           // Concatena con la cadena "temp_"
+           return "delete_" . $formattedNumber;
+       }
+   }
+
+    public function generateBudgetReference(Invoices $invoices) {
+
+       // Obtener la fecha actual del presupuesto
+       $budgetCreationDate = $budget->creation_date ?? now();
+       $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+
+       // Formatear la fecha para obtener los componentes necesarios
+       $year = $datetimeBudgetCreationDate->format('Y');
+       $monthNum = $datetimeBudgetCreationDate->format('m');
+
+       // Buscar la última referencia autoincremental para el año y mes actual
+       $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
+                           ->where('month_num', $monthNum)
+                           ->orderBy('id', 'desc')
+                           ->first();
+        //dd($latestReference->reference_autoincrement);
+       // Si no existe, empezamos desde 1, de lo contrario, incrementamos
+       $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
+
+       // Formatear el número autoincremental a 6 dígitos
+       $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
+
+       // Crear la referencia
+       $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
+
+       // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
+       $referenceToSave = new InvoicesReferenceAutoincrement([
+           'reference_autoincrement' => $newReferenceAutoincrement,
+           'year' => $year,
+           'month_num' => $monthNum,
+           // Otros campos pueden ser asignados si son necesarios
+       ]);
+       $referenceToSave->save();
+
+       // Devolver el resultado
+       return [
+           'id' => $referenceToSave->id,
+           'reference' => $reference,
+           'reference_autoincrement' => $newReferenceAutoincrement,
+           'budget_reference_autoincrements' => [
+               'year' => $year,
+               'month_num' => $monthNum,
+               // Añade aquí más si es necesario
+           ],
+       ];
+   }
+
+   public function getReservaIA($codigo){
+        $reserva = Reserva::where('codigo_reserva', $codigo)->first();
+        return response()->json($reserva);
+   }
 }
 
