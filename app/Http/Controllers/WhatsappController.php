@@ -215,7 +215,6 @@ class WhatsappController extends Controller
         $id = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
         $mensaje = $data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'];
-        $id_thread = $data['entry'][0]['changes'][0]['value']['messages'][0]['id'];
 
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->get();
 
@@ -225,7 +224,7 @@ class WhatsappController extends Controller
 
             $dataRegistrar = [
                 'id_mensaje' => $id,
-                'id_three' => $id_thread,
+                'id_three' => $mensajeExiste->id_three,
                 'remitente' => $phone,
                 'mensaje' => $mensaje,
                 'respuesta' => null,
