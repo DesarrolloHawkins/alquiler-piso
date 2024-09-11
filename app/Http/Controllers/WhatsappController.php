@@ -234,6 +234,7 @@ class WhatsappController extends Controller
                 'date' => Carbon::now()
             ];
 
+        }
             $mensajeCreado = ChatGpt::create($dataRegistrar);
 
             $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
@@ -261,9 +262,6 @@ class WhatsappController extends Controller
             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
             return;
-
-        }
-            
             
             $isAveria = $this->chatGpModelo($mensaje);
             Storage::disk('local')->put( 'Contestacion del modelo-'.$fecha.'.txt', json_encode($isAveria) );
@@ -413,8 +411,8 @@ class WhatsappController extends Controller
             }
             
 
+        }
     }
-
 
     public function envioAutoVoz(Request $request){
         
