@@ -610,7 +610,7 @@ class ReservasController extends Controller
         $reserva = Reserva::where('codigo_reserva', $codigo)->first();
         $data = [
             'codigo_reserva' => $reserva->codigo_reserva,
-            'cliente' => $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre .' ' . $reserva->cliente->apellido1,
+            'cliente' => $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre,
             'apartamento' => $reserva->apartamento->titulo,
             'edificio' => $reserva->apartamento->edificioName->nombre,
             'fecha_entrada' => $reserva->fecha_entrada,
