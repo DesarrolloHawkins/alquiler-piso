@@ -224,7 +224,7 @@ class WhatsappController extends Controller
 
             $dataRegistrar = [
                 'id_mensaje' => $id,
-                'id_three' => $mensajeExiste->id_three,
+                'id_three' => $mensajesAnteriores->id_three,
                 'remitente' => $phone,
                 'mensaje' => $mensaje,
                 'respuesta' => null,
