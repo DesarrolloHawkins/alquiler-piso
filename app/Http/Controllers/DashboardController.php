@@ -25,9 +25,10 @@ class DashboardController extends Controller
         $countReservas = $reservas->count();
         $sumPrecio = $reservas->sum('precio');
         $reservas = $reservas->get();
+        $mesNombre = $mes ? Carbon::create()->month($mes)->locale('es')->monthName : null;
 
         // Puede pasar los datos a la vista o retornar una respuesta JSON
         // Retorno a la vista con los datos
-        return view('admin.dashboard', compact('countReservas', 'sumPrecio', 'anio', 'mes', 'reservas'));
+        return view('admin.dashboard', compact('countReservas', 'sumPrecio', 'anio', 'mes', 'reservas', 'mesNombre'));
     }
 }

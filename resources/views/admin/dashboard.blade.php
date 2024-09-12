@@ -61,23 +61,24 @@
                 <form action="{{ route('dashboard.index') }}" method="GET">
                     <label for="mes">Selecciona un mes:</label>
                     <select name="mes" id="mes" class="form-control">
-                        <option value="1">Enero</option>
-                        <option value="2">Febrero</option>
-                        <option value="3">Marzo</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Mayo</option>
-                        <option value="6">Junio</option>
-                        <option value="7">Julio</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Septiembre</option>
-                        <option value="10">Octubre</option>
-                        <option value="11">Noviembre</option>
-                        <option value="12">Diciembre</option>
+                        <option value="1" {{ (request('mes') == 1) ? 'selected' : '' }}>Enero</option>
+                        <option value="2" {{ (request('mes') == 2) ? 'selected' : '' }}>Febrero</option>
+                        <option value="3" {{ (request('mes') == 3) ? 'selected' : '' }}>Marzo</option>
+                        <option value="4" {{ (request('mes') == 4) ? 'selected' : '' }}>Abril</option>
+                        <option value="5" {{ (request('mes') == 5) ? 'selected' : '' }}>Mayo</option>
+                        <option value="6" {{ (request('mes') == 6) ? 'selected' : '' }}>Junio</option>
+                        <option value="7" {{ (request('mes') == 7) ? 'selected' : '' }}>Julio</option>
+                        <option value="8" {{ (request('mes') == 8) ? 'selected' : '' }}>Agosto</option>
+                        <option value="9" {{ (request('mes') == 9) ? 'selected' : '' }}>Septiembre</option>
+                        <option value="10" {{ (request('mes') == 10) ? 'selected' : '' }}>Octubre</option>
+                        <option value="11" {{ (request('mes') == 11) ? 'selected' : '' }}>Noviembre</option>
+                        <option value="12" {{ (request('mes') == 12) ? 'selected' : '' }}>Diciembre</option>
                     </select>
                     <button type="submit" class="btn btn-primary mt-3 w-100">Consultar</button>
                 </form>
+    
                 <div class="container mt-4">
-                    <h4 class="text-center">Reporte de Reservas para el Año {{ $anio }} @if($mes) y Mes {{ $mes }} @endif</h4>
+                    <h4 class="text-center">Reporte de Reservas para el Año {{ $anio }} @if($mes) y Mes <span class="text-capitalize">{{ $mesNombre }} </span>@endif</h4>
                     <hr>
 
                     <p class="mb-0 text-center fs-5">Total de Reservas:</p>
@@ -97,7 +98,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="reservasModalLabel">Reservas</h5>
+                    <h5 class="modal-title d-flex justify-content-between" id="reservasModalLabel"><span>Reservas</span> <span class="ms-5">Sumatorio: <strong>{{ number_format($sumPrecio, 2) }} €</strong> </span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -126,6 +127,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    <h6>Sumatorio: <strong>{{ number_format($sumPrecio, 2) }} €</strong> </h6>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
