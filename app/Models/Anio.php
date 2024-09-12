@@ -12,7 +12,9 @@ class Anio extends Model
     protected $table = 'anio';
 
     protected $fillable = [
-        'anio'
+        'anio',
+        'saldo_inicial',
+        'is_close'
     ];
 
 }

@@ -59,13 +59,13 @@
             </form>
         </div>
         <div class="tab-pane fade" id="pills-contabilidad" role="tabpanel" aria-labelledby="pills-contabilidad-tab" tabindex="0">
-            <form action="{{route('configuracion.updateAnio')}}" method="POST">
+            <form action="{{route('configuracion.saldoInicial')}}" method="POST">
                 @csrf
                 <div class="col-md-12">.
 
                     <h5 class="form-label">Saldo Inicial</h5>
                     {{-- {{$anio}} --}}
-                    <input type="text" name="saldo_inicial" id="saldo_inicial" class="form-control w-auto"/>
+                    <input type="text" name="saldo_inicial" id="saldo_inicial" class="form-control w-auto" value="{{$saldo->saldo_inicial}}"/>
                         
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">Actualizar Saldo Inicial</button>    

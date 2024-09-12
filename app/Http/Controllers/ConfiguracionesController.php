@@ -39,7 +39,7 @@ class ConfiguracionesController extends Controller
 
         $limpiadorasUsers = User::where('inactive', null)->where('role', 'USER')->get();
         $limpiadorasGuardia = LimpiadoraGuardia::all();
-
+        $saldo = Anio::where('anio', $anio)->where('is_close', null)->first();
         return view('admin.configuraciones.index', compact(
             'configuraciones',
             'reparaciones',
@@ -49,7 +49,8 @@ class ConfiguracionesController extends Controller
             'prompt',
             'emailsNotificaciones',
             'limpiadorasUsers',
-            'limpiadorasGuardia'
+            'limpiadorasGuardia',
+            'saldo'
         ));
     }
 
@@ -216,14 +217,19 @@ class ConfiguracionesController extends Controller
     public function saldoInicial(Request $request){
         $anio = Anio::first();
         $saldo = $request->saldo_inicial;
+    $saldo_inicial = str_replace(',', '.', $request->input('saldo_inicial'));
 
         if (!$anio) {
+            $saldo_inicial = str_replace(',', '.', $request->input('saldo_inicial'));
+
             $nuevoAnio = Anio::create([
                 'anio' => Carbon::now()->format('Y'),
-                'saldo_inicial' => $saldo,
+                'saldo_inicial' => $saldo_inicial,
             ]);
         }else {
-            $anio->saldo_inicial = $saldo;
+            $saldo_inicial = str_replace(',', '.', $request->input('saldo_inicial'));
+
+            $anio->saldo_inicial = $saldo_inicial;
             $anio->save();
         }
 

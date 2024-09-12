@@ -184,6 +184,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/configuracion/store-limpiadora', [App\Http\Controllers\ConfiguracionesController::class, 'storeLimpiadora'])->name('configuracion.storeLimpiadora');
     Route::post('/configuracion/update-limpiadora/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateLimpiadora'])->name('configuracion.updateLimpiadora');
     Route::post('/configuracion/delete-limpiadora/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteLimpiadora'])->name('configuracion.deleteLimpiadora');
+    Route::post('/configuracion/update-saldo', [App\Http\Controllers\ConfiguracionesController::class, 'saldoInicial'])->name('configuracion.saldoInicial');
 
     // Formas de Pago
     Route::post('/forma-pago/store', [App\Http\Controllers\FormasDePagoController::class, 'store'])->name('formaPago.store');
