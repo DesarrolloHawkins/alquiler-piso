@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anio;
 use App\Models\CuentasContable;
 use App\Models\DiarioCaja;
 use App\Models\EstadosDiario;
@@ -31,11 +32,34 @@ class DiarioCajaController extends Controller
      */
     public function index()
     {
+        // Recuperar el saldo inicial de la base de datos
+        $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+        $saldoInicial = $anio->saldo_inicial;
+
+        // Obtener todas las entradas del diario de caja
         $response = DiarioCaja::all();
-        return view('admin.contabilidad.diarioCaja.index', compact('response'));
+
+        // Inicializar el saldo acumulado con el saldo inicial
+        $saldoAcumulado = $saldoInicial;
+
+        // Recorrer todas las líneas del diario y calcular el saldo
+        foreach ($response as $linea) {
+            if ($linea->debe) {
+                $saldoAcumulado -= $linea->debe;
+            }
+
+            if ($linea->haber) {
+                $saldoAcumulado += $linea->haber;
+            }
+
+            // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+            $linea->saldo = $saldoAcumulado;
+        }
+
+        return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
     }
     /**
-     *  Mostrar el formulario de creación
+     *  Mostrar el formulario de creación de Ingreso
      *
      * @return \Illuminate\Http\Response
      */
@@ -119,6 +143,12 @@ class DiarioCajaController extends Controller
         $estados = EstadosDiario::all();
         return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento','estados'));
     }
+
+    /**
+     *  Mostrar el formulario de creación de Gasto
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function createGasto()
     {
         $date = Carbon::now();
@@ -281,9 +311,8 @@ class DiarioCajaController extends Controller
 
     }
 
-
      /**
-     * Guardar un nuevo contacto
+     * Guardar un nuevo ingreso
      *
     * @param  Request  $request
     *
@@ -329,6 +358,14 @@ class DiarioCajaController extends Controller
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Cliente creado con éxito!');
 
     }
+
+    /**
+     * Guardar un nuevo gastos
+     *
+    * @param  Request  $request
+    *
+    * @return \Illuminate\Http\Response
+    */
     public function storeGasto(Request $request)
     {
         $messages = [

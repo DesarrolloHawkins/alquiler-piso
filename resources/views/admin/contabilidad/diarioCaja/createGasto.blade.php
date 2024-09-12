@@ -11,7 +11,7 @@
     }
 </style>
 <div class="container-fluid">
-    <h2 class="mb-3">Agregar Ingreso</h2>
+    <h2 class="mb-3">Agregar Gasto</h2>
     {{-- route('admin.diarioCaja.create')route('admin.diarioCaja.create') --}}
     <hr>
     <div class="row justify-content-center">
