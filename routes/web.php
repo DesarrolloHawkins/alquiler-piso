@@ -353,3 +353,7 @@ Route::post('/get-data', [App\Http\Controllers\ReservasController::class, 'getDa
 Route::post('/change-state', [App\Http\Controllers\ReservasController::class, 'changeState'])->name('admin.ingresos.changeState');
 Route::get('/facturar-reservas', [App\Http\Controllers\ReservasController::class, 'facturarReservas'])->name('admin.reservas.facturarReservas');
 Route::post('/get-reserva-ia/{codigo}', [App\Http\Controllers\ReservasController::class, 'getReservaIA'])->name('admin.reservas.getReservaIA');
+
+Route::get('/probar-ia', [App\Http\Controllers\ReservasController::class, 'probarIA'])->name('probarIA');
+Route::get('/instrucciones', [App\Http\Controllers\ReservasController::class, 'mostrarInstrucciones'])->name('mostrarInstrucciones');
+Route::post('/guardar-instrucciones', [App\Http\Controllers\ReservasController::class, 'guardarInstrucciones'])->name('guardarInstrucciones');

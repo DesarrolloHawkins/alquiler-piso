@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Anio;
+use ChatGptService;
 use Illuminate\Support\ServiceProvider;
 
 class AnioServiceProvider extends ServiceProvider
@@ -16,6 +17,7 @@ class AnioServiceProvider extends ServiceProvider
             // Aquí obtenemos el último año configurado
             return Anio::latest()->first()->anio ?? date('Y');
         });
+     
     }
 
     /**

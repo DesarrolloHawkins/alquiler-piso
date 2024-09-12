@@ -684,7 +684,6 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
-
     public function listarMensajes($id_thread)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');

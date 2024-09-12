@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
+use App\Models\ChatGpt;
 use App\Models\Cliente;
 use App\Models\Huesped;
 use App\Models\Invoices;
@@ -10,12 +11,19 @@ use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\MensajeAuto;
 use App\Models\Photo;
 use App\Models\Reserva;
+use App\Services\ChatGptService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ReservasController extends Controller
 {
+    protected $chatGptService;
+
+    public function __construct(ChatGptService $ChatGptService)
+    {
+        $this->chatGptService = $ChatGptService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -620,5 +628,485 @@ class ReservasController extends Controller
 
         return response()->json($data);
    }
+
+
+    // PRUEBAS CON LA INTELIGENCIA
+    // PRUEBAS CON LA INTELIGENCIA
+public function probarIA(Request $request) {
+    $mensaje = $request->input('texto');
+    $contestacion = '';
+    $response = '';
+
+    // Verificar si el archivo de la conversación ya existe
+    $filePath = storage_path('conversations/conversation.json');
+    if (Storage::exists('conversations/conversation.json')) {
+        $conversation = json_decode(Storage::get('conversations/conversation.json'), true);
+    } else {
+        $conversation = [];
+    }
+
+    if (isset($mensaje)) {
+        $phone = '34622440984';
+
+        // Obtener respuesta del servicio de IA
+        $respuesta = $this->chatGptService->enviarMensajeAsistente($mensaje, $phone);
+
+        // Añadir la nueva pregunta y respuesta al archivo JSON
+        $conversation[] = [
+            'pregunta' => $mensaje,
+            'respuesta' => $respuesta
+        ];
+
+        // Guardar el archivo JSON actualizado
+        Storage::put('conversations/conversation.json', json_encode($conversation));
+
+        // Pasar la conversación a la vista junto con la respuesta
+        return view('pruebasIA', compact('contestacion', 'response', 'conversation'));
+    }
+
+    // En caso de que no haya un mensaje, devolver la conversación previa
+    return view('pruebasIA', compact('contestacion', 'conversation'));
+}
+public function mostrarInstrucciones()
+    {
+        // Verificar si el archivo existe
+        if (Storage::exists('instrucciones.txt')) {
+            $instrucciones = Storage::get('instrucciones.txt');
+        } else {
+            // Si no existe, creamos un archivo de ejemplo
+            $instrucciones = "No hay instrucciones disponibles.";
+            Storage::put('instrucciones.txt', $instrucciones);
+        }
+
+        // Retornar la vista con las instrucciones cargadas
+        return response()->json(['instrucciones' => $instrucciones]);
+    }
+
+    public function guardarInstrucciones(Request $request)
+    {
+        $nuevasInstrucciones = $request->input('instrucciones');
+
+        // Guardar las nuevas instrucciones en el archivo
+        Storage::put('instrucciones.txt', $nuevasInstrucciones);
+
+        return response()->json(['status' => 'Instrucciones actualizadas correctamente.']);
+    }
+
+    // public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
+    // {
+    //     ini_set('max_execution_time', 200); // 300 segundos (5 minutos)
+
+    //     $existeHilo = ChatGpt::find($idMensaje);
+	// 	$mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
+		
+    //     if ($mensajeAnterior[1]->id_three == null) {
+    //         //dd($existeHilo);
+    //         $three_id = $this->crearHilo();
+    //         //dd($three_id);
+    //         $existeHilo->id_three = $three_id['id'];
+    //         $existeHilo->save();
+    //         $mensajeAnterior[1]->id_three = $three_id['id'];
+    //         $mensajeAnterior[1]->save();
+    //         //dd($existeHilo);
+    //     } else {
+    //         $three_id['id'] = $mensajeAnterior[1]->id_three;
+    //         $existeHilo->id_three = $mensajeAnterior[1]->id_three;
+    //         $existeHilo->save();
+    //         $three_id['id'] = $existeHilo->id_three;
+    //     }
+                    
+
+    //     $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
+    //     // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
+    //     $ejecuccion = $this->ejecutarHilo($three_id['id']);
+    //     // dd($ejecuccion);
+    //     $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
+    //     // dd($ejecuccionStatus,$ejecuccion);
+        
+    //     //dd($ejecuccionStatus);
+    //     // Inicia un bucle para esperar hasta que el hilo se complete
+    //     while (true) {
+    //         //$ejecuccion = $this->ejecutarHilo($three_id['id']);
+
+    //         if ($ejecuccionStatus['status'] === 'in_progress') {
+    //             // Espera activa antes de verificar el estado nuevamente
+    //             sleep(7); // Ajusta este valor según sea necesario
+
+    //             // Verifica el estado del paso actual del hilo
+    //             $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
+    //             if ($pasosHilo['data'][0]['status'] === 'completed') {
+    //                 // Si el paso se completó, verifica el estado general del hilo
+    //                 $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
+    //             }
+    //         } elseif ($ejecuccionStatus['status'] === 'completed') {
+    //             // El hilo ha completado su ejecución, obtiene la respuesta final
+    //             $mensajes = $this->listarMensajes($three_id['id']);
+    //             // dd($mensajes);
+    //             if(count($mensajes['data']) > 0){
+    //                 return $mensajes['data'][0]['content'][0]['text']['value'];
+    //                 // return $mensajes['data'][0]['content'][0]['text'];
+    //                 // return $mensajes;
+    //                 // return json_encode($mensajes);
+    //             }
+    //         } else {
+    //             // Maneja otros estados, por ejemplo, errores
+    //             //dd($ejecuccionStatus);
+    //             //return; // Sale del bucle si se encuentra un estado inesperado
+    //         }
+    //     }
+    // }
+
+    public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
+{
+    ini_set('max_execution_time', 300); // Extiende el tiempo de ejecución
+
+    $existeHilo = ChatGpt::find($idMensaje);
+    $mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
+    
+    if ($mensajeAnterior[1]->id_three == null) {
+        $three_id = $this->crearHilo();
+        $existeHilo->id_three = $three_id['id'];
+        $existeHilo->save();
+        $mensajeAnterior[1]->id_three = $three_id['id'];
+        $mensajeAnterior[1]->save();
+    } else {
+        $three_id['id'] = $mensajeAnterior[1]->id_three;
+        $existeHilo->id_three = $mensajeAnterior[1]->id_three;
+        $existeHilo->save();
+        $three_id['id'] = $existeHilo->id_three;
+    }
+
+    $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
+    $ejecuccion = $this->ejecutarHilo($three_id['id']);
+    $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
+    
+    $maxRetries = 5; // Número máximo de reintentos
+    $retryCount = 0; // Contador de reintentos
+    $timeoutSeconds = 180; // Máximo tiempo en segundos (3 minutos)
+    $startTime = time(); // Tiempo de inicio
+    
+    // Bucle while con límite de tiempo y reintentos
+    while (true) {
+        if ((time() - $startTime) > $timeoutSeconds) {
+            // Enviar una respuesta provisional al cliente
+            return [
+                "aviso" => false,
+                "mensaje" => "Su consulta está siendo procesada, por favor espere unos momentos."
+            ];
+        }
+
+        if ($retryCount >= $maxRetries) {
+            // Enviar una respuesta provisional si se exceden los reintentos
+            return [
+                "aviso" => false,
+                "mensaje" => "Estamos experimentando demoras, su respuesta llegará en breve."
+            ];
+
+             //"Estamos experimentando demoras, su respuesta llegará en breve.";
+        }
+
+        if ($ejecuccionStatus['status'] === 'in_progress') {
+            sleep(7); // Pausa antes de la siguiente verificación
+            $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
+            
+            if ($pasosHilo['data'][0]['status'] === 'completed') {
+                $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
+            }
+        } elseif ($ejecuccionStatus['status'] === 'completed') {
+            $mensajes = $this->listarMensajes($three_id['id']);
+            if (count($mensajes['data']) > 0) {
+                return $mensajes['data'][0]['content'][0]['text']['value'];
+            }
+        } else {
+            // Incrementa el contador de reintentos
+            $retryCount++;
+            sleep(3); // Pausa entre reintentos
+        }
+    }
+}
+
+    public function crearHilo()
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads';
+
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            $response_data = json_decode($response, true);
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud: '.$response_data
+            ];
+            return $error;
+
+        } else {
+            $response_data = json_decode($response, true);
+            //Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
+            return $response_data;
+        }
+    }
+    public function recuperarHilo($id_thread)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'.$id_thread;
+
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+
+        } else {
+            $response_data = json_decode($response, true);
+            // Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
+            return $response_data;
+        }
+    }
+    public function ejecutarHilo($id_thread)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/runs';
+
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        $body = [
+            "response_format" => [
+                "type" => "json_object" // Especifica que quieres el formato de respuesta como JSON
+            ],
+            "assistant_id" => 'asst_tm1HTdOUuMtN20JhP9PDmUb2'
+        ];
+        // "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS,json_encode($body));
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // Procesar la respuesta
+        if ($response === false) {
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+
+        } else {
+            $response_data = json_decode($response, true);
+            return $response_data;
+        }
+    }
+    public function mensajeHilo($id_thread, $pregunta)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/messages';
+
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+        $body = [
+            "role" => "user",
+            "content" => $pregunta,
+            // "response_format" => [
+            //     "type" => "json_object" // Forzar que la respuesta sea en formato JSON
+            // ]
+        ];
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS,json_encode($body));
+
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // dd($response);
+        // Procesar la respuesta
+        if ($response === false) {
+            $response_data = json_decode($response, true);
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud: '.$response_data
+            ];
+            return $error;
+
+        } else {
+            $response_data = json_decode($response, true);
+            //Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
+            return $response_data;
+        }
+    }
+    public function ejecutarHiloStatus($id_thread, $id_runs)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/runs/'.$id_runs;
+
+        $headers = array(
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, false);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+
+        } else {
+            $response_data = json_decode($response, true);
+            return $response_data;
+        }
+    }
+    public function ejecutarHiloISteeps($id_thread, $id_runs)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'.$id_thread. '/runs/' .$id_runs. '/steps';
+
+        $headers = array(
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, false);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Procesar la respuesta
+        if ($response === false) {
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+
+        } else {
+            $response_data = json_decode($response, true);
+            return $response_data;
+        }
+    }
+    public function listarMensajes($id_thread)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/messages';
+
+        $headers = array(
+            'Authorization: Bearer '. $token,
+            "OpenAI-Beta: assistants=v1"
+        );
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, false);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // dd($response);
+
+        // Procesar la respuesta
+        if( $response === false ){
+            $error = [
+            'status' => 'error',
+            'messages' => 'Error al realizar la solicitud'
+            ];
+
+        } else {
+            $response_data = json_decode( $response, true );
+            return $response_data;
+        }
+    }
+    public function enviarMensajeAsistente($mensaje, $asistenteId)
+    {
+        try {
+            // Enviar el mensaje al asistente con el ID específico
+            $response = $this->client->chat()->create([
+                'model' => 'gpt-3.5-turbo', // Modelo subyacente, aunque el asistente ya está preconfigurado
+                'assistant' => $asistenteId, // ID del asistente
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $mensaje,
+                    ],
+                ],
+            ]);
+
+            return $this->parseResponse($response);
+
+        } catch (\Exception $e) {
+            // Manejo de errores
+            return "Lo siento, ocurrió un error al procesar tu solicitud: " . $e->getMessage();
+        }
+    }
+
+  
 }
 
