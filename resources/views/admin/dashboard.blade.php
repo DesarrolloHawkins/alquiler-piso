@@ -84,12 +84,54 @@
                     <p class="fs-4 mb-0 text-center"><strong>{{ $countReservas }}</strong></p>
                     <p class="mb-0 text-center fs-5">Total de Ingresos:</p>
                     <p class="fs-4 mb-0 text-center"><strong>{{ number_format($sumPrecio, 2) }} €</strong></p>
-
+                    <button class="btn btn-warning text-white w-100 mt-3" data-bs-toggle="modal" data-bs-target="#reservasModal">
+                        Ver reservas
+                    </button>
                 </div>
                 
             </div>
         </div>
     </div>
-    
+    <!-- Modal -->
+    <div class="modal fade" id="reservasModal" tabindex="-1" aria-labelledby="reservasModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reservasModalLabel">Reservas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tabla para mostrar las reservas -->
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Código de Reserva</th>
+                                <th>Origen</th>
+                                <th>Fecha Entrada</th>
+                                <th>Fecha Salida</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($reservas as $reserva)
+                                <tr>
+                                    <td>{{ $reserva->id }}</td>
+                                    <td>{{ $reserva->codigo_reserva }}</td>
+                                    <td>{{ $reserva->origen }}</td>
+                                    <td>{{ $reserva->fecha_entrada }}</td>
+                                    <td>{{ $reserva->fecha_salida }}</td>
+                                    <td>{{ number_format($reserva->precio, 2) }} €</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

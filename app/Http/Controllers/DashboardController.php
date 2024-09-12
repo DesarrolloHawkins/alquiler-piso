@@ -24,9 +24,10 @@ class DashboardController extends Controller
         // Realiza el conteo de las reservas y la suma de los precios
         $countReservas = $reservas->count();
         $sumPrecio = $reservas->sum('precio');
+        $reservas = $reservas->get();
 
         // Puede pasar los datos a la vista o retornar una respuesta JSON
         // Retorno a la vista con los datos
-        return view('admin.dashboard', compact('countReservas', 'sumPrecio', 'anio', 'mes'));
+        return view('admin.dashboard', compact('countReservas', 'sumPrecio', 'anio', 'mes', 'reservas'));
     }
 }
