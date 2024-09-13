@@ -1111,99 +1111,47 @@ class ReservasController extends Controller
     }
 
     public function reservasCobradas(Request $request){
-        //dd('entro');
-        $hoy = Carbon::now()->subDay(1); // La fecha actual
-        $juevesPasado = Carbon::now()->subDays(8); // Restar 5 días para obtener el jueves de la semana pasada
         
-        //dd($hoy, $juevesPasado);
-        
-        try {
-            
-            // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
-            // $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
-            // ->whereDate('fecha_salida', '<=', $hoy)
-            // // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
-            // ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
-            // ->get();
-            $reservas = Reserva::all();
-            //dd($reservas);
-            foreach( $reservas as $reserva){
-                $invoice = Invoices::where('reserva_id', $reserva->id)->first();
-                
-                if ($invoice == null) {
-                    $data = [
-                        'budget_id' => null,
-                        'cliente_id' => $reserva->cliente_id,
-                        'reserva_id' => $reserva->id,
-                        'invoice_status_id' => 1,
-                        'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-                        'description' => '',
-                        'fecha' => $reserva->fecha_salida,
-                        'fecha_cobro' => null,
-                        'base' => $reserva->precio,
-                        'iva' => $reserva->precio * 0.10,
-                        'descuento' => null,
-                        'total' => $reserva->precio,
-                    ];
-                    // dd($data);
-                    $crearFactura = Invoices::create($data);
+        $codigoReserva = $request->input('codigo_reserva');
+        $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
 
-                    $referencia = $this->generateBudgetReference($crearFactura);
-                    $crearFactura->reference = $referencia['reference'];
-                    $crearFactura->reference_autoincrement_id = $referencia['id'];
-                    $crearFactura->invoice_status_id = 3;
-                    $crearFactura->save();
-                    $reserva->estado_id = 5;
-                    $reserva->save();
-                }
+        $factura = Invoices::where('reserva_id', $reserva->id)->first();
 
+        if ($factura !== null) {
+            if ( $factura->invoice_status_id == 6) {
+                return response()->json('Reserva ya esta en cobrada',200);
             }
-        } catch (\Throwable $th) {
-            //throw $th;
-            return $th;
+            $factura->invoice_status_id = 6;
+            $factura->fecha_cobro = Carbon::now();
+            $factura->save();
+            return response()->json('Añadido correctamente',200);
+        }else {
+            
+            $data = [
+                'budget_id' => null,
+                'cliente_id' => $reserva->cliente_id,
+                'reserva_id' => $reserva->reserva_id,
+                'invoice_status_id' => 1,
+                'concepto' => "Apartamento: ". $reserva->apartamento->titulo,
+                'description' => null,
+                'fecha' => $reserva->fecha_entrada,
+                'fecha_cobro' => Carbon::now(),
+                'base' => $reserva->precio,
+                'iva' => $reserva->precio * 0.10,
+                'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
+                'total' => $reserva->precio,
+            ];
+            
+            $crear = Invoices::create($data);
+            $referencia = $this->generateBudgetReference($crear);
+            $crear->reference = $referencia['reference'];
+            $crear->reference_autoincrement_id = $referencia['id'];
+            $crear->invoice_status_id = 6;
+            $crear->save();
+            
+            return response()->json('Añadido correctamente',200);
+
         }
-
-
-        return response()->json('Facturas creadas', 200);
-        // $codigoReserva = $request->input('codigo_reserva');
-        // $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
-
-        // $factura = Invoices::where('reserva_id', $reserva->id)->first();
-
-        // if ($factura !== null) {
-        //     if ( $factura->invoice_status_id == 6) {
-        //         return response()->json('Reserva ya esta en cobrada',200);
-        //     }
-        //     $factura->invoice_status_id = 6;
-        //     $factura->fecha_cobro = Carbon::now();
-        //     $factura->save();
-        //     return response()->json('Añadido correctamente',200);
-        // }else {
-            
-        //     $data = [
-        //         'budget_id' => null,
-        //         'cliente_id' => $reserva->cliente_id,
-        //         'reserva_id' => $reserva->reserva_id,
-        //         'invoice_status_id' => 1,
-        //         'concepto' => "Apartamento: ". $reserva->apartamento->titulo,
-        //         'description' => null,
-        //         'fecha' => $reserva->fecha_entrada,
-        //         'fecha_cobro' => Carbon::now(),
-        //         'base' => $reserva->precio,
-        //         'iva' => $reserva->precio * 0.10,
-        //         'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
-        //         'total' => $reserva->precio,
-        //     ];
-            
-        //     $crear = Invoices::create($data);
-        //     $referencia = $this->generateBudgetReference($crear);
-        //     $crear->reference = $referencia['reference'];
-        //     $crear->reference_autoincrement_id = $referencia['id'];
-        //     $crear->invoice_status_id = 6;
-        //     $crear->save();
-        //     return response()->json('Añadido correctamente',200);
-
-        // }
     }
 
     
