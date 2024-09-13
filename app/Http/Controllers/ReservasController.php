@@ -572,7 +572,7 @@ class ReservasController extends Controller
     public function generateBudgetReference(Invoices $invoices) {
 
        // Obtener la fecha actual del presupuesto
-       $budgetCreationDate = $budget->creation_date ?? now();
+       $budgetCreationDate = $invoices->fecha ?? now();
        $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
 
        // Formatear la fecha para obtener los componentes necesarios
