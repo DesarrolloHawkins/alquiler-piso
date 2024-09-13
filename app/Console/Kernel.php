@@ -126,7 +126,7 @@ class Kernel extends ConsoleKernel
             //$hoy = Carbon::now();
             // Obtener la fecha de hoy (sin la hora)
             $hoy = Carbon::now()->subDay(1); // La fecha actual
-            $juevesPasado = Carbon::now()->subDays(5); // Restar 5 días para obtener el jueves de la semana pasada
+            $juevesPasado = Carbon::now()->subDays(8); // Restar 5 días para obtener el jueves de la semana pasada
             
             // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
             $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
