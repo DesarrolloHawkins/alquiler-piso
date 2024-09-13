@@ -16,7 +16,7 @@ class Invoices extends Model
         'budget_id',
         'cliente_id',
         'reserva_id',
-        'invoice_status_id ',
+        'invoice_status_id',
         'concepto',
         'description',
         'fecha',

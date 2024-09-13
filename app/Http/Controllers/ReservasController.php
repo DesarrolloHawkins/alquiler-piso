@@ -13,6 +13,7 @@ use App\Models\Photo;
 use App\Models\Reserva;
 use App\Services\ChatGptService;
 use Carbon\Carbon;
+use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -1112,27 +1113,36 @@ class ReservasController extends Controller
         $codigoReserva = $request->input('codigo_reserva');
         $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
 
-        $data = [
-            'budget_id' => null,
-            'cliente_id' => $reserva->cliente_id,
-            'reserva_id' => $reserva->reserva_id,
-            'invoice_status_id ' => 1,
-            'concepto' => $request->concepto,
-            'description' => $request->descripcion,
-            'fecha' => $request->fecha,
-            'fecha_cobro' => null,
-            'base' => $reserva->precio,
-            'iva' => $reserva->precio * 0.10,
-            'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
-            'total' => $reserva->precio,
-        ];
-        
-        $crear = Invoices::create($data);
-        $referencia = $this->generateBudgetReference($crear);
-        $crear->reference = $referencia['reference'];
-        $crear->reference_autoincrement_id = $referencia['id'];
-        $crear->budget_status_id = 3;
-        $crear->save();
+        $factura = Invoices::where('reserva_id', $reserva->id)->first();
+
+        if (count($factura) > 0 || $factura !== null) {
+            $factura->invoice_status_id = 6;
+            $factura->fecha_cobro = Carbon::now();
+            $factura->save();
+        }else {
+            
+            $data = [
+                'budget_id' => null,
+                'cliente_id' => $reserva->cliente_id,
+                'reserva_id' => $reserva->reserva_id,
+                'invoice_status_id ' => 1,
+                'concepto' => "Apartamento: ". $reserva->apartamento->titulo,
+                'description' => null,
+                'fecha' => $reserva->fecha_entrada,
+                'fecha_cobro' => Carbon::now(),
+                'base' => $reserva->precio,
+                'iva' => $reserva->precio * 0.10,
+                'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
+                'total' => $reserva->precio,
+            ];
+            
+            $crear = Invoices::create($data);
+            $referencia = $this->generateBudgetReference($crear);
+            $crear->reference = $referencia['reference'];
+            $crear->reference_autoincrement_id = $referencia['id'];
+            $crear->budget_status_id = 3;
+            $crear->save();
+        }
     }
 
     
