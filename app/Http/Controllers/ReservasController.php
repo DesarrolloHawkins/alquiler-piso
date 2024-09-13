@@ -500,6 +500,7 @@ class ReservasController extends Controller
 
         return response()->json('Se actualizo el estado correctamente', 200);
     }
+
     public function facturarReservas(){
         
         $hoy = Carbon::now()->subDay(1); // La fecha actual
@@ -540,7 +541,6 @@ class ReservasController extends Controller
         return response()->json($reservas);
     }
     
-
     public function generateReferenceTemp($reference){
 
         // Extrae los dos dígitos del final de la cadena usando expresiones regulares
@@ -554,6 +554,7 @@ class ReservasController extends Controller
            return "temp_" . $formattedNumber;
        }
    }
+
    private function generateReferenceDelete($reference){
         // Extrae los dos dígitos del final de la cadena usando expresiones regulares
         preg_match('/delete_(\d{2})/', $reference, $matches);
@@ -632,42 +633,42 @@ class ReservasController extends Controller
 
     // PRUEBAS CON LA INTELIGENCIA
     // PRUEBAS CON LA INTELIGENCIA
-public function probarIA(Request $request) {
-    $mensaje = $request->input('texto');
-    $contestacion = '';
-    $response = '';
+    public function probarIA(Request $request) {
+        $mensaje = $request->input('texto');
+        $contestacion = '';
+        $response = '';
 
-    // Verificar si el archivo de la conversación ya existe
-    $filePath = storage_path('conversations/conversation.json');
-    if (Storage::exists('conversations/conversation.json')) {
-        $conversation = json_decode(Storage::get('conversations/conversation.json'), true);
-    } else {
-        $conversation = [];
+        // Verificar si el archivo de la conversación ya existe
+        $filePath = storage_path('conversations/conversation.json');
+        if (Storage::exists('conversations/conversation.json')) {
+            $conversation = json_decode(Storage::get('conversations/conversation.json'), true);
+        } else {
+            $conversation = [];
+        }
+
+        if (isset($mensaje)) {
+            $phone = '34622440984';
+
+            // Obtener respuesta del servicio de IA
+            $respuesta = $this->chatGptService->enviarMensajeAsistente($mensaje, $phone);
+
+            // Añadir la nueva pregunta y respuesta al archivo JSON
+            $conversation[] = [
+                'pregunta' => $mensaje,
+                'respuesta' => $respuesta
+            ];
+
+            // Guardar el archivo JSON actualizado
+            Storage::put('conversations/conversation.json', json_encode($conversation));
+
+            // Pasar la conversación a la vista junto con la respuesta
+            return view('pruebasIA', compact('contestacion', 'response', 'conversation'));
+        }
+
+        // En caso de que no haya un mensaje, devolver la conversación previa
+        return view('pruebasIA', compact('contestacion', 'conversation'));
     }
-
-    if (isset($mensaje)) {
-        $phone = '34622440984';
-
-        // Obtener respuesta del servicio de IA
-        $respuesta = $this->chatGptService->enviarMensajeAsistente($mensaje, $phone);
-
-        // Añadir la nueva pregunta y respuesta al archivo JSON
-        $conversation[] = [
-            'pregunta' => $mensaje,
-            'respuesta' => $respuesta
-        ];
-
-        // Guardar el archivo JSON actualizado
-        Storage::put('conversations/conversation.json', json_encode($conversation));
-
-        // Pasar la conversación a la vista junto con la respuesta
-        return view('pruebasIA', compact('contestacion', 'response', 'conversation'));
-    }
-
-    // En caso de que no haya un mensaje, devolver la conversación previa
-    return view('pruebasIA', compact('contestacion', 'conversation'));
-}
-public function mostrarInstrucciones()
+    public function mostrarInstrucciones()
     {
         // Verificar si el archivo existe
         if (Storage::exists('instrucciones.txt')) {
@@ -1107,6 +1108,34 @@ public function mostrarInstrucciones()
         }
     }
 
+    public function reservasCobradas(Request $request){
+        $codigoReserva = $request->input('codigo_reserva');
+        $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
+
+        $data = [
+            'budget_id' => null,
+            'cliente_id' => $reserva->cliente_id,
+            'reserva_id' => $reserva->reserva_id,
+            'invoice_status_id ' => 1,
+            'concepto' => $request->concepto,
+            'description' => $request->descripcion,
+            'fecha' => $request->fecha,
+            'fecha_cobro' => null,
+            'base' => $reserva->precio,
+            'iva' => $reserva->precio * 0.10,
+            'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
+            'total' => $reserva->precio,
+        ];
+        
+        $crear = Invoices::create($data);
+        $referencia = $this->generateBudgetReference($crear);
+        $crear->reference = $referencia['reference'];
+        $crear->reference_autoincrement_id = $referencia['id'];
+        $crear->budget_status_id = 3;
+        $crear->save();
+    }
+
+    
   
 }
 
