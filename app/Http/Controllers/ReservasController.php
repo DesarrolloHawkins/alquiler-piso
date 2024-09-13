@@ -1116,6 +1116,9 @@ class ReservasController extends Controller
         $factura = Invoices::where('reserva_id', $reserva->id)->first();
 
         if ($factura !== null) {
+            if ( $factura->invoice_status_id == 6) {
+                return response()->json('Reserva ya esta en cobrada',200);
+            }
             $factura->invoice_status_id = 6;
             $factura->fecha_cobro = Carbon::now();
             $factura->save();
