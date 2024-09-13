@@ -159,7 +159,6 @@ class Kernel extends ConsoleKernel
                     $crear->reference_autoincrement_id = $referencia['id'];
                     $crear->invoice_status_id = 3;
                     $crear->save();    
-
                 }
         
             }
