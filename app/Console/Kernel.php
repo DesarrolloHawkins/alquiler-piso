@@ -123,48 +123,49 @@ class Kernel extends ConsoleKernel
 
         // Generamos Factura
         $schedule->call(function () {
-            //$hoy = Carbon::now();
+
             // Obtener la fecha de hoy (sin la hora)
             $hoy = Carbon::now()->subDay(1); // La fecha actual
             $juevesPasado = Carbon::now()->subDays(8); // Restar 5 días para obtener el jueves de la semana pasada
             
 
-                // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
-                $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
-                ->whereDate('fecha_salida', '<=', $hoy)
-                // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
-                ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
-                ->get();
-        
-        
-                foreach( $reservas as $reserva){
-                    $invoice = Invoices::where('reserva_id', $reserva->id)->first();
-                    
-                    if ($invoice != null) {
-                        $data = [
-                            'budget_id' => null,
-                            'cliente_id' => $reserva->cliente_id,
-                            'reserva_id' => $reserva->id,
-                            'invoice_status_id' => 1,
-                            'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-                            'description' => '',
-                            'fecha' => $reserva->fecha_salida,
-                            'fecha_cobro' => null,
-                            'base' => $reserva->precio,
-                            'iva' => $reserva->precio * 0.10,
-                            'descuento' => null,
-                            'total' => $reserva->precio,
-                        ];
-                        $crearFactura = Invoices::create($data);
-                        $referencia = $this->generateBudgetReference($crearFactura);
-                        $crearFactura->reference = $referencia['reference'];
-                        $crearFactura->reference_autoincrement_id = $referencia['id'];
-                        $crearFactura->invoice_status_id = 3;
-                        $crearFactura->save();
-                        $reserva->estado_id = 5;
-                        $reserva->save();
-                    }
+            // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
+            $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
+            ->whereDate('fecha_salida', '<=', $hoy)
+            // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
+            ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
+            ->get();
+    
+    
+            foreach( $reservas as $reserva){
+                $invoice = Invoices::where('reserva_id', $reserva->id)->first();
+                
+                if ($invoice != null) {
+                    $data = [
+                        'budget_id' => null,
+                        'cliente_id' => $reserva->cliente_id,
+                        'reserva_id' => $reserva->id,
+                        'invoice_status_id' => 1,
+                        'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
+                        'description' => '',
+                        'fecha' => $reserva->fecha_salida,
+                        'fecha_cobro' => null,
+                        'base' => $reserva->precio,
+                        'iva' => $reserva->precio * 0.10,
+                        'descuento' => null,
+                        'total' => $reserva->precio,
+                    ];
+                    $crearFactura = Invoices::create($data);
+                    $referencia = $this->generateBudgetReference($crearFactura);
+                    $crearFactura->reference = $referencia['reference'];
+                    $crearFactura->reference_autoincrement_id = $referencia['id'];
+                    $crearFactura->invoice_status_id = 3;
+                    $crearFactura->save();
+                    $reserva->estado_id = 5;
+                    $reserva->save();
                 }
+            }
+
         })->everyMinute();
         
         // $schedule->call(function (ClienteService $clienteService) {
@@ -2031,7 +2032,7 @@ class Kernel extends ConsoleKernel
         $year = $datetimeBudgetCreationDate->format('Y');
         $monthNum = $datetimeBudgetCreationDate->format('m');
  
-        dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
+        //dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
         // Buscar la última referencia autoincremental para el año y mes actual
         $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
                             ->where('month_num', $monthNum)
