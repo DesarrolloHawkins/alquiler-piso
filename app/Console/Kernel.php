@@ -131,7 +131,7 @@ class Kernel extends ConsoleKernel
             // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
             $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
                 ->whereDate('fecha_salida', '<=', $hoy)
-                ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
+                // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
                 ->get();
                 
                 
