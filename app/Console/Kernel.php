@@ -140,7 +140,7 @@ class Kernel extends ConsoleKernel
             foreach( $reservas as $reserva){
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
                 
-                if ($invoice != null) {
+                if ($invoice == null) {
                     $data = [
                         'budget_id' => null,
                         'cliente_id' => $reserva->cliente_id,
@@ -155,7 +155,9 @@ class Kernel extends ConsoleKernel
                         'descuento' => null,
                         'total' => $reserva->precio,
                     ];
+                    // dd($data);
                     $crearFactura = Invoices::create($data);
+
                     $referencia = $this->generateBudgetReference($crearFactura);
                     $crearFactura->reference = $referencia['reference'];
                     $crearFactura->reference_autoincrement_id = $referencia['id'];
@@ -164,6 +166,7 @@ class Kernel extends ConsoleKernel
                     $reserva->estado_id = 5;
                     $reserva->save();
                 }
+
             }
 
         })->everyMinute();

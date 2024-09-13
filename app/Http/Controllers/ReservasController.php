@@ -1114,20 +1114,23 @@ class ReservasController extends Controller
         //dd('entro');
         $hoy = Carbon::now()->subDay(1); // La fecha actual
         $juevesPasado = Carbon::now()->subDays(8); // Restar 5 días para obtener el jueves de la semana pasada
+        
+        //dd($hoy, $juevesPasado);
+        
         try {
             
             // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
-            $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
-            ->whereDate('fecha_salida', '<=', $hoy)
-            // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
-            ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
-            ->get();
-        
-        
+            // $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
+            // ->whereDate('fecha_salida', '<=', $hoy)
+            // // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
+            // ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
+            // ->get();
+            $reservas = Reserva::all();
+            //dd($reservas);
             foreach( $reservas as $reserva){
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
                 
-                if ($invoice != null) {
+                if ($invoice == null) {
                     $data = [
                         'budget_id' => null,
                         'cliente_id' => $reserva->cliente_id,
@@ -1142,7 +1145,9 @@ class ReservasController extends Controller
                         'descuento' => null,
                         'total' => $reserva->precio,
                     ];
+                    // dd($data);
                     $crearFactura = Invoices::create($data);
+
                     $referencia = $this->generateBudgetReference($crearFactura);
                     $crearFactura->reference = $referencia['reference'];
                     $crearFactura->reference_autoincrement_id = $referencia['id'];
