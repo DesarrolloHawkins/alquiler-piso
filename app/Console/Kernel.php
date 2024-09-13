@@ -132,6 +132,7 @@ class Kernel extends ConsoleKernel
             $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
                 ->whereDate('fecha_salida', '<=', $hoy)
                 // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
+                ->whereNotIn('estado_id', 4) // Filtrar estado_id diferente de 5 o 6
                 ->get();
                 
                 
@@ -158,7 +159,9 @@ class Kernel extends ConsoleKernel
                     $crear->reference = $referencia['reference'];
                     $crear->reference_autoincrement_id = $referencia['id'];
                     $crear->invoice_status_id = 3;
-                    $crear->save();    
+                    $crear->save();
+                    $reserva->estado_id = 5;
+                    $reserva->save();
                 }
         
             }
