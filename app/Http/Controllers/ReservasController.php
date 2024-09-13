@@ -1119,13 +1119,14 @@ class ReservasController extends Controller
             $factura->invoice_status_id = 6;
             $factura->fecha_cobro = Carbon::now();
             $factura->save();
+            return response()->json('Añadido correctamente',200);
         }else {
             
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
                 'reserva_id' => $reserva->reserva_id,
-                'invoice_status_id ' => 1,
+                'invoice_status_id' => 1,
                 'concepto' => "Apartamento: ". $reserva->apartamento->titulo,
                 'description' => null,
                 'fecha' => $reserva->fecha_entrada,
@@ -1140,8 +1141,10 @@ class ReservasController extends Controller
             $referencia = $this->generateBudgetReference($crear);
             $crear->reference = $referencia['reference'];
             $crear->reference_autoincrement_id = $referencia['id'];
-            $crear->budget_status_id = 3;
+            $crear->invoice_status_id = 6;
             $crear->save();
+            return response()->json('Añadido correctamente',200);
+
         }
     }
 
