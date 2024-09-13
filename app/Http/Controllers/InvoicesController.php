@@ -137,48 +137,49 @@ class InvoicesController extends Controller
 
     public function generateBudgetReference(Invoices $invoices) {
 
-       // Obtener la fecha actual del presupuesto
-       $budgetCreationDate = $budget->creation_date ?? now();
-       $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
-
-       // Formatear la fecha para obtener los componentes necesarios
-       $year = $datetimeBudgetCreationDate->format('Y');
-       $monthNum = $datetimeBudgetCreationDate->format('m');
-
-       // Buscar la última referencia autoincremental para el año y mes actual
-       $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
-                           ->where('month_num', $monthNum)
-                           ->orderBy('reference_autoincrement', 'desc')
-                           ->first();
-
-       // Si no existe, empezamos desde 1, de lo contrario, incrementamos
-       $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
-
-       // Formatear el número autoincremental a 6 dígitos
-       $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
-
-       // Crear la referencia
-       $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
-
-       // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
-       $referenceToSave = new InvoicesReferenceAutoincrement([
-           'reference_autoincrement' => $newReferenceAutoincrement,
-           'year' => $year,
-           'month_num' => $monthNum,
-           // Otros campos pueden ser asignados si son necesarios
-       ]);
-       $referenceToSave->save();
-
-       // Devolver el resultado
-       return [
-           'id' => $referenceToSave->id,
-           'reference' => $reference,
-           'reference_autoincrement' => $newReferenceAutoincrement,
-           'budget_reference_autoincrements' => [
-               'year' => $year,
-               'month_num' => $monthNum,
-               // Añade aquí más si es necesario
-           ],
-       ];
+        // Obtener la fecha actual del presupuesto
+        $budgetCreationDate = $invoices->created_at ?? now();
+        $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+ 
+        // Formatear la fecha para obtener los componentes necesarios
+        $year = $datetimeBudgetCreationDate->format('Y');
+        $monthNum = $datetimeBudgetCreationDate->format('m');
+ 
+        dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
+        // Buscar la última referencia autoincremental para el año y mes actual
+        $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
+                            ->where('month_num', $monthNum)
+                            ->orderBy('id', 'desc')
+                            ->first();
+         //dd($latestReference->reference_autoincrement);
+        // Si no existe, empezamos desde 1, de lo contrario, incrementamos
+        $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
+ 
+        // Formatear el número autoincremental a 6 dígitos
+        $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
+ 
+        // Crear la referencia
+        $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
+ 
+        // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
+        $referenceToSave = new InvoicesReferenceAutoincrement([
+            'reference_autoincrement' => $newReferenceAutoincrement,
+            'year' => $year,
+            'month_num' => $monthNum,
+            // Otros campos pueden ser asignados si son necesarios
+        ]);
+        $referenceToSave->save();
+ 
+        // Devolver el resultado
+        return [
+            'id' => $referenceToSave->id,
+            'reference' => $reference,
+            'reference_autoincrement' => $newReferenceAutoincrement,
+            'budget_reference_autoincrements' => [
+                'year' => $year,
+                'month_num' => $monthNum,
+                // Añade aquí más si es necesario
+            ],
+        ];
    }
 }

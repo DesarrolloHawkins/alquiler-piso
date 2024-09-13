@@ -133,28 +133,35 @@ class Kernel extends ConsoleKernel
                 ->whereDate('fecha_salida', '<=', $hoy)
                 ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
                 ->get();
+                
+                
             foreach( $reservas as $reserva){
-                $data = [
-                    'budget_id' => null,
-                    'cliente_id' => $reserva->cliente_id,
-                    'reserva_id' => $reserva->id,
-                    'invoice_status_id ' => 1,
-                    'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-                    'description' => '',
-                    'fecha' => $reserva->fecha_salida,
-                    'fecha_cobro' => null,
-                    'base' => $reserva->precio,
-                    'iva' => $reserva->precio * 0.10,
-                    'descuento' => null,
-                    'total' => $reserva->precio,
-                ];
-                $crear = Invoices::create($data);
-                $referencia = $this->generateBudgetReference($crear);
-                $crear->reference = $referencia['reference'];
-                $crear->reference_autoincrement_id = $referencia['id'];
-                $crear->budget_status_id = 3;
-                $crear->save();    
+                $invoice = Invoices::where('reserva_id', $reserva->id)->first();
+                
+                if ($invoice != null) {
+                    $data = [
+                        'budget_id' => null,
+                        'cliente_id' => $reserva->cliente_id,
+                        'reserva_id' => $reserva->id,
+                        'invoice_status_id' => 1,
+                        'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
+                        'description' => '',
+                        'fecha' => $reserva->fecha_salida,
+                        'fecha_cobro' => null,
+                        'base' => $reserva->precio,
+                        'iva' => $reserva->precio * 0.10,
+                        'descuento' => null,
+                        'total' => $reserva->precio,
+                    ];
+                    $crear = Invoices::create($data);
+                    $referencia = $this->generateBudgetReference($crear);
+                    $crear->reference = $referencia['reference'];
+                    $crear->reference_autoincrement_id = $referencia['id'];
+                    $crear->invoice_status_id = 3;
+                    $crear->save();    
 
+                }
+        
             }
         })->everyMinute();
         
@@ -2014,48 +2021,49 @@ class Kernel extends ConsoleKernel
 
     public function generateBudgetReference(Invoices $invoices) {
 
-       // Obtener la fecha actual del presupuesto
-       $budgetCreationDate = $budget->creation_date ?? now();
-       $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
-
-       // Formatear la fecha para obtener los componentes necesarios
-       $year = $datetimeBudgetCreationDate->format('Y');
-       $monthNum = $datetimeBudgetCreationDate->format('m');
-
-       // Buscar la última referencia autoincremental para el año y mes actual
-       $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
-                           ->where('month_num', $monthNum)
-                           ->orderBy('reference_autoincrement', 'desc')
-                           ->first();
-
-       // Si no existe, empezamos desde 1, de lo contrario, incrementamos
-       $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
-
-       // Formatear el número autoincremental a 6 dígitos
-       $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
-
-       // Crear la referencia
-       $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
-
-       // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
-       $referenceToSave = new InvoicesReferenceAutoincrement([
-           'reference_autoincrement' => $newReferenceAutoincrement,
-           'year' => $year,
-           'month_num' => $monthNum,
-           // Otros campos pueden ser asignados si son necesarios
-       ]);
-       $referenceToSave->save();
-
-       // Devolver el resultado
-       return [
-           'id' => $referenceToSave->id,
-           'reference' => $reference,
-           'reference_autoincrement' => $newReferenceAutoincrement,
-           'budget_reference_autoincrements' => [
-               'year' => $year,
-               'month_num' => $monthNum,
-               // Añade aquí más si es necesario
-           ],
-       ];
+        // Obtener la fecha actual del presupuesto
+        $budgetCreationDate = $invoices->created_at ?? now();
+        $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+ 
+        // Formatear la fecha para obtener los componentes necesarios
+        $year = $datetimeBudgetCreationDate->format('Y');
+        $monthNum = $datetimeBudgetCreationDate->format('m');
+ 
+        dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
+        // Buscar la última referencia autoincremental para el año y mes actual
+        $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
+                            ->where('month_num', $monthNum)
+                            ->orderBy('id', 'desc')
+                            ->first();
+         //dd($latestReference->reference_autoincrement);
+        // Si no existe, empezamos desde 1, de lo contrario, incrementamos
+        $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
+ 
+        // Formatear el número autoincremental a 6 dígitos
+        $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
+ 
+        // Crear la referencia
+        $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
+ 
+        // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
+        $referenceToSave = new InvoicesReferenceAutoincrement([
+            'reference_autoincrement' => $newReferenceAutoincrement,
+            'year' => $year,
+            'month_num' => $monthNum,
+            // Otros campos pueden ser asignados si son necesarios
+        ]);
+        $referenceToSave->save();
+ 
+        // Devolver el resultado
+        return [
+            'id' => $referenceToSave->id,
+            'reference' => $reference,
+            'reference_autoincrement' => $newReferenceAutoincrement,
+            'budget_reference_autoincrements' => [
+                'year' => $year,
+                'month_num' => $monthNum,
+                // Añade aquí más si es necesario
+            ],
+        ];
    }
 }

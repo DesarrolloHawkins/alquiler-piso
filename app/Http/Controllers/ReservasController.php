@@ -572,13 +572,14 @@ class ReservasController extends Controller
     public function generateBudgetReference(Invoices $invoices) {
 
        // Obtener la fecha actual del presupuesto
-       $budgetCreationDate = $invoices->fecha ?? now();
+       $budgetCreationDate = $invoices->created_at ?? now();
        $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
 
        // Formatear la fecha para obtener los componentes necesarios
        $year = $datetimeBudgetCreationDate->format('Y');
        $monthNum = $datetimeBudgetCreationDate->format('m');
 
+       dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
        // Buscar la última referencia autoincremental para el año y mes actual
        $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
                            ->where('month_num', $monthNum)
