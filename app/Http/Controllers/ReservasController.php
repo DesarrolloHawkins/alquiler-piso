@@ -1115,7 +1115,7 @@ class ReservasController extends Controller
 
         $factura = Invoices::where('reserva_id', $reserva->id)->first();
 
-        if (count($factura) > 0 || $factura !== null) {
+        if ($factura !== null) {
             $factura->invoice_status_id = 6;
             $factura->fecha_cobro = Carbon::now();
             $factura->save();
