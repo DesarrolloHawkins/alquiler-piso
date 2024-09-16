@@ -1154,6 +1154,25 @@ class ReservasController extends Controller
         }
     }
 
+
+    public function obtenerReservas(Request $request){
+        $codigo = $request->codigo_reserva;
+        $reserva = Reserva::where('codigo_reserva', $codigo)->first();
+        if ($reserva) {
+            $data = [
+                'codigo_reserva' => $reserva->codigo_reserva,
+                'cliente' => $reserva->cliente['nombre'] == null ? $reserva->cliente->alias : $reserva->cliente['nombre'] .' ' . $reserva->cliente['apellido1'],
+                'apartamento' => $reserva->apartamento->titulo,
+                'edificio' => isset($reserva->apartamento->edificioName->nombre) ? $reserva->apartamento->edificioName->nombre : 'Edificio Hawkins Suite',
+                'fecha_entrada' => $reserva->fecha_entrada,
+                'clave' => $reserva->apartamento->claves
+            ];
+        }
+
+        return response()->json($data, 200);
+
+
+    }
     
   
 }
