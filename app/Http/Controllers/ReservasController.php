@@ -1167,9 +1167,12 @@ class ReservasController extends Controller
                 'fecha_entrada' => $reserva->fecha_entrada,
                 'clave' => $reserva->apartamento->claves
             ];
+            return response()->json($data, 200);
+        }else {
+
+            return response()->json('Error no se encontro reserva', 400);
         }
 
-        return response()->json($data, 200);
 
 
     }
