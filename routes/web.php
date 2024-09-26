@@ -21,6 +21,8 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
+Route::get('paises', [App\Http\Controllers\HomeController::class, 'paises'])->name('paises');
+Route::get('tipos', [App\Http\Controllers\HomeController::class, 'tipos'])->name('tipos');
 
 Auth::routes();
 

@@ -116,33 +116,22 @@ class WhatsappController extends Controller
     {
         $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
+
         Storage::disk('local')->put('phone-Prueba.txt', json_encode($phone) );
         Storage::disk('local')->put('phone-mensaje.txt', json_encode($mensajeExiste) );
+
         if ($mensajeExiste == null) {
 
             $idMedia = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
 
             Storage::disk('local')->put('image-'.$idMedia.'.txt', json_encode($data) );
 
-            // $url = $this->obtenerImage($idMedia);
-            // Storage::disk('local')->put('image-response-url-simple-'.$idMedia.'.txt', $url );
-
-            // $urlMedia = str_replace('\/', '/', $url );
-
-            // Storage::disk('local')->put('image-response-url-'.$idMedia.'.txt', $urlMedia );
-            // $url = str_replace('/\/', '/', $this->obtenerAudio($idMedia));
-
             $descargarImage = $this->descargarImage($idMedia);
             Storage::disk('publico')->put('nombreImagen.txt', $descargarImage );
 
-            // if ($descargarImage == true) {
-            //     Storage::disk('local')->put('image-url-final'.$idMedia.'.txt', $descargarImage );
-
-            // }
-
             $responseImage = 'Gracias!! recuerda que soy una inteligencia artificial y que no puedo ver lo que me has enviado pero mi supervisora María lo verá en el horario de 09:00 a 18:00 de Lunes a viernes. Si es tu DNI o Pasaporte es suficiente con enviármelo a mi. Mi supervisora lo recibirá. Muchas gracias!!';
             $respuestaImage = $this->chatGptPruebasConImagen($descargarImage);
-            Storage::disk('publico')->put('pruebadelectura-'.$idMedia.'.txt', $respuestaImage );
+            Storage::disk('publico')->put('lecturaImagen-'.$idMedia.'.txt', $respuestaImage );
 
             // $respuestaWhatsapp = $this->contestarWhatsapp($phone, $responseImage);
 
@@ -779,76 +768,172 @@ class WhatsappController extends Controller
             return ['error' => $e->getMessage()];
         }
     }
-    public function chatGptPruebasConImagen($imagenFilename) {
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-       
-        // Configurar los parámetros de la solicitud
-        $url = 'https://api.openai.com/v1/chat/completions';
-        $headers = array(
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json'
-        );
 
-        // Construir la URL completa de la imagen
-        $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
 
-        $data = array(
-            "model" => "gpt-4o",
-            "messages" => [
-                [
-                    "role" => "user",
-                    "content" => [
-                        [
-                            "type" => "text",
-                            "text" => "Analiza esta imagen y dime si es un dni o pasaporte, hazme la contestacion devolviendome solo un JSON, donde tenga la sigueinte estructura: {isDni: true o false, isPasaporte: true o false (dependiendo si es un dni o pasaporte lo que te envie, si es un dni o pasaporte entonces agregamos otra propiedades), informacion: { nombre, apellido,fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte }, si no es dni o pasaporte esa dos propiedades de isDni o isPasaporte deben venir false."
-                        ],
-                        [
-                            "type" => "image_url",
-                            "image_url" => [
-                                "url" => $imageUrl
-                            ]
+
+public function chatGptPruebasConImagen($imagenFilename)
+{
+    $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+
+    // Cargar los JSON de paises y tipos desde la carpeta pública
+    $paisesFilePath = public_path('paises.json');
+    $tiposFilePath = public_path('tipos.json');
+
+    $paisesData = json_decode(file_get_contents($paisesFilePath), true);
+    $tiposData = json_decode(file_get_contents($tiposFilePath), true);
+
+    // Configurar los parámetros de la solicitud
+    $url = 'https://api.openai.com/v1/chat/completions';
+    $headers = array(
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json'
+    );
+
+    // Construir la URL completa de la imagen
+    $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
+
+    // Construir el contenido del mensaje que incluye la imagen, paises y tipos de documento
+    $data = array(
+        "model" => "gpt-4",
+        "messages" => [
+            [
+                "role" => "user",
+                "content" => [
+                    [
+                        "type" => "text",
+                        "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean}. Aquí tienes información adicional sobre países y tipos de documentos."
+                    ],
+                    [
+                        "type" => "image_url",
+                        "image_url" => [
+                            "url" => $imageUrl
+                        ]
+                    ],
+                    [
+                        "type" => "json",
+                        "json" => [
+                            "paises" => $paisesData,
+                            "tipos" => $tiposData
                         ]
                     ]
                 ]
             ]
-        );
+        ]
+    );
 
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    // Inicializar cURL y configurar las opciones
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-        curl_close($curl);
-        Storage::disk('local')->put('REspuestaImagenChat.txt', json_encode($response));
-        $response_data = json_decode($response, true);
+    // Ejecutar la solicitud y obtener la respuesta
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    // Guardar la respuesta en un archivo para depuración
+    Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
+
+    // Decodificar la respuesta JSON
+    $response_data = json_decode($response, true);
+
+    // Si ocurre un error, devolver una respuesta de error
+    if ($response === false) {
+        $error = [
+            'status' => 'error',
+            'message' => 'Error al realizar la solicitud'
+        ];
+        Storage::disk('local')->put('errorChat.txt', $error['message']);
+        return response()->json($error);
+    } else {
+        // Guardar la respuesta para seguimiento
+        $responseReturn = [
+            'status' => 'ok',
+            'message' => $response_data
+        ];
+        Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
+
+        // Retornar la respuesta decodificada
         return response()->json($response_data);
-        // Procesar la respuesta
-        if ($response === false) {
-            $error = [
-                'status' => 'error',
-                'messages' => 'Error al realizar la solicitud'
-            ];
-            Storage::disk('local')->put('errorChapt.txt', $error['messages']);
+    }
+}
 
-            return response()->json($error);
-        } else {
-            $response_data = json_decode($response, true);
-            $responseReturn = [
-                'status' => 'ok',
-                'messages' => $response_data['choices'][0]['text']
-            ];
-            Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages']);
 
-            return response()->json($response_data);
-        }
+
+
+
+    // public function chatGptPruebasConImagen($imagenFilename) {
+    //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+       
+    //     // Configurar los parámetros de la solicitud
+    //     $url = 'https://api.openai.com/v1/chat/completions';
+    //     $headers = array(
+    //         'Authorization: Bearer ' . $token,
+    //         'Content-Type: application/json'
+    //     );
+
+    //     // Construir la URL completa de la imagen
+    //     $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
+
+    //     $data = array(
+    //         "model" => "gpt-4o",
+    //         "messages" => [
+    //             [
+    //                 "role" => "user",
+    //                 "content" => [
+    //                     [
+    //                         "type" => "text",
+    //                         "text" => "Analiza esta imagen y dime si es un dni o pasaporte, hazme la contestacion devolviendome solo un JSON, donde tenga la sigueinte estructura: {isDni: true o false, isPasaporte: true o false (dependiendo si es un dni o pasaporte lo que te envie, si es un dni o pasaporte entonces agregamos otra propiedades), informacion: { nombre, apellido,fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte }, si no es dni o pasaporte esa dos propiedades de isDni o isPasaporte deben venir false."
+    //                     ],
+    //                     [
+    //                         "type" => "image_url",
+    //                         "image_url" => [
+    //                             "url" => $imageUrl
+    //                         ]
+    //                     ]
+    //                 ]
+    //             ]
+    //         ]
+    //     );
+
+    //     // Inicializar cURL y configurar las opciones
+    //     $curl = curl_init();
+    //     curl_setopt($curl, CURLOPT_URL, $url);
+    //     curl_setopt($curl, CURLOPT_POST, true);
+    //     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+    //     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+    //     // Ejecutar la solicitud y obtener la respuesta
+    //     $response = curl_exec($curl);
+    //     curl_close($curl);
+    //     Storage::disk('local')->put('REspuestaImagenChat.txt', json_encode($response));
+    //     $response_data = json_decode($response, true);
+    //     return response()->json($response_data);
+    //     // Procesar la respuesta
+    //     if ($response === false) {
+    //         $error = [
+    //             'status' => 'error',
+    //             'messages' => 'Error al realizar la solicitud'
+    //         ];
+    //         Storage::disk('local')->put('errorChapt.txt', $error['messages']);
+
+    //         return response()->json($error);
+    //     } else {
+    //         $response_data = json_decode($response, true);
+    //         $responseReturn = [
+    //             'status' => 'ok',
+    //             'messages' => $response_data['choices'][0]['text']
+    //         ];
+    //         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages']);
+
+    //         return response()->json($response_data);
+    //     }
         
 
-    }
+    // }
 
     public function chatGpModelo( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
