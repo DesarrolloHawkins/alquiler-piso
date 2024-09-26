@@ -772,101 +772,105 @@ class WhatsappController extends Controller
 
 
     public function chatGptPruebasConImagen($imagenFilename)
-{
-    $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-
-    // Cargar los JSON de paises y tipos desde la carpeta pública
-    $paisesFilePath = public_path('paises.json');
-    $tiposFilePath = public_path('tipos.json');
-
-    $paisesData = json_decode(file_get_contents($paisesFilePath), true);
-    $tiposData = json_decode(file_get_contents($tiposFilePath), true);
-
-    // Leer la imagen y convertirla a base64
-    $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
-    if (file_exists($imagePath)) {
-        $imageData = file_get_contents($imagePath);
-        $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
-    } else {
-        return response()->json(['error' => 'La imagen no se encuentra.']);
-    }
-
-    // Configurar los parámetros de la solicitud
-    $url = 'https://api.openai.com/v1/chat/completions';
-    $headers = array(
-        'Authorization: Bearer ' . $token,
-        'Content-Type: application/json'
-    );
-
-    // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento
-    $data = array(
-        "model" => "gpt-4",
-        "messages" => [
-            [
-                "role" => "user",
-                "content" => [
-                    [
-                        "type" => "text",
-                        "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean}. Aquí tienes información adicional sobre países y tipos de documentos."
-                    ],
-                    [
-                        "type" => "image_url",
-                        "image_url" => [
-                            "url" => $imageBase64
-                        ]
-                    ],
-                    [
-                        "type" => "json",
-                        "json" => [
-                            "paises" => $paisesData,
-                            "tipos" => $tiposData
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+    
+        // Cargar los JSON de paises y tipos desde la carpeta pública
+        $paisesFilePath = public_path('paises.json');
+        $tiposFilePath = public_path('tipos.json');
+    
+        $paisesData = json_decode(file_get_contents($paisesFilePath), true);
+        $tiposData = json_decode(file_get_contents($tiposFilePath), true);
+    
+        // Leer la imagen y convertirla a base64
+        $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
+        if (file_exists($imagePath)) {
+            $imageData = file_get_contents($imagePath);
+            $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
+        } else {
+            return response()->json(['error' => 'La imagen no se encuentra.']);
+        }
+    
+        // Convertir los datos de países y tipos a texto JSON
+        $paisesJsonText = json_encode($paisesData);
+        $tiposJsonText = json_encode($tiposData);
+    
+        // Configurar los parámetros de la solicitud
+        $url = 'https://api.openai.com/v1/chat/completions';
+        $headers = array(
+            'Authorization: Bearer ' . $token,
+            'Content-Type: application/json'
+        );
+    
+        // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
+        $data = array(
+            "model" => "gpt-4",
+            "messages" => [
+                [
+                    "role" => "user",
+                    "content" => [
+                        [
+                            "type" => "text",
+                            "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean}. Aquí tienes información adicional sobre países y tipos de documentos:"
+                        ],
+                        [
+                            "type" => "text",
+                            "text" => "Paises: " . $paisesJsonText
+                        ],
+                        [
+                            "type" => "text",
+                            "text" => "Tipos: " . $tiposJsonText
+                        ],
+                        [
+                            "type" => "image_url",
+                            "image_url" => [
+                                "url" => $imageBase64
+                            ]
                         ]
                     ]
                 ]
             ]
-        ]
-    );
-
-    // Inicializar cURL y configurar las opciones
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_POST, true);
-    curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-    // Ejecutar la solicitud y obtener la respuesta
-    $response = curl_exec($curl);
-    curl_close($curl);
-
-    // Guardar la respuesta en un archivo para depuración
-    Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
-
-    // Decodificar la respuesta JSON
-    $response_data = json_decode($response, true);
-
-    // Si ocurre un error, devolver una respuesta de error
-    if ($response === false) {
-        $error = [
-            'status' => 'error',
-            'message' => 'Error al realizar la solicitud'
-        ];
-        Storage::disk('local')->put('errorChat.txt', $error['message']);
-        return response()->json($error);
-    } else {
-        // Guardar la respuesta para seguimiento
-        $responseReturn = [
-            'status' => 'ok',
-            'message' => $response_data
-        ];
-        Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
-
-        // Retornar la respuesta decodificada
-        return response()->json($response_data);
+        );
+    
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+    
+        // Guardar la respuesta en un archivo para depuración
+        Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
+    
+        // Decodificar la respuesta JSON
+        $response_data = json_decode($response, true);
+    
+        // Si ocurre un error, devolver una respuesta de error
+        if ($response === false) {
+            $error = [
+                'status' => 'error',
+                'message' => 'Error al realizar la solicitud'
+            ];
+            Storage::disk('local')->put('errorChat.txt', $error['message']);
+            return response()->json($error);
+        } else {
+            // Guardar la respuesta para seguimiento
+            $responseReturn = [
+                'status' => 'ok',
+                'message' => $response_data
+            ];
+            Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
+    
+            // Retornar la respuesta decodificada
+            return response()->json($response_data);
+        }
     }
-}
-
-
+    
 
 
 
