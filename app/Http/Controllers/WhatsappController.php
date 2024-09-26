@@ -771,7 +771,7 @@ class WhatsappController extends Controller
 
 
 
-public function chatGptPruebasConImagen($imagenFilename)
+    public function chatGptPruebasConImagen($imagenFilename)
 {
     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
 
@@ -782,6 +782,15 @@ public function chatGptPruebasConImagen($imagenFilename)
     $paisesData = json_decode(file_get_contents($paisesFilePath), true);
     $tiposData = json_decode(file_get_contents($tiposFilePath), true);
 
+    // Leer la imagen y convertirla a base64
+    $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
+    if (file_exists($imagePath)) {
+        $imageData = file_get_contents($imagePath);
+        $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
+    } else {
+        return response()->json(['error' => 'La imagen no se encuentra.']);
+    }
+
     // Configurar los parámetros de la solicitud
     $url = 'https://api.openai.com/v1/chat/completions';
     $headers = array(
@@ -789,10 +798,7 @@ public function chatGptPruebasConImagen($imagenFilename)
         'Content-Type: application/json'
     );
 
-    // Construir la URL completa de la imagen
-    $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
-
-    // Construir el contenido del mensaje que incluye la imagen, paises y tipos de documento
+    // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento
     $data = array(
         "model" => "gpt-4",
         "messages" => [
@@ -806,7 +812,7 @@ public function chatGptPruebasConImagen($imagenFilename)
                     [
                         "type" => "image_url",
                         "image_url" => [
-                            "url" => $imageUrl
+                            "url" => $imageBase64
                         ]
                     ],
                     [
@@ -859,6 +865,7 @@ public function chatGptPruebasConImagen($imagenFilename)
         return response()->json($response_data);
     }
 }
+
 
 
 
