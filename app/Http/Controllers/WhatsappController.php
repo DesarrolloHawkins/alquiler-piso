@@ -804,7 +804,7 @@ class WhatsappController extends Controller
     
         // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
         $data = array(
-            "model" => "gpt-4",
+            "model" => "gpt-4o",
             "messages" => [
                 [
                     "role" => "user",
