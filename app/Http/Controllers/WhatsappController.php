@@ -115,11 +115,13 @@ class WhatsappController extends Controller
 
     public function imageMensaje( $data )
     {
+        
         // Comprobamos si el Mensaje existe ya
         $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
-
+        
         // Obetenemos el numero de Telefono
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
+        Storage::disk('publico')->put('data-'.$phone.'.txt', $data );
 
         // Comprobamos si existe algun cliente con ese telefono
         $cliente = Cliente::where('telefono', $phone)->get();
