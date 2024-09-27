@@ -133,8 +133,11 @@ class WhatsappController extends Controller
             
             $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
             
-            Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', $respuestaImageChatGPT );
+            Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', json_encode($respuestaImageChatGPT) );
             return true;
+
+
+
             $reservas = Reserva::where('cliente_id', $cliente->id)->get();
             // Comprobamos si existen reservas
             if (count($reservas) > 0) {
