@@ -121,7 +121,7 @@ class WhatsappController extends Controller
         
         // Obetenemos el numero de Telefono
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
-        Storage::disk('publico')->put('data-'.$phone.'.txt', $data );
+        Storage::disk('publico')->put('data-'.$phone.'.txt', json_encode($data) );
 
         // Comprobamos si existe algun cliente con ese telefono
         $cliente = Cliente::where('telefono', $phone)->get();
