@@ -124,12 +124,18 @@ class WhatsappController extends Controller
         Storage::disk('publico')->put('data-'.$phone.'.txt', json_encode($data) );
 
         // Comprobamos si existe algun cliente con ese telefono
-        $cliente = Cliente::where('telefono', $phone)->get();
+        $cliente = Cliente::where('telefono', $phone)->first();
         // Si el cliente existe vamos a buscar una reserva que tenga
-        if (count($cliente) > 0 ) {
+        if ($cliente != null) {
             // Reservas del cliente que nos ha escrito
+            $idImg = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
+            $fileName = $this->descargarImage($idImg); // obtenemos el nombre de la imagen
+            
+            $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
+            
+            Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', $respuestaImageChatGPT );
+            return true;
             $reservas = Reserva::where('cliente_id', $cliente->id)->get();
-
             // Comprobamos si existen reservas
             if (count($reservas) > 0) {
                 foreach ($reservas as $reserva) {
