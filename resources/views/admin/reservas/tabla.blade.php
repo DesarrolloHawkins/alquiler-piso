@@ -16,7 +16,16 @@
     th { background-color: #f2f2f2; }
     .header { background-color: #0f1739; color: white; padding: 20px 20px; margin-bottom: 1rem }
     .fondo_verde {
-      background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
+        background-color: #4CAF50 !important; /* Color verde para el día de hoy */
+        color: white;
+    }
+    .fondo_naranja {
+        background-color: #FFA500 !important; /* Color naranja para fechas pasadas */
+        color: white;
+    }
+    .fondo_celeste {
+        background-color: #00CFFF !important; /* Color celeste para fechas futuras */
+        color: white;
     }
     /* Hacer sticky la primera columna (Apartamentos) */
     .apartments-column {
@@ -26,11 +35,6 @@
         left: 0;
         z-index: 10;
         background-color: white;
-    }
-
-    /* Establecer el scroll horizontal */
-    .table-responsive {
-        overflow-x: auto;
     }
 
     /* CSS para celdas con división diagonal */
@@ -49,7 +53,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #f0f0f0;
+        background-color: white;
         clip-path: polygon(0 0, 100% 0, 0 100%);
     }
 
@@ -67,14 +71,14 @@
     .diagonal-cell-content-top-left {
         top: 0;
         left: 0;
-        background-color: #4CAF50;
+        background-color: #FFA500; /* Naranja para fechas pasadas */
         color: white;
     }
 
     .diagonal-cell-content-bottom-right {
         bottom: 0;
         right: 0;
-        background-color: #2196F3;
+        background-color: #00CFFF; /* Celeste para fechas futuras */
         color: white;
     }
 </style>
@@ -148,17 +152,20 @@
                           @if ($reservaSalida && $reservaEntrada)
                               <td class="diagonal-cell {{ $claseDiaHoy }}">
                                   <div class="diagonal-cell-content diagonal-cell-content-top-left">
-                                      {{ $reservaSalida->cliente->nombre }} (Salida)
+                                      {{ $reservaSalida->cliente->nombre }}
                                   </div>
                                   <div class="diagonal-cell-content diagonal-cell-content-bottom-right">
-                                      {{ $reservaEntrada->cliente->nombre }} (Entrada)
+                                      {{ $reservaEntrada->cliente->nombre }}
                                   </div>
                               </td>
                           @elseif ($reservaEntrada)
                               {{-- Caso normal de reserva de entrada --}}
                               <td class="p-0 {{ $claseDiaHoy }}">
                                   <div class="w-100 d-flex justify-content-between align-items-center">
-                                      <button type="button" class="w-100 rounded-0 btn btn-info" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaEntrada->id }}">
+                                      @php
+                                          $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success fondo_verde' : ($fechaEntrada->isPast() ? 'btn-warning fondo_naranja' : 'btn-info fondo_celeste');
+                                      @endphp
+                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaEntrada->id }}">
                                           {{ $reservaEntrada->fecha_entrada->format('d') }} - {{ $reservaEntrada->fecha_salida->format('d') }}
                                       </button>
                                   </div>
@@ -167,7 +174,10 @@
                               {{-- Caso normal de reserva de salida --}}
                               <td class="p-0 {{ $claseDiaHoy }}">
                                   <div class="w-100 d-flex justify-content-between align-items-center">
-                                      <button type="button" class="w-100 rounded-0 btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaSalida->id }}">
+                                      @php
+                                          $claseBoton = ($fechaSalida->isToday()) ? 'btn-success fondo_verde' : ($fechaSalida->isPast() ? 'btn-warning fondo_naranja' : 'btn-info fondo_celeste');
+                                      @endphp
+                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaSalida->id }}">
                                           {{ $reservaSalida->fecha_entrada->format('d') }} - {{ $reservaSalida->fecha_salida->format('d') }}
                                       </button>
                                   </div>
