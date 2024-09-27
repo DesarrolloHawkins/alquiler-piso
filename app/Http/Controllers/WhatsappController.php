@@ -168,7 +168,7 @@ class WhatsappController extends Controller
             }
         }else {
             
-            $fileName = $this->descargarImageTemporal(); // temporalWhatsapp/fileName.[jpg,png] obtenemos la ruta completa que esta en public
+            $fileName = $this->descargarImageTemporal(null); // temporalWhatsapp/fileName.[jpg,png] obtenemos la ruta completa que esta en public
         }
         
         Storage::disk('local')->put('phone-Prueba.txt', json_encode($phone) );
