@@ -139,28 +139,102 @@ class WhatsappController extends Controller
                         $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
                         
                         Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', $respuestaImageChatGPT );
+                        return true;
+                        //    'nombre': nombre,
+                        //    'apellido1': apellido1,
+                        //    'apellido2': apellido2,
+                        //    'nacionalidad': data['cliente']['nacionalidadCode'],
+                        //    'nacionalidadStr': data['cliente']['nacionalidadStr'],
+                        //    'tipoDocumento': data['cliente']['tipo_documento'],
+                        //    'tipoDocumentoStr': data['cliente']['tipo_documento_str'],
+                        //    'numIdentificacion': data['cliente']['num_identificacion'],
+                        //    'fechaExpedicionDoc': datetime.strptime(data['cliente']['fecha_expedicion_doc'], '%Y-%m-%d').strftime('%d/%m/%Y'),
+                        //    'dia': datetime.strptime(data['cliente']['fecha_nacimiento'], '%Y-%m-%d').day,
+                        //    'mes': datetime.strptime(data['cliente']['fecha_nacimiento'], '%Y-%m-%d').month,
+                        //    'ano': datetime.strptime(data['cliente']['fecha_nacimiento'], '%Y-%m-%d').year,
+                        //    'fechaNacimiento': datetime.strptime(data['cliente']['fecha_nacimiento'], '%Y-%m-%d').strftime('%d/%m/%Y'),
+                        //    'sexo': data['cliente']['sexo_str'],
+                        //    'sexoStr': data['cliente']['sexo'],
+                        //    'fechaEntrada': datetime.strptime(data['fecha_entrada'], '%Y-%m-%d').strftime('%d/%m/%Y'),
+
+                    /*    {
+                            "id":"chatcmpl-ABjhmK5e9ctr1oPPgo6EPvb5k0SUN",
+                            "object":"chat.completion",
+                            "created":1727360662,
+                            "model":"gpt-4o-2024-05-13",
+                            "choices":[
+                                {
+                                    "index":0,
+                                    "message":{
+                                        "role":"assistant",
+                                        "content":
+                                            "isDni": true,
+                                            "isPasaporte": false,
+                                            "informacion": {
+                                                "nombre": "FILIPE ANDR\u00c9\",
+                                                "apellido1": "JESUS",
+                                                "apellido2": "CASTANHA",
+                                                "fechaNacimiento": "15 06 1988",
+                                                "fechaExpedicionDoc": "03 08 2031",
+                                                "pais": "PORTUGAL",
+                                                "numIdentificacion": "13379841",
+                                                "value": "A9125AAAAA",
+                                                "isEuropean": true,
+                                                "sexo": "Masculino o Femenino",
+                                                "nacionalidadStr": ,
+                                                "nacionalidad": ,
+                                                "tipoDocumento": ,
+                                                "tipoDocumentoStr": ,
+                                                "sexoStr": ,
+                                                "dia": esto es sobre la fecha de nacimiento ,
+                                                "mes": esto es sobre la fecha de nacimiento ,
+                                                "ano": esto es sobre la fecha de nacimiento ,
+                                            }
+                                    },
+                                    "refusal":null
+                                },
+                                    "logprobs":null,
+                                    "finish_reason":"stop"
+                                }
+                            ],
+                            "usage":
+                                {
+                                    "prompt_tokens":4866,
+                                    "completion_tokens":135,
+                                    "total_tokens":5001,
+                                    "completion_tokens_details":{
+                                        "reasoning_tokens":0
+                                    }
+                                },
+                            "system_fingerprint":"fp_3537616b13"
+                        } */
+
+                        // if($respuestaImageChatGPT['isDni'] == true){
+                        //     if($cliente->nombre == $respuestaImageChatGPT){
+                        //         $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT['informacion']->nombre : '';
+                        //         $cliente->apellido1 == null ? $cliente->apellido1 = $respuestaImageChatGPT['informacion']->apellido1 : '';
+                        //         $cliente->apellido2 == null ? $cliente->apellido2 = $respuestaImageChatGPT['informacion']->apellido2 : '';
+                        //         $cliente->nacionalidad == null ? $cliente->nacionalidad = $respuestaImageChatGPT['informacion']->nacionalidad : '';
+                        //         $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT['informacion']->nombre : '';
+                        //         $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT['informacion']->nombre : '';
+                        //         $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT['informacion']->nombre : '';
+                        //     }
+                        // }elseif($respuestaImageChatGPT['isPasaporte'] == true){
+
+                        // }
                         
-                        if($cliente->nombre == $respuestaImageChatGPT){
-                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
-                            $cliente->apellido1 == null ? $cliente->apellido1 = $respuestaImageChatGPT->apellido1 : '';
-                            $cliente->apellido2 == null ? $cliente->apellido2 = $respuestaImageChatGPT->apellido2 : '';
-                            $cliente->nacionalidad == null ? $cliente->nacionalidad = $respuestaImageChatGPT->nacionalidad : '';
-                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
-                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
-                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
-                        }
 
-                        $responseImage = '!';
+                        // $responseImage = '!';
 
-                        $dataRegistrarChat = [
-                            'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
-                            'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
-                            'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
-                            'respuesta' => $responseImage,
-                            'status' => 1,
-                            'type' => 'image'
-                        ];
-                        ChatGpt::create( $dataRegistrarChat );
+                        // $dataRegistrarChat = [
+                        //     'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                        //     'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                        //     'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
+                        //     'respuesta' => $responseImage,
+                        //     'status' => 1,
+                        //     'type' => 'image'
+                        // ];
+                        // ChatGpt::create( $dataRegistrarChat );
                         //Storage::disk('local')->put( 'image-'.$fileName.'.txt', json_encode($data) );
                         
                     }
@@ -853,6 +927,106 @@ class WhatsappController extends Controller
 
 
 
+    // public function chatGptPruebasConImagen($imagenFilename)
+    // {
+    //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+    
+    //     // Cargar los JSON de paises y tipos desde la carpeta pública
+    //     $paisesFilePath = public_path('paises.json');
+    //     $tiposFilePath = public_path('tipos.json');
+    
+    //     $paisesData = json_decode(file_get_contents($paisesFilePath), true);
+    //     $tiposData = json_decode(file_get_contents($tiposFilePath), true);
+    
+    //     // Leer la imagen y convertirla a base64
+    //     $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
+    //     if (file_exists($imagePath)) {
+    //         $imageData = file_get_contents($imagePath);
+    //         $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
+    //     } else {
+    //         return response()->json(['error' => 'La imagen no se encuentra.']);
+    //     }
+    
+    //     // Convertir los datos de países y tipos a texto JSON
+    //     $paisesJsonText = json_encode($paisesData);
+    //     $tiposJsonText = json_encode($tiposData);
+    
+    //     // Configurar los parámetros de la solicitud
+    //     $url = 'https://api.openai.com/v1/chat/completions';
+    //     $headers = array(
+    //         'Authorization: Bearer ' . $token,
+    //         'Content-Type: application/json'
+    //     );
+    
+    //     // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
+    //     $data = array(
+    //         "model" => "gpt-4o",
+    //         "messages" => [
+    //             [
+    //                 "role" => "user",
+    //                 "content" => [
+    //                     [
+    //                         "type" => "text",
+    //                         "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean, mensaje}. En mensaje debes colocar tu respuesta para poder contestar al cliente, Aquí tienes información adicional sobre países y tipos de documentos:"
+    //                     ],
+    //                     [
+    //                         "type" => "text",
+    //                         "text" => "Paises: " . $paisesJsonText
+    //                     ],
+    //                     [
+    //                         "type" => "text",
+    //                         "text" => "Tipos: " . $tiposJsonText
+    //                     ],
+    //                     [
+    //                         "type" => "image_url",
+    //                         "image_url" => [
+    //                             "url" => $imageBase64
+    //                         ]
+    //                     ]
+    //                 ]
+    //             ]
+    //         ]
+    //     );
+    
+    //     // Inicializar cURL y configurar las opciones
+    //     $curl = curl_init();
+    //     curl_setopt($curl, CURLOPT_URL, $url);
+    //     curl_setopt($curl, CURLOPT_POST, true);
+    //     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+    //     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    
+    //     // Ejecutar la solicitud y obtener la respuesta
+    //     $response = curl_exec($curl);
+    //     curl_close($curl);
+    
+    //     // Guardar la respuesta en un archivo para depuración
+    //     //Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
+    
+    //     // Decodificar la respuesta JSON
+    //     $response_data = json_decode($response, true);
+    
+    //     // Si ocurre un error, devolver una respuesta de error
+    //     if ($response === false) {
+    //         $error = [
+    //             'status' => 'error',
+    //             'message' => 'Error al realizar la solicitud'
+    //         ];
+    //         //Storage::disk('local')->put('errorChat.txt', $error['message']);
+    //         return response()->json($error);
+    //     } else {
+    //         // Guardar la respuesta para seguimiento
+    //         $responseReturn = [
+    //             'status' => 'ok',
+    //             'message' => $response_data
+    //         ];
+    //         //Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
+    
+    //         // Retornar la respuesta decodificada
+    //         return $response_data;
+    //     }
+    // }
+    
     public function chatGptPruebasConImagen($imagenFilename)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -868,7 +1042,7 @@ class WhatsappController extends Controller
         $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
         if (file_exists($imagePath)) {
             $imageData = file_get_contents($imagePath);
-            $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
+            $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData);
         } else {
             return response()->json(['error' => 'La imagen no se encuentra.']);
         }
@@ -893,7 +1067,7 @@ class WhatsappController extends Controller
                     "content" => [
                         [
                             "type" => "text",
-                            "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean, mensaje}. En mensaje debes colocar tu respuesta para poder contestar al cliente, Aquí tienes información adicional sobre países y tipos de documentos:"
+                            "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido1, apellido2, fechaNacimiento, fechaExpedicionDoc, pais, numIdentificacion, value, isEuropean, mensaje}. En mensaje debes colocar tu respuesta para poder contestar al cliente. Aquí tienes información adicional sobre países y tipos de documentos:"
                         ],
                         [
                             "type" => "text",
@@ -926,34 +1100,82 @@ class WhatsappController extends Controller
         $response = curl_exec($curl);
         curl_close($curl);
     
-        // Guardar la respuesta en un archivo para depuración
-        //Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
-    
         // Decodificar la respuesta JSON
         $response_data = json_decode($response, true);
     
         // Si ocurre un error, devolver una respuesta de error
         if ($response === false) {
-            $error = [
-                'status' => 'error',
-                'message' => 'Error al realizar la solicitud'
-            ];
-            //Storage::disk('local')->put('errorChat.txt', $error['message']);
-            return response()->json($error);
-        } else {
-            // Guardar la respuesta para seguimiento
-            $responseReturn = [
-                'status' => 'ok',
-                'message' => $response_data
-            ];
-            //Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
+            return response()->json(['status' => 'error', 'message' => 'Error al realizar la solicitud']);
+        }
     
-            // Retornar la respuesta decodificada
-            return $response_data;
+        // Procesar la respuesta para ajustar los campos adicionales
+        if (!empty($response_data)) {
+            $informacion = $response_data['informacion'] ?? [];
+    
+            // Agregar campos adicionales basados en los datos JSON y la lógica que mencionas:
+            
+            // Buscar la nacionalidad en el JSON de países
+            $pais = $informacion['pais'] ?? '';
+            if (!empty($paisesData[$pais])) {
+                $informacion['nacionalidadStr'] = $pais;
+                $informacion['nacionalidad'] = $paisesData[$pais]['value'] ?? '';
+                $informacion['isEuropean'] = $paisesData[$pais]['isEuropean'] ?? false;
+            }
+    
+            // Buscar el tipo de documento en el JSON de tipos de documento
+            $tipoDocumento = $informacion['tipoDocumento'] ?? '';
+            foreach ($tiposData as $tipo) {
+                if ($tipo['codigo'] == $tipoDocumento) {
+                    $informacion['tipoDocumentoStr'] = $tipo['descripcion'];
+                    break;
+                }
+            }
+    
+            // Validar el sexo y convertirlo a "M" o "F"
+            $sexo = $informacion['sexo'] ?? '';
+            $informacion['sexoStr'] = ($sexo == 'Masculino') ? 'M' : 'F';
+    
+            // Procesar fecha de nacimiento (día, mes, año)
+            if (!empty($informacion['fechaNacimiento'])) {
+                $fecha = explode(' ', $informacion['fechaNacimiento']);
+                if (count($fecha) === 3) {
+                    $informacion['dia'] = $fecha[0];
+                    $informacion['mes'] = $fecha[1];
+                    $informacion['ano'] = $fecha[2];
+                }
+            }
+    
+            // Retornar la respuesta procesada
+            return [
+                'isDni' => $response_data['isDni'] ?? false,
+                'isPasaporte' => $response_data['isPasaporte'] ?? false,
+                'informacion' => $informacion
+            ];
+        }
+    
+        return response()->json(['status' => 'error', 'message' => 'No se recibió respuesta válida.']);
+    }
+    
+    public function obtenerStringDNI($tipo)
+    {
+        switch ($tipo) {
+            case 'D':
+                return "DNI";
+            case 'C':
+                return "PERMISO CONDUCIR ESPAÑOL";
+            case 'X':
+                return "PERMISO DE RESIDENCIA DE ESTADO MIEMBRO DE LA UE";
+            case 'N':
+                return "NIE O TARJETA ESPAÑOLA DE EXTRANJEROS";
+            case 'I':
+                return "CARTA DE IDENTIDAD EXTRANJERA";
+            case 'P':
+                return "PASAPORTE";
+            default:
+                return "Desconocido";
         }
     }
     
-
 
 
 

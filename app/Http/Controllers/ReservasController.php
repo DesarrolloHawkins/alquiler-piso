@@ -468,14 +468,14 @@ class ReservasController extends Controller
     public function getData() {
         $hoy = Carbon::now();
         $reservas = Reserva::whereDate('fecha_entrada', $hoy)
-                          ->where(function($query) {
-                              $query->where('dni_entregado', true);
-                          })
-                          ->where(function($query) {
-                              $query->where('enviado_webpol', false)
-                                    ->orWhereNull('enviado_webpol');
-                          })
-                          ->get();
+                ->where(function($query) {
+                    $query->where('dni_entregado', true);
+                })
+                ->where(function($query) {
+                    $query->where('enviado_webpol', false)
+                        ->orWhereNull('enviado_webpol');
+                })
+                ->get();
         if (count($reservas) > 0) {
             foreach($reservas as $reserva){
                 $reserva['cliente'] = $reserva->cliente;
