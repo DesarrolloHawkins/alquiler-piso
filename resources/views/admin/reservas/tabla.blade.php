@@ -64,6 +64,51 @@
         left: 0;
     }
 
+    .diagonal-cell {
+    position: relative;
+    height: 100%;
+    padding: 0;
+    background-color: white;
+    overflow: hidden;
+}
+
+.diagonal-cell::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.diagonal-cell-content {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    padding: 5px;
+}
+
+.diagonal-cell-content-top-left {
+    top: 0;
+    left: 0;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.diagonal-cell-content-bottom-right {
+    bottom: 0;
+    right: 0;
+    background-color: #2196F3;
+    color: white;
+}
+
+
 </style>
 
 <div class="container-fluid">
@@ -100,46 +145,71 @@
                       <td class="apartments-column">{{ $apartamento->titulo }}</td>
                       
                       @for ($day = 1; $day <= $daysInMonth; $day++)
-                          @php
-                              $found = false;
-                              $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
-                          @endphp
-                  
-                          {{-- Buscar si hay una reserva que coincida con este día --}}
-                         
-                          @foreach ($apartamento->reservas as $itemReserva)
+    @php
+        $found = false;
+        $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
+        $reservaSalida = null; // Para la reserva que sale ese día
+        $reservaEntrada = null; // Para la reserva que entra ese día
+    @endphp
 
-                          @php
-                              // Obtener la fecha de la reserva en formato Carbon
-                              $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                              $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
-                              $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
-                          @endphp
-                      
-                          {{-- Si el día coincide con el inicio de la reserva --}}
-                          @if ($day >= $fechaEntrada->day && $day <= $fechaSalida->day)
-                              @php
-                                  $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
-                              @endphp
-                      
-                              {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
-                              <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
-                                  <div class="w-100 d-flex justify-content-between align-items-center">
-                                      {{-- Botón con detalles de la reserva --}}
-                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                          {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
-                                      </button>
-                                  </div>
-                              </td>
-                      
-                              @php
-                                  // Saltar los días cubiertos por el colspan
-                                  $day += $diasDiferencia - 1;
-                                  $found = true;
-                              @endphp
-                              @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
-                          @endif
-                      @endforeach
+    {{-- Buscar si hay una reserva que coincida con este día --}}
+    @foreach ($apartamento->reservas as $itemReserva)
+        @php
+            $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+            $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+        @endphp
+
+        {{-- Caso 1: Día coincide con la fecha de salida de una reserva --}}
+        @if ($day == $fechaSalida->day)
+            @php
+                $reservaSalida = $itemReserva;
+                $found = true;
+            @endphp
+        @endif
+
+        {{-- Caso 2: Día coincide con la fecha de entrada de otra reserva --}}
+        @if ($day == $fechaEntrada->day)
+            @php
+                $reservaEntrada = $itemReserva;
+                $found = true;
+            @endphp
+        @endif
+    @endforeach
+
+    {{-- Si hay coincidencia de entrada y salida el mismo día, se muestra la celda dividida --}}
+    @if ($reservaSalida && $reservaEntrada)
+        <td class="diagonal-cell {{ $claseDiaHoy }}">
+            <div class="diagonal-cell-content diagonal-cell-content-top-left">
+                {{ $reservaSalida->cliente->nombre }} (Salida)
+            </div>
+            <div class="diagonal-cell-content diagonal-cell-content-bottom-right">
+                {{ $reservaEntrada->cliente->nombre }} (Entrada)
+            </div>
+        </td>
+    @elseif ($reservaEntrada)
+        {{-- Caso normal de reserva de entrada --}}
+        <td class="p-0 {{ $claseDiaHoy }}">
+            <div class="w-100 d-flex justify-content-between align-items-center">
+                <button type="button" class="w-100 rounded-0 btn btn-info" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaEntrada->id }}">
+                    {{ $reservaEntrada->fecha_entrada->format('d') }} - {{ $reservaEntrada->fecha_salida->format('d') }}
+                </button>
+            </div>
+        </td>
+    @elseif ($reservaSalida)
+        {{-- Caso normal de reserva de salida --}}
+        <td class="p-0 {{ $claseDiaHoy }}">
+            <div class="w-100 d-flex justify-content-between align-items-center">
+                <button type="button" class="w-100 rounded-0 btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaSalida->id }}">
+                    {{ $reservaSalida->fecha_entrada->format('d') }} - {{ $reservaSalida->fecha_salida->format('d') }}
+                </button>
+            </div>
+        </td>
+    @else
+        {{-- Celda vacía --}}
+        <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
+    @endif
+@endfor
+
                       
                   
                   
