@@ -16,18 +16,14 @@
     th { background-color: #f2f2f2; }
     .header { background-color: #0f1739; color: white; padding: 20px 20px; margin-bottom: 1rem }
     .fondo_verde {
-        background-color: #4CAF50 !important; /* Verde para el día de hoy */
-        color: white;
+        background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
     }
     .fondo_naranja {
-        background-color: #FFA500 !important; /* Naranja para fechas pasadas */
-        color: white;
+        background-color: #FFA500 !important; /* Naranja para reservas pasadas */
     }
     .fondo_celeste {
-        background-color: #00CFFF !important; /* Celeste para fechas futuras */
-        color: white;
+        background-color: #00CFFF !important; /* Celeste para reservas futuras */
     }
-
     /* Hacer sticky la primera columna (Apartamentos) */
     .apartments-column {
         white-space: nowrap;
@@ -38,40 +34,35 @@
         background-color: white;
     }
 
-    /* Dividir celdas diagonalmente */
+    /* CSS para celdas con división diagonal */
     .diagonal-cell {
         position: relative;
         height: 100%;
         padding: 0;
-        overflow: hidden;
         background-color: white;
+        overflow: hidden;
     }
 
     .diagonal-cell::before {
         content: "";
         position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         background-color: white;
-        border-left: 1px solid #ccc;
-        border-bottom: 1px solid #ccc;
-        transform: rotate(45deg);
-        top: 0;
-        left: -50%;
-        z-index: 0;
+        clip-path: polygon(0 0, 100% 0, 0 100%);
     }
 
     .diagonal-cell-content {
         position: absolute;
+        width: 50%;
+        height: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 50%;
-        height: 50%;
-        z-index: 1;
         font-size: 12px;
-        padding: 2px;
-        box-sizing: border-box;
+        padding: 5px;
     }
 
     .diagonal-cell-content-top-left {
@@ -111,7 +102,7 @@
                         @for ($day = 1; $day <= $daysInMonth; $day++)
                             @php
                                 $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
-                                $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase si es el día de hoy
+                                $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Agregar la clase si es el día de hoy
                             @endphp
                             <th class="{{ $claseDiaHoy }}">{{ $day }}</th> <!-- Encabezado del día -->
                         @endfor
