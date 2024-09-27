@@ -16,16 +16,7 @@
     th { background-color: #f2f2f2; }
     .header { background-color: #0f1739; color: white; padding: 20px 20px; margin-bottom: 1rem }
     .fondo_verde {
-        background-color: #4CAF50 !important; /* Color verde para el día de hoy */
-        color: white;
-    }
-    .fondo_naranja {
-        background-color: #FFA500 !important; /* Color naranja para fechas pasadas */
-        color: white;
-    }
-    .fondo_celeste {
-        background-color: #00CFFF !important; /* Color celeste para fechas futuras */
-        color: white;
+      background-color: #def7df !important; /* Color de fondo verde para el día de hoy */
     }
     /* Hacer sticky la primera columna (Apartamentos) */
     .apartments-column {
@@ -37,50 +28,43 @@
         background-color: white;
     }
 
-    /* CSS para celdas con división diagonal */
-    .diagonal-cell {
-        position: relative;
+    /* Drag handles for resizing */
+    .drag-right, .drag-left {
+        width: 10px;
         height: 100%;
-        padding: 0;
-        background-color: white;
-        overflow: hidden;
+        position: absolute;
+        top: 0;
+        cursor: ew-resize;
+        z-index: 5;
     }
 
-    .diagonal-cell::before {
+    .drag-right {
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .drag-left {
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Establecer el scroll horizontal */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .cell-45-degree-line::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 100%;
-        background-color: white;
-        clip-path: polygon(0 0, 100% 0, 0 100%);
-    }
-
-    .diagonal-cell-content {
-        position: absolute;
-        width: 50%;
-        height: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        padding: 5px;
-    }
-
-    .diagonal-cell-content-top-left {
-        top: 0;
+        height: 1px;
+        background-color: black;
+        transform: rotate(45deg);
+        top: 50%;
         left: 0;
-        background-color: #FFA500; /* Naranja para fechas pasadas */
-        color: white;
     }
+    
 
-    .diagonal-cell-content-bottom-right {
-        bottom: 0;
-        right: 0;
-        background-color: #00CFFF; /* Celeste para fechas futuras */
-        color: white;
-    }
 </style>
 
 <div class="container-fluid">
@@ -115,80 +99,59 @@
                   @foreach ($apartamentos as $apartamento)
                   <tr>
                       <td class="apartments-column">{{ $apartamento->titulo }}</td>
-
+                      
                       @for ($day = 1; $day <= $daysInMonth; $day++)
                           @php
                               $found = false;
                               $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
-                              $reservaSalida = null; // Para la reserva que sale ese día
-                              $reservaEntrada = null; // Para la reserva que entra ese día
                           @endphp
-
+                  
                           {{-- Buscar si hay una reserva que coincida con este día --}}
+                         
                           @foreach ($apartamento->reservas as $itemReserva)
+
+                          @php
+                              // Obtener la fecha de la reserva en formato Carbon
+                              $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+                              $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+                              $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
+                          @endphp
+                      
+                          {{-- Si el día coincide con el inicio de la reserva --}}
+                          @if ($day >= $fechaEntrada->day && $day <= $fechaSalida->day)
                               @php
-                                  $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                                  $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+                                  $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
                               @endphp
-
-                              {{-- Caso 1: Día coincide con la fecha de salida de una reserva --}}
-                              @if ($day == $fechaSalida->day)
-                                  @php
-                                      $reservaSalida = $itemReserva;
-                                      $found = true;
-                                  @endphp
-                              @endif
-
-                              {{-- Caso 2: Día coincide con la fecha de entrada de otra reserva --}}
-                              @if ($day == $fechaEntrada->day)
-                                  @php
-                                      $reservaEntrada = $itemReserva;
-                                      $found = true;
-                                  @endphp
-                              @endif
-                          @endforeach
-
-                          {{-- Si hay coincidencia de entrada y salida el mismo día, se muestra la celda dividida --}}
-                          @if ($reservaSalida && $reservaEntrada)
-                              <td class="diagonal-cell {{ $claseDiaHoy }}">
-                                  <div class="diagonal-cell-content diagonal-cell-content-top-left">
-                                      {{ $reservaSalida->cliente->nombre }}
-                                  </div>
-                                  <div class="diagonal-cell-content diagonal-cell-content-bottom-right">
-                                      {{ $reservaEntrada->cliente->nombre }}
-                                  </div>
-                              </td>
-                          @elseif ($reservaEntrada)
-                              {{-- Caso normal de reserva de entrada --}}
-                              <td class="p-0 {{ $claseDiaHoy }}">
+                      
+                              {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
+                              <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
                                   <div class="w-100 d-flex justify-content-between align-items-center">
-                                      @php
-                                          $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success fondo_verde' : ($fechaEntrada->isPast() ? 'btn-warning fondo_naranja' : 'btn-info fondo_celeste');
-                                      @endphp
-                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaEntrada->id }}">
-                                          {{ $reservaEntrada->fecha_entrada->format('d') }} - {{ $reservaEntrada->fecha_salida->format('d') }}
+                                      {{-- Botón con detalles de la reserva --}}
+                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                          {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
                                       </button>
                                   </div>
                               </td>
-                          @elseif ($reservaSalida)
-                              {{-- Caso normal de reserva de salida --}}
-                              <td class="p-0 {{ $claseDiaHoy }}">
-                                  <div class="w-100 d-flex justify-content-between align-items-center">
-                                      @php
-                                          $claseBoton = ($fechaSalida->isToday()) ? 'btn-success fondo_verde' : ($fechaSalida->isPast() ? 'btn-warning fondo_naranja' : 'btn-info fondo_celeste');
-                                      @endphp
-                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $reservaSalida->id }}">
-                                          {{ $reservaSalida->fecha_entrada->format('d') }} - {{ $reservaSalida->fecha_salida->format('d') }}
-                                      </button>
-                                  </div>
-                              </td>
-                          @else
-                              {{-- Celda vacía --}}
+                      
+                              @php
+                                  // Saltar los días cubiertos por el colspan
+                                  $day += $diasDiferencia - 1;
+                                  $found = true;
+                              @endphp
+                              @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
+                          @endif
+                      @endforeach
+                      
+                  
+                  
+                          {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
+                          @if (!$found)
                               <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
                           @endif
                       @endfor
                   </tr>
                   @endforeach
+                  
                 </tbody>
             </table>
         </div>
@@ -229,7 +192,6 @@
             </div>
         </div>
 
-        {{-- Modales para cada reserva --}}
         @foreach ($apartamentos as $apartamento)
             @foreach ($apartamento->reservas as $itemReserva)
               <!-- Modal para visualizar reserva existente -->
@@ -261,6 +223,92 @@
 <script>
     const reservas = @json($apartamentos);
     console.log(reservas);
+    let dragType = '';  // Para saber si estamos ajustando la fecha de entrada o de salida
+    let reservaId = ''; // Para saber qué reserva estamos ajustando
+    let originalDay = ''; // Día original de la fecha de salida o entrada
+    let dragging = false; // Variable para saber si estamos arrastrando
+
+    // Función que se ejecuta cuando comenzamos a arrastrar
+    function startDrag(event, type) {
+        console.log('startDrag event:', event, 'type:', type); // Debug
+        event.dataTransfer.effectAllowed = 'move';
+        dragType = type;  // Puede ser 'start' para fecha de entrada o 'end' para fecha de salida
+        reservaId = event.target.getAttribute('data-reserva-id');
+        originalDay = event.target.closest('td').getAttribute('data-dia'); // Guardar el día original
+        dragging = true; // Estamos arrastrando
+        console.log('dragType:', dragType, 'reservaId:', reservaId, 'originalDay:', originalDay); // Debug
+    }
+
+    // Función para permitir el evento drop en los divs invisibles
+    function allowDrop(event) {
+        event.preventDefault();
+        console.log('allowDrop event:', event.target); // Debug para ver el elemento
+    }
+
+    // Función para manejar el evento drop cuando se suelta en un div invisible
+    function handleDrop(event, newDay) {
+        event.preventDefault();
+        console.log('handleDrop event:', event, 'newDay:', newDay); // Debug
+
+        if (!dragging) return; // Verificamos si estamos arrastrando
+
+        // Generar la fecha completa con año y mes
+        const year = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->year }};
+        const month = {{ \Carbon\Carbon::createFromFormat('Y-m', $date)->month }};
+        const fechaCompleta = `${year}-${String(month).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`;
+
+        // Debug: Verificar la fecha antes de enviar
+        console.log("Nueva fecha: ", fechaCompleta, "Reserva ID: ", reservaId, "Drag Type: ", dragType);
+
+        // Verificar si estamos adelantando o reduciendo la fecha de salida
+        if (dragType === 'end') {
+            if (parseInt(newDay) < parseInt(originalDay)) {
+                console.log("Estamos reduciendo la fecha de salida");
+            } else {
+                console.log("Estamos aumentando la fecha de salida");
+            }
+        } else if (dragType === 'start') {
+            console.log("Cambiando la fecha de entrada");
+        }
+
+        // Hacer una llamada AJAX para actualizar la fecha de la reserva
+        let url = `/reservas/update/${reservaId}`;
+        let data = {
+            '_token': '{{ csrf_token() }}',
+            'reserva_id': reservaId,
+            'new_date': fechaCompleta,  // Enviar la fecha completa (año-mes-día)
+            'drag_type': dragType  // 'start' para cambiar la fecha de entrada, 'end' para cambiar la fecha de salida
+        };
+
+        // Realizamos la solicitud AJAX para actualizar la fecha
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recargar la página para reflejar los cambios
+                location.reload();
+            } else {
+                alert('Error al actualizar la reserva: ' + data.message);
+            }
+        });
+
+        dragging = false; // Reiniciar la variable de arrastre
+    }
+
+
+    // Evitar el comportamiento por defecto en el dragover
+    document.addEventListener('dragover', function(event) {
+        event.preventDefault();
+        console.log('dragover event:', event); // Debug
+    });
+
+
+</script>
+<script>
 
     // Función para abrir el modal de crear reserva con los datos de apartamento y día
     function openCrearReservaModal(apartamentoId, dia) {
