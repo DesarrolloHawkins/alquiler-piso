@@ -22,6 +22,7 @@ use libphonenumber\PhoneNumberToCarrierMapper;
 use libphonenumber\geocoding\PhoneNumberOfflineGeocoder;
 use libphonenumber\PhoneNumberFormat;
 use Illuminate\Support\Facades\Log;
+use PhpOption\None;
 
 class WhatsappController extends Controller
 {
@@ -114,9 +115,62 @@ class WhatsappController extends Controller
 
     public function imageMensaje( $data )
     {
+        // Comprobamos si el Mensaje existe ya
         $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
+
+        // Obetenemos el numero de Telefono
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
 
+        // Comprobamos si existe algun cliente con ese telefono
+        $cliente = Cliente::where('telefono', $phone)->get();
+        // Si el cliente existe vamos a buscar una reserva que tenga
+        if (count($cliente) > 0 ) {
+            // Reservas del cliente que nos ha escrito
+            $reservas = Reserva::where('cliente_id', $cliente->id)->get();
+
+            // Comprobamos si existen reservas
+            if (count($reservas) > 0) {
+                foreach ($reservas as $reserva) {
+                    $hoy = Carbon::now()->toDateString(); // Obtener solo la fecha de hoy (YYYY-MM-DD)
+                    if ($reserva->fecha_entrada->toDateString() >= $hoy) {
+                        $idImg = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
+                        $fileName = $this->descargarImage($idImg); // obtenemos el nombre de la imagen
+
+                        $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
+                        
+                        Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', $respuestaImageChatGPT );
+                        
+                        if($cliente->nombre == $respuestaImageChatGPT){
+                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
+                            $cliente->apellido1 == null ? $cliente->apellido1 = $respuestaImageChatGPT->apellido1 : '';
+                            $cliente->apellido2 == null ? $cliente->apellido2 = $respuestaImageChatGPT->apellido2 : '';
+                            $cliente->nacionalidad == null ? $cliente->nacionalidad = $respuestaImageChatGPT->nacionalidad : '';
+                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
+                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
+                            $cliente->nombre == null ? $cliente->nombre = $respuestaImageChatGPT->nombre : '';
+                        }
+
+                        $responseImage = '!';
+
+                        $dataRegistrarChat = [
+                            'id_mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['id'],
+                            'remitente' => $data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'],
+                            'mensaje' => $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'],
+                            'respuesta' => $responseImage,
+                            'status' => 1,
+                            'type' => 'image'
+                        ];
+                        ChatGpt::create( $dataRegistrarChat );
+                        //Storage::disk('local')->put( 'image-'.$fileName.'.txt', json_encode($data) );
+                        
+                    }
+                }
+            }
+        }else {
+            
+            $fileName = $this->descargarImageTemporal(); // temporalWhatsapp/fileName.[jpg,png] obtenemos la ruta completa que esta en public
+        }
+        
         Storage::disk('local')->put('phone-Prueba.txt', json_encode($phone) );
         Storage::disk('local')->put('phone-mensaje.txt', json_encode($mensajeExiste) );
 
@@ -165,6 +219,34 @@ class WhatsappController extends Controller
 
         return null;
     }
+
+    public function descargarImageTemporal($imageId)
+    {
+        // URL base para obtener imágenes de WhatsApp
+        $url = "https://graph.facebook.com/v20.0/{$imageId}";
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
+        ])->get($url);
+
+        if ($response->successful()) {
+            $mediaUrl = $response->json()['url'];
+
+            // Descargar el archivo de medios
+            $mediaResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . env('TOKEN_WHATSAPP')
+            ])->get($mediaUrl);
+
+            if ($mediaResponse->successful()) {
+                $extension = explode('/', $mediaResponse->header('Content-Type'))[1];
+                $filename = $imageId . '.' . $extension;
+                Storage::disk('publico')->put('temporalWhatsapp/' . $filename, $mediaResponse->body());
+                return 'temporalWhatsapp/'.$filename;
+            }
+        }
+
+        return null;
+    }
+
 
     public function descargarImage($imageId)
     {
@@ -811,7 +893,7 @@ class WhatsappController extends Controller
                     "content" => [
                         [
                             "type" => "text",
-                            "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean}. Aquí tienes información adicional sobre países y tipos de documentos:"
+                            "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean, mensaje}. En mensaje debes colocar tu respuesta para poder contestar al cliente, Aquí tienes información adicional sobre países y tipos de documentos:"
                         ],
                         [
                             "type" => "text",
@@ -845,7 +927,7 @@ class WhatsappController extends Controller
         curl_close($curl);
     
         // Guardar la respuesta en un archivo para depuración
-        Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
+        //Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
     
         // Decodificar la respuesta JSON
         $response_data = json_decode($response, true);
@@ -856,7 +938,7 @@ class WhatsappController extends Controller
                 'status' => 'error',
                 'message' => 'Error al realizar la solicitud'
             ];
-            Storage::disk('local')->put('errorChat.txt', $error['message']);
+            //Storage::disk('local')->put('errorChat.txt', $error['message']);
             return response()->json($error);
         } else {
             // Guardar la respuesta para seguimiento
@@ -864,10 +946,10 @@ class WhatsappController extends Controller
                 'status' => 'ok',
                 'message' => $response_data
             ];
-            Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
+            //Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
     
             // Retornar la respuesta decodificada
-            return response()->json($response_data);
+            return $response_data;
         }
     }
     

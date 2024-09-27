@@ -109,45 +109,38 @@
                          
                           @foreach ($apartamento->reservas as $itemReserva)
 
+                          @php
+                              // Obtener la fecha de la reserva en formato Carbon
+                              $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
+                              $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
+                              $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
+                          @endphp
+                      
+                          {{-- Si el día coincide con el inicio de la reserva --}}
+                          @if ($day >= $fechaEntrada->day && $day <= $fechaSalida->day)
                               @php
-                                  // Obtener la fecha de la reserva en formato Carbon
-                                  $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                                  $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
-                                  $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
+                                  $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
                               @endphp
-                                @if ($itemReserva->id == 1397)
-                                    {{-- {{dd($itemReserva)}} --}}
-                                @endif
-                              {{-- Si el día coincide con el inicio de la reserva --}}
-                              @if ($day == $fechaEntrada->day)
-                                  @php
-                                      $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
-                                  @endphp
-                  
-                                  {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
-                                  <td @if($itemReserva->id == 1397) id="pryeb" @endif colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
-                                      <div  class="w-100 d-flex justify-content-between align-items-center">
-                                          {{-- Botón con detalles de la reserva --}}
-                                          <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                              {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
-                                          </button>
-                                          
-                                          {{-- Drag handle para modificar la fecha de salida (lado derecho) --}}
-                                          <div class="drag-right" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'end')"></div>
-                                          
-                                          {{-- Drag handle para modificar la fecha de entrada (lado izquierdo) --}}
-                                          <div class="drag-left" data-reserva-id="{{ $itemReserva->id }}" draggable="true" ondragstart="startDrag(event, 'start')"></div>
-                                      </div>
-                                  </td>
-                  
-                                  @php
-                                      // Saltar los días cubiertos por el colspan
-                                      $day += $diasDiferencia - 1; 
-                                      $found = true;
-                                  @endphp
-                                  @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
-                              @endif
-                          @endforeach
+                      
+                              {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
+                              <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
+                                  <div class="w-100 d-flex justify-content-between align-items-center">
+                                      {{-- Botón con detalles de la reserva --}}
+                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
+                                          {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
+                                      </button>
+                                  </div>
+                              </td>
+                      
+                              @php
+                                  // Saltar los días cubiertos por el colspan
+                                  $day += $diasDiferencia - 1;
+                                  $found = true;
+                              @endphp
+                              @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
+                          @endif
+                      @endforeach
+                      
                   
                   
                           {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
@@ -227,7 +220,8 @@
 </div>
 
 <script>
-
+    const reservas = @json($apartamentos);
+    console.log(reservas);
     let dragType = '';  // Para saber si estamos ajustando la fecha de entrada o de salida
     let reservaId = ''; // Para saber qué reserva estamos ajustando
     let originalDay = ''; // Día original de la fecha de salida o entrada
