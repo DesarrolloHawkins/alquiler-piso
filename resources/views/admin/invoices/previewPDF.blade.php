@@ -90,8 +90,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if(!is_null($invoice->conceptos) && is_array(json_decode($invoice->conceptos)) || is_object(json_decode($invoice->conceptos)))
-                        @foreach(json_decode($invoice->conceptos) as $concept)
+                    @if(!is_null($conceptos) && is_array(json_decode($conceptos)) || is_object(json_decode($conceptos)))
+                        @foreach(json_decode($conceptos) as $concept)
                         <tr>
                             <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
