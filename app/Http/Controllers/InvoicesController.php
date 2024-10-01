@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
+use App\Models\Reserva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
@@ -93,12 +94,13 @@ class InvoicesController extends Controller
             'title' => 'Factura ' . $invoice->reference,
             'invoice' => $invoice,
         ];
+        $conceptos = Reserva::find($invoice->reserva_id);
 
         // Sanitizar el nombre del archivo para eliminar caracteres no válidos
         $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
 
         // Renderizar la vista y pasarle los datos
-        $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data','invoice'));
+        $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data','invoice','conceptos'));
 
         // Configurar el tamaño de la página y las márgenes si es necesario
         $pdf->setPaper('A4', 'portrait');

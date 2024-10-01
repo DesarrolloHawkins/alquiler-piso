@@ -57,17 +57,17 @@
                 <tr>
                     <td align="left" style="width: 40%;padding-left:20px;">
                         <p><strong>Ref.:</strong> {{ $invoice->reference }}</p>
-                        <p><strong>Fecha de Creación:</strong> {{ \Carbon\Carbon::parse($invoice->created_at)->format('d/m/Y') }}</p>
-                        <p><strong>Concepto:</strong> {{ $invoice->concept }}</p>
-                        <p><strong>Observaciones:</strong> {{ $invoice->observations }}</p>
+                        <p><strong>Fecha de Creación:</strong> {{ \Carbon\Carbon::parse($invoice->fecha)->format('d/m/Y') }}</p>
+                        <p><strong>Concepto:</strong> {{ $invoice->concepto }}</p>
+                        <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
                     </td>
                     <td align="right" style="width: 50%;padding-right: 20px;">
-                        <h3>{{ $invoice->cliente_nombre }}</h3>
-                        <p>{{ $invoice->cliente_direccion }}</p>
-                        <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p>
-                        <p><strong>NIF:</strong> {{ $invoice->cliente_nif }}</p>
+                        <h3>{{ $invoice->cliente-> == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
+                        {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
+                        {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
+                        <p><strong>NIF:</strong> {{ $invoice->cliente->num_identificacion }}</p>
 
-                        <h4>Forma de pago: {{ $invoice->forma_pago }}</h4>
+                        {{-- <h4>Forma de pago: {{ $invoice->forma_pago }}</h4> --}}
                     </td>
                 </tr>
             </table>
@@ -81,6 +81,8 @@
                 <thead>
                     <tr>
                         <th style="width: 50%;">Descripción</th>
+                        <th style="width: 10%; text-align: right;">Fecha Entrada.</th>
+                        <th style="width: 10%; text-align: right;">Fecha Salida.</th>
                         <th style="width: 10%; text-align: right;">Uds.</th>
                         <th style="width: 15%; text-align: right;">Precio/Uds.</th>
                         <th style="width: 10%; text-align: right;">Dcto.</th>
@@ -91,11 +93,13 @@
                     @if(!is_null($invoice->conceptos) && is_array(json_decode($invoice->conceptos)) || is_object(json_decode($invoice->conceptos)))
                         @foreach(json_decode($invoice->conceptos) as $concept)
                         <tr>
-                            <td><strong>{{ $concept->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
-                            <td style="text-align: right;">{{ $concept->units }}</td>
-                            <td style="text-align: right;">{{ $concept->price_unit }} &euro;</td>
+                            <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
+                            <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
+                            <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
+                            <td style="text-align: right;">1</td>
+                            <td style="text-align: right;">{{ $concept->precio }} &euro;</td>
                             <td style="text-align: right;">{{ $concept->discount }}%</td>
-                            <td style="text-align: right;">{{ $concept->total }} &euro;</td>
+                            <td style="text-align: right;">{{ $concept->precio }} &euro;</td>
                         </tr>
                         @endforeach
                     @else
@@ -117,8 +121,8 @@
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
-                    <td style="text-align:center">{{ number_format($invoice->gross, 2) }} &euro;</td>
-                    <td style="text-align:center">{{ number_format($invoice->discount, 2) }} &euro;</td>
+                    <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
+                    <td style="text-align:center">{{ number_format($invoice->descuento, 2) }} &euro;</td>
                     <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
                     <td style="text-align:center">{{ number_format($invoice->iva, 2) }} &euro;</td>
                     <td style="text-align:right" class="total-amount">{{ number_format($invoice->total, 2) }} &euro;</td>
