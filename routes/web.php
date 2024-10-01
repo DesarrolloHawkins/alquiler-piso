@@ -243,6 +243,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Facturas
     Route::get('/facturas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.facturas.index');
     Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
+    Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
+
 });
 
 // Rutas de usuarios logueados

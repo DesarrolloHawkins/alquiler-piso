@@ -188,7 +188,7 @@
                           <td>{{ $factura->fecha }}</td>
                           <td><strong>{{ $factura->total }} €</strong></td>
                           <td>{{ $factura->estado->name }}</td>
-                          <td><a href="" class="btn bg-color-segundo">Descargar PDF</a></td>
+                          <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
                           {{-- <td><a href="{{ route('facturas.show', $factura->id) }}" class="btn bg-color-quinto">Ver Factura</a></td> --}}
                       </tr>
                   @endforeach
