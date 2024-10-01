@@ -98,9 +98,9 @@
               <thead>
                   <tr class="bg-color-primero-table">
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'id' ? 'active-sort' : 'inactive-sort' }}">
-                              ID
-                              @if(request()->get('order_by') == 'id')
+                          <a href="{{ route('admin.facturas.index', ['order_by' => 'reference', 'direction' => (request()->get('order_by') == 'reference' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'reference' ? 'active-sort' : 'inactive-sort' }}">
+                                Referencia
+                              @if(request()->get('order_by') == 'reference')
                                   @if(request()->get('direction') == 'asc')
                                       &#9650; {{-- Icono de flecha hacia arriba --}}
                                   @else

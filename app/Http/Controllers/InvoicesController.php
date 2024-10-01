@@ -28,6 +28,7 @@ class InvoicesController extends Controller
                 $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
                     $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
                 })
+                ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
                 ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
                 ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
             });
