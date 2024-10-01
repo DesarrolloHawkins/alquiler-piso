@@ -95,6 +95,7 @@ class InvoicesController extends Controller
             'invoice' => $invoice,
         ];
         $conceptos = Reserva::where('id',$invoice->reserva_id)->get();
+        $invoice['conceptos'] = $conceptos;
         // dd($conceptos);
         // Sanitizar el nombre del archivo para eliminar caracteres no válidos
         $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
