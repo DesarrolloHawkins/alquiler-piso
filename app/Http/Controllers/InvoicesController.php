@@ -97,7 +97,7 @@ class InvoicesController extends Controller
         $conceptos = Reserva::where('id',$invoice->reserva_id)->get();
         foreach($conceptos as $concepto){
             $apartamento = $concepto->apartamento;
-            $edificio = $concepto->apartamento->edificio;
+            $edificio = $concepto->apartamento->edificioName;
             $concepto['apartamento'] = $apartamento;
             $concepto['edificio'] = $edificio;
         }
