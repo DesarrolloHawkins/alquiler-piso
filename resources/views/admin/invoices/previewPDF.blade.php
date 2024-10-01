@@ -43,10 +43,10 @@
             <table width="100%">
                 <tr>
                     <td align="left" style="width: 40%;padding-left: 20px;vertical-align: bottom;">
-                        <h1 style="font-weight: normal;"><strong>FACTURA</strong></h1>
+                        <h1 style="font-weight: normal; font-size:40px"><strong>FACTURA</strong></h1>
                     </td>
-                    <td align="right" style="width: 50%;padding-right: 45px;">
-                        <h1>Hawkins Real State</h1>
+                    <td align="right" style="width: 50%;padding-right: 15px;">
+                        <h1>Hawkins Real State SL</h1>
                         {{-- <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1JSTbvPQy4RdU-Av5a1Rv6JdYIZZrRrhbCA&s" alt="Logo" width="200" class="logo"/> --}}
                     </td>
                 </tr>
@@ -151,7 +151,7 @@
             <tr>
                 <td align="left" style="width: 50%;">
                     @if(\Carbon\Carbon::parse($invoice->created_at) >= \Carbon\Carbon::parse("2021/02/01"))
-                        HAWKINS REAL STATE - B72284631 - C/General Primo de Rivera s/N - CP 11201 Algeciras (Cádiz)
+                        HAWKINS REAL STATE SL - B56927809 - C/General Primo de Rivera s/N - CP 11201 Algeciras (Cádiz)
                     @else
                         IPOINT COMUNICACION MASIVA SL - CIF: B72139868 - Urb. Parque del Oeste nº5 11205 Algeciras (Cádiz)
                     @endif
