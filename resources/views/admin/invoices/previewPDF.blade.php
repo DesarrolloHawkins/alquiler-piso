@@ -88,7 +88,7 @@
         <br/>
     </header>
 
-    <main style="margin-top: -10px">
+    <main style="margin-top: 50px">
         <div class="invoice" style="padding-left:0px;">
             <table class="table fixed" width="100%">
                 <thead>
