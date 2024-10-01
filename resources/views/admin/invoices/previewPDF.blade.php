@@ -43,10 +43,11 @@
             <table width="100%">
                 <tr>
                     <td align="left" style="width: 40%;padding-left: 20px;vertical-align: bottom;">
-                        <h1 style="font-weight: normal;">FACTURA</h1>
+                        <h1 style="font-weight: normal;"><strong>FACTURA</strong></h1>
                     </td>
                     <td align="right" style="width: 50%;padding-right: 45px;">
-                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1JSTbvPQy4RdU-Av5a1Rv6JdYIZZrRrhbCA&s" alt="Logo" width="200" class="logo"/>
+                        <h1>Hawkins Real State</h1>
+                        {{-- <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1JSTbvPQy4RdU-Av5a1Rv6JdYIZZrRrhbCA&s" alt="Logo" width="200" class="logo"/> --}}
                     </td>
                 </tr>
             </table>
@@ -81,26 +82,26 @@
                 <thead>
                     <tr>
                         <th style="width: 50%;">Descripción</th>
-                        <th style="width: 10%; text-align: right;">Fecha Entrada.</th>
-                        <th style="width: 10%; text-align: right;">Fecha Salida.</th>
+                        <th style="width: 15%; text-align: right;">F. Entrada.</th>
+                        <th style="width: 15%; text-align: right;">F. Salida.</th>
                         <th style="width: 10%; text-align: right;">Uds.</th>
                         <th style="width: 15%; text-align: right;">Precio/Uds.</th>
-                        <th style="width: 10%; text-align: right;">Dcto.</th>
-                        <th style="width: 15%; text-align: right;">TOTAL</th>
+                        <th style="width: 8%; text-align: right;">Dcto.</th>
+                        <th style="width: 10%; text-align: right;">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if(!is_null($conceptos) && is_array(json_decode($conceptos)) || is_object(json_decode($conceptos)))
                         @foreach(json_decode($conceptos) as $concept)
-                        {{-- {{dd($concept->apartamento)}} --}}
+                        {{-- {{dd($concept)}} --}}
                         <tr>
-                            <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->titulo }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
+                            <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->titulo }}</strong></td>
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
                             <td style="text-align: right;">{{ $concept->precio }} &euro;</td>
-                            <td style="text-align: right;">{{ $concept->discount }}%</td>
-                            <td style="text-align: right;">{{ $concept->precio }} &euro;</td>
+                            <td style="text-align: right;">{{ $invoice->discount }}%</td>
+                            <td style="text-align: right;">{{ $invoice->base }} &euro;</td>
                         </tr>
                         @endforeach
                     @else
@@ -138,7 +139,7 @@
             <tr>
                 <td align="left" style="width: 50%;">
                     @if(\Carbon\Carbon::parse($invoice->created_at) >= \Carbon\Carbon::parse("2021/02/01"))
-                        THWORK 3000 SL - B72284631 - C/General Primo de Rivera s/N - CP 11201 Algeciras (Cádiz)
+                        HAWKINS REAL STATE - B72284631 - C/General Primo de Rivera s/N - CP 11201 Algeciras (Cádiz)
                     @else
                         IPOINT COMUNICACION MASIVA SL - CIF: B72139868 - Urb. Parque del Oeste nº5 11205 Algeciras (Cádiz)
                     @endif
