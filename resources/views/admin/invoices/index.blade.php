@@ -148,6 +148,18 @@
                               @endif
                           </a>
                       </th>
+                      <th scope="col">
+                        <a href="{{ route('admin.facturas.index', ['order_by' => 'total', 'direction' => (request()->get('order_by') == 'total' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'total' ? 'active-sort' : 'inactive-sort' }}">
+                            Total
+                            @if(request()->get('order_by') == 'total')
+                                @if(request()->get('direction') == 'asc')
+                                    &#9650;
+                                @else
+                                    &#9660;
+                                @endif
+                            @endif
+                        </a>
+                    </th>
           
                       <th scope="col">
                           <a href="{{ route('admin.facturas.index', ['order_by' => 'invoice_status_id', 'direction' => (request()->get('order_by') == 'invoice_status_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'invoice_status_id' ? 'active-sort' : 'inactive-sort' }}">
@@ -162,18 +174,7 @@
                           </a>
                       </th>
           
-                      <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'total', 'direction' => (request()->get('order_by') == 'total' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'total' ? 'active-sort' : 'inactive-sort' }}">
-                              Total
-                              @if(request()->get('order_by') == 'total')
-                                  @if(request()->get('direction') == 'asc')
-                                      &#9650;
-                                  @else
-                                      &#9660;
-                                  @endif
-                              @endif
-                          </a>
-                      </th>
+                      
           
                       <th scope="col">Acción</th>
                   </tr>
@@ -181,12 +182,12 @@
               <tbody>
                   @foreach ($facturas as $factura)
                       <tr>
-                          <th scope="row">{{ $factura->id }}</th>
+                          <th scope="row">{{ $factura->reference }}</th>
                           <td>{{ $factura->cliente->alias }}</td>
                           <td>{{ $factura->concepto }}</td>
                           <td>{{ $factura->fecha }}</td>
-                          <td>{{ $factura->invoice_status_id }}</td>
-                          <td>{{ $factura->total }}</td>
+                          <td><strong>{{ $factura->total }} €</strong></td>
+                          <td>{{ $factura->estado->name }}</td>
                           <td><a href="" class="btn bg-color-segundo">Descargar PDF</a></td>
                           {{-- <td><a href="{{ route('facturas.show', $factura->id) }}" class="btn bg-color-quinto">Ver Factura</a></td> --}}
                       </tr>
