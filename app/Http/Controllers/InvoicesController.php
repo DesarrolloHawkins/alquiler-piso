@@ -64,8 +64,29 @@ class InvoicesController extends Controller
     }
 
     public function previewPDF($id){
-        // Obtener la factura desde la base de datos
+        // Buscar la factura por su ID
         $invoice = Invoices::findOrFail($id);
+
+        // Datos adicionales para la vista
+        $data = [
+            'title' => 'Factura ' . $invoice->reference,
+        ];
+        // Sanear el nombre del archivo para evitar caracteres inválidos
+        $safeFileName = preg_replace('/[\/\\\\]/', '-', $invoice->reference);
+        // Generar el PDF utilizando la vista 'facturas.pdf'
+        $pdf = Pdf::loadView('admin.invoices.previewPDF', compact('invoice', 'data'));
+
+        // Descargar o visualizar el PDF
+        return $pdf->stream('factura_' . $safeFileName . '.pdf'); // Para visualizar en el navegador
+        // return $pdf->download('factura_' . $invoice->reference . '.pdf'); // Para forzar la descarga
+         
+
+    }
+
+    public function generateInvoicePDF($invoiceId)
+    {
+        // Obtener la factura desde la base de datos
+        $invoice = Invoices::findOrFail($invoiceId);
 
         // Aquí puedes definir más datos o preparaciones si lo necesitas
         $data = [
@@ -81,8 +102,6 @@ class InvoicesController extends Controller
 
         // Descargar el PDF o verlo en el navegador
         return $pdf->download('factura_' . $invoice->reference . '.pdf');
-         
-
     }
 
 
