@@ -62,7 +62,7 @@
                         <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
                     </td>
                     <td align="right" style="width: 50%;padding-right: 20px;">
-                        <h3>{{ $invoice->cliente-> == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
+                        <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
                         {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
                         {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
                         <p><strong>NIF:</strong> {{ $invoice->cliente->num_identificacion }}</p>
