@@ -126,7 +126,7 @@
         </div>
 
         <div class="information">
-            <table id="summary" width="100%" style="margin-top: 20px;">
+            <table id="summary" width="100%" style="margin-top: 70px;">
                 <tr>
                     <th style="text-align:center">Bruto</th>
                     <th style="text-align:center">Dto.</th>
