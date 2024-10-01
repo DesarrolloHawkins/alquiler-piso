@@ -158,6 +158,11 @@
                                             </a>
                                         </li>
                                         <li class="nav-item">
+                                            <a href="{{route('admin.facturas.index')}}" class="nav-link fs-6 {{ request()->is('facturas', 'facturas/*') ? 'active' : '' }}" >
+                                            Facturas
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
                                             <a href="{{ route('admin.ingresos.index') }}" class="nav-link fs-6 {{ request()->is('ingresos', 'ingresos/*') ? 'active' : '' }}">
                                                 Ver Ingresos
                                             </a>
