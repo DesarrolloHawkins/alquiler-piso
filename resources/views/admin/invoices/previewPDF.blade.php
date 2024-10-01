@@ -93,7 +93,7 @@
                     @if(!is_null($conceptos) && is_array(json_decode($conceptos)) || is_object(json_decode($conceptos)))
                         @foreach(json_decode($conceptos) as $concept)
                         <tr>
-                            <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
+                            <td><strong>{{ $concept->apartamento->edificio->nombre .': '.$concept->apartamento->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
