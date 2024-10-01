@@ -58,7 +58,7 @@
                 <tr>
                     <td align="left" style="width: 40%;padding-left:20px;">
                         <p><strong>Ref.:</strong> {{ $invoice->reference }}</p>
-                        <p><strong>Fecha de Creación:</strong> {{ \Carbon\Carbon::parse($invoice->fecha)->format('d/m/Y') }}</p>
+                        <p><strong>Fecha de Factura:</strong> {{ \Carbon\Carbon::parse($invoice->fecha)->format('d/m/Y') }}</p>
                         <p><strong>Concepto:</strong> {{ $invoice->concepto }}</p>
                         <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
                     </td>
@@ -66,7 +66,19 @@
                         <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
                         {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
                         {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
-                        <p><strong>NIF:</strong> {{ $invoice->cliente->num_identificacion }}</p>
+                        <p>
+                            @if ($invoice->cliente->tipo_documento == 1)
+                                <strong>DNI:</strong> {{ $invoice->cliente->num_identificacion }}
+                            @else
+                                <strong>PASAPORTE:</strong> {{ $invoice->cliente->num_identificacion }}
+                            @endif
+                        </p>
+                        <p>
+                            <strong>TELEFONO:</strong> {{ $invoice->cliente->telefono }}
+                        </p>
+                        <p>
+                            <strong>EMAIL:</strong> {{ $invoice->cliente->email }}
+                        </p>
 
                         {{-- <h4>Forma de pago: {{ $invoice->forma_pago }}</h4> --}}
                     </td>
