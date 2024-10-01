@@ -94,6 +94,9 @@ class InvoicesController extends Controller
             'invoice' => $invoice,
         ];
 
+        // Sanitizar el nombre del archivo para eliminar caracteres no válidos
+        $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
+
         // Renderizar la vista y pasarle los datos
         $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data','invoice'));
 
@@ -101,7 +104,7 @@ class InvoicesController extends Controller
         $pdf->setPaper('A4', 'portrait');
 
         // Descargar el PDF o verlo en el navegador
-        return $pdf->download('factura_' . $invoice->reference . '.pdf');
+        return $pdf->download($fileName);
     }
 
 
