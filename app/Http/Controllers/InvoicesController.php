@@ -95,7 +95,7 @@ class InvoicesController extends Controller
         ];
 
         // Renderizar la vista y pasarle los datos
-        $pdf = PDF::loadView('invoices.previewPDF', $data);
+        $pdf = PDF::loadView('admin.invoices.previewPDF', $data);
 
         // Configurar el tamaño de la página y las márgenes si es necesario
         $pdf->setPaper('A4', 'portrait');
