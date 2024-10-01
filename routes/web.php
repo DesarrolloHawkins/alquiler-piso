@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\CategoryEmailController;
 use App\Http\Controllers\CuentasContableController;
+use App\Http\Controllers\EmailController;
+use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -244,6 +247,31 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/facturas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.facturas.index');
     Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
     Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
+    
+    // Categoria de Emails
+    Route::get('/category-email', [App\Http\Controllers\CategoryEmailController::class, 'index'])->name('admin.categoriaEmail.index');
+    Route::get('/category-email/create', [App\Http\Controllers\CategoryEmailController::class, 'create'])->name('admin.categoriaEmail.create');
+    Route::post('/category-email/store', [App\Http\Controllers\CategoryEmailController::class, 'store'])->name('admin.categoriaEmail.store');
+    Route::get('/category-email/{id}/edit', [App\Http\Controllers\CategoryEmailController::class, 'edit'])->name('admin.categoriaEmail.edit');
+    Route::post('/category-email/{id}/update', [App\Http\Controllers\CategoryEmailController::class, 'update'])->name('admin.categoriaEmail.update');
+    Route::post('/category-email/{id}/destroy', [App\Http\Controllers\CategoryEmailController::class, 'destroy'])->name('admin.categoriaEmail.destroy');
+
+    // Estados de Emails
+    Route::get('/status-mail', [App\Http\Controllers\StatusMailController::class, 'index'])->name('admin.statusMail.index');
+    Route::get('/status-mail/create', [App\Http\Controllers\StatusMailController::class, 'create'])->name('admin.statusMail.create');
+    Route::post('/status-mail/store', [App\Http\Controllers\StatusMailController::class, 'store'])->name('admin.statusMail.store');
+    Route::get('/status-mail/{id}/edit', [App\Http\Controllers\StatusMailController::class, 'edit'])->name('admin.statusMail.edit');
+    Route::post('/status-mail/{id}/update', [App\Http\Controllers\StatusMailController::class, 'update'])->name('admin.statusMail.update');
+    Route::post('/status-mail/{id}/destroy', [App\Http\Controllers\StatusMailController::class, 'destroy'])->name('admin.statusMail.destroy');
+    //Route::resource('category_email', CategoryEmailController::class);
+    
+    
+    // Emails
+    Route::get('/emails', [EmailController::class, 'index'])->name('admin.emails.index');
+    Route::get('/emails/{email}', [EmailController::class, 'show'])->name('admin.emails.show');
+
+    Route::get('/emails-recive',[App\Http\Controllers\InvoicesController::class, 'email'])->name('admin.facturas.email');
+
 
 });
 

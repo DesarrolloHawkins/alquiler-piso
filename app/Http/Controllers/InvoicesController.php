@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Email;
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\Reserva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
+use Webklex\IMAP\Facades\Client;
 
 class InvoicesController extends Controller
 {
+
+    
 
     public function index(Request $request)
     {

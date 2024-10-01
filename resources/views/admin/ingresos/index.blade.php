@@ -12,7 +12,7 @@
 </style>
 <div class="container-fluid">
     <h2 class="mb-3">{{ __('Nuestros Ingresos') }}</h2>
-    <a href="{{route('admin.gastos.create')}}" class="btn bg-color-quinto">Crear ingreso</a>
+    <a href="{{route('admin.ingresos.create')}}" class="btn bg-color-quinto">Crear ingreso</a>
     <hr class="mb-5">
     <div class="row justify-content-center">
 

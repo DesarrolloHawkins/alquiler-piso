@@ -135,6 +135,30 @@
                                     </ul>
                                 </li>
 
+                                {{-- Emails --}}
+                                <li class="nav-item w-100">
+                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
+                                    <button data-bs-target="#submenuEmails" href="#submenuEmails" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('emails', 'emails/*', 'status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('emails', 'emails/*', 'status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'true' : 'false' }}">
+                                        <i class="fa-solid fa-envelope me-2 fs-4" style="width:25px"></i>
+                                        Emails
+                                    </button>
+                                    <!-- Submenú para Emails, mostrando los enlaces de Status y Categoría -->
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'show' : '' }}" id="submenuEmails">
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.statusMail.index') }}" class="nav-link fs-6 {{ request()->is('status-mail', 'status-mail/*') ? 'active' : '' }}">
+                                                Status de Emails
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.categoriaEmail.index') }}" class="nav-link fs-6 {{ request()->is('category-email', 'category-email/*') ? 'active' : '' }}">
+                                                Categorías de Emails
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+
+
+
                                 {{-- Asistente --}}
                                 <li class="nav-item w-100">
                                     <a target="_blank" href="{{route('whatsapp.mensajes')}}" class="nav-link fs-5" aria-current="page">
