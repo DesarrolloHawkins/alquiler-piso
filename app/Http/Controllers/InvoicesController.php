@@ -95,12 +95,12 @@ class InvoicesController extends Controller
             'invoice' => $invoice,
         ];
         $conceptos = Reserva::where('id',$invoice->reserva_id)->get();
-
+        dd($conceptos);
         // Sanitizar el nombre del archivo para eliminar caracteres no válidos
         $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
 
         // Renderizar la vista y pasarle los datos
-        $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data','invoice','conceptos'));
+        $pdf = PDF::loadView('admin.invoices.previewPDF', compact( 'data', 'invoice', 'conceptos'));
 
         // Configurar el tamaño de la página y las márgenes si es necesario
         $pdf->setPaper('A4', 'portrait');
