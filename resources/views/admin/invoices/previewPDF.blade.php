@@ -77,7 +77,7 @@
     </header>
 
     <main style="margin-top: -10px">
-        <div class="invoice" style="padding-left:16px;">
+        <div class="invoice" style="padding-left:0px;">
             <table class="table fixed" width="100%">
                 <thead>
                     <tr>
@@ -87,7 +87,7 @@
                         <th style="width: 10%; text-align: right;">Uds.</th>
                         <th style="width: 15%; text-align: right;">Precio/Uds.</th>
                         <th style="width: 8%; text-align: right;">Dcto.</th>
-                        <th style="width: 10%; text-align: right;">TOTAL</th>
+                        <th style="width: 15%; text-align: right;">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -99,9 +99,9 @@
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
-                            <td style="text-align: right;">{{ $concept->precio }} &euro;</td>
+                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
                             <td style="text-align: right;">{{ $invoice->discount }}%</td>
-                            <td style="text-align: right;">{{ $invoice->base }} &euro;</td>
+                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
                         </tr>
                         @endforeach
                     @else
@@ -123,10 +123,10 @@
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
-                    <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
+                    <td style="text-align:center">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
                     <td style="text-align:center">{{ number_format($invoice->descuento, 2) }} &euro;</td>
-                    <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
-                    <td style="text-align:center">{{ number_format($invoice->iva, 2) }} &euro;</td>
+                    <td style="text-align:center">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
+                    <td style="text-align:center">21%</td>
                     <td style="text-align:right" class="total-amount">{{ number_format($invoice->total, 2) }} &euro;</td>
                 </tr>
             </table>
