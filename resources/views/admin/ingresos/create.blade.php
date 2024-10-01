@@ -11,7 +11,7 @@
     }
 </style>
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Crear Gasto') }}</h2>
+    <h2 class="mb-3">{{ __('Crear Ingreso') }}</h2>
     <hr class="mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -21,7 +21,7 @@
                 </div>
             @endif
             
-            <form action="{{ route('admin.gastos.store') }}" method="POST" class="mb-4" enctype="multipart/form-data">
+            <form action="{{ route('admin.ingresos.store') }}" method="POST" class="mb-4" enctype="multipart/form-data">
                 @csrf
                 <div class="form-group mb-3">
                     <label for="estado_id">Estado</label>
@@ -77,8 +77,8 @@
                     @enderror
                 </div>
                 <div class="form-group mb-3">
-                    <label for="quantity">Fecha del Gasto</label>
-                    <input type="date" class="form-control" name="date" id="date" placeholder="Fecha del gasto" value="{{ old('date') }}">
+                    <label for="quantity">Fecha del Ingreso</label>
+                    <input type="date" class="form-control" name="date" id="date" placeholder="Fecha del ingreso" value="{{ old('date') }}">
                     @error('date')
                         <div class="alert alert-danger">{{ $message }}</div>
                     @enderror
@@ -93,7 +93,7 @@
                     @enderror
                 </div>
                 
-                <button type="submit" class="btn bg-color-primero">Crear Gasto</button>
+                <button type="submit" class="btn bg-color-primero">Crear Ingreso</button>
             </form>
         </div>
     </div>

@@ -184,11 +184,11 @@
                                 @endif
                             </td>
                             <td>{{$ingreso->title}}</td>
-                            <td>{{ !empty($gasto->date) ? \Carbon\Carbon::parse($ingreso->date)->format('d-m-Y') : 'Sin fecha establecida' }}</td>
+                            <td>{{ !empty($ingreso->date) ? \Carbon\Carbon::parse($ingreso->date)->format('d-m-Y') : 'Sin fecha establecida' }}</td>
                             <td>{{$ingreso->quantity}} €</td>
                             <td style="width:auto;">
-                                <a href="{{route('admin.gastos.edit', $ingreso->id)}}" class="btn btn-secundario">Editar</a>
-                                <form action="{{ route('admin.gastos.destroy', $ingreso->id) }}" method="POST" style="display: inline;" class="delete-form">
+                                <a href="{{route('admin.ingresos.edit', $ingreso->id)}}" class="btn btn-secundario">Editar</a>
+                                <form action="{{ route('admin.ingresos.destroy', $ingreso->id) }}" method="POST" style="display: inline;" class="delete-form">
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
                                 </form>
