@@ -92,7 +92,7 @@
                 <tbody>
                     @if(!is_null($conceptos) && is_array(json_decode($conceptos)) || is_object(json_decode($conceptos)))
                         @foreach(json_decode($conceptos) as $concept)
-                        {{dd($concept->apartamento)}}
+                        {{dd($concept)}}
                         <tr>
                             <td><strong>{{ $concept->apartamento->edificio->nombre .': '.$concept->apartamento->title }}</strong><br><span style="padding-left: 10px;">{{ $concept->description }}</span></td>
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
