@@ -259,6 +259,13 @@
                                     </ul>
                                 </li>
                                 
+                                {{-- Clientes --}}
+                                <li class="nav-item w-100">
+                                    <a href="{{route('admin.empleados.index')}}" class="nav-link fs-5 {{ request()->is('empleados', 'empleados/*') ? 'active' : '' }}" aria-current="page">
+                                        <i class="fa-solid fa-user-group me-2 fs-4" style=" width:25px"></i>
+                                        Empleados
+                                    </a>
+                                </li>
                                 {{-- Logs --}}
                                 <li class="nav-item w-100">
                                     <a href="#" class="nav-link fs-5" aria-current="page">
