@@ -21,6 +21,7 @@
                 {{ session('status') }}
             </div>
         @endif
+        
         <!-- Formulario de búsqueda -->
         <form action="{{ route('admin.categoriaIngresos.update', $categoria->id) }}" method="POST" class="mb-4">
           @csrf
