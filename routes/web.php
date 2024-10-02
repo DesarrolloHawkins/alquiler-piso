@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryEmailController;
 use App\Http\Controllers\CuentasContableController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\GestionApartamentoController;
 use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
 
@@ -107,11 +108,11 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
    
     // Categoria de Ingresos
     Route::get('/categoria-ingresos', [App\Http\Controllers\CategoriaIngresosController::class, 'index'])->name('admin.categoriaIngresos.index');
-    Route::get('/categoria-ingresos/create', [App\Http\Controllers\CategoriaGastosController::class, 'create'])->name('admin.categoriaIngresos.create');
-    Route::post('/categoria-ingresos/store', [App\Http\Controllers\CategoriaGastosController::class, 'store'])->name('admin.categoriaIngresos.store');
-    Route::get('/categoria-ingresos/{categoria}/edit', [App\Http\Controllers\CategoriaGastosController::class, 'edit'])->name('admin.categoriaIngresos.edit');
-    Route::post('/categoria-ingresos/{categoria}/update', [App\Http\Controllers\CategoriaGastosController::class, 'update'])->name('admin.categoriaIngresos.update');
-    Route::post('/categoria-ingresos/{categoria}/destroy', [App\Http\Controllers\CategoriaGastosController::class, 'destroy'])->name('admin.categoriaIngresos.destroy');
+    Route::get('/categoria-ingresos/create', [App\Http\Controllers\CategoriaIngresosController::class, 'create'])->name('admin.categoriaIngresos.create');
+    Route::post('/categoria-ingresos/store', [App\Http\Controllers\CategoriaIngresosController::class, 'store'])->name('admin.categoriaIngresos.store');
+    Route::get('/categoria-ingresos/{categoria}/edit', [App\Http\Controllers\CategoriaIngresosController::class, 'edit'])->name('admin.categoriaIngresos.edit');
+    Route::post('/categoria-ingresos/{categoria}/update', [App\Http\Controllers\CategoriaIngresosController::class, 'update'])->name('admin.categoriaIngresos.update');
+    Route::post('/categoria-ingresos/{categoria}/destroy', [App\Http\Controllers\CategoriaIngresosController::class, 'destroy'])->name('admin.categoriaIngresos.destroy');
     
      // Ingresos
     Route::get('/ingresos', [App\Http\Controllers\IngresosController::class, 'index'])->name('admin.ingresos.index');
@@ -277,7 +278,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/emails', [EmailController::class, 'index'])->name('admin.emails.index');
     Route::get('/emails/{email}', [EmailController::class, 'show'])->name('admin.emails.show');
 
-    Route::get('/emails-recive',[App\Http\Controllers\InvoicesController::class, 'email'])->name('admin.facturas.email');
+    Route::get('/emails-recive',[EmailController::class, 'email'])->name('admin.facturas.email');
 
 
 });
@@ -337,6 +338,7 @@ Route::get('/gestion-edit/{apartamentoLimpieza}', [App\Http\Controllers\GestionA
 Route::post('/gestion-update/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'update'])->name('gestion.update');
 Route::post('/gestion-finalizar/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizar'])->name('gestion.finalizar');
 Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
+Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
 
 // Fotos
 Route::get('/fotos-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'indexDormitorio'])->name('fotos.dormitorio');
