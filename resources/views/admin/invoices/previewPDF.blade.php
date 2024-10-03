@@ -67,7 +67,7 @@
                         {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
                         {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
                         <p>
-                            @if ($invoice->cliente->tipo_documento == 1)
+                            @if ($invoice->cliente->tipo_documento != 'P')
                                 <strong>DNI:</strong> {{ $invoice->cliente->num_identificacion }}
                             @else
                                 <strong>PASAPORTE:</strong> {{ $invoice->cliente->num_identificacion }}
