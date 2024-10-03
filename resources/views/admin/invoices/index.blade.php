@@ -30,10 +30,6 @@
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
         <h2 class="mb-0 me-3 encabezado_top">{{ __('Facturas') }}</h2>
-        {{-- <a href="{{route('facturas.create')}}" class="btn bg-color-sexto text-uppercase">
-            <i class="fa-solid fa-plus me-2"></i>
-            Crear Factura
-        </a> --}}
     </div>
     <hr class="mb-3">
     <div class="row justify-content-center">
@@ -77,10 +73,16 @@
                             <div class="d-flex align-items-center">
                                 <input type="text" class="form-control me-2" id="search" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
 
-                                <!-- Fecha de Emisión -->
+                                <!-- Fecha de inicio -->
                                 <div class="input-group me-2">
-                                    <label class="input-group-text" for="fecha" id="label_fecha">Fecha de Emisión</label>
-                                    <input type="text" class="form-control" id="fecha" name="fecha" value="{{ request()->get('fecha') }}">
+                                    <label class="input-group-text" for="fecha_inicio" id="label_fecha_inicio">Fecha Inicio</label>
+                                    <input type="text" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ request()->get('fecha_inicio') }}">
+                                </div>
+
+                                <!-- Fecha de fin -->
+                                <div class="input-group me-2">
+                                    <label class="input-group-text" for="fecha_fin" id="label_fecha_fin">Fecha Fin</label>
+                                    <input type="text" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ request()->get('fecha_fin') }}">
                                 </div>
 
                                 <!-- Botones -->
@@ -90,6 +92,18 @@
                         </form>
                     </div>
                 </div>
+                <div class="col-12">
+                    <a href="{{ route('admin.facturas.export', [
+                            'order_by' => request()->get('order_by'),
+                            'direction' => request()->get('direction'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                        ]) }}" class="btn bg-color-primero">
+                        Exportar a Excel
+                    </a>
+                </div>
             </div>
             @php
               $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
@@ -98,7 +112,15 @@
               <thead>
                   <tr class="bg-color-primero-table">
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'reference', 'direction' => (request()->get('order_by') == 'reference' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'reference' ? 'active-sort' : 'inactive-sort' }}">
+                          <a href="{{ route('admin.facturas.index', [
+                                'order_by' => 'reference',
+                                'direction' => (request()->get('order_by') == 'reference' ? $orderDirection : 'asc'),
+                                'search' => request()->get('search'),
+                                'perPage' => request()->get('perPage'),
+                                'fecha_inicio' => request()->get('fecha_inicio'),
+                                'fecha_fin' => request()->get('fecha_fin')
+                            ]) }}" 
+                            class="{{ request('order_by') == 'reference' ? 'active-sort' : 'inactive-sort' }}">
                                 Referencia
                               @if(request()->get('order_by') == 'reference')
                                   @if(request()->get('direction') == 'asc')
@@ -109,9 +131,17 @@
                               @endif
                           </a>
                       </th>
-          
+
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'cliente_id' ? 'active-sort' : 'inactive-sort' }}">
+                          <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'cliente_id',
+                            'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                          ]) }}"
+                          class="{{ request('order_by') == 'cliente_id' ? 'active-sort' : 'inactive-sort' }}">
                               Cliente
                               @if(request()->get('order_by') == 'cliente_id')
                                   @if(request()->get('direction') == 'asc')
@@ -122,12 +152,22 @@
                               @endif
                           </a>
                       </th>
-          
+
+                      <th scope="col">Número de Identificación</th> <!-- Nueva columna -->
+
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'concepto', 'direction' => (request()->get('order_by') == 'concepto' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'concepto' ? 'active-sort' : 'inactive-sort' }}">
+                          <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'concepto',
+                            'direction' => (request()->get('order_by') == 'concepto' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                            ]) }}" 
+                          class="{{ request('order_by') == 'concepto' ? 'active-sort' : 'inactive-sort' }}">
                               Concepto
-                              @if(request()->get('order_by') == 'concepto')
-                                  @if(request()->get('direction') == 'asc')
+                              @if(request('order_by') == 'concepto')
+                                  @if(request('direction') == 'asc')
                                       &#9650;
                                   @else
                                       &#9660;
@@ -135,10 +175,21 @@
                               @endif
                           </a>
                       </th>
-          
+
+                      <th scope="col">Fecha de Entrada</th> <!-- Nueva columna -->
+                      <th scope="col">Fecha de Salida</th> <!-- Nueva columna -->
+
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'fecha', 'direction' => (request()->get('order_by') == 'fecha' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'fecha' ? 'active-sort' : 'inactive-sort' }}">
-                              Fecha
+                          <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'fecha',
+                            'direction' => (request()->get('order_by') == 'fecha' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                            ]) }}" 
+                          class="{{ request('order_by') == 'fecha' ? 'active-sort' : 'inactive-sort' }}">
+                              Fecha de Facturación
                               @if(request()->get('order_by') == 'fecha')
                                   @if(request()->get('direction') == 'asc')
                                       &#9650;
@@ -149,10 +200,17 @@
                           </a>
                       </th>
                       <th scope="col">
-                        <a href="{{ route('admin.facturas.index', ['order_by' => 'total', 'direction' => (request()->get('order_by') == 'total' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'total' ? 'active-sort' : 'inactive-sort' }}">
+                        <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'total',
+                            'direction' => (request()->get('order_by') == 'total' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')                            ]) }}" 
+                        class="{{ request('order_by') == 'total' ? 'active-sort' : 'inactive-sort' }}">
                             Total
-                            @if(request()->get('order_by') == 'total')
-                                @if(request()->get('direction') == 'asc')
+                            @if(request('order_by') == 'total')
+                                @if(request('direction') == 'asc')
                                     &#9650;
                                 @else
                                     &#9660;
@@ -160,12 +218,19 @@
                             @endif
                         </a>
                     </th>
-          
+
                       <th scope="col">
-                          <a href="{{ route('admin.facturas.index', ['order_by' => 'invoice_status_id', 'direction' => (request()->get('order_by') == 'invoice_status_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha' => request()->get('fecha')]) }}" class="{{ request('order_by') == 'invoice_status_id' ? 'active-sort' : 'inactive-sort' }}">
+                          <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'invoice_status_id',
+                            'direction' => (request()->get('order_by') == 'invoice_status_id' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                          ]) }}" class="{{ request('order_by') == 'invoice_status_id' ? 'active-sort' : 'inactive-sort' }}">
                               Estado
-                              @if(request()->get('order_by') == 'invoice_status_id')
-                                  @if(request()->get('direction') == 'asc')
+                              @if(request('order_by') == 'invoice_status_id')
+                                  @if(request('direction') == 'asc')
                                       &#9650;
                                   @else
                                       &#9660;
@@ -173,9 +238,6 @@
                               @endif
                           </a>
                       </th>
-          
-                      
-          
                       <th scope="col">Acción</th>
                   </tr>
               </thead>
@@ -184,16 +246,17 @@
                       <tr>
                           <th scope="row">{{ $factura->reference }}</th>
                           <td>{{ $factura->cliente->alias }}</td>
+                          <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
                           <td>{{ $factura->concepto }}</td>
+                          <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
+                          <td>{{ $factura->reserva->fecha_salida ?? 'N/A' }}</td> <!-- Mostrar Fecha de Salida -->
                           <td>{{ $factura->fecha }}</td>
                           <td><strong>{{ $factura->total }} €</strong></td>
                           <td>{{ $factura->estado->name }}</td>
                           <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
-                          {{-- <td><a href="{{ route('facturas.show', $factura->id) }}" class="btn bg-color-quinto">Ver Factura</a></td> --}}
                       </tr>
                   @endforeach
               </tbody>
-             
           </table>
           <h3 class="text-center"><strong>{{$sumatorio}} €</strong></h3>
           <!-- Paginación links -->
@@ -208,18 +271,32 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        flatpickr("#fecha", {
-            dateFormat: "Y-m-d",
-            locale: "es",
-            onChange: function(selectedDates, dateStr, instance) {
-                document.getElementById('fecha').value = dateStr;
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                document.getElementById('label_fecha').addEventListener('click', function() {
-                    instance.open();
-                });
-            }
-        });
+    flatpickr("#fecha_inicio", {
+        dateFormat: "Y-m-d",
+        locale: "es",
+        onChange: function(selectedDates, dateStr, instance) {
+            document.getElementById('fecha_inicio').value = dateStr;
+        },
+        onReady: function(selectedDates, dateStr, instance) {
+            document.getElementById('label_fecha_inicio').addEventListener('click', function() {
+                instance.open();
+            });
+        }
     });
+
+    flatpickr("#fecha_fin", {
+        dateFormat: "Y-m-d",
+        locale: "es",
+        onChange: function(selectedDates, dateStr, instance) {
+            document.getElementById('fecha_fin').value = dateStr;
+        },
+        onReady: function(selectedDates, dateStr, instance) {
+            document.getElementById('label_fecha_fin').addEventListener('click', function() {
+                instance.open();
+            });
+        }
+    });
+});
+
 </script>
 @endsection

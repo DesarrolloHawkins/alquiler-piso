@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\InvoicesExport;
 use App\Models\Email;
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
@@ -9,6 +10,7 @@ use App\Models\Reserva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 use Webklex\IMAP\Facades\Client;
 
 class InvoicesController extends Controller
@@ -17,56 +19,63 @@ class InvoicesController extends Controller
     
 
     public function index(Request $request)
-    {
-        $orderBy = $request->get('order_by', 'fecha');
-        $direction = $request->get('direction', 'asc');
-        $perPage = $request->get('perPage', 10);
-        $searchTerm = $request->get('search', '');
-        $fecha = $request->get('fecha'); // Filtro de fecha de emisión
+{
+    $orderBy = $request->get('order_by', 'fecha');
+    $direction = $request->get('direction', 'asc');
+    $perPage = $request->get('perPage', 10);
+    $searchTerm = $request->get('search', '');
+    $fechaInicio = $request->get('fecha_inicio');
+    $fechaFin = $request->get('fecha_fin');
 
-        // Query inicial para facturas con su cliente asociado
-        $query = Invoices::with('cliente'); 
+    // Query inicial para facturas con su cliente y reserva asociados
+    $query = Invoices::with(['cliente', 'reserva']); // Asegúrate de incluir las relaciones
 
-        // Filtro de búsqueda por cliente, concepto, total, etc.
-        if (!empty($searchTerm)) {
-            $query->where(function($subQuery) use ($searchTerm) {
-                $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
-                    $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
-                })
-                ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
-                ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
-                ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-
-        // Filtro por fecha de emisión
-        if (!empty($fecha)) {
-            $query->whereDate('fecha', '=', $fecha);
-        }
-
-        // Filtro por estado de factura (si es necesario)
-        if ($request->has('estado')) {
-            $query->where('invoice_status_id', $request->get('estado'));
-        }
-
-        // Obtener el sumatorio de la columna "total"
-        // $sumatorio = $query->sum('total'); // Suma el total de la consulta filtrada
-
-        // Aplicar orden por columna y dirección
-        $facturas = $query->orderBy($orderBy, $direction)
-                    ->paginate($perPage)
-                    ->appends([
-                        'order_by' => $orderBy,
-                        'direction' => $direction,
-                        'search' => $searchTerm,
-                        'perPage' => $perPage,
-                        'fecha' => $fecha,
-                    ]);
-        $sumatorio = $facturas->sum('total');
-        // Retornar la vista con las facturas y el sumatorio
-        // return view('facturas.index', compact('facturas', 'sumatorio'));
-        return view('admin.invoices.index', compact('facturas','sumatorio'));
+    // Filtro de búsqueda por cliente, concepto, total, etc.
+    if (!empty($searchTerm)) {
+        $query->where(function($subQuery) use ($searchTerm) {
+            $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
+                $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
+            })
+            ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
+        });
     }
+
+    // Filtro por rango de fechas
+    if (!empty($fechaInicio) || !empty($fechaFin)) {
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+        } elseif (!empty($fechaInicio)) {
+            $query->where('fecha', '>=', $fechaInicio);
+        } elseif (!empty($fechaFin)) {
+            $query->where('fecha', '<=', $fechaFin);
+        }
+    }
+
+    // Filtro por estado de factura (si es necesario)
+    if ($request->has('estado')) {
+        $query->where('invoice_status_id', $request->get('estado'));
+    }
+
+    // Aplicar orden por columna y dirección
+    $facturas = $query->orderBy($orderBy, $direction)
+                ->paginate($perPage)
+                ->appends([
+                    'order_by' => $orderBy,
+                    'direction' => $direction,
+                    'search' => $searchTerm,
+                    'perPage' => $perPage,
+                    'fecha_inicio' => $fechaInicio,
+                    'fecha_fin' => $fechaFin,
+                ]);
+
+    $sumatorio = $facturas->sum('total');
+
+    return view('admin.invoices.index', compact('facturas', 'sumatorio'));
+}
+
+
 
     public function previewPDF($id){
         // Buscar la factura por su ID
@@ -220,4 +229,56 @@ class InvoicesController extends Controller
             ],
         ];
    }
+
+   public function exportInvoices(Request $request)
+   {
+       $orderBy = $request->get('order_by', 'fecha');
+       $direction = $request->get('direction', 'asc');
+       $searchTerm = $request->get('search', '');
+       $fechaInicio = $request->get('fecha_inicio');
+       $fechaFin = $request->get('fecha_fin');
+   
+       // Query inicial para facturas con cliente, reserva y estado asociados
+       $query = Invoices::with(['cliente', 'reserva']);
+   
+       // Filtro de búsqueda por cliente, referencia, concepto, o total
+       if (!empty($searchTerm)) {
+           $query->where(function($subQuery) use ($searchTerm) {
+               $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
+                   $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
+               })
+               ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
+               ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
+               ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
+           });
+       }
+   
+       // Filtro por rango de fechas
+       if (!empty($fechaInicio) || !empty($fechaFin)) {
+           if (!empty($fechaInicio) && !empty($fechaFin)) {
+               $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+           } elseif (!empty($fechaInicio)) {
+               $query->where('fecha', '>=', $fechaInicio);
+           } elseif (!empty($fechaFin)) {
+               $query->where('fecha', '<=', $fechaFin);
+           }
+       }
+   
+    //    // Filtro por estado de factura
+    //    if ($request->has('estado')) {
+    //        $query->where('invoice_status_id', $request->get('estado'));
+    //    }
+   
+       // Aplicar el orden
+       $query->orderBy($orderBy, $direction);
+   
+       // Obtener los resultados filtrados
+       $invoices = $query->get();
+   
+       // Exportar el Excel con los datos filtrados
+       return Excel::download(new InvoicesExport($invoices), 'invoices.xlsx');
+   }
+   
+
+   
 }

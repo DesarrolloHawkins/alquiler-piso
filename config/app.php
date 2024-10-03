@@ -173,7 +173,7 @@ return [
         App\Providers\ClienteServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         App\Providers\AnioServiceProvider::class,
-
+        Maatwebsite\Excel\ExcelServiceProvider::class,
 
     ])->toArray(),
 
@@ -195,7 +195,7 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'DataTables' => Yajra\DataTables\DataTablesServiceProvider::class,
         
-
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     ])->toArray(),
 
 ];

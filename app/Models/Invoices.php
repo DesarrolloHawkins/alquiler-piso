@@ -50,6 +50,9 @@ class Invoices extends Model
      {
          return $this->belongsTo(InvoicesStatus::class, 'invoice_status_id'); // cliente_id es la clave foránea en la tabla invoices
      }
- 
+     public function reserva()
+     {
+         return $this->belongsTo(Reserva::class, 'reserva_id');
+     }
      
 }

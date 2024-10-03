@@ -18,6 +18,7 @@
         "leifermendez/laravel-policia-hotel": "^1.2",
         "livewire/livewire": "^3.1",
         "openai-php/client": "^0.7.3",
+        "maatwebsite/excel": "^3.1",
         "realrashid/sweet-alert": "^7.1",
         "symfony/browser-kit": "^6.4",
         "symfony/http-client": "^6.4",
