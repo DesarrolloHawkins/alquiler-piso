@@ -403,3 +403,4 @@ Route::get('/instrucciones', [App\Http\Controllers\ReservasController::class, 'm
 Route::post('/guardar-instrucciones', [App\Http\Controllers\ReservasController::class, 'guardarInstrucciones'])->name('guardarInstrucciones');
 Route::post('/reservas-cobradas', [App\Http\Controllers\ReservasController::class, 'reservasCobradas'])->name('reservasCobradas');
 Route::post('/obtener-reservas', [App\Http\Controllers\ReservasController::class, 'obtenerReservas'])->name('obtenerReservas');
+Route::post('/obtener-reservas-ia', [App\Http\Controllers\ReservasController::class, 'obtenerReservasIA'])->name('obtenerReservas');
