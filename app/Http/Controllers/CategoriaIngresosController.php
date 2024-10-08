@@ -32,7 +32,7 @@ class CategoriaIngresosController extends Controller
 
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        $banco = CategoriaIngresos::create($validatedData);
+        $ingresoCategoria = CategoriaIngresos::create($validatedData);
 
         return redirect()->route('admin.categoriaIngresos.index')->with('status', 'Categoria de ingreso creado con éxito!');
 
