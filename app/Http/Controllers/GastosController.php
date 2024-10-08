@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Bancos;
 use App\Models\CategoriaGastos;
+use App\Models\DiarioCaja;
 use App\Models\EstadosGastos;
 use App\Models\Gastos;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -51,7 +53,8 @@ class GastosController extends Controller
         return view('admin.gastos.create', compact('categorias','bancos', 'estados'));
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $rules = [
             'estado_id' => 'required|exists:estados_gastos,id',
             'categoria_id' => 'required|exists:categoria_gastos,id',
@@ -60,29 +63,42 @@ class GastosController extends Controller
             'date' => 'required',
             'quantity' => 'required|numeric'
         ];
-    
+
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-    
+
         // Crear el gasto en la base de datos sin la foto
         $gasto = Gastos::create($validatedData);
-        
+
         // Manejar la carga de la foto si existe
         if ($request->hasFile('factura_foto')) {
             if ($request->file('factura_foto')->isValid()) {
                 $file = $request->file('factura_foto');
                 $filename = time() . '_' . $file->getClientOriginalName(); // Crear un nombre de archivo único
                 $path = $file->storeAs('public/facturas', $filename); // Guardar el archivo en el storage
-    
+
                 // Actualizar la instancia de gasto con la ruta de la foto
                 $gasto->factura_foto = $path;
                 $gasto->save(); // Guardar el path en la columna factura_foto
             }
         }
-    
+
+        // Registrar el gasto en el Diario de Caja
+        DiarioCaja::create([
+            'asiento_contable' => $this->generarAsientoContable(),
+            'cuenta_id' => $validatedData['categoria_id'],
+            'gasto_id' => $gasto->id,
+            'date' => Carbon::parse($validatedData['date']),
+            'concepto' => $validatedData['title'],
+            'debe' => $validatedData['quantity'],
+            'tipo' => 'gasto',
+            'estado_id' => $validatedData['estado_id']
+        ]);
+
         // Redireccionar al índice de gastos con un mensaje de éxito
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto creado con éxito!');
     }
+
     
     
     public function edit($id)
@@ -96,8 +112,8 @@ class GastosController extends Controller
 
     public function update(Request $request, $id)
     {
-        $gasto = Gastos::findOrFail($id); // Asegúrate de obtener el gasto existente
-    
+        $gasto = Gastos::findOrFail($id); // Obtener el gasto existente
+        
         $rules = [
             'estado_id' => 'required|exists:estados_gastos,id',
             'categoria_id' => 'required|exists:categoria_gastos,id',
@@ -106,17 +122,17 @@ class GastosController extends Controller
             'date' => 'required|date',
             'quantity' => 'required|numeric'
         ];
-    
+        
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-    
+        
         // Actualizar el gasto en la base de datos sin la foto
         $gasto->update($validatedData);
         
         // Manejar la carga de la foto si existe
         if ($request->hasFile('factura_foto')) {
             if ($request->file('factura_foto')->isValid()) {
-                // Opcional: Eliminar el archivo antiguo si existe
+                // Eliminar el archivo antiguo si existe
                 if ($gasto->factura_foto) {
                     Storage::delete($gasto->factura_foto);
                 }
@@ -131,13 +147,34 @@ class GastosController extends Controller
             }
         }
     
+        // Actualizar también el Diario de Caja correspondiente
+        $diarioCaja = DiarioCaja::where('gasto_id', $id)->first();
+        if ($diarioCaja) {
+            $diarioCaja->update([
+                'date' => $validatedData['date'],
+                'concepto' => $validatedData['title'],
+                'debe' => $validatedData['quantity']
+            ]);
+        }
+    
         // Redireccionar al índice de gastos con un mensaje de éxito
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto actualizado con éxito!');
     }
     
-    public function destroy(Gastos $categoria){
-        $categoria->delete();
-        return redirect()->route('admin.gastos.index')->with('status', 'Gasto eliminada con éxito!');
+    
+    public function destroy($id){
+        $gasto = Gastos::findOrFail($id);
+
+        // Buscar y eliminar la referencia en el Diario de Caja
+        $diarioCaja = DiarioCaja::where('gasto_id', $id)->first();
+        if ($diarioCaja) {
+            $diarioCaja->delete();
+        }
+
+        // Eliminar el gasto
+        $gasto->delete();
+
+        return redirect()->route('admin.gastos.index')->with('status', 'Gasto eliminado con éxito.');
     }
     public function clasificarGastos(Request $request){
         $origen = $request->Origen;

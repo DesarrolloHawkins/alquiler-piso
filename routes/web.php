@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryEmailController;
 use App\Http\Controllers\CuentasContableController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\GestionApartamentoController;
+use App\Http\Controllers\MovimientosController;
 use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
+    
+    Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
+    Route::get('/upload-files', [MovimientosController::class, 'uploadFiles'])->name('admin.upload.files');
 
     // Limpieza
     Route::get('aparatamento-limpieza/{id}/show', [\App\Http\Controllers\ApartamentoLimpiezaController::class, 'show'])->name('apartamentoLimpieza.admin.show');
@@ -103,7 +107,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/gastos/store', [App\Http\Controllers\GastosController::class, 'store'])->name('admin.gastos.store');
     Route::get('/gastos/{categoria}/edit', [App\Http\Controllers\GastosController::class, 'edit'])->name('admin.gastos.edit');
     Route::post('/gastos/{categoria}/update', [App\Http\Controllers\GastosController::class, 'update'])->name('admin.gastos.update');
-    Route::post('/gastos/{categoria}/destroy', [App\Http\Controllers\GastosController::class, 'destroy'])->name('admin.gastos.destroy');
+    Route::post('/gastos/{id}/destroy', [App\Http\Controllers\GastosController::class, 'destroy'])->name('admin.gastos.destroy');
     Route::get('/gastos/download/{id}', [App\Http\Controllers\GastosController::class, 'download'])->name('gastos.download');
    
     // Categoria de Ingresos
@@ -120,7 +124,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/ingresos/store', [App\Http\Controllers\IngresosController::class, 'store'])->name('admin.ingresos.store');
     Route::get('/ingresos/{categoria}/edit', [App\Http\Controllers\IngresosController::class, 'edit'])->name('admin.ingresos.edit');
     Route::post('/ingresos/{categoria}/update', [App\Http\Controllers\IngresosController::class, 'update'])->name('admin.ingresos.update');
-    Route::post('/ingresos/{categoria}/destroy', [App\Http\Controllers\IngresosController::class, 'destroy'])->name('admin.ingresos.destroy');
+    Route::post('/ingresos/{id}/destroy', [App\Http\Controllers\IngresosController::class, 'destroy'])->name('admin.ingresos.destroy');
     Route::get('/ingresos/download/{id}', [App\Http\Controllers\IngresosController::class, 'download'])->name('ingresos.download');
 
     // Diario de Caja
@@ -132,6 +136,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/diario-caja/{id}/edit', [App\Http\Controllers\DiarioCajaController::class, 'edit'])->name('admin.diarioCaja.edit');
     Route::post('/diario-caja/{id}/update', [App\Http\Controllers\DiarioCajaController::class, 'update'])->name('admin.diarioCaja.update');
     Route::post('/diario-caja/{id}/destroy', [App\Http\Controllers\DiarioCajaController::class, 'destroy'])->name('admin.diarioCaja.destroy');
+    Route::post('/diario-caja/{id}/destroy-linea', [App\Http\Controllers\DiarioCajaController::class, 'destroyDiarioCaja'])->name('admin.diarioCaja.destroyDiarioCaja');
 
     // Cuentas Contables
     Route::get('/cuentas-contables', [App\Http\Controllers\CuentasContableController::class, 'index'])->name('admin.cuentasContables.index');

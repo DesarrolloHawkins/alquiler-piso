@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "64ccf798fc5edd9c26f6848870f2f426",
+    "content-hash": "a4a2cf33d256978355727792def880b8",
     "packages": [
         {
             "name": "anlutro/curl",

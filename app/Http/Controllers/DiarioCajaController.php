@@ -31,33 +31,38 @@ class DiarioCajaController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        // Recuperar el saldo inicial de la base de datos
-        $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
-        $saldoInicial = $anio->saldo_inicial;
+{
+    // Recuperar el saldo inicial de la base de datos
+    $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+    $saldoInicial = $anio->saldo_inicial;
 
-        // Obtener todas las entradas del diario de caja
-        $response = DiarioCaja::all();
+    // Obtener todas las entradas del diario de caja
+    $response = DiarioCaja::all();
 
-        // Inicializar el saldo acumulado con el saldo inicial
-        $saldoAcumulado = $saldoInicial;
+    // Inicializar el saldo acumulado con el saldo inicial
+    $saldoAcumulado = $saldoInicial;
 
-        // Recorrer todas las líneas del diario y calcular el saldo
-        foreach ($response as $linea) {
-            if ($linea->debe) {
-                $saldoAcumulado -= $linea->debe;
-            }
+    // Recorrer todas las líneas del diario y calcular el saldo
+    foreach ($response as $linea) {
+        // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+        $debe = abs($linea->debe);
+        $haber = abs($linea->haber);
 
-            if ($linea->haber) {
-                $saldoAcumulado += $linea->haber;
-            }
-
-            // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
-            $linea->saldo = $saldoAcumulado;
+        if ($debe > 0) {
+            $saldoAcumulado -= $debe;
         }
 
-        return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
+        if ($haber > 0) {
+            $saldoAcumulado += $haber;
+        }
+
+        // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+        $linea->saldo = $saldoAcumulado;
     }
+
+    return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
+}
+
     /**
      *  Mostrar el formulario de creación de Ingreso
      *
@@ -143,7 +148,32 @@ class DiarioCajaController extends Controller
         $estados = EstadosDiario::all();
         return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento','estados'));
     }
-
+    public function destroyDiarioCaja($id)
+    {
+        $diario = DiarioCaja::findOrFail($id);
+    
+        // Verificar si hay un ingreso relacionado
+        if ($diario->ingreso_id) {
+            $ingreso = Ingresos::find($diario->ingreso_id);
+            if ($ingreso) {
+                $ingreso->delete();
+            }
+        }
+    
+        // Verificar si hay un gasto relacionado
+        if ($diario->gasto_id) {
+            $gasto = Gastos::find($diario->gasto_id);
+            if ($gasto) {
+                $gasto->delete();
+            }
+        }
+    
+        // Eliminar la línea del Diario de Caja
+        $diario->delete();
+    
+        return redirect()->route('admin.diarioCaja.index')->with('status', 'Registro del Diario de Caja eliminado con éxito.');
+    }
+    
     /**
      *  Mostrar el formulario de creación de Gasto
      *

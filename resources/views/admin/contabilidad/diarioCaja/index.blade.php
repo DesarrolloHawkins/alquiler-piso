@@ -62,7 +62,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Mostrar el saldo inicial en la primera fila -->
                             <tr>
                                 <td colspan="7"></td>
                                 <td><strong>Saldo Inicial:</strong></td>
@@ -74,9 +73,14 @@
                                 @foreach ($response as $linea)
                                 <tr>
                                     <td>{{ $linea->asiento_contable }}</td>
-                                    <td>{{ $linea->estado->nombre }}</td>
-                                    <td data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ $linea->determineCuenta()->nombre }}">
-                                        {{ $linea->determineCuenta()->numero }}
+                                    <td>@if ($linea->estado == null)
+                                        <span class="badge bg-danger">No encontrado</span>
+                                        @else
+                                            {{ $linea->estado->nombre }}
+                                        @endif
+                                    </td>
+                                    <td data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="">
+                                        {{-- {{ $linea->determineCuenta()->numero }} --}}
                                     </td>
                                     <td>{{ $linea->date }}</td>
                                     <td>{{ $linea->concepto }}</td>
@@ -85,13 +89,21 @@
                                     <td>{{ number_format($linea->haber, 2) }} €</td>
                                     <td>{{ number_format($linea->saldo, 2) }} €</td>
                                     <td>
-                                        <button class="btn btn-warning">Editar</button>
-                                        <button class="btn btn-danger">Eliminar</button>
-                                    </td>
+                                        @if ($linea->tipo == 'ingreso')
+                                            <a href="{{ route('admin.ingresos.edit', $linea->ingreso_id) }}" class="btn btn-warning">Editar</a>
+                                        @elseif ($linea->tipo == 'gasto')
+                                            <a href="{{ route('admin.gastos.edit', $linea->gasto_id) }}" class="btn btn-warning">Editar</a>
+                                        @endif
+                                        <form action="{{ route('admin.diarioCaja.destroyDiarioCaja', $linea->id) }}" method="POST" class="d-inline delete-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
+                                        </form>                                    </td>                                    
                                 </tr>
                                 @endforeach
                             @endif
                         </tbody>
+                        
                     </table>
                 </div>
             </div>
