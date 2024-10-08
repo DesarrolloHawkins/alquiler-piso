@@ -41,11 +41,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-        // $clienteService = app(ClienteService::class);
+
+        // Tarea programada de Limpieza de numero de telefono del cliente.
         $schedule->command('clean:phonenumbers')->twiceDaily(1, 13);
 
-        // // Miramos si el cliente tiene la Nacionalidad e idioma
+
+        // Tarea programada de Nacionalidad del cliente ejecutada con éxito.
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
@@ -58,45 +59,42 @@ class Kernel extends ConsoleKernel
             foreach($reservasEntrada as $reserva){
                 $resultado = $clienteService->getIdiomaClienteID($reserva->cliente_id);
             }
-        //     $code = $this->codigoApartamento(15);
-        //     if ($reserva->apartamento_id > 7) {
-        //         $codigoPuertaPrincipal = '7589#';
-        //         # code...
-        //     }else {
-        //     }
-        //     $codigoPuertaPrincipal = '8642#';
-        //    $mensaje = $this->clavesEmail('es', 'david', $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],"Hawkins Costa");
-        //    $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
+
         // Miramos si el cliente ha entregado el DNI el dia de entrada
         $schedule->call(function () {
+            // Hoy
             $hoy = Carbon::now();
         
             // Solo ejecutar después de las 10 de la mañana
             if ($hoy->hour >= 8) {
                 // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
                 $reservasEntrada = Reserva::where('dni_entregado', null)
-                                          ->where('estado_id', 1)
-                                          ->whereDate('fecha_entrada', '=', $hoy->toDateString())
-                                          ->get();
+                                    ->where('estado_id', 1)
+                                    ->whereDate('fecha_entrada', '=', $hoy->toDateString())
+                                    ->get();
         
                 foreach ($reservasEntrada as $reserva) {
                     // Comprobamos si ya existe un mensaje automático para esta reserva
                     $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
-                                          ->where('categoria_id', 8)
-                                          ->first(); // Asegúrate de que 'first' esté escrito correctamente
+                                        ->where('categoria_id', 8)
+                                        ->first(); // Asegúrate de que 'first' esté escrito correctamente
                     if (!$mensaje) {
+                        // Cliente
                         $cliente = $reserva->cliente;
+                        // URL de DNI
                         $url = 'https://crm.apartamentosalgeciras.com/dni-user/'.$reserva->token;
+                        // Telefonos para avisos
                         $telefonosEnvios = [
-                            'Ivan' => '34605621704',
+                            // 'Ivan' => '34605621704',
                             'Elena' => '34664368232',
-                            // 'Africa' => '34655659573',
                             'David' => '34622440984'
                         ];
+
+                        // Obtenenemos el telefono del cliente limpio
                         $telefonoCliente = $this->limpiarNumeroTelefono($cliente->telefono);
         
                         foreach ($telefonosEnvios as $phone) {
@@ -118,10 +116,12 @@ class Kernel extends ConsoleKernel
             }
         })->everyMinute();
     
+
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
 
-        // Generamos Factura
+
+        // Tarea de Generacion de Factura
         $schedule->call(function () {
 
             // Obtener la fecha de hoy (sin la hora)
@@ -171,125 +171,8 @@ class Kernel extends ConsoleKernel
 
         })->everyMinute();
         
-        // $schedule->call(function (ClienteService $clienteService) {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
-        //     // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-        //     $clientes = Cliente::where('idioma', null)
-        //     ->get();
 
-        //     foreach($clientes as $cliente){
-        //         $cliente = $clienteService->getIdiomaClienteID($cliente->id);
-        //     }
-        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        // })->everyMinute();
-
-
-        // $schedule->call(function (ClienteService $clienteService) {
-        //     // Obtener la fecha de hoy
-        //     $hoy = Carbon::now();
-
-        //       // Modificamos la consulta para obtener registros donde enviado_webpol no sea true (1)
-        //         $reservasEntrada = Reserva::where('dni_entregado', true)
-        //         ->where('fecha_entrada', '=', $hoy->toDateString())
-        //         ->where(function($query) {
-        //             $query->where('enviado_webpol', '=', 0)
-        //                 ->orWhereNull('enviado_webpol');
-        //         })
-        //         ->first();
-
-        //         if ($reservasEntrada != null) {
-        //             $cliente = Cliente::where('id',$reservasEntrada->cliente_id)
-        //             ->where(function($query) {
-        //                 $query->where('webpol', '=', 0)
-        //                     ->orWhereNull('webpol');
-        //             })
-        //             ->first();
-        //             if ($cliente != null) {
-        //                 $fechaExpedicion = new Carbon($cliente->fecha_expedicion_doc);
-        //                 $fechaNacimiento = new Carbon($cliente->fecha_nacimiento);
-        //                 $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
-
-        //                 $data = [
-        //                     'jsonHiddenComunes'=> null, 
-        //                     // 'idHospederia' => $idHospederia,
-        //                     'nombre' => $cliente->nombre,
-        //                     'apellido1' => $cliente->apellido1,
-        //                     'apellido2' => $cliente->apellido2,
-        //                     'nacionalidad' => $cliente->nacionalidadCode,
-        //                     'nacionalidadStr' => $cliente->nacionalidadStr,
-        //                     'tipoDocumento' => $cliente->tipo_documento,
-        //                     'tipoDocumentoStr' => $cliente->tipo_documento_str,
-        //                     'numIdentificacion' => $cliente->num_identificacion,
-        //                     'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
-        //                     'dia' => $fechaNacimiento->day,
-        //                     'mes' => $fechaNacimiento->month,
-        //                     'ano' => $fechaNacimiento->year,
-        //                     'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
-        //                     'sexo' => $cliente->sexo_str,
-        //                     'sexoStr' => $cliente->sexo,
-        //                     'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
-        //                     // '_csrf' => $csrfToken
-        //                 ];
-        //                 $this->webPol($data);
-        //                 $cliente->wepbol = true;
-        //                 $cliente->save();
-        //                 return true;
-        //             }else{
-        //                 $huesped = Huesped::where('reserva_id', $reservasEntrada->id)
-        //                 ->where(function($query) {
-        //                     $query->where('webpol', '=', 0)
-        //                         ->orWhereNull('webpol');
-        //                 })
-        //                 ->first();
-        //                 if ($huesped != null) {
-        //                     $fechaExpedicion = new Carbon($huesped->fecha_expedicion);
-        //                     $fechaNacimiento = new Carbon($huesped->fecha_nacimiento);
-        //                     $fechaReservaFinal = new Carbon($reservasEntrada->fecha_entrada);
-
-        //                     $data = [
-        //                         'jsonHiddenComunes'=> null, 
-        //                         // 'idHospederia' => $idHospederia,
-        //                         'nombre' => $huesped->nombre,
-        //                         'apellido1' => $huesped->primer_apellido,
-        //                         'apellido2' => $huesped->segundo_apellido,
-        //                         'nacionalidad' => $huesped->nacionalidadCode,
-        //                         'nacionalidadStr' => $huesped->nacionalidadStr,
-        //                         'tipoDocumento' => $huesped->tipo_documento,
-        //                         'tipoDocumentoStr' => $huesped->tipo_documento_str,
-        //                         'numIdentificacion' => $huesped->numero_identificacion,
-        //                         'fechaExpedicionDoc' => $fechaExpedicion->format('m/d/Y'),
-        //                         'dia' => $fechaNacimiento->day,
-        //                         'mes' => $fechaNacimiento->month,
-        //                         'ano' => $fechaNacimiento->year,
-        //                         'fechaNacimiento' => $fechaNacimiento->format('m/d/Y'),
-        //                         'sexo' => $huesped->sexo_str,
-        //                         'sexoStr' => $huesped->sexo,
-        //                         'fechaEntrada' => $fechaReservaFinal->format('m/d/Y'),
-        //                         // '_csrf' => $csrfToken
-        //                     ];
-        //                     $this->webPol($data);
-        //                     $huesped->wepbol = true;
-        //                     $huesped->save();
-        //                 }
-        //                 $reservasEntrada->enviado_webpol = true;
-        //                 $reservasEntrada->save();
-        //             }
-
-        //         }
-
-        //     Log::info("Tarea programada de WebPol ejecutada con éxito.");
-        // })->everyMinute();
-
-        $schedule->call(function () {
-
-            // $mensajeEmail = $this->dniEmail('es', '123456789');
-            // $enviarEmail = $this->enviarEmail('david@hawkins.es', 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', '123456789');
-
-            // Log::info("Tarea programada de Email al cliente ejecutada con éxito.");
-        })->everyMinute();
-
-        // Tarea par enviar el mensaje del Dni
+        // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
@@ -302,10 +185,6 @@ class Kernel extends ConsoleKernel
             ->where('estado_id', 1)
             ->whereDate('fecha_entrada', '>=', now())
             ->get();
-
-            // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
-            // ->where('estado_id', 1)
-            // ->get();
 
 
             /*  MENSAJES TEMPLATE:
@@ -360,56 +239,33 @@ class Kernel extends ConsoleKernel
 
                         $mensajeEmail = $this->dniEmail($idiomaCliente, $token);
                         $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
-                    } else {
-                        // if ($reserva->dni_entregado == null) {
-                        //     if ($reserva->fecha_entrada == $hoyFormateado) {
-                        //         // Obtenemos el token ya creado
-                        //         $token = $reserva->token;
-                        //         // Limpiamos el numero de telefono
-                        //         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                        //         // Enviamos el mensaje
-                        //         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-
-                        //         $enviarMensaje = $this->mensajesAutomaticos('dni', $token , $phoneCliente, $idiomaCliente );
-                        //             // Data para guardar Mensaje enviado
-                        //         $dataMensaje = [
-                        //             'reserva_id' => $reserva->id,
-                        //             'cliente_id' => $reserva->cliente_id,
-                        //             'categoria_id' => 1,
-                        //             'fecha_envio' => Carbon::now()
-                        //         ];
-
-                        //         MensajeAuto::create($dataMensaje);
-                        //     }
-                        // }
-
                     }
                 }
 
             }
-            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+            Log::info("Tarea programada de Primer envio de DNI ejecutada con éxito.");
         })->everyMinute();
 
-         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
-         $schedule->call(function (ClienteService $clienteService) {
+
+        // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
+        $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
 
+            // Reservas
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
             ->where('estado_id', '!=', 4)
             // ->where('dni_entregado', '!=', null)
             ->get();
             
             foreach($reservas as $reserva){
-                if ($reserva->apartamento_id > 7) {
-                    $codigoPuertaPrincipal = '7589#';
-                    # code...
-                }else {
-                    $codigoPuertaPrincipal = '8642#';
-                }
+
+                // Apartamento
                 $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
+
                 // Fecha de Hoy
                 $FechaHoy = new \DateTime();
+
                 // Formatea la fecha actual a una cadena 'Y-m-d'
                 $fechaHoyStr = $FechaHoy->format('Y-m-d');
 
@@ -418,23 +274,24 @@ class Kernel extends ConsoleKernel
                 $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 11:00:00');
                 $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
                 $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
-                $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '11:00:00');
+                // $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '11:00:00');
 
                 // Diferencias horarias para las horas objetivos
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
                 $diferenciasHoraCodigos = $hoy->diff($horaObjetivoCodigo)->format('%R%H%I');
                 $diferenciasHoraConsulta = $hoy->diff($horaObjetivoConsulta)->format('%R%H%I');
                 $diferenciasHoraOcio = $hoy->diff($horaObjetivoOcio)->format('%R%H%I');
-                $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
+                // $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
 
                 // Comprobacion de los mensajes enviados automaticamente
                 $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
                 $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
                 $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
                 $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
-                $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
+                // $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
                 $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
 
+                // MENSAJE DE BIEVENIDA
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
                     // Obtenemos codigo de idioma
@@ -454,11 +311,12 @@ class Kernel extends ConsoleKernel
                     MensajeAuto::create($dataMensaje);
                 }
 
+                // MENSAJE CLAVES DEL APARTAMENTO
                 if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                     $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeBienvenida >= 1) {
                         // Obtenemos el codigo de entrada del apartamento
-                        $code = $this->codigoApartamento($reserva->apartamento_id);
+                        //$code = $this->codigoApartamento($reserva->apartamento_id);
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
@@ -468,8 +326,8 @@ class Kernel extends ConsoleKernel
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
                                 $reserva->cliente->nombre,
-                                $code['nombre'], $reserva->apartamento->edificioName->clave,
-                                $code['codigo'],
+                                $reserva->apartamento->titulo, $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves,
                                 $phoneCliente,
                                 $idiomaCliente,
                                 $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico',
@@ -478,8 +336,15 @@ class Kernel extends ConsoleKernel
                             );
                             # code...
                         } else {
-                            $data = $this->clavesMensaje($reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo'], $phoneCliente, $idiomaCliente, $enlace);
-                            Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+                            $data = $this->clavesMensaje(
+                                $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $reserva->apartamento->titulo,
+                                $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves,
+                                $phoneCliente,
+                                $idiomaCliente,
+                                $enlace
+                            );
+                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                         
                         }
 
@@ -495,18 +360,38 @@ class Kernel extends ConsoleKernel
 
 
                         if ($reserva->apartamento_id === 1) {
-                            $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo']);
+                            $mensaje = $this->clavesEmailAtico(
+                                $idiomaCliente,
+                                $reserva->cliente->nombre,
+                                $reserva->apartamento->titulo,
+                                $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves
+                            );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                             
                         }else {
-                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo'],$apartamentoReservado->edificio);
+                            $mensaje = $this->clavesEmail(
+                                $idiomaCliente,
+                                $reserva->cliente->nombre,
+                                $reserva->apartamento->titulo,
+                                $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves,
+                                $apartamentoReservado->edificio
+                            );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                             
                         }
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensaje, 'Hawkins Suite - Claves', $token = null);
+                        $enviarEmail = $this->enviarEmail(
+                            $reserva->cliente->email_secundario,
+                            'emails.envioClavesEmail',
+                            $mensaje,
+                            'Hawkins Suite - Claves',
+                            $token = null
+                        );
                     }
                 }
 
+                // MENSAJE DE SI TIENE ALGUNA CONSULTA
                 if ($diferenciasHoraConsulta <= 0 && $mensajeClaves != null && $mensajeConsulta == null) {
                     $tiempoDesdeClaves = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeClaves >= 1) {
@@ -528,6 +413,7 @@ class Kernel extends ConsoleKernel
                     }
                 }
 
+                // MENSAJE DE OCIO
                 if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
                     $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeConsulta >= 1) {
@@ -548,30 +434,9 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
                     }
                 }
-
-                // if ($diferenciasHoraDespedida <= 0 && $mensajeOcio != null && $mensajeDespedida == null) {
-                //     $tiempoDesdeOcio = $mensajeOcio->created_at->diffInMinutes(Carbon::now());
-                //     if ($tiempoDesdeOcio >= 1) {
-                //        // Obtenemos codigo de idioma
-                //         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                //         // Enviamos el mensaje
-                //         $data = $this->despedidaMensaje($reserva->cliente->nombre, $reserva->cliente->telefono, $idiomaCliente);
-
-                //         // Creamos la data para guardar el mensaje
-                //         $dataMensaje = [
-                //             'reserva_id' => $reserva->id,
-                //             'cliente_id' => $reserva->cliente_id,
-                //             'categoria_id' => 7,
-                //             'fecha_envio' => Carbon::now()
-                //         ];
-                //         // Creamos el mensaje
-                //         MensajeAuto::create($dataMensaje);
-                //     }
-
-                // }
             }
 
-            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+            Log::info("Tarea programada de Envio de mensajes Automatizados ejecutada con éxito.");
         })->everyMinute();
 
 
@@ -619,26 +484,9 @@ class Kernel extends ConsoleKernel
                 }
             }
 
-            Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
+            Log::info("Tarea programada Mensaje de despedida ejecutada con éxito.");
         })->everyMinute();
 
-        // Tarea añadir a webpol
-        $schedule->call(function () {
-            $reservas = Reserva::where('dni_entregado', true)->where('enviado_webpol', null)->get();
-            if (count($reservas) > 0) {
-                foreach($reservas as $reserva){
-
-                }
-            }
-
-
-            Log::info("Tarea programada de webpol del cliente ejecutada con éxito.");
-        })->everyMinute();
-
-        // $schedule->call(function () {
-
-        //     Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        // })->everyMinute();
     }
 
     /**
@@ -884,6 +732,8 @@ class Kernel extends ConsoleKernel
 
     public function codigoApartamento($habitacion){
         $apartamento = Apartamento::find($habitacion);
+        
+
         if ($apartamento) {
             switch ($habitacion) {
                 case 1:
@@ -961,7 +811,7 @@ class Kernel extends ConsoleKernel
                 case 12:
                     return [
                         'nombre' => '2A',
-                        'codigo' => '2568'
+                        'codigo' => $apartamento->claves
                     ];
                     break;
                 case 13:
