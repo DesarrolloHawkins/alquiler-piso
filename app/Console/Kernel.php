@@ -468,7 +468,7 @@ class Kernel extends ConsoleKernel
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
                                 $reserva->cliente->nombre,
-                                $code['nombre'], $codigoPuertaPrincipal,
+                                $code['nombre'], $reserva->apartamento->edificioName->clave,
                                 $code['codigo'],
                                 $phoneCliente,
                                 $idiomaCliente,
@@ -478,7 +478,7 @@ class Kernel extends ConsoleKernel
                             );
                             # code...
                         } else {
-                            $data = $this->clavesMensaje($reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'], $phoneCliente, $idiomaCliente, $enlace);
+                            $data = $this->clavesMensaje($reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo'], $phoneCliente, $idiomaCliente, $enlace);
                             Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                         
                         }
@@ -495,11 +495,11 @@ class Kernel extends ConsoleKernel
 
 
                         if ($reserva->apartamento_id === 1) {
-                            $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo']);
+                            $mensaje = $this->clavesEmailAtico($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo']);
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                             
                         }else {
-                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $codigoPuertaPrincipal, $code['codigo'],$apartamentoReservado->edificio);
+                            $mensaje = $this->clavesEmail($idiomaCliente, $reserva->cliente->nombre, $code['nombre'], $reserva->apartamento->edificioName->clave, $code['codigo'],$apartamentoReservado->edificio);
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
                             
                         }
