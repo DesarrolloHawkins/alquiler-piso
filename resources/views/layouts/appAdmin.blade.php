@@ -170,12 +170,12 @@
                                 {{-- Tesoreria --}}
                                 <li class="nav-item w-100">
                                     <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*','facturas', 'facturas/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*') ? 'true' : 'false' }}">
+                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*','facturas', 'facturas/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*') ? 'true' : 'false' }}">
                                         <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
                                         Tesoreria
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*') ? 'show' : '' }}" id="submenuTesoreria">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*') ? 'show' : '' }}" id="submenuTesoreria">
                                         <li class="nav-item w-100">
                                             <a href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-6 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}">
                                                 Diario de Caja
@@ -209,6 +209,11 @@
                                         <li class="nav-item">
                                             <a href="{{route('admin.bancos.index')}}" class="nav-link fs-6 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" >
                                             Bancos
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{route('admin.upload.files')}}" class="nav-link fs-6 {{ request()->is('upload-files', 'upload-files/*') ? 'active' : '' }}" >
+                                            Subida de Ficheros Banco
                                             </a>
                                         </li>
                                         
