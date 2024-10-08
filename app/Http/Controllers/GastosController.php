@@ -100,7 +100,24 @@ class GastosController extends Controller
     }
 
     
-    
+    private function generarAsientoContable()
+    {
+        // Generar un número de asiento contable único para cada registro
+        $asiento = DiarioCaja::orderBy('id', 'desc')->first();
+        $anio = Carbon::now()->format('Y');
+        $numeroAsiento;
+
+        if ($asiento != null) {
+            $asientoTemporal = explode("/", $asiento->asiento_contable);
+            $numeroAsientos = $asientoTemporal[0] + 1;
+            $numeroConCeros = str_pad($numeroAsientos, 4, "0", STR_PAD_LEFT);
+            $numeroAsiento =  $numeroConCeros. '/' . $anio;
+        } else {
+            $numeroAsiento = '0001' . '/' . $anio;
+        }
+
+        return $numeroAsiento;
+    }
     public function edit($id)
     {
         $gasto = Gastos::findOrFail($id);  // Asegúrate de usar findOrFail para manejar errores si el ID no existe
