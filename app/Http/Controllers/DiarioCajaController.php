@@ -30,38 +30,100 @@ class DiarioCajaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-{
-    // Recuperar el saldo inicial de la base de datos
-    $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
-    $saldoInicial = $anio->saldo_inicial;
+//     public function index()
+// {
+//     // Recuperar el saldo inicial de la base de datos
+//     $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+//     $saldoInicial = $anio->saldo_inicial;
 
-    // Obtener todas las entradas del diario de caja
-    $response = DiarioCaja::all();
+//     // Obtener todas las entradas del diario de caja
+//     $response = DiarioCaja::all();
 
-    // Inicializar el saldo acumulado con el saldo inicial
-    $saldoAcumulado = $saldoInicial;
+//     // Inicializar el saldo acumulado con el saldo inicial
+//     $saldoAcumulado = $saldoInicial;
 
-    // Recorrer todas las líneas del diario y calcular el saldo
-    foreach ($response as $linea) {
-        // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
-        $debe = abs($linea->debe);
-        $haber = abs($linea->haber);
+//     // Recorrer todas las líneas del diario y calcular el saldo
+//     foreach ($response as $linea) {
+//         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+//         $debe = abs($linea->debe);
+//         $haber = abs($linea->haber);
 
-        if ($debe > 0) {
-            $saldoAcumulado -= $debe;
+//         if ($debe > 0) {
+//             $saldoAcumulado -= $debe;
+//         }
+
+//         if ($haber > 0) {
+//             $saldoAcumulado += $haber;
+//         }
+
+//         // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+//         $linea->saldo = $saldoAcumulado;
+//     }
+
+//     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
+// }
+
+    public function index(Request $request)
+    {
+        // Recuperar el saldo inicial de la base de datos
+        $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+        $saldoInicial = $anio->saldo_inicial;
+
+        // Inicializar la consulta
+        $query = DiarioCaja::query();
+
+        // Filtros
+        if ($request->filled('start_date')) {
+            $query->where('date', '>=', $request->start_date);
         }
 
-        if ($haber > 0) {
-            $saldoAcumulado += $haber;
+        if ($request->filled('end_date')) {
+            $query->where('date', '<=', $request->end_date);
         }
 
-        // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
-        $linea->saldo = $saldoAcumulado;
+        if ($request->filled('estado_id')) {
+            $query->where('estado_id', $request->estado_id);
+        }
+
+        if ($request->filled('cuenta_id')) {
+            $query->where('cuenta_id', $request->cuenta_id);
+        }
+
+        if ($request->filled('concepto')) {
+            $query->where('concepto', 'like', '%' . $request->concepto . '%');
+        }
+
+        // Obtener todas las entradas del diario de caja filtradas
+        $response = $query->get();
+
+        // Inicializar el saldo acumulado con el saldo inicial
+        $saldoAcumulado = $saldoInicial;
+
+        // Recorrer todas las líneas del diario y calcular el saldo
+        foreach ($response as $linea) {
+            // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+            $debe = abs($linea->debe);
+            $haber = abs($linea->haber);
+
+            if ($debe > 0) {
+                $saldoAcumulado -= $debe;
+            }
+
+            if ($haber > 0) {
+                $saldoAcumulado += $haber;
+            }
+
+            // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+            $linea->saldo = $saldoAcumulado;
+        }
+
+        // Recuperar los estados y cuentas para los filtros
+        $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
+        $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
+
+        return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
     }
 
-    return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
-}
 
     /**
      *  Mostrar el formulario de creación de Ingreso
