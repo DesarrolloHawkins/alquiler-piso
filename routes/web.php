@@ -7,6 +7,7 @@ use App\Http\Controllers\GestionApartamentoController;
 use App\Http\Controllers\MovimientosController;
 use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,10 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
+
+Route::get('/request-data', function (Request $request) {
+    return $request->all(); // Esto devolverá todos los datos de la solicitud
+});
 Route::get('paises', [App\Http\Controllers\HomeController::class, 'paises'])->name('paises');
 Route::get('tipos', [App\Http\Controllers\HomeController::class, 'tipos'])->name('tipos');
 
@@ -43,7 +48,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
+    Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');
     Route::get('/upload-files', [MovimientosController::class, 'uploadFiles'])->name('admin.upload.files');
+    Route::get('/upload-files-booking', [MovimientosController::class, 'uploadBooking'])->name('admin.uploadBooking.files');
 
     // Limpieza
     Route::get('aparatamento-limpieza/{id}/show', [\App\Http\Controllers\ApartamentoLimpiezaController::class, 'show'])->name('apartamentoLimpieza.admin.show');
