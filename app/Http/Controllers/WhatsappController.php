@@ -1042,6 +1042,7 @@ class WhatsappController extends Controller
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
     
+        // token
         // Cargar los JSON de paises y tipos desde la carpeta pública
         $paisesFilePath = public_path('paises.json');
         $tiposFilePath = public_path('tipos.json');
