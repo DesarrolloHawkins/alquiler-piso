@@ -1111,6 +1111,7 @@ class WhatsappController extends Controller
         // Ejecutar la solicitud y obtener la respuesta
         $response = curl_exec($curl);
         curl_close($curl);
+        Storage::disk('publico')->put('RespuestaChatSobreImagenDirecto-'.$imagePath.'.txt', json_encode($response) );
     
         // Decodificar la respuesta JSON
         $response_data = json_decode($response, true);
