@@ -82,7 +82,7 @@
 </div>
 @endsection
 
-@include('sweetalert::alert')
+<!-- @include('sweetalert::alert') -->
 
 @section('scripts')
 <script>
