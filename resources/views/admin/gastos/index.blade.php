@@ -204,8 +204,9 @@
             <!-- Paginación links -->
             {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
             @if($gastos instanceof \Illuminate\Pagination\LengthAwarePaginator)
-                {{ $gastos->appends(request()->except('page'))->links() }}
+                {{ $gastos->appends(request()->all())->links() }}
             @endif
+
 
 
         </div>

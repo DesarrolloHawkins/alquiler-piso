@@ -19,10 +19,9 @@ class GastosController extends Controller
         $order = $request->get('order', 'asc');
         $month = $request->get('month');
         $category = $request->get('category');
-        $perPage = $request->get('perPage', 10);  // Predeterminado a 10
+        $perPage = $request->get('perPage', 10); // Predeterminado a 10
         $estado_id = $request->get('estado_id');
 
-        // Construcción de la consulta
         $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
             $query->where('title', 'like', '%'.$search.'%');
             if ($month) {
@@ -38,11 +37,12 @@ class GastosController extends Controller
 
         $totalQuantity = $query->sum('quantity');
 
-        // Condicional para manejar la opción "Todo"
+        // Manejar la opción "Todo" con perPage = -1
         if ($perPage == -1) {
             $gastos = $query->orderBy($sort, $order)->get();
         } else {
-            $gastos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->except('page'));
+            // Paginación con todos los filtros
+            $gastos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->all());
         }
 
         $categorias = CategoriaGastos::all();
@@ -50,6 +50,7 @@ class GastosController extends Controller
 
         return view('admin.gastos.index', compact('gastos', 'totalQuantity', 'categorias', 'estados'));
     }
+
 
 
 
