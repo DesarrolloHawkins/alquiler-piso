@@ -69,7 +69,7 @@
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
                                 </form>
-                                {{-- <a href="{{route('clientes.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> --}}
+                                <!-- <a href="{{route('admin.categoriaGastos.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> -->
                             </td>
                         </tr>
                     @endforeach
@@ -96,6 +96,7 @@
 
         // Botones de eliminar
         const deleteButtons = document.querySelectorAll('.delete-btn');
+        console.log(deleteButtons);
         deleteButtons.forEach(button => {
             button.addEventListener('click', function (event) {
                 event.preventDefault();
