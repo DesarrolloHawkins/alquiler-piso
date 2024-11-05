@@ -19,9 +19,10 @@ class GastosController extends Controller
         $order = $request->get('order', 'asc');
         $month = $request->get('month');
         $category = $request->get('category');
-        $perPage = $request->get('perPage', 10);
+        $perPage = $request->get('perPage', 10);  // Predeterminado a 10
         $estado_id = $request->get('estado_id');
-    
+
+        // Construcción de la consulta
         $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
             $query->where('title', 'like', '%'.$search.'%');
             if ($month) {
@@ -34,21 +35,23 @@ class GastosController extends Controller
                 $query->where('estado_id', $estado_id);
             }
         });
-    
+
         $totalQuantity = $query->sum('quantity');
-        // Verifica si perPage es -1 para mostrar todos los resultados sin paginación
+
+        // Condicional para manejar la opción "Todo"
         if ($perPage == -1) {
             $gastos = $query->orderBy($sort, $order)->get();
         } else {
-            $gastos = $query->orderBy($sort, $order)->paginate($perPage);
+            $gastos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->except('page'));
         }
-    
+
         $categorias = CategoriaGastos::all();
         $estados = EstadosGastos::all();
-    
+
         return view('admin.gastos.index', compact('gastos', 'totalQuantity', 'categorias', 'estados'));
     }
-     
+
+
 
     public function create(){
         $categorias = CategoriaGastos::all();
@@ -104,7 +107,7 @@ class GastosController extends Controller
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto creado con éxito!');
     }
 
-    
+
     private function generarAsientoContable()
     {
         // Generar un número de asiento contable único para cada registro
@@ -135,7 +138,7 @@ class GastosController extends Controller
     public function update(Request $request, $id)
     {
         $gasto = Gastos::findOrFail($id); // Obtener el gasto existente
-        
+
         $rules = [
             'estado_id' => 'required|exists:estados_gastos,id',
             'categoria_id' => 'required|exists:categoria_gastos,id',
@@ -144,13 +147,13 @@ class GastosController extends Controller
             'date' => 'required|date',
             'quantity' => 'required|numeric'
         ];
-        
+
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        
+
         // Actualizar el gasto en la base de datos sin la foto
         $gasto->update($validatedData);
-        
+
         // Manejar la carga de la foto si existe
         if ($request->hasFile('factura_foto')) {
             if ($request->file('factura_foto')->isValid()) {
@@ -158,17 +161,17 @@ class GastosController extends Controller
                 if ($gasto->factura_foto) {
                     Storage::delete($gasto->factura_foto);
                 }
-    
+
                 $file = $request->file('factura_foto');
                 $filename = time() . '_' . $file->getClientOriginalName(); // Crear un nombre de archivo único
                 $path = $file->storeAs('public/facturas', $filename); // Guardar el archivo en el storage
-    
+
                 // Actualizar la instancia de gasto con la ruta de la foto
                 $gasto->factura_foto = $path;
                 $gasto->save(); // Guardar el path en la columna factura_foto
             }
         }
-    
+
         // Actualizar también el Diario de Caja correspondiente
         $diarioCaja = DiarioCaja::where('gasto_id', $id)->first();
         if ($diarioCaja) {
@@ -178,12 +181,12 @@ class GastosController extends Controller
                 'debe' => $validatedData['quantity']
             ]);
         }
-    
+
         // Redireccionar al índice de gastos con un mensaje de éxito
         return redirect()->route('admin.gastos.index')->with('status', 'Gasto actualizado con éxito!');
     }
-    
-    
+
+
     public function destroy($id){
         $gasto = Gastos::findOrFail($id);
 
@@ -227,7 +230,7 @@ class GastosController extends Controller
         if (!$gasto->factura_foto) {
             return abort(404);
         }
-    
+
         $pathToFile = storage_path('app/' . $gasto->factura_foto);
         return response()->download($pathToFile);
     }
