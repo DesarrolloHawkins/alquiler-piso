@@ -18,32 +18,40 @@ class IngresosController extends Controller
         $sort = $request->get('sort', 'id');
         $order = $request->get('order', 'asc');
         $month = $request->get('month');
-        $category = $request->get('category');  // Nuevo parámetro para la categoría
-        $perPage = $request->get('perPage', 10);
-        $estado_id = $request->get('estado_id');  // Nuevo parámetro para la categoría
+        $category = $request->get('category');
+        $perPage = $request->get('perPage', 10); // Predeterminado a 10
+        $estado_id = $request->get('estado_id');
 
+        // Construcción de la consulta con filtros
         $query = Ingresos::where(function ($query) use ($search, $month, $category, $estado_id) {
-            $query->where('title', 'like', '%'.$search.'%');
+            if ($search) {
+                $query->where('title', 'like', '%'.$search.'%');
+            }
             if ($month) {
                 $query->whereMonth('date', $month);
             }
             if ($category) {
-                $query->where('categoria_id', $category); // Filtrar por categoría
+                $query->where('categoria_id', $category);
             }
             if ($estado_id) {
-                $query->where('estado_id', $estado_id); // Filtrar por categoría
+                $query->where('estado_id', $estado_id);
             }
         });
-    
+
         $totalQuantity = $query->sum('quantity');
-        $ingresos = $query->orderBy($sort, $order)->paginate($perPage);
-    
-        // Pasamos también las categorías a la vista para el selector
+
+        // Manejar la opción "Todo" (perPage = -1)
+        if ($perPage == -1) {
+            $ingresos = $query->orderBy($sort, $order)->get();
+        } else {
+            $ingresos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->except('page'));
+        }
+
         $categorias = CategoriaIngresos::all();
         $estados = EstadosIngresos::all();
 
         return view('admin.ingresos.index', compact('ingresos', 'totalQuantity', 'categorias', 'estados'));
-    }   
+    }
 
     public function create(){
         $categorias = CategoriaIngresos::all();
@@ -117,7 +125,7 @@ class IngresosController extends Controller
 
         return $numeroAsiento;
     }
-    
+
     public function edit($id)
     {
         $ingreso = Ingresos::findOrFail($id);  // Asegúrate de usar findOrFail para manejar errores si el ID no existe
@@ -130,7 +138,7 @@ class IngresosController extends Controller
     public function update(Request $request, $id)
     {
         $ingreso = Ingresos::findOrFail($id); // Obtener el ingreso existente
-        
+
         $rules = [
             'estado_id' => 'required|exists:estados_gastos,id',
             'categoria_id' => 'required|exists:categoria_gastos,id',
@@ -139,13 +147,13 @@ class IngresosController extends Controller
             'date' => 'required|date',
             'quantity' => 'required|numeric'
         ];
-        
+
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        
+
         // Actualizar el ingreso en la base de datos sin la foto
         $ingreso->update($validatedData);
-        
+
         // Manejar la carga de la foto si existe
         if ($request->hasFile('factura_foto')) {
             if ($request->file('factura_foto')->isValid()) {
@@ -178,7 +186,7 @@ class IngresosController extends Controller
         return redirect()->route('admin.ingresos.index')->with('status', 'Ingreso actualizado con éxito!');
     }
 
-    
+
     public function destroy($id){
         $ingreso = Ingresos::findOrFail($id);
 
@@ -187,10 +195,10 @@ class IngresosController extends Controller
         if ($diarioCaja) {
             $diarioCaja->delete();
         }
-    
+
         // Eliminar el ingreso
         $ingreso->delete();
-    
+
         return redirect()->route('admin.ingresos.index')->with('status', 'Ingreso eliminado con éxito.');
     }
 
@@ -219,7 +227,7 @@ class IngresosController extends Controller
         if (!$gasto->factura_foto) {
             return abort(404);
         }
-    
+
         $pathToFile = storage_path('app/' . $gasto->factura_foto);
         return response()->download($pathToFile);
     }

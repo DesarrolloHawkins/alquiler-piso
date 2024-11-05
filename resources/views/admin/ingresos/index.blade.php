@@ -26,21 +26,25 @@
                 <div class="col-md-2">
                     <div class="mb-3">
                         <form action="{{ route('admin.ingresos.index') }}" method="GET">
+                            <input type="hidden" name="search" value="{{ request()->get('search') }}">
+                            <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
+                            <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
+                            <input type="hidden" name="month" value="{{ request()->get('month') }}">
+                            <input type="hidden" name="category" value="{{ request()->get('category') }}">
+                            <input type="hidden" name="estado_id" value="{{ request()->get('estado_id') }}">
+
                             <div class="form-group">
-                                 <!-- Otros parámetros como campos ocultos -->
-                                <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
-                                <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
-                                <input type="hidden" name="search" value="{{ request()->get('search') }}">
                                 <label for="perPage" class="form-label">Registros por página:</label>
                                 <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
-                                    {{-- <option value="5" {{ request()->get('perPage') == 5 ? 'selected' : '' }}>5</option> --}}
                                     <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
                                     <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
                                     <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
                                     <option value="100" {{ request()->get('perPage') == 100 ? 'selected' : '' }}>100</option>
+                                    <option value="-1" {{ request()->get('perPage') == -1 ? 'selected' : '' }}>Todo</option>
                                 </select>
                             </div>
                         </form>
+
                     </div>
                 </div>
                 <div class="col-md-10">
@@ -49,11 +53,12 @@
                             <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
                             <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                             <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+
                             <div class="input-group mb-5 justify-content-around">
                                 <div class="col-md-3 px-3">
                                     <label for="search" class="form-label">Busqueda</label>
                                     <input type="text" class="form-control" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
-                                </div>   
+                                </div>
                                 <div class="col-md-2 px-3">
                                     <label for="estado_id" class="form-label">Estados</label>
                                     <select class="form-control" name="estado_id">
@@ -72,7 +77,6 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                                             
                                 <div class="col-md-2 px-3">
                                     <label for="search" class="form-label">Mes</label>
                                     <select class="form-control" name="month">
@@ -84,12 +88,13 @@
                                             <option value="{{ $i }}" @if (request('month') == $i) selected @endif>{{ $meses[$i - 1] }}</option>
                                         @endfor
                                     </select>
-                                </div>                                  
+                                </div>
                                 <div class="col-md-2 align-items-end d-flex justify-content-center">
                                     <button type="submit" class="btn btn-terminar">Buscar</button>
                                 </div>
                             </div>
                         </form>
+
                     </div>
                 </div>
             </div>
@@ -132,7 +137,7 @@
                                 @endif
                             </a>
                         </th>
-                        
+
                         <th scope="col">
                             <a href="{{ route('admin.ingresos.index', ['sort' => 'date', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
                                class="{{ request('sort') == 'date' ? 'active-sort' : 'inactive-sort' }}">
@@ -171,7 +176,7 @@
                                     @else
                                         <span class="badge bg-danger fs-6">{{$ingreso->estado->nombre}}</span>
                                     @endif
-                                    
+
                                 @else
                                     <strong>{{'Sin Estado'}}</strong>
                                 @endif
@@ -207,7 +212,9 @@
             </table>
             <!-- Paginación links -->
             {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
-            {{ $ingresos->appends(request()->except('page'))->links() }}
+            @if($ingresos instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                {{ $ingresos->appends(request()->except('page'))->links() }}
+            @endif
 
         </div>
     </div>
