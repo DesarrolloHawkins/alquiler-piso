@@ -18,32 +18,37 @@ class GastosController extends Controller
         $sort = $request->get('sort', 'id');
         $order = $request->get('order', 'asc');
         $month = $request->get('month');
-        $category = $request->get('category');  // Nuevo parámetro para la categoría
+        $category = $request->get('category');
         $perPage = $request->get('perPage', 10);
-        $estado_id = $request->get('estado_id');  // Nuevo parámetro para la categoría
-
+        $estado_id = $request->get('estado_id');
+    
         $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
             $query->where('title', 'like', '%'.$search.'%');
             if ($month) {
                 $query->whereMonth('date', $month);
             }
             if ($category) {
-                $query->where('categoria_id', $category); // Filtrar por categoría
+                $query->where('categoria_id', $category);
             }
             if ($estado_id) {
-                $query->where('estado_id', $estado_id); // Filtrar por categoría
+                $query->where('estado_id', $estado_id);
             }
         });
     
         $totalQuantity = $query->sum('quantity');
-        $gastos = $query->orderBy($sort, $order)->paginate($perPage);
+        // Verifica si perPage es -1 para mostrar todos los resultados sin paginación
+        if ($perPage == -1) {
+            $gastos = $query->orderBy($sort, $order)->get();
+        } else {
+            $gastos = $query->orderBy($sort, $order)->paginate($perPage);
+        }
     
-        // Pasamos también las categorías a la vista para el selector
         $categorias = CategoriaGastos::all();
         $estados = EstadosGastos::all();
-
+    
         return view('admin.gastos.index', compact('gastos', 'totalQuantity', 'categorias', 'estados'));
-    }   
+    }
+     
 
     public function create(){
         $categorias = CategoriaGastos::all();

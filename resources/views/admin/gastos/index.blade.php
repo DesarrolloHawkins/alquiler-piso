@@ -33,11 +33,11 @@
                                 <input type="hidden" name="search" value="{{ request()->get('search') }}">
                                 <label for="perPage" class="form-label">Registros por página:</label>
                                 <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
-                                    {{-- <option value="5" {{ request()->get('perPage') == 5 ? 'selected' : '' }}>5</option> --}}
                                     <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
                                     <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
                                     <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
                                     <option value="100" {{ request()->get('perPage') == 100 ? 'selected' : '' }}>100</option>
+                                    <option value="-1" {{ request()->get('perPage') == -1 ? 'selected' : '' }}>Todo</option> <!-- Opción para ver todos -->
                                 </select>
                             </div>
                         </form>
@@ -207,7 +207,7 @@
             </table>
             <!-- Paginación links -->
             {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
-            {{ $gastos->appends(request()->except('page'))->links() }}
+            {{$gastos->appends(request()->except('page'))->links()}}
 
         </div>
     </div>
