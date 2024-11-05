@@ -24,7 +24,9 @@ class GastosController extends Controller
 
         // Construcción de la consulta con filtros
         $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
-            $query->where('title', 'like', '%'.$search.'%');
+            if ($search) {
+                $query->where('title', 'like', '%'.$search.'%');
+            }
             if ($month) {
                 $query->whereMonth('date', $month);
             }
@@ -42,7 +44,7 @@ class GastosController extends Controller
         if ($perPage == -1) {
             $gastos = $query->orderBy($sort, $order)->get();
         } else {
-            $gastos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->all());
+            $gastos = $query->orderBy($sort, $order)->paginate($perPage)->appends($request->except('page'));
         }
 
         $categorias = CategoriaGastos::all();
@@ -50,6 +52,7 @@ class GastosController extends Controller
 
         return view('admin.gastos.index', compact('gastos', 'totalQuantity', 'categorias', 'estados'));
     }
+
 
 
 

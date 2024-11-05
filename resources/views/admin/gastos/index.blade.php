@@ -45,6 +45,7 @@
                             </div>
                         </form>
 
+
                     </div>
                 </div>
                 <div class="col-md-10">
@@ -53,6 +54,7 @@
                             <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
                             <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                             <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+
                             <div class="input-group mb-5 justify-content-around">
                                 <div class="col-md-3 px-3">
                                     <label for="search" class="form-label">Busqueda</label>
@@ -76,7 +78,6 @@
                                         @endforeach
                                     </select>
                                 </div>
-
                                 <div class="col-md-2 px-3">
                                     <label for="search" class="form-label">Mes</label>
                                     <select class="form-control" name="month">
@@ -94,6 +95,7 @@
                                 </div>
                             </div>
                         </form>
+
                     </div>
                 </div>
             </div>
@@ -212,12 +214,8 @@
             <!-- Paginación links -->
             {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
             @if($gastos instanceof \Illuminate\Pagination\LengthAwarePaginator)
-                {{ $gastos->appends(request()->all())->links() }}
+                {{ $gastos->appends(request()->except('page'))->links() }}
             @endif
-
-
-
-
         </div>
     </div>
 </div>
