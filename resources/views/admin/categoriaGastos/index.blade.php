@@ -82,8 +82,6 @@
 </div>
 @endsection
 
-<!-- @include('sweetalert::alert') -->
-
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
