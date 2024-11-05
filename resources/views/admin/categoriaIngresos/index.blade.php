@@ -69,7 +69,6 @@
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
                                 </form>
-                                {{-- <a href="{{route('clientes.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> --}}
                             </td>
                         </tr>
                     @endforeach
@@ -83,7 +82,6 @@
 </div>
 @endsection
 
-@include('sweetalert::alert')
 
 @section('scripts')
 <script>
