@@ -26,6 +26,13 @@
                 <div class="col-md-2">
                     <div class="mb-3">
                         <form action="{{ route('admin.gastos.index') }}" method="GET">
+                            <input type="hidden" name="search" value="{{ request()->get('search') }}">
+                            <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
+                            <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
+                            <input type="hidden" name="month" value="{{ request()->get('month') }}">
+                            <input type="hidden" name="category" value="{{ request()->get('category') }}">
+                            <input type="hidden" name="estado_id" value="{{ request()->get('estado_id') }}">
+
                             <div class="form-group">
                                 <label for="perPage" class="form-label">Registros por página:</label>
                                 <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
@@ -37,6 +44,7 @@
                                 </select>
                             </div>
                         </form>
+
                     </div>
                 </div>
                 <div class="col-md-10">
@@ -206,6 +214,7 @@
             @if($gastos instanceof \Illuminate\Pagination\LengthAwarePaginator)
                 {{ $gastos->appends(request()->all())->links() }}
             @endif
+
 
 
 
