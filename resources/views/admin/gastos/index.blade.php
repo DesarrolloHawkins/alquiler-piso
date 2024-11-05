@@ -207,7 +207,9 @@
             </table>
             <!-- Paginación links -->
             {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
-            {{$gastos->appends(request()->except('page'))->links()}}
+            @if($gastos instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                {{ $gastos->appends(request()->except('page'))->links() }}
+            @endif
 
         </div>
     </div>
