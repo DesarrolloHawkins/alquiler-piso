@@ -23,7 +23,7 @@
                 </div>
             @endif
             <!-- Formulario de búsqueda -->
-            <form action="{{ route('admin.bancos.index') }}" method="GET" class="mb-4">
+            <form action="{{ route('admin.categoriaGastos.index') }}" method="GET" class="mb-4">
                 <div class="input-group mb-5">
                     <input type="text" class="form-control" name="search" placeholder="Buscar categoria" value="{{ request()->get('search') }}">
                     <button type="submit" class="btn bg-color-primero">Buscar</button>
@@ -69,7 +69,6 @@
                                     @csrf
                                     <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
                                 </form>
-                                <!-- <a href="{{route('admin.categoriaGastos.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> -->
                             </td>
                         </tr>
                     @endforeach
