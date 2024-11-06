@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Services\OpenAIService;
 use App\Models\Apartamento;
+use App\Models\Reserva;
+
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -149,6 +151,7 @@ class ChatController extends Controller
                 // Agrega más campos según lo necesites
             ];
         });
+
 
         return response()->json($data, 200);
     }
