@@ -147,7 +147,7 @@ class ChatController extends Controller
                 'titulo' => $apartamento->titulo,
                 'descripcion' => $apartamento->descripcion, // Asegúrate de que este campo existe en tu modelo
                 'edificio' => $apartamento->edificioName->nombre ?? 'Edificio Hawkins Suite', // Agregar el nombre del edificio
-                'claves' => $apartamento->claves,
+                // 'claves' => $apartamento->claves,
                 // Agrega más campos según lo necesites
             ];
         });
