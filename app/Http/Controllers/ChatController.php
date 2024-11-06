@@ -20,7 +20,7 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        $message = "¿Cuáles son los apartamentos disponibles hoy?";
+        $message = "¿Cuáles son los apartamentos disponibles hoy para reservar?";
 
         // Definir las funciones API
         $functions = [
