@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\OpenAIService;
-use Illuminate\Http\Request;
 use App\Models\Apartamento;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ChatController extends Controller
 {
