@@ -24,24 +24,24 @@ class ChatController extends Controller
             [
                 "name" => "GetAllApartments",
                 "description" => "Retrieve a list of all apartments.",
-                "parameters" => [
-                    "type" => "object",
-                    "properties" => [
-                        "apartments" => [
-                            "type" => "array",
-                            "description" => "List of apartments available.",
-                            "items" => [
-                                "type" => "object",
-                                "properties" => [
-                                    "apartment_id" => ["type" => "string", "description" => "Unique identifier for the apartment"],
-                                    "name" => ["type" => "string", "description" => "Name of the apartment"],
-                                    "capacity" => ["type" => "integer", "description" => "Maximum occupancy of the apartment"]
-                                ]
-                            ]
-                        ]
-                    ],
-                    "required" => ["apartments"]
-                ]
+                // "parameters" => [
+                //     "type" => "object",
+                //     "properties" => [
+                //         "apartments" => [
+                //             "type" => "array",
+                //             "description" => "List of apartments available.",
+                //             "items" => [
+                //                 "type" => "object",
+                //                 "properties" => [
+                //                     "apartment_id" => ["type" => "string", "description" => "Unique identifier for the apartment"],
+                //                     "name" => ["type" => "string", "description" => "Name of the apartment"],
+                //                     "capacity" => ["type" => "integer", "description" => "Maximum occupancy of the apartment"]
+                //                 ]
+                //             ]
+                //         ]
+                //     ],
+                //     "required" => ["apartments"]
+                // ]
             ],
             [
                 "name" => "ReportTechnicalIssue",
