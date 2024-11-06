@@ -66,22 +66,13 @@ class ChatController extends Controller
 
             // Determinar cuál función se solicitó
             if ($function_call['name'] === 'GetAllApartments') {
-                // Llamar a la función para obtener apartamentos (ejemplo de datos locales o llamada a API)
-                $apartments = $this->getAllApartments();
+                // Llamar a la función para obtener apartamentos
+                $apartments = $this->getAllApartments(); // Obtiene el array de apartamentos
 
-                // Construir la respuesta en el formato que OpenAI espera
-                return response()->json([
-                    'choices' => [
-                        [
-                            'message' => [
-                                'role' => 'function',
-                                'function_call' => [
-                                    'name' => 'GetAllApartments',
-                                    'arguments' => json_encode($apartments)
-                                ]
-                            ]
-                        ]
-                    ]
+                // Construir la respuesta para OpenAI
+                return $this->openAIService->sendMessage("Aquí están los apartamentos disponibles:", [], [
+                    'name' => 'GetAllApartments',
+                    'arguments' => json_encode($apartments) // Convierte a JSON para que OpenAI pueda procesarlo
                 ]);
             } elseif ($function_call['name'] === 'ReportTechnicalIssue') {
                 // Extraer parámetros
@@ -92,7 +83,11 @@ class ChatController extends Controller
                 // Llamar a la función para reportar un problema técnico
                 $issueReport = $this->reportTechnicalIssue($apartment_id, $description);
 
-                return response()->json($issueReport);
+                // Construir la respuesta para OpenAI
+                return $this->openAIService->sendMessage("He reportado el problema: $description", [], [
+                    'name' => 'ReportTechnicalIssue',
+                    'arguments' => json_encode($issueReport) // Convierte a JSON para que OpenAI pueda procesarlo
+                ]);
             }
         }
         return response()->json($response);
