@@ -107,7 +107,7 @@ class ApiController extends Controller
      */
     public function averiasTecnico(Request $request)
     {
-        dd($request->all());
+        return response()->json('Averias tecnico enviada', 200);
     }
 
 
