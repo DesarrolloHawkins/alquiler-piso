@@ -33,6 +33,8 @@ Route::get('/request-data', function (Request $request) {
 });
 Route::get('paises', [App\Http\Controllers\HomeController::class, 'paises'])->name('paises');
 Route::get('tipos', [App\Http\Controllers\HomeController::class, 'tipos'])->name('tipos');
+Route::get('pruebas-dni', [App\Http\Controllers\HomeController::class, 'pruebas'])->name('pruebas');
+Route::get('/get-reservas-json', [App\Http\Controllers\HomeController::class, 'getReservas'])->name('reservas.get.json');
 
 Auth::routes();
 
@@ -46,7 +48,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
-    
+
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');
     Route::get('/upload-files', [MovimientosController::class, 'uploadFiles'])->name('admin.upload.files');
@@ -91,7 +93,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/bancos/{banco}/edit', [App\Http\Controllers\BancosController::class, 'edit'])->name('admin.bancos.edit');
     Route::post('/bancos/{banco}/update', [App\Http\Controllers\BancosController::class, 'update'])->name('admin.bancos.update');
     Route::post('/bancos/{banco}/destroy', [App\Http\Controllers\BancosController::class, 'destroy'])->name('admin.bancos.destroy');
-    
+
     // Edificios
     Route::get('/edificios', [App\Http\Controllers\EdificiosController::class, 'index'])->name('admin.edificios.index');
     Route::get('/edificio-create', [App\Http\Controllers\EdificiosController::class, 'create'])->name('admin.edificio.create');
@@ -99,7 +101,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/edificio/{id}/edit', [App\Http\Controllers\EdificiosController::class, 'edit'])->name('admin.edificio.edit');
     Route::post('/edificio/{id}/update', [App\Http\Controllers\EdificiosController::class, 'update'])->name('admin.edificio.update');
     Route::post('/edificio/{id}/destroy', [App\Http\Controllers\EdificiosController::class, 'destroy'])->name('admin.edificio.destroy');
-    
+
     // Categoria de Gastos
     Route::get('/categoria-gastos', [App\Http\Controllers\CategoriaGastosController::class, 'index'])->name('admin.categoriaGastos.index');
     Route::get('/categoria-gastos/create', [App\Http\Controllers\CategoriaGastosController::class, 'create'])->name('admin.categoriaGastos.create');
@@ -107,7 +109,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/categoria-gastos/{categoria}/edit', [App\Http\Controllers\CategoriaGastosController::class, 'edit'])->name('admin.categoriaGastos.edit');
     Route::post('/categoria-gastos/{categoria}/update', [App\Http\Controllers\CategoriaGastosController::class, 'update'])->name('admin.categoriaGastos.update');
     Route::post('/categoria-gastos/{categoria}/destroy', [App\Http\Controllers\CategoriaGastosController::class, 'destroy'])->name('admin.categoriaGastos.destroy');
-    
+
     // Gastos
     Route::get('/gastos', [App\Http\Controllers\GastosController::class, 'index'])->name('admin.gastos.index');
     Route::get('/gastos/create', [App\Http\Controllers\GastosController::class, 'create'])->name('admin.gastos.create');
@@ -116,7 +118,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/gastos/{categoria}/update', [App\Http\Controllers\GastosController::class, 'update'])->name('admin.gastos.update');
     Route::post('/gastos/{id}/destroy', [App\Http\Controllers\GastosController::class, 'destroy'])->name('admin.gastos.destroy');
     Route::get('/gastos/download/{id}', [App\Http\Controllers\GastosController::class, 'download'])->name('gastos.download');
-   
+
     // Categoria de Ingresos
     Route::get('/categoria-ingresos', [App\Http\Controllers\CategoriaIngresosController::class, 'index'])->name('admin.categoriaIngresos.index');
     Route::get('/categoria-ingresos/create', [App\Http\Controllers\CategoriaIngresosController::class, 'create'])->name('admin.categoriaIngresos.create');
@@ -124,7 +126,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/categoria-ingresos/{categoria}/edit', [App\Http\Controllers\CategoriaIngresosController::class, 'edit'])->name('admin.categoriaIngresos.edit');
     Route::post('/categoria-ingresos/{categoria}/update', [App\Http\Controllers\CategoriaIngresosController::class, 'update'])->name('admin.categoriaIngresos.update');
     Route::post('/categoria-ingresos/{categoria}/destroy', [App\Http\Controllers\CategoriaIngresosController::class, 'destroy'])->name('admin.categoriaIngresos.destroy');
-    
+
     // Estados del Diario de Caja
     Route::get('/estados-diario', [App\Http\Controllers\EstadosDiarioController::class, 'index'])->name('admin.estadosDiario.index');
     Route::get('/estados-diario/create', [App\Http\Controllers\EstadosDiarioController::class, 'create'])->name('admin.estadosDiario.create');
@@ -132,7 +134,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/estados-diario/{categoria}/edit', [App\Http\Controllers\EstadosDiarioController::class, 'edit'])->name('admin.estadosDiario.edit');
     Route::post('/estados-diario/{categoria}/update', [App\Http\Controllers\EstadosDiarioController::class, 'update'])->name('admin.estadosDiario.update');
     Route::post('/estados-diario/{categoria}/destroy', [App\Http\Controllers\EstadosDiarioController::class, 'destroy'])->name('admin.estadosDiario.destroy');
-    
+
      // Ingresos
     Route::get('/ingresos', [App\Http\Controllers\IngresosController::class, 'index'])->name('admin.ingresos.index');
     Route::get('/ingresos/create', [App\Http\Controllers\IngresosController::class, 'create'])->name('admin.ingresos.create');
@@ -162,7 +164,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::delete('/cuentas-contables/destroy/{id}', [App\Http\Controllers\CuentasContableController::class, 'destroy'])->name('admin.cuentasContables.destroy');
 
     Route::get('/cuentas-contables/get-cuentas', [App\Http\Controllers\CuentasContableController::class, 'getCuentasByDataTables'])->name('admin.cuentasContables.getClients');
-    
+
     // Sub-Cuentas Contables
     Route::get('/sub-cuentas-contables', [App\Http\Controllers\SubCuentasContableController::class, 'index'])->name('admin.subCuentasContables.index');
     Route::get('/sub-cuentas-contables/create', [App\Http\Controllers\SubCuentasContableController::class, 'create'])->name('admin.subCuentasContables.create');
@@ -170,7 +172,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/sub-cuentas-contables/{id}/edit', [App\Http\Controllers\SubCuentasContableController::class, 'edit'])->name('admin.subCuentasContables.edit');
     Route::post('/sub-cuentas-contables/updated', [App\Http\Controllers\SubCuentasContableController::class, 'updated'])->name('admin.subCuentasContables.updated');
     Route::delete('/sub-cuentas-contables/destroy/{id}', [App\Http\Controllers\SubCuentasContableController::class, 'destroy'])->name('admin.subCuentasContables.destroy');
-    
+
     // Sub-Cuentas Hijas Contables
     Route::get('/sub-cuentas-hijas-contables', [App\Http\Controllers\SubCuentasHijoController::class, 'index'])->name('admin.subCuentasHijaContables.index');
     Route::get('/sub-cuentas-hijas-contables/create', [App\Http\Controllers\SubCuentasHijoController::class, 'create'])->name('admin.subCuentasHijaContables.create');
@@ -178,7 +180,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/sub-cuentas-hijas-contables/{id}/edit', [App\Http\Controllers\SubCuentasHijoController::class, 'edit'])->name('admin.subCuentasHijaContables.edit');
     Route::post('/sub-cuentas-hijas-contables/updated', [App\Http\Controllers\SubCuentasHijoController::class, 'updated'])->name('admin.subCuentasHijaContables.updated');
     Route::delete('/sub-cuentas-hijas-contables/destroy/{id}', [App\Http\Controllers\SubCuentasHijoController::class, 'destroy'])->name('admin.subCuentasHijaContables.destroy');
-    
+
     // Grupos Contables
     Route::get('/grupo-contable', [App\Http\Controllers\GrupoContabilidadController::class, 'index'])->name('admin.grupoContabilidad.index');
     Route::get('/grupo-contable/create', [App\Http\Controllers\GrupoContabilidadController::class, 'create'])->name('admin.grupoContabilidad.create');
@@ -186,7 +188,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/grupo-contable/{id}/edit', [App\Http\Controllers\GrupoContabilidadController::class, 'edit'])->name('admin.grupoContabilidad.edit');
     Route::post('/grupo-contable/updated', [App\Http\Controllers\GrupoContabilidadController::class, 'updated'])->name('admin.grupoContabilidad.updated');
     Route::delete('/grupo-contable/destroy/{id}', [App\Http\Controllers\GrupoContabilidadController::class, 'destroy'])->name('admin.grupoContabilidad.destroy');
-    
+
     // Sub-Grupos Contables
     Route::get('/sub-grupo-contable', [App\Http\Controllers\SubGrupoContabilidadController::class, 'index'])->name('admin.subGrupoContabilidad.index');
     Route::get('/sub-grupo-contable/create', [App\Http\Controllers\SubGrupoContabilidadController::class, 'create'])->name('admin.subGrupoContabilidad.create');
@@ -243,7 +245,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/checklists/{id}/edit', [App\Http\Controllers\ChecklistController::class, 'edit'])->name('admin.checklists.edit');
     Route::post('/checklists/{id}/update', [App\Http\Controllers\ChecklistController::class, 'update'])->name('admin.checklists.update');
     Route::post('/checklists/{id}/destroy', [App\Http\Controllers\ChecklistController::class, 'destroy'])->name('admin.checklists.destroy');
-    
+
     // Items_checklist - Limpieza
     Route::get('/items_checklist', [App\Http\Controllers\ItemChecklistController::class, 'index'])->name('admin.itemsChecklist.index');
     Route::get('/items_checklist-create', [App\Http\Controllers\ItemChecklistController::class, 'create'])->name('admin.itemsChecklist.create');
@@ -251,7 +253,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/items_checklist/{id}/edit', [App\Http\Controllers\ItemChecklistController::class, 'edit'])->name('admin.itemsChecklist.edit');
     Route::post('/items_checklist/{id}/update', [App\Http\Controllers\ItemChecklistController::class, 'update'])->name('admin.itemsChecklist.update');
     Route::post('/items_checklist/{id}/destroy', [App\Http\Controllers\ItemChecklistController::class, 'destroy'])->name('admin.itemsChecklist.destroy');
-    
+
     // Proveedores
     Route::get('/proveedores', [App\Http\Controllers\ProveedoresController::class, 'index'])->name('admin.proveedores.index');
     Route::get('/proveedores/create', [App\Http\Controllers\ProveedoresController::class, 'create'])->name('admin.proveedores.create');
@@ -269,7 +271,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/facturas-excel',[App\Http\Controllers\InvoicesController::class, 'exportInvoices'])->name('admin.facturas.export');
     Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
     Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
-    
+
     // Categoria de Emails
     Route::get('/category-email', [App\Http\Controllers\CategoryEmailController::class, 'index'])->name('admin.categoriaEmail.index');
     Route::get('/category-email/create', [App\Http\Controllers\CategoryEmailController::class, 'create'])->name('admin.categoriaEmail.create');
@@ -294,7 +296,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/empleados/{id}/edit', [App\Http\Controllers\UserController::class, 'edit'])->name('admin.empleados.edit');
     Route::post('/empleados/{id}/update', [App\Http\Controllers\UserController::class, 'update'])->name('admin.empleados.update');
     Route::post('/empleados/{id}/destroy', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.empleados.destroy');
-    
+
     // Emails
     Route::get('/emails', [EmailController::class, 'index'])->name('admin.emails.index');
     Route::get('/emails/{email}', [EmailController::class, 'show'])->name('admin.emails.show');
@@ -315,7 +317,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/fichajes/pausa/iniciar', [App\Http\Controllers\FichajeController::class, 'iniciarPausa'])->name('fichajes.pausa.iniciar');
     Route::post('/fichajes/pausa/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarPausa'])->name('fichajes.pausa.finalizar');
     Route::post('/fichajes/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarJornada'])->name('fichajes.finalizar');
-    
+
 
     // Más rutas que solo deben ser accesibles
 });

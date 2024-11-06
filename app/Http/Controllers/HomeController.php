@@ -13,7 +13,8 @@ use DateTime;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\DomCrawler\Crawler;
-
+use OakLabs\Psd2\Authorization\Authorization;
+use GuzzleHttp\Client;
 
 class HomeController extends Controller
 {
@@ -60,6 +61,95 @@ class HomeController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
+    public function bancos()
+    {
+        $data = [
+            'code' => '1234567890',
+            'state' => '4587-8548',
+            'redirect_uri' => 'https://crm.apartamentosalgeciras.com/request-data',
+            'client_id' => '3407106a-9433-44d5-a478-70facb316203',
+            'client_secret' => 'T1fP5fN6uY4yA6qK3sW6nJ0yA6rD4uO2yJ5xA1uR4aU6eE1uH0',
+        ];
+
+        $authorization = new Authorization($data);
+
+        // $this->assertEquals($data['code'], $authorization->getCode());
+        // $this->assertEquals($data['state'], $authorization->getState());
+        // $this->assertEquals($data['redirect_uri'], $authorization->getRedirectUri());
+        // $this->assertEquals($data['client_id'], $authorization->getClientId());
+        // $this->assertEquals($data['client_secret'], $authorization->getClientSecret());
+        return response()->json($authorization);
+    }
+    // Función para extraer los datos específicos del DNI de la respuesta de Azure
+    private function parseDniData($data) {
+        $dniData = [];
+
+        // Extrae campos específicos de la respuesta JSON
+        if (isset($data['analyzeResult']['documentResults'][0]['fields'])) {
+            $fields = $data['analyzeResult']['documentResults'][0]['fields'];
+            $dniData['document_number'] = $fields['DocumentNumber']['valueString'] ?? null;
+            $dniData['first_name'] = $fields['FirstName']['valueString'] ?? null;
+            $dniData['last_name'] = $fields['LastName']['valueString'] ?? null;
+            $dniData['date_of_birth'] = $fields['DateOfBirth']['valueDate'] ?? null;
+        }
+
+        return $dniData;
+    }
+
+
+public function pruebas()
+{
+    // Carga las variables de entorno para Custom Vision
+    $endpoint = env('AZURE_CUSTOM_VISION_ENDPOINT');
+    $apiKey = env('AZURE_CUSTOM_VISION_API_KEY');
+    $projectId = env('AZURE_CUSTOM_VISION_PROJECT_ID');
+    $publishedName = env('AZURE_CUSTOM_VISION_PUBLISHED_NAME');
+
+    // Construye la ruta de la imagen en la carpeta public
+    $filePath = public_path('dni.jpg');
+
+    // Configura el cliente HTTP
+    $client = new Client();
+
+    // Lee la imagen
+    $imageData = file_get_contents($filePath);
+
+    try {
+        // Envía la solicitud a Azure Custom Vision Prediction API
+        $response = $client->post("{$endpoint}/customvision/v3.0/Prediction/{$projectId}/classify/iterations/{$publishedName}/image", [
+            'headers' => [
+                'Prediction-Key' => $apiKey,
+                'Content-Type' => 'application/octet-stream',
+            ],
+            'body' => $imageData,
+        ]);
+
+        // Procesa la respuesta
+        $resultData = json_decode($response->getBody(), true);
+
+        // Aquí podrías extraer las predicciones específicas de los datos de DNI
+        // Dependiendo de cómo hayas entrenado el modelo, podrías extraer campos específicos
+        dd($resultData);
+
+        return $this->parseDniData($resultData);
+
+    } catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
+}
+
+public function getReservas()
+{
+    $reservas = Reserva::all();
+    foreach($reservas as $reserva){
+        $cliente = Cliente::find($reserva->cliente_id);
+        $reserva['cliente'] = $cliente;
+        $apartamento = Apartamento::find($reserva->apartamento_id);
+        $reserva['apartamento'] = $apartamento;
+
+    }
+    return response()->json($reservas);
+}
     public function index()
     {
         return view('home');
@@ -69,7 +159,7 @@ class HomeController extends Controller
         // $credentials = array(
         //     'user' => 'H11070GEV04',
         //     'pass' => 'H4Kins4p4rtamento2023'
-        // ); 
+        // );
         // $data = [
         //     'username' => 'H11070GEV04',
         //     'password' => 'H4Kins4p4rtamento2023',
@@ -98,7 +188,7 @@ class HomeController extends Controller
         foreach ($browser->getCookieJar()->all() as $cookie) {
             $cookiesArray[$cookie->getName()] = $cookie->getValue();
         }
-        
+
         $postData = [
             'username' => 'H11070GEV04',
             'password' => 'H4Kins4p4rtamento2023',
@@ -144,7 +234,7 @@ class HomeController extends Controller
         $apellido = mb_convert_encoding('CASTAÑOS', 'UTF-8');
 
         $data = [
-            'jsonHiddenComunes'=> null, 
+            'jsonHiddenComunes'=> null,
             'idHospederia' => $idHospederia,
             'nombre' => 'DANI',
             'apellido1' => $apellido,
@@ -164,7 +254,7 @@ class HomeController extends Controller
             'fechaEntrada' => '21/12/2023',
             '_csrf' => $csrfToken
         ];
-       
+
         $headers = [
             'Cookie' => 'FRONTAL_JSESSIONID: ' . $cookiesArray['FRONTAL_JSESSIONID'] . ' UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_: ' . $cookiesArray['UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_'] . ' cookiesession1: ' . $cookiesArray['cookiesession1'],
             'Accept' => 'text/html, */*; q=0.01',
@@ -189,7 +279,7 @@ class HomeController extends Controller
 
         $response4 = $browser->getResponse();
         $statusCode4 = $response4->getStatusCode();
-        
+
         if ($browser->getResponse()->getStatusCode() == 302) {
             $crawler = $browser->followRedirect();
             // Sigue la redirección
@@ -439,7 +529,7 @@ class HomeController extends Controller
                     "ZAMBIA" => ["value" => "A9382AAAAA", "isEuropean" => in_array("ZAMBIA", $paisesEuropeos)],
                     "ZIMBABWE" => ["value" => "A9357AAAAA", "isEuropean" => in_array("ZIMBABWE", $paisesEuropeos)]
                 ];
-        
+
                 $jsonPaisesDni = json_encode($paisesDni, JSON_PRETTY_PRINT);
                 return response()->json($paisesDni);
     }
