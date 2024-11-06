@@ -83,6 +83,12 @@ class ReservasController extends Controller
 
     }
 
+    public function obtenerApartamentos(){
+        $apartamentos = Apartamento::all();
+        return response()->json($apartamentos);
+    }
+
+
     public function getReservas()
     {
         $reservas = Reserva::all();
@@ -100,7 +106,7 @@ class ReservasController extends Controller
      * Show the form for creating a new resource.
      */
     public function create()
-    {   
+    {
         $clientes = Cliente::all();
         $apartamentos = Apartamento::all();
         return view('reservas.create', compact('clientes','apartamentos'));
@@ -125,10 +131,10 @@ class ReservasController extends Controller
             'enviado_webpol' => 'nullable|integer',
             'fecha_limpieza' => 'nullable|date'
         ]);
-    
+
         $reserva = new Reserva($request->all());
         $reserva->save();
-    
+
         return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
 
@@ -160,19 +166,19 @@ class ReservasController extends Controller
     {
         // Buscar la reserva por su ID
         $reserva = Reserva::find($id);
-        
+
         // Validar que la reserva existe
         if (!$reserva) {
             return response()->json(['success' => false, 'message' => 'Reserva no encontrada'], 404);
         }
-        
+
         // Intentar parsear la nueva fecha
         try {
             $newDate = Carbon::createFromFormat('Y-m-d', $request->new_date);
         } catch (\Carbon\Exceptions\InvalidFormatException $e) {
             return response()->json(['success' => false, 'message' => 'Formato de fecha inválido'], 400);
         }
-    
+
         // Revisar si estamos actualizando la fecha de entrada o de salida
         if ($request->drag_type == 'start') {
             // Actualizar la fecha de entrada (se puede sumar o restar días)
@@ -191,14 +197,14 @@ class ReservasController extends Controller
                 return response()->json(['success' => false, 'message' => 'La fecha de salida no puede ser anterior a la fecha de entrada'], 400);
             }
         }
-    
+
         // Guardar los cambios en la base de datos
         $reserva->save();
-    
+
         // Devolver una respuesta JSON indicando éxito
         return response()->json(['success' => true, 'message' => 'Reserva actualizada correctamente']);
     }
-    
+
 
 
     /**
@@ -303,7 +309,7 @@ class ReservasController extends Controller
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
                     $searchQuery = $request->input('apartamento');
                     $bestMatch = $this->findClosestMatch($searchQuery);
-                
+
                     if ($bestMatch) {
                         $apartamento = $bestMatch;
                         // dd($apartamento);
@@ -312,7 +318,7 @@ class ReservasController extends Controller
                         //     'message' => 'Apartamento encontrado',
                         //     'data' => $bestMatch
                         // ]);
-                    } 
+                    }
                     // $apartamentoEncontrado = Apartamento::where('nombre', $data['apartamento'])->first();
                     // dd($apartamentoEncontrado);
                     // switch ($data['apartamento']) {
@@ -383,17 +389,17 @@ class ReservasController extends Controller
     function levenshteinDistance($str1, $str2) {
         $len1 = strlen($str1);
         $len2 = strlen($str2);
-    
+
         $matrix = [];
-    
+
         for ($i = 0; $i <= $len1; $i++) {
             $matrix[$i][0] = $i;
         }
-    
+
         for ($j = 0; $j <= $len2; $j++) {
             $matrix[0][$j] = $j;
         }
-    
+
         for ($i = 1; $i <= $len1; $i++) {
             for ($j = 1; $j <= $len2; $j++) {
                 if ($str1[$i - 1] == $str2[$j - 1]) {
@@ -408,16 +414,16 @@ class ReservasController extends Controller
                 );
             }
         }
-    
+
         return $matrix[$len1][$len2];
     }
     public function findClosestMatch($searchQuery) {
         // Obtener todos los nombres de apartamentos de la base de datos
         $apartments = Apartamento::all();
-    
+
         $closestMatch = null;
         $shortestDistance = PHP_INT_MAX;
-    
+
         foreach ($apartments as $apartment) {
             $distance = $this->levenshteinDistance($searchQuery, $apartment->nombre);
             if ($distance < $shortestDistance) {
@@ -425,7 +431,7 @@ class ReservasController extends Controller
                 $closestMatch = $apartment;
             }
         }
-    
+
         return $closestMatch;
     }
 
@@ -503,10 +509,10 @@ class ReservasController extends Controller
     }
 
     public function facturarReservas(){
-        
+
         $hoy = Carbon::now()->subDay(1); // La fecha actual
         $juevesPasado = Carbon::now()->subDays(5); // Restar 5 días para obtener el jueves de la semana pasada
-        
+
         // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
         $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
             ->whereDate('fecha_salida', '<=', $hoy)
@@ -533,7 +539,7 @@ class ReservasController extends Controller
             $crear->reference_autoincrement_id = $referencia['id'];
             $crear->invoice_status_id = 1;
             // $crear->budget_status_id = 3;
-            $crear->save();    
+            $crear->save();
             $reserva->estado_id = 5;
             $reserva->save();
             // return;
@@ -541,7 +547,7 @@ class ReservasController extends Controller
         }
         return response()->json($reservas);
     }
-    
+
     public function generateReferenceTemp($reference){
 
         // Extrae los dos dígitos del final de la cadena usando expresiones regulares
@@ -701,7 +707,7 @@ class ReservasController extends Controller
 
     //     $existeHilo = ChatGpt::find($idMensaje);
 	// 	$mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
-		
+
     //     if ($mensajeAnterior[1]->id_three == null) {
     //         //dd($existeHilo);
     //         $three_id = $this->crearHilo();
@@ -717,7 +723,7 @@ class ReservasController extends Controller
     //         $existeHilo->save();
     //         $three_id['id'] = $existeHilo->id_three;
     //     }
-                    
+
 
     //     $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
     //     // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
@@ -725,7 +731,7 @@ class ReservasController extends Controller
     //     // dd($ejecuccion);
     //     $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
     //     // dd($ejecuccionStatus,$ejecuccion);
-        
+
     //     //dd($ejecuccionStatus);
     //     // Inicia un bucle para esperar hasta que el hilo se complete
     //     while (true) {
@@ -765,7 +771,7 @@ class ReservasController extends Controller
 
     $existeHilo = ChatGpt::find($idMensaje);
     $mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
-    
+
     if ($mensajeAnterior[1]->id_three == null) {
         $three_id = $this->crearHilo();
         $existeHilo->id_three = $three_id['id'];
@@ -782,12 +788,12 @@ class ReservasController extends Controller
     $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
     $ejecuccion = $this->ejecutarHilo($three_id['id']);
     $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
-    
+
     $maxRetries = 5; // Número máximo de reintentos
     $retryCount = 0; // Contador de reintentos
     $timeoutSeconds = 180; // Máximo tiempo en segundos (3 minutos)
     $startTime = time(); // Tiempo de inicio
-    
+
     // Bucle while con límite de tiempo y reintentos
     while (true) {
         if ((time() - $startTime) > $timeoutSeconds) {
@@ -811,7 +817,7 @@ class ReservasController extends Controller
         if ($ejecuccionStatus['status'] === 'in_progress') {
             sleep(7); // Pausa antes de la siguiente verificación
             $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
-            
+
             if ($pasosHilo['data'][0]['status'] === 'completed') {
                 $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
             }
@@ -1111,7 +1117,7 @@ class ReservasController extends Controller
     }
 
     public function reservasCobradas(Request $request){
-        
+
         $codigoReserva = $request->input('codigo_reserva');
         $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
 
@@ -1126,7 +1132,7 @@ class ReservasController extends Controller
             $factura->save();
             return response()->json('Añadido correctamente',200);
         }else {
-            
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -1141,14 +1147,14 @@ class ReservasController extends Controller
                 'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
                 'total' => $reserva->precio,
             ];
-            
+
             $crear = Invoices::create($data);
             $referencia = $this->generateBudgetReference($crear);
             $crear->reference = $referencia['reference'];
             $crear->reference_autoincrement_id = $referencia['id'];
             $crear->invoice_status_id = 6;
             $crear->save();
-            
+
             return response()->json('Añadido correctamente',200);
 
         }
@@ -1211,7 +1217,7 @@ class ReservasController extends Controller
         }
     }
 
-    
-  
+
+
 }
 
