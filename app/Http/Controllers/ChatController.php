@@ -44,6 +44,10 @@ class ChatController extends Controller
                 // ]
             ],
             [
+                "name" => "GetApartmentsLibre",
+                "description" => "Retrieve a list of all apartments available today.",
+            ],
+            [
                 "name" => "ReportTechnicalIssue",
                 "description" => "Report a technical issue that requires attention.",
                 "parameters" => [
@@ -70,6 +74,12 @@ class ChatController extends Controller
                 $apartments = $this->getAllApartments(); // Obtiene el array de apartamentos
 
                 $messageToSend = "Aquí están los apartamentos disponibles: " . json_encode($apartments);
+                return $this->openAIService->sendMessage($messageToSend, $functions);
+            } elseif ($function_call['name'] === 'GetApartmentsLibre') {
+                // Llamar a la función para reportar un problema técnico
+                $apartamentos = $this->obtenerApartamentosDisponibles();
+
+                $messageToSend = "Aquí están los apartamentos disponibles: " . json_encode($apartamentos);
                 return $this->openAIService->sendMessage($messageToSend, $functions);
             } elseif ($function_call['name'] === 'ReportTechnicalIssue') {
                 // Extraer parámetros
@@ -108,6 +118,38 @@ class ChatController extends Controller
         return response()->json([
             "apartments" => $apartments
         ]);
+    }
+
+
+    /**
+     * Obtener los apartamentos disponibles
+     */
+    public function obtenerApartamentosDisponibles(Request $request)
+    {
+        // Obtener la fecha y la hora actual
+        $hoy = Carbon::now();
+
+        // Obtener los IDs de los apartamentos que están reservados hoy
+        $reservasHoy = Reserva::whereDate('fecha_entrada', '<=', $hoy->toDateString())
+            ->whereDate('fecha_salida', '>=', $hoy->toDateString())
+            ->pluck('apartamento_id');
+
+        // Obtener los apartamentos que no están en las reservas de hoy
+        $apartamentosDisponibles = Apartamento::whereNotIn('id', $reservasHoy)->get();
+
+        // Formatear los datos para la respuesta
+        $data = $apartamentosDisponibles->map(function ($apartamento) {
+            return [
+                'id' => $apartamento->id,
+                'titulo' => $apartamento->titulo,
+                'descripcion' => $apartamento->descripcion, // Asegúrate de que este campo existe en tu modelo
+                'edificio' => $apartamento->edificioName->nombre ?? 'Edificio Hawkins Suite', // Agregar el nombre del edificio
+                'claves' => $apartamento->claves,
+                // Agrega más campos según lo necesites
+            ];
+        });
+
+        return response()->json($data, 200);
     }
 
 
