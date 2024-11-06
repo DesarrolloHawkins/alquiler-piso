@@ -124,7 +124,7 @@ class ChatController extends Controller
     /**
      * Obtener los apartamentos disponibles
      */
-    public function obtenerApartamentosDisponibles(Request $request)
+    public function obtenerApartamentosDisponibles()
     {
         // Obtener la fecha y la hora actual
         $hoy = Carbon::now();
