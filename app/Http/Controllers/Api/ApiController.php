@@ -109,6 +109,13 @@ class ApiController extends Controller
     {
         return response()->json('Averias tecnico enviada', 200);
     }
+    /**
+     * Averias tecnico
+     */
+    public function equipoLimpieza(Request $request)
+    {
+        return response()->json('Equipo de limpieza enviada', 200);
+    }
 
 
 }

@@ -21,3 +21,4 @@ Route::post('/obtener-reservas-hoy', [App\Http\Controllers\Api\ApiController::cl
 Route::get('/obtener-apartamentos', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentos'])->name('obtenerApartamentos');
 Route::get('/obtener-apartamentos-disponibles', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentosDisponibles'])->name('obtenerApartamentosDisponibles');
 Route::post('/averias-tecnico', [App\Http\Controllers\Api\ApiController::class, 'averiasTecnico'])->name('averiasTecnico');
+Route::post('/equipo-limpieza', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
