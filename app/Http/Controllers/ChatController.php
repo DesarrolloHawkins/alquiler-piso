@@ -69,11 +69,8 @@ class ChatController extends Controller
                 // Llamar a la función para obtener apartamentos
                 $apartments = $this->getAllApartments(); // Obtiene el array de apartamentos
 
-                // Construir la respuesta para OpenAI
-                return $this->openAIService->sendMessage("Aquí están los apartamentos disponibles:", [], [
-                    'name' => 'GetAllApartments',
-                    'arguments' => json_encode($apartments) // Convierte a JSON para que OpenAI pueda procesarlo
-                ]);
+                $messageToSend = "Aquí están los apartamentos disponibles: " . json_encode($apartments);
+                return $this->openAIService->sendMessage($messageToSend, $functions);
             } elseif ($function_call['name'] === 'ReportTechnicalIssue') {
                 // Extraer parámetros
                 $params = json_decode($function_call['arguments'], true);
