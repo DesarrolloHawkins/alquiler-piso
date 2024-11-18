@@ -630,27 +630,43 @@ class WhatsappController extends Controller
     {
         dd($id, $idMensaje, $mensaje, $phone);
 
-        $existeHilo = ChatGpt::where('id_mensaje',$idMensaje)->first();
-		$mensajeAnterior = ChatGpt::where('id_mensaje', $id)->get();
-            if ($mensajeAnterior[1]->id_three == null) {
-				//dd($existeHilo);
+        $existeHilo = ChatGpt::find($idMensaje);
+
+        if ($existeHilo) {
+
+            $fechaLimite = '2024-11-18 13:30:00';
+
+            $mensajeAnterior = ChatGpt::where('remitente', $phone)
+                ->where('created_at', '>=', $fechaLimite)
+                ->get();
+
+            if ($mensajeAnterior) {
+                // Existe un mensaje válido posterior a la fecha límite
+                if ($mensajeAnterior[1]->id_three == null) {
+                    //dd($existeHilo);
+                    $three_id = $this->crearHilo();
+                    //dd($three_id);
+                    $existeHilo->id_three = $three_id['id'];
+                    $existeHilo->save();
+                    $mensajeAnterior[1]->id_three = $three_id['id'];
+                    $mensajeAnterior[1]->save();
+                    //dd($existeHilo);
+                } else {
+                    $three_id['id'] = $mensajeAnterior[1]->id_three;
+                    //dd($three_id['id']);
+                    $existeHilo->id_three = $mensajeAnterior[1]->id_three;
+                    $existeHilo->save();
+                    $three_id['id'] = $existeHilo->id_three;
+                }
+            } else {
                 $three_id = $this->crearHilo();
-				//dd($three_id);
-				$existeHilo->id_three = $three_id['id'];
+                //dd($three_id);
+                $existeHilo->id_three = $three_id['id'];
                 $existeHilo->save();
                 $mensajeAnterior[1]->id_three = $three_id['id'];
                 $mensajeAnterior[1]->save();
-				//dd($existeHilo);
-            } else {
-                $three_id['id'] = $mensajeAnterior[1]->id_three;
-                //dd($three_id['id']);
-				$existeHilo->id_three = $mensajeAnterior[1]->id_three;
-                $existeHilo->save();
-                $three_id['id'] = $existeHilo->id_three;
             }
 
-
-            dd($three_id['id']);
             $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
             // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
             $ejecuccion = $this->ejecutarHilo($three_id['id']);
@@ -681,7 +697,59 @@ class WhatsappController extends Controller
                     //dd($ejecuccionStatus);
                     //return; // Sale del bucle si se encuentra un estado inesperado
                 }
-			}
+
+            }
+        }
+            // if ($mensajeAnterior[1]->id_three == null) {
+			// 	//dd($existeHilo);
+            //     $three_id = $this->crearHilo();
+			// 	//dd($three_id);
+			// 	$existeHilo->id_three = $three_id['id'];
+            //     $existeHilo->save();
+            //     $mensajeAnterior[1]->id_three = $three_id['id'];
+            //     $mensajeAnterior[1]->save();
+			// 	//dd($existeHilo);
+            // } else {
+            //     $three_id['id'] = $mensajeAnterior[1]->id_three;
+            //     //dd($three_id['id']);
+			// 	$existeHilo->id_three = $mensajeAnterior[1]->id_three;
+            //     $existeHilo->save();
+            //     $three_id['id'] = $existeHilo->id_three;
+            // }
+
+
+            //dd($three_id['id']);
+            // $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
+            // // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
+            // $ejecuccion = $this->ejecutarHilo($three_id['id']);
+            // $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
+            // // Inicia un bucle para esperar hasta que el hilo se complete
+            // while (true) {
+            //     //$ejecuccion = $this->ejecutarHilo($three_id['id']);
+
+            //     if ($ejecuccionStatus['status'] === 'in_progress') {
+            //         // Espera activa antes de verificar el estado nuevamente
+            //         sleep(2); // Ajusta este valor según sea necesario
+
+            //         // Verifica el estado del paso actual del hilo
+            //         $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
+            //         if ($pasosHilo['data'][0]['status'] === 'completed') {
+            //             // Si el paso se completó, verifica el estado general del hilo
+            //             $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
+            //         }
+            //     } elseif ($ejecuccionStatus['status'] === 'completed') {
+            //         // El hilo ha completado su ejecución, obtiene la respuesta final
+            //         $mensajes = $this->listarMensajes($three_id['id']);
+            //         //dd($mensajes);
+            //         if(count($mensajes['data']) > 0){
+            //             return $mensajes['data'][0]['content'][0]['text']['value'];
+            //         }
+            //     } else {
+            //         // Maneja otros estados, por ejemplo, errores
+            //         //dd($ejecuccionStatus);
+            //         //return; // Sale del bucle si se encuentra un estado inesperado
+            //     }
+			// }
     }
 
     public function enviarMensajeAlAsistente($assistant_id = 'asst_KfPsIM26MjS662Vlq6h9WnuH', $mensaje)
