@@ -574,7 +574,7 @@ class WhatsappController extends Controller
             if ($mensajeAnterior[1]->id_three == null) {
 				//dd($existeHilo);
                 $three_id = $this->crearHilo();
-				dd($three_id);
+				//dd($three_id);
 				$existeHilo->id_three = $three_id['id'];
                 $existeHilo->save();
                 $mensajeAnterior[1]->id_three = $three_id['id'];
@@ -582,17 +582,18 @@ class WhatsappController extends Controller
 				//dd($existeHilo);
             } else {
                 $three_id['id'] = $mensajeAnterior[1]->id_three;
+                //dd($three_id['id']);
 				$existeHilo->id_three = $mensajeAnterior[1]->id_three;
                 $existeHilo->save();
                 $three_id['id'] = $existeHilo->id_three;
             }
 
 
+            dd($three_id['id']);
             $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
             // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
             $ejecuccion = $this->ejecutarHilo($three_id['id']);
             $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
-            //dd($ejecuccionStatus);
             // Inicia un bucle para esperar hasta que el hilo se complete
             while (true) {
                 //$ejecuccion = $this->ejecutarHilo($three_id['id']);
