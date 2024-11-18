@@ -115,10 +115,10 @@ class WhatsappController extends Controller
 
     public function imageMensaje( $data )
     {
-        
+
         // Comprobamos si el Mensaje existe ya
         $mensajeExiste = ChatGpt::where('id_mensaje', $data['entry'][0]['changes'][0]['value']['messages'][0]['id'])->first();
-        
+
         // Obetenemos el numero de Telefono
         $phone = $data['entry'][0]['changes'][0]['value']['messages'][0]['from'];
         Storage::disk('publico')->put('data-'.$phone.'.txt', json_encode($data) );
@@ -130,9 +130,9 @@ class WhatsappController extends Controller
             // Reservas del cliente que nos ha escrito
             $idImg = $data['entry'][0]['changes'][0]['value']['messages'][0]['image']['id'];
             $fileName = $this->descargarImage($idImg); // obtenemos el nombre de la imagen
-            
+
             $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
-            
+
             Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', json_encode($respuestaImageChatGPT) );
             return true;
 
@@ -148,7 +148,7 @@ class WhatsappController extends Controller
                         $fileName = $this->descargarImage($idImg); // obtenemos el nombre de la imagen
 
                         $respuestaImageChatGPT = $this->chatGptPruebasConImagen($fileName);
-                        
+
                         Storage::disk('publico')->put('RespuestaChatSobreImagen-'.$idImg.'.txt', $respuestaImageChatGPT );
                         return true;
                         //    'nombre': nombre,
@@ -233,7 +233,7 @@ class WhatsappController extends Controller
                         // }elseif($respuestaImageChatGPT['isPasaporte'] == true){
 
                         // }
-                        
+
 
                         // $responseImage = '!';
 
@@ -247,15 +247,15 @@ class WhatsappController extends Controller
                         // ];
                         // ChatGpt::create( $dataRegistrarChat );
                         //Storage::disk('local')->put( 'image-'.$fileName.'.txt', json_encode($data) );
-                        
+
                     }
                 }
             }
         }else {
-            
+
             $fileName = $this->descargarImageTemporal(null); // temporalWhatsapp/fileName.[jpg,png] obtenemos la ruta completa que esta en public
         }
-        
+
         Storage::disk('local')->put('phone-Prueba.txt', json_encode($phone) );
         Storage::disk('local')->put('phone-mensaje.txt', json_encode($mensajeExiste) );
 
@@ -377,7 +377,7 @@ class WhatsappController extends Controller
         if (count($mensajeExiste) > 0) {
 
         }else {
-            
+
             $isAveria = $this->chatGpModelo($mensaje);
             Storage::disk('local')->put( 'Contestacion del modelo-'.$fecha.'.txt', json_encode($isAveria) );
 
@@ -513,24 +513,24 @@ class WhatsappController extends Controller
                 $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
                 //dd($reponseChatGPT);
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-    
+
                 if(isset($respuestaWhatsapp['error'])){
                     dd($respuestaWhatsapp);
                 };
-    
+
                 $mensajeCreado->update([
                     'respuesta'=> $reponseChatGPT
                 ]);
 
                 return response($reponseChatGPT)->header('Content-Type', 'text/plain');
             }
-            
+
 
         }
     }
 
     public function envioAutoVoz(Request $request){
-        
+
         $tipo = $request->tipo;
 
         // Leticia  y Saray
@@ -568,7 +568,7 @@ class WhatsappController extends Controller
     {
         $existeHilo = ChatGpt::find($idMensaje);
 		$mensajeAnterior = ChatGpt::where('remitente', $existeHilo->remitente)->get();
-		
+
             if ($mensajeAnterior[1]->id_three == null) {
 				//dd($existeHilo);
                 $three_id = $this->crearHilo();
@@ -584,8 +584,8 @@ class WhatsappController extends Controller
                 $existeHilo->save();
                 $three_id['id'] = $existeHilo->id_three;
             }
-                     
-    
+
+
             $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
             // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
             $ejecuccion = $this->ejecutarHilo($three_id['id']);
@@ -657,7 +657,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
-    
+
     public function recuperarHilo($id_thread)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -705,7 +705,8 @@ class WhatsappController extends Controller
         );
 
         $body = [
-            "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
+            // "assistant_id" => 'asst_zYokKNRE98fbjUsKpkSzmU9Y'
+            "assistant_id" => 'asst_KfPsIM26MjS662Vlq6h9WnuH'
         ];
         // Inicializar cURL y configurar las opciones
         $curl = curl_init();
@@ -885,7 +886,7 @@ class WhatsappController extends Controller
 
     public function contestarWhatsapp($phone, $texto) {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-    
+
         // Construir la carga útil como un array en lugar de un string JSON
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
@@ -896,11 +897,11 @@ class WhatsappController extends Controller
                 "body" => $texto
             ]
         ];
-    
+
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
-    
+
         $curl = curl_init();
-    
+
         curl_setopt_array($curl, [
             CURLOPT_URL => $urlMensajes,
             CURLOPT_RETURNTRANSFER => true,
@@ -916,7 +917,7 @@ class WhatsappController extends Controller
                 'Authorization: Bearer ' . $token
             ],
         ]);
-    
+
         $response = curl_exec($curl);
         if ($response === false) {
             $error = curl_error($curl);
@@ -925,7 +926,7 @@ class WhatsappController extends Controller
             return ['error' => $error];
         }
         curl_close($curl);
-    
+
         try {
             $responseJson = json_decode($response, true);
             Storage::disk('local')->put("Respuesta_Envio_Whatsapp-{$phone}.txt", $response);
@@ -941,14 +942,14 @@ class WhatsappController extends Controller
     // public function chatGptPruebasConImagen($imagenFilename)
     // {
     //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-    
+
     //     // Cargar los JSON de paises y tipos desde la carpeta pública
     //     $paisesFilePath = public_path('paises.json');
     //     $tiposFilePath = public_path('tipos.json');
-    
+
     //     $paisesData = json_decode(file_get_contents($paisesFilePath), true);
     //     $tiposData = json_decode(file_get_contents($tiposFilePath), true);
-    
+
     //     // Leer la imagen y convertirla a base64
     //     $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
     //     if (file_exists($imagePath)) {
@@ -957,18 +958,18 @@ class WhatsappController extends Controller
     //     } else {
     //         return response()->json(['error' => 'La imagen no se encuentra.']);
     //     }
-    
+
     //     // Convertir los datos de países y tipos a texto JSON
     //     $paisesJsonText = json_encode($paisesData);
     //     $tiposJsonText = json_encode($tiposData);
-    
+
     //     // Configurar los parámetros de la solicitud
     //     $url = 'https://api.openai.com/v1/chat/completions';
     //     $headers = array(
     //         'Authorization: Bearer ' . $token,
     //         'Content-Type: application/json'
     //     );
-    
+
     //     // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
     //     $data = array(
     //         "model" => "gpt-4o",
@@ -998,7 +999,7 @@ class WhatsappController extends Controller
     //             ]
     //         ]
     //     );
-    
+
     //     // Inicializar cURL y configurar las opciones
     //     $curl = curl_init();
     //     curl_setopt($curl, CURLOPT_URL, $url);
@@ -1006,17 +1007,17 @@ class WhatsappController extends Controller
     //     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
     //     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
     //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    
+
     //     // Ejecutar la solicitud y obtener la respuesta
     //     $response = curl_exec($curl);
     //     curl_close($curl);
-    
+
     //     // Guardar la respuesta en un archivo para depuración
     //     //Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
-    
+
     //     // Decodificar la respuesta JSON
     //     $response_data = json_decode($response, true);
-    
+
     //     // Si ocurre un error, devolver una respuesta de error
     //     if ($response === false) {
     //         $error = [
@@ -1032,24 +1033,24 @@ class WhatsappController extends Controller
     //             'message' => $response_data
     //         ];
     //         //Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
-    
+
     //         // Retornar la respuesta decodificada
     //         return $response_data;
     //     }
     // }
-    
+
     public function chatGptPruebasConImagen($imagenFilename)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-    
+
         // token
         // Cargar los JSON de paises y tipos desde la carpeta pública
         $paisesFilePath = public_path('paises.json');
         $tiposFilePath = public_path('tipos.json');
-    
+
         $paisesData = json_decode(file_get_contents($paisesFilePath), true);
         $tiposData = json_decode(file_get_contents($tiposFilePath), true);
-    
+
         // Leer la imagen y convertirla a base64
         $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
         if (file_exists($imagePath)) {
@@ -1058,18 +1059,18 @@ class WhatsappController extends Controller
         } else {
             return response()->json(['error' => 'La imagen no se encuentra.']);
         }
-    
+
         // Convertir los datos de países y tipos a texto JSON
         $paisesJsonText = json_encode($paisesData);
         $tiposJsonText = json_encode($tiposData);
-    
+
         // Configurar los parámetros de la solicitud
         $url = 'https://api.openai.com/v1/chat/completions';
         $headers = array(
             'Authorization: Bearer ' . $token,
             'Content-Type: application/json'
         );
-    
+
         // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
         $data = array(
             "model" => "gpt-4o",
@@ -1099,7 +1100,7 @@ class WhatsappController extends Controller
                 ]
             ]
         );
-    
+
         // Inicializar cURL y configurar las opciones
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -1107,26 +1108,26 @@ class WhatsappController extends Controller
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    
+
         // Ejecutar la solicitud y obtener la respuesta
         $response = curl_exec($curl);
         curl_close($curl);
         Storage::disk('publico')->put('RespuestaChatSobreImagenDirecto-'.$imagePath.'.txt', $response );
-    
+
         // Decodificar la respuesta JSON
         $response_data = json_decode($response, true);
-    
+
         // Si ocurre un error, devolver una respuesta de error
         if ($response === false) {
             return response()->json(['status' => 'error', 'message' => 'Error al realizar la solicitud']);
         }
-    
+
         // Procesar la respuesta para ajustar los campos adicionales
         if (!empty($response_data)) {
             $informacion = $response_data['informacion'] ?? [];
-    
+
             // Agregar campos adicionales basados en los datos JSON y la lógica que mencionas:
-            
+
             // Buscar la nacionalidad en el JSON de países
             $pais = $informacion['pais'] ?? '';
             if (!empty($paisesData[$pais])) {
@@ -1134,7 +1135,7 @@ class WhatsappController extends Controller
                 $informacion['nacionalidad'] = $paisesData[$pais]['value'] ?? '';
                 $informacion['isEuropean'] = $paisesData[$pais]['isEuropean'] ?? false;
             }
-    
+
             // Buscar el tipo de documento en el JSON de tipos de documento
             $tipoDocumento = $informacion['tipoDocumento'] ?? '';
             foreach ($tiposData as $tipo) {
@@ -1143,11 +1144,11 @@ class WhatsappController extends Controller
                     break;
                 }
             }
-    
+
             // Validar el sexo y convertirlo a "M" o "F"
             $sexo = $informacion['sexo'] ?? '';
             $informacion['sexoStr'] = ($sexo == 'Masculino') ? 'M' : 'F';
-    
+
             // Procesar fecha de nacimiento (día, mes, año)
             if (!empty($informacion['fechaNacimiento'])) {
                 $fecha = explode(' ', $informacion['fechaNacimiento']);
@@ -1157,7 +1158,7 @@ class WhatsappController extends Controller
                     $informacion['ano'] = $fecha[2];
                 }
             }
-    
+
             // Retornar la respuesta procesada
             return [
                 'isDni' => $response_data['isDni'] ?? false,
@@ -1165,10 +1166,10 @@ class WhatsappController extends Controller
                 'informacion' => $informacion
             ];
         }
-    
+
         return response()->json(['status' => 'error', 'message' => 'No se recibió respuesta válida.']);
     }
-    
+
     public function obtenerStringDNI($tipo)
     {
         switch ($tipo) {
@@ -1188,13 +1189,13 @@ class WhatsappController extends Controller
                 return "Desconocido";
         }
     }
-    
+
 
 
 
     // public function chatGptPruebasConImagen($imagenFilename) {
     //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-       
+
     //     // Configurar los parámetros de la solicitud
     //     $url = 'https://api.openai.com/v1/chat/completions';
     //     $headers = array(
@@ -1259,7 +1260,7 @@ class WhatsappController extends Controller
 
     //         return response()->json($response_data);
     //     }
-        
+
 
     // }
 
@@ -1299,9 +1300,9 @@ class WhatsappController extends Controller
                             - Devuelve "FALSE".
 
                             Recuerda: La respuesta debe ser "TRUE", "FALSE" o "NULL" en mayúsculas. No incluyas ningún otro tipo de respuesta.
-                            
+
                             Este es el mensaje: ' . $texto
-                            
+
                         ]
                     ]
                 ]
@@ -1344,7 +1345,7 @@ class WhatsappController extends Controller
             return $response_data['choices'][0]['message']['content'];
         }
     }
-    
+
     public function chatGptPruebas( $texto ) {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
