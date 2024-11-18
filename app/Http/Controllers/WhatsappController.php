@@ -625,11 +625,12 @@ class WhatsappController extends Controller
     public function enviarMensajeAlAsistente($assistant_id = 'asst_KfPsIM26MjS662Vlq6h9WnuH', $mensaje)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = "https://api.openai.com/v2/assistants/".$assistant_id."/messages";
+        $url = "https://api.openai.com/v1/assistants/".$assistant_id."/messages";
 
         $headers = [
             'Content-Type: application/json',
-            'Authorization: Bearer ' . $token
+            'Authorization: Bearer ' . $token,
+            'OpenAI-Beta: assistants=v2'
         ];
         $body = json_encode([
             "input" => [
