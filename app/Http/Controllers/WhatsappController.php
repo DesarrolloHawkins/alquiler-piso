@@ -510,7 +510,9 @@ class WhatsappController extends Controller
                 $mensajeCreado = ChatGpt::create($dataRegistrar);
 
                 // Enviar la question al asistente
-                $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
+
+                // $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
+                $reponseChatGPT = $this->enviarMensajeAlAsistente(null, $mensaje);
                 //dd($reponseChatGPT);
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
@@ -618,6 +620,36 @@ class WhatsappController extends Controller
                     //return; // Sale del bucle si se encuentra un estado inesperado
                 }
 			}
+    }
+
+    public function enviarMensajeAlAsistente($assistant_id = 'asst_KfPsIM26MjS662Vlq6h9WnuH', $mensaje)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = "https://api.openai.com/v2/assistants/".$assistant_id."/messages";
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token
+        ];
+        $body = json_encode([
+            "input" => [
+                "message" => $mensaje
+            ]
+        ]);
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        if ($response === false) {
+            return ['status' => 'error', 'message' => 'CURL error: ' . curl_error($curl)];
+        }
+        return json_decode($response, true);
     }
 
     public function crearHilo()
