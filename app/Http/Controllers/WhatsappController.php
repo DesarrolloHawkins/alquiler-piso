@@ -687,7 +687,7 @@ class WhatsappController extends Controller
 
         } else {
             $response_data = json_decode($response, true);
-            Storage::disk('local')->put('Crear Hilo-'.$id.'.txt', $response );
+            Storage::disk('local')->put('Crear Hilo Prueba.txt', $response );
             return $response_data;
         }
     }
@@ -724,7 +724,7 @@ class WhatsappController extends Controller
         } else {
             $response_data = json_decode($response, true);
             // Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
-            Storage::disk('local')->put('Recuperar Hilo-'.$id.'.txt', $response );
+            Storage::disk('local')->put('Recuperar Hilo Prueba.txt', $response );
 
             return $response_data;
         }
@@ -766,7 +766,7 @@ class WhatsappController extends Controller
         } else {
             $response_data = json_decode($response, true);
             // Guardar la respuesta en un archivo con el storage
-            Storage::disk('local')->put('Ejecutar Hilo-'.$id_thread.'.txt', $response);
+            Storage::disk('local')->put('Ejecutar Hilo Prueba.txt', $response);
             return $response_data;
         }
     }
@@ -810,7 +810,7 @@ class WhatsappController extends Controller
         } else {
             $response_data = json_decode($response, true);
             //Storage::disk('local')->put('Respuesta_Peticion_ChatGPT-'.$id.'.txt', $response );
-            Storage::disk('local')->put('Mensajes del Hilo-'.$id.'.txt', $response );
+            Storage::disk('local')->put('Mensajes del Hilo Prueba.txt', $response );
 
             return $response_data;
         }
@@ -911,7 +911,7 @@ class WhatsappController extends Controller
 
         } else {
             $response_data = json_decode( $response, true );
-            Storage::disk('local')->put('Listar Mensaes del Hilo-'.$id.'.txt', $response );
+            Storage::disk('local')->put('Listar Mensaes del Hilo Prueba.txt', $response );
 
             return $response_data;
         }
