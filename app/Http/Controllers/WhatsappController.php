@@ -664,8 +664,8 @@ class WhatsappController extends Controller
                     //dd($three_id);
                     $existeHilo->id_three = $three_id['id'];
                     $existeHilo->save();
-                    $mensajeAnterior[1]->id_three = $three_id['id'];
-                    $mensajeAnterior[1]->save();
+                    // $mensajeAnterior[1]->id_three = $three_id['id'];
+                    // $mensajeAnterior[1]->save();
                 }
                 // Existe un mensaje válido posterior a la fecha límite
             } else {
@@ -673,8 +673,8 @@ class WhatsappController extends Controller
                 //dd($three_id);
                 $existeHilo->id_three = $three_id['id'];
                 $existeHilo->save();
-                $mensajeAnterior[1]->id_three = $three_id['id'];
-                $mensajeAnterior[1]->save();
+                // $mensajeAnterior[1]->id_three = $three_id['id'];
+                // $mensajeAnterior[1]->save();
             }
 
             $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
