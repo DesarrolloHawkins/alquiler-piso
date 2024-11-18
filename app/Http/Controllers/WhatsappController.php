@@ -729,6 +729,8 @@ class WhatsappController extends Controller
 
         } else {
             $response_data = json_decode($response, true);
+            // Guardar la respuesta en un archivo con el storage
+            Storage::disk('local')->put('Respuesta_Ejecucion_Hilo-'.$id_thread.'.txt', $response);
             return $response_data;
         }
     }
