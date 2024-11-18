@@ -511,8 +511,8 @@ class WhatsappController extends Controller
 
                 // Enviar la question al asistente
 
-                // $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
-                $reponseChatGPT = $this->enviarMensajeAlAsistente(null, $mensaje);
+                $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
+                //$reponseChatGPT = $this->enviarMensajeAlAsistente(null, $mensaje);
                 //dd($reponseChatGPT);
                 $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
@@ -625,12 +625,11 @@ class WhatsappController extends Controller
     public function enviarMensajeAlAsistente($assistant_id = 'asst_KfPsIM26MjS662Vlq6h9WnuH', $mensaje)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = "https://api.openai.com/v1/assistants/".$assistant_id."/messages";
+        $url = "https://api.openai.com/v2/assistants/".$assistant_id."/messages";
 
         $headers = [
             'Content-Type: application/json',
-            'Authorization: Bearer ' . $token,
-            'OpenAI-Beta: assistants=v2'
+            'Authorization: Bearer ' . $token
         ];
         $body = json_encode([
             "input" => [
@@ -650,8 +649,8 @@ class WhatsappController extends Controller
         if ($response === false) {
             return ['status' => 'error', 'message' => 'CURL error: ' . curl_error($curl)];
         }
-        // Guardar la respuesta en storage para seguimiento
-        Storage::disk('local')->put('respuesta_asistente_' . date('Y-m-d_H-i-s') . '.txt', $response);
+        // Guardar la respuesta para seguimiento
+        Storage::disk('local')->put('respuesta_asistente_00.txt', $response);
         return json_decode($response, true);
     }
 
@@ -736,7 +735,7 @@ class WhatsappController extends Controller
         $headers = array(
             'Content-Type: application/json',
             'Authorization: Bearer '. $token,
-            "OpenAI-Beta: assistants=v1"
+            "OpenAI-Beta: assistants=v2"
         );
 
         $body = [
