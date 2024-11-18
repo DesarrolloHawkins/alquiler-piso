@@ -574,7 +574,7 @@ class WhatsappController extends Controller
             if ($mensajeAnterior[1]->id_three == null) {
 				//dd($existeHilo);
                 $three_id = $this->crearHilo();
-				//dd($three_id);
+				dd($three_id);
 				$existeHilo->id_three = $three_id['id'];
                 $existeHilo->save();
                 $mensajeAnterior[1]->id_three = $three_id['id'];
