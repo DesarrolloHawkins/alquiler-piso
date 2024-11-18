@@ -641,23 +641,33 @@ class WhatsappController extends Controller
                 ->get();
 
             if ($mensajeAnterior) {
-                // Existe un mensaje válido posterior a la fecha límite
-                if ($mensajeAnterior[1]->id_three == null) {
-                    //dd($existeHilo);
+                if (isset($mensajeAnterior[1])) {
+                    # code...
+                    if ($mensajeAnterior[1]->id_three == null) {
+                        //dd($existeHilo);
+                        $three_id = $this->crearHilo();
+                        //dd($three_id);
+                        $existeHilo->id_three = $three_id['id'];
+                        $existeHilo->save();
+                        $mensajeAnterior[1]->id_three = $three_id['id'];
+                        $mensajeAnterior[1]->save();
+                        //dd($existeHilo);
+                    } else {
+                        $three_id['id'] = $mensajeAnterior[1]->id_three;
+                        //dd($three_id['id']);
+                        $existeHilo->id_three = $mensajeAnterior[1]->id_three;
+                        $existeHilo->save();
+                        $three_id['id'] = $existeHilo->id_three;
+                    }
+                } else {
                     $three_id = $this->crearHilo();
                     //dd($three_id);
                     $existeHilo->id_three = $three_id['id'];
                     $existeHilo->save();
                     $mensajeAnterior[1]->id_three = $three_id['id'];
                     $mensajeAnterior[1]->save();
-                    //dd($existeHilo);
-                } else {
-                    $three_id['id'] = $mensajeAnterior[1]->id_three;
-                    //dd($three_id['id']);
-                    $existeHilo->id_three = $mensajeAnterior[1]->id_three;
-                    $existeHilo->save();
-                    $three_id['id'] = $existeHilo->id_three;
                 }
+                // Existe un mensaje válido posterior a la fecha límite
             } else {
                 $three_id = $this->crearHilo();
                 //dd($three_id);
