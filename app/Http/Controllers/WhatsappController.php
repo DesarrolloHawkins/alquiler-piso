@@ -649,6 +649,8 @@ class WhatsappController extends Controller
         if ($response === false) {
             return ['status' => 'error', 'message' => 'CURL error: ' . curl_error($curl)];
         }
+        // Guardar la respuesta en storage para seguimiento
+        Storage::disk('local')->put('respuesta_asistente_' . date('Y-m-d_H-i-s') . '.txt', $response);
         return json_decode($response, true);
     }
 
