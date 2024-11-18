@@ -628,7 +628,7 @@ class WhatsappController extends Controller
 
     public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
     {
-        dd($id, $idMensaje, $mensaje, $phone);
+        //dd($id, $idMensaje, $mensaje, $phone);
 
         $existeHilo = ChatGpt::find($idMensaje);
 
