@@ -129,23 +129,23 @@
 
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Dirección</label>
-                    <input type="text" id="direccion" class="form-control" readonly value="{{ $cliente->direccion }}">
+                    <input type="text" id="direccion" class="form-control"  value="{{ $cliente->direccion }}">
                 </div>
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Ciudad</label>
-                    <input type="text" id="direccion" class="form-control" readonly value="{{ $cliente->localidad }}">
+                    <input type="text" id="direccion" class="form-control"  value="{{ $cliente->localidad }}">
                 </div>
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Codigo Postal</label>
-                    <input type="text" id="direccion" class="form-control" readonly value="{{ $cliente->codigo_postal }}">
+                    <input type="text" id="direccion" class="form-control"  value="{{ $cliente->codigo_postal }}">
                 </div>
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Provincia</label>
-                    <input type="text" id="direccion" class="form-control" readonly value="{{ $cliente->provincia }}">
+                    <input type="text" id="direccion" class="form-control"  value="{{ $cliente->provincia }}">
                 </div>
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Pais</label>
-                    <input type="text" id="direccion" class="form-control" readonly value="{{ $cliente->estado }}">
+                    <input type="text" id="direccion" class="form-control"  value="{{ $cliente->estado }}">
                 </div>
 
                 <button type="submit" class="btn btn-terminar w-100 fs-4 mt-4">Guardar</button>
