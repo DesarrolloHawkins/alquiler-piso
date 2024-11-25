@@ -192,7 +192,7 @@ class InvoicesController extends Controller
         $year = $datetimeBudgetCreationDate->format('Y');
         $monthNum = $datetimeBudgetCreationDate->format('m');
 
-        dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
+        //dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
         // Buscar la última referencia autoincremental para el año y mes actual
         $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
                             ->where('month_num', $monthNum)
