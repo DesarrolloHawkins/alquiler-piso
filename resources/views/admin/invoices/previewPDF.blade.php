@@ -66,17 +66,25 @@
                         <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
                         {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
                         {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
-                        <p>
+                        <p class="margin-bottom:10px">
                             @if ($invoice->cliente->tipo_documento != 'P')
                                 <strong>DNI:</strong> {{ $invoice->cliente->num_identificacion }}
                             @else
                                 <strong>PASAPORTE:</strong> {{ $invoice->cliente->num_identificacion }}
                             @endif
                         </p>
-                        <p>
+                        <p class="margin-bottom:10px">
+                            <strong>DIRECCIÓN:</strong>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->direccion }}</p>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->localidad }}</p>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->codigo_postal }}</p>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->provincia }}</p>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->estado }}</p>
+                        </p>
+                        <p class="margin-bottom:10px">
                             <strong>TELEFONO:</strong> {{ $invoice->cliente->telefono }}
                         </p>
-                        <p>
+                        <p class="margin-bottom:10px">
                             <strong>EMAIL:</strong> {{ $invoice->cliente->email }}
                         </p>
 
