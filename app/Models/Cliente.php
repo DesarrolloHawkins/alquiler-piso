@@ -37,6 +37,12 @@ class Cliente extends Model
         'email_secundario',
         'nacionalidadStr',
         'nacionalidadCode',
+        'direccion',
+        'localidad',
+        'codigo_postal',
+        'provincia',
+        'estado'
+
     ];
 
     /**

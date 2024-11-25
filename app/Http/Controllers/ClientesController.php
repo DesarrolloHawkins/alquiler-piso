@@ -518,6 +518,12 @@ class ClientesController extends Controller
             'num_identificacion' => 'required|string|max:255',
             'fecha_expedicion_doc' => 'required|date',
             'idiomas' => 'required|string|max:255',
+            'direccion' => 'nullable|string|max:255',
+            'localidad' => 'nullable|string|max:255',
+            'codigo_postal' => 'nullable|string|max:255',
+            'provincia' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:255',
+
         ];
 
         // Validar los datos del formulario
