@@ -261,7 +261,12 @@ class ClientesController extends Controller
             'nacionalidad' => 'required|string|max:255',
             'tipo_documento' => 'required|string|max:255|in:DNI,Pasaporte', // Asegúrate de que el tipo de documento esté dentro de los valores permitidos
             'num_identificacion' => 'required|string|max:255',
-            'fecha_expedicion_doc' => 'required|date'
+            'fecha_expedicion_doc' => 'required|date',
+            'direccion' => 'nullable|string|max:255',
+            'localidad' => 'nullable|string|max:255',
+            'codigo_postal' => 'nullable|string|max:255',
+            'provincia' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:255',
         ];
 
         // Validar los datos del formulario
