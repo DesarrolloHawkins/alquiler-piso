@@ -24,20 +24,55 @@ class ApiController extends Controller
     /**
      * Obtener las reservas para hoy
      */
+    // public function obtenerReservasHoy(Request $request)
+    // {
+    //     // Obtener la fecha y la hora actual
+    //     $hoy = Carbon::now();
+    //     $horaLimite = Carbon::createFromTime(14, 0, 0); // Hora límite: 14:00
+
+    //     // Filtrar las reservas cuya fecha de entrada sea hoy
+    //     $reservas = Reserva::whereDate('fecha_entrada', $hoy->toDateString())
+    //         ->where(function ($query) use ($hoy, $horaLimite) {
+    //             // Excluir las reservas cuya fecha de salida sea hoy y la hora sea mayor a las 14:00
+    //             $query->whereDate('fecha_salida', '>', $hoy->toDateString())
+    //                 ->orWhere(function ($query) use ($hoy, $horaLimite) {
+    //                     $query->whereDate('fecha_salida', $hoy->toDateString())
+    //                         ->whereTime('fecha_salida', '<', $horaLimite->toTimeString());
+    //                 });
+    //         })
+    //         ->get();
+
+    //     // Verificar si hay reservas y formatear los datos para la respuesta
+    //     if ($reservas->isNotEmpty()) {
+    //         $data = $reservas->map(function ($reserva) {
+    //             return [
+    //                 'codigo_reserva' => $reserva->codigo_reserva,
+    //                 'cliente' => $reserva->cliente['nombre'] == null ? $reserva->cliente->alias : $reserva->cliente['nombre'] . ' ' . $reserva->cliente['apellido1'],
+    //                 'apartamento' => $reserva->apartamento->titulo,
+    //                 'edificio' => isset($reserva->apartamento->edificioName->nombre) ? $reserva->apartamento->edificioName->nombre : 'Edificio Hawkins Suite',
+    //                 'fecha_entrada' => $reserva->fecha_entrada,
+    //                 'clave' => $reserva->apartamento->claves
+    //             ];
+    //         });
+
+    //         return response()->json($data, 200);
+    //     } else {
+    //         return response()->json('Error, no se encontraron reservas para hoy', 400);
+    //     }
+    // }
+
     public function obtenerReservasHoy(Request $request)
     {
-        // Obtener la fecha y la hora actual
+        // Obtener la fecha y hora actual
         $hoy = Carbon::now();
-        $horaLimite = Carbon::createFromTime(14, 0, 0); // Hora límite: 14:00
 
-        // Filtrar las reservas cuya fecha de entrada sea hoy
-        $reservas = Reserva::whereDate('fecha_entrada', $hoy->toDateString())
-            ->where(function ($query) use ($hoy, $horaLimite) {
-                // Excluir las reservas cuya fecha de salida sea hoy y la hora sea mayor a las 14:00
-                $query->whereDate('fecha_salida', '>', $hoy->toDateString())
-                    ->orWhere(function ($query) use ($hoy, $horaLimite) {
+        // Filtrar las reservas activas
+        $reservas = Reserva::where('fecha_entrada', '<=', $hoy) // La reserva ya inició
+            ->where(function ($query) use ($hoy) {
+                $query->where('fecha_salida', '>', $hoy) // Aún no ha salido
+                    ->orWhere(function ($query) use ($hoy) {
                         $query->whereDate('fecha_salida', $hoy->toDateString())
-                            ->whereTime('fecha_salida', '<', $horaLimite->toTimeString());
+                              ->whereTime('fecha_salida', '>', $hoy->toTimeString()); // Salida más tarde hoy
                     });
             })
             ->get();
@@ -51,15 +86,17 @@ class ApiController extends Controller
                     'apartamento' => $reserva->apartamento->titulo,
                     'edificio' => isset($reserva->apartamento->edificioName->nombre) ? $reserva->apartamento->edificioName->nombre : 'Edificio Hawkins Suite',
                     'fecha_entrada' => $reserva->fecha_entrada,
+                    'fecha_salida' => $reserva->fecha_salida,
                     'clave' => $reserva->apartamento->claves
                 ];
             });
 
             return response()->json($data, 200);
         } else {
-            return response()->json('Error, no se encontraron reservas para hoy', 400);
+            return response()->json('No hay reservas activas', 400);
         }
     }
+
 
     /**
      * Obtener los apartamentos
