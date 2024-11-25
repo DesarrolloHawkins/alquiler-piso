@@ -16,7 +16,7 @@ use Webklex\IMAP\Facades\Client;
 class InvoicesController extends Controller
 {
 
-    
+
 
     public function index(Request $request)
 {
@@ -93,7 +93,7 @@ class InvoicesController extends Controller
         // Descargar o visualizar el PDF
         return $pdf->stream('factura_' . $safeFileName . '.pdf'); // Para visualizar en el navegador
         // return $pdf->download('factura_' . $invoice->reference . '.pdf'); // Para forzar la descarga
-         
+
 
     }
 
@@ -187,11 +187,11 @@ class InvoicesController extends Controller
         // Obtener la fecha actual del presupuesto
         $budgetCreationDate = $invoices->created_at ?? now();
         $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
- 
+
         // Formatear la fecha para obtener los componentes necesarios
         $year = $datetimeBudgetCreationDate->format('Y');
         $monthNum = $datetimeBudgetCreationDate->format('m');
- 
+
         dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
         // Buscar la última referencia autoincremental para el año y mes actual
         $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
@@ -201,13 +201,13 @@ class InvoicesController extends Controller
          //dd($latestReference->reference_autoincrement);
         // Si no existe, empezamos desde 1, de lo contrario, incrementamos
         $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
- 
+
         // Formatear el número autoincremental a 6 dígitos
         $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
- 
+
         // Crear la referencia
         $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
- 
+
         // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
         $referenceToSave = new InvoicesReferenceAutoincrement([
             'reference_autoincrement' => $newReferenceAutoincrement,
@@ -216,7 +216,7 @@ class InvoicesController extends Controller
             // Otros campos pueden ser asignados si son necesarios
         ]);
         $referenceToSave->save();
- 
+
         // Devolver el resultado
         return [
             'id' => $referenceToSave->id,
@@ -237,10 +237,10 @@ class InvoicesController extends Controller
        $searchTerm = $request->get('search', '');
        $fechaInicio = $request->get('fecha_inicio');
        $fechaFin = $request->get('fecha_fin');
-   
+
        // Query inicial para facturas con cliente, reserva y estado asociados
        $query = Invoices::with(['cliente', 'reserva']);
-   
+
        // Filtro de búsqueda por cliente, referencia, concepto, o total
        if (!empty($searchTerm)) {
            $query->where(function($subQuery) use ($searchTerm) {
@@ -252,7 +252,7 @@ class InvoicesController extends Controller
                ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
            });
        }
-   
+
        // Filtro por rango de fechas
        if (!empty($fechaInicio) || !empty($fechaFin)) {
            if (!empty($fechaInicio) && !empty($fechaFin)) {
@@ -263,22 +263,67 @@ class InvoicesController extends Controller
                $query->where('fecha', '<=', $fechaFin);
            }
        }
-   
+
     //    // Filtro por estado de factura
     //    if ($request->has('estado')) {
     //        $query->where('invoice_status_id', $request->get('estado'));
     //    }
-   
+
        // Aplicar el orden
        $query->orderBy($orderBy, $direction);
-   
+
        // Obtener los resultados filtrados
        $invoices = $query->get();
-   
+
        // Exportar el Excel con los datos filtrados
        return Excel::download(new InvoicesExport($invoices), 'invoices.xlsx');
    }
-   
 
-   
+   public function facturar(Request $request)
+   {
+       $idReserva = $request->input('reserva_id');
+       $reserva = Reserva::find($idReserva);
+
+       if (!$reserva) {
+           return response()->json(['success' => false, 'message' => 'Reserva no encontrada.'], 404);
+       }
+
+       $invoice = Invoices::where('reserva_id', $idReserva)->first();
+
+       if ($invoice == null) {
+           $data = [
+               'budget_id' => null,
+               'cliente_id' => $reserva->cliente_id,
+               'reserva_id' => $reserva->id,
+               'invoice_status_id' => 1,
+               'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
+               'description' => '',
+               'fecha' => $reserva->fecha_salida,
+               'fecha_cobro' => null,
+               'base' => $reserva->precio,
+               'iva' => $reserva->precio * 0.10,
+               'descuento' => null,
+               'total' => $reserva->precio,
+               'created_at' => $reserva->fecha_salida,
+               'updated_at' => $reserva->fecha_salida,
+           ];
+
+           $crearFactura = Invoices::create($data);
+
+           $referencia = $this->generateBudgetReference($crearFactura);
+           $crearFactura->reference = $referencia['reference'];
+           $crearFactura->reference_autoincrement_id = $referencia['id'];
+           $crearFactura->invoice_status_id = 3;
+           $crearFactura->save();
+
+           $reserva->estado_id = 5;
+           $reserva->save();
+
+           return response()->json(['success' => true, 'message' => 'Factura generada correctamente.']);
+       } else {
+           return response()->json(['success' => false, 'message' => 'La factura ya estaba generada.']);
+       }
+   }
+
+
 }

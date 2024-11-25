@@ -119,7 +119,7 @@
                                 'perPage' => request()->get('perPage'),
                                 'fecha_inicio' => request()->get('fecha_inicio'),
                                 'fecha_fin' => request()->get('fecha_fin')
-                            ]) }}" 
+                            ]) }}"
                             class="{{ request('order_by') == 'reference' ? 'active-sort' : 'inactive-sort' }}">
                                 Referencia
                               @if(request()->get('order_by') == 'reference')
@@ -163,7 +163,7 @@
                             'perPage' => request()->get('perPage'),
                             'fecha_inicio' => request()->get('fecha_inicio'),
                             'fecha_fin' => request()->get('fecha_fin')
-                            ]) }}" 
+                            ]) }}"
                           class="{{ request('order_by') == 'concepto' ? 'active-sort' : 'inactive-sort' }}">
                               Concepto
                               @if(request('order_by') == 'concepto')
@@ -187,7 +187,7 @@
                             'perPage' => request()->get('perPage'),
                             'fecha_inicio' => request()->get('fecha_inicio'),
                             'fecha_fin' => request()->get('fecha_fin')
-                            ]) }}" 
+                            ]) }}"
                           class="{{ request('order_by') == 'fecha' ? 'active-sort' : 'inactive-sort' }}">
                               Fecha de Facturación
                               @if(request()->get('order_by') == 'fecha')
@@ -206,7 +206,7 @@
                             'search' => request()->get('search'),
                             'perPage' => request()->get('perPage'),
                             'fecha_inicio' => request()->get('fecha_inicio'),
-                            'fecha_fin' => request()->get('fecha_fin')                            ]) }}" 
+                            'fecha_fin' => request()->get('fecha_fin')                            ]) }}"
                         class="{{ request('order_by') == 'total' ? 'active-sort' : 'inactive-sort' }}">
                             Total
                             @if(request('order_by') == 'total')
@@ -245,7 +245,7 @@
                   @foreach ($facturas as $factura)
                       <tr>
                           <th scope="row">{{ $factura->reference }}</th>
-                          <td>{{ $factura->cliente->alias }}</td>
+                          <td>{{ $factura->cliente->nombre == '' $factura->cliente->alias : $factura->cliente->nombre}}</td>
                           <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
                           <td>{{ $factura->concepto }}</td>
                           <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
@@ -261,7 +261,7 @@
           <h3 class="text-center"><strong>{{$sumatorio}} €</strong></h3>
           <!-- Paginación links -->
           {{ $facturas->appends(request()->except('page'))->links() }}
-          
+
         </div>
     </div>
 </div>

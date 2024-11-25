@@ -90,7 +90,7 @@
                                 @if (isset($factura))
                                     <span>Reserva Facturada: {{$factura->fecha}}</span>
                                 @else
-                                    <button class="btn btn-info text-white">Facturar</button>
+                                    <button id="facturar" class="btn btn-info text-white" data-reserva-id="{{ $reserva->id }}">Facturar</button>
                                 @endif
                             </td>
                         </tr>
@@ -156,5 +156,41 @@
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        $('#facturar').on('click', function() {
+            let reservaId = $(this).data('reserva-id'); // Obtener el ID de la reserva
+
+            // Confirmación opcional
+            if (!confirm('¿Estás seguro de que deseas facturar esta reserva?')) {
+                return;
+            }
+
+            // Enviar la solicitud POST usando Fetch
+            fetch(`{{ route('admin.facturas.facturar') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Incluye el token CSRF
+                },
+                body: JSON.stringify({ reserva_id: reservaId }) // Enviar el ID de la reserva
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Factura generada correctamente.');
+                    location.reload(); // Recargar la página para actualizar el estado
+                } else {
+                    alert(data.message || 'Error al generar la factura.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Hubo un error al procesar la solicitud.');
+            });
+        });
+    });
+</script>
 
 @endsection
