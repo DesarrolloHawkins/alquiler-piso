@@ -245,7 +245,7 @@
                   @foreach ($facturas as $factura)
                       <tr>
                           <th scope="row">{{ $factura->reference }}</th>
-                          <td>{{ $factura->cliente->nombre == '' $factura->cliente->alias : $factura->cliente->nombre}}</td>
+                          <td>{{ $factura->cliente->nombre == '' ? $factura->cliente->alias : $factura->cliente->nombre}}</td>
                           <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
                           <td>{{ $factura->concepto }}</td>
                           <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
