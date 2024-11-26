@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const id = this.dataset.id;
                 const nuevaFecha = this.value;
 
-                fetch(`/admin/facturas/update-fecha/${id}`, {
+                fetch(`/facturas/update-fecha/${id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
