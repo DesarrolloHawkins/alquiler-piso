@@ -230,6 +230,25 @@ class InvoicesController extends Controller
         ];
    }
 
+   public function updateFecha(Request $request, $id)
+    {
+        $factura = Factura::find($id);
+
+        if (!$factura) {
+            return response()->json(['success' => false, 'message' => 'Factura no encontrada.'], 404);
+        }
+
+        $request->validate([
+            'fecha' => 'required|date',
+        ]);
+
+        $factura->fecha = $request->input('fecha');
+        $factura->save();
+
+        return response()->json(['success' => true, 'message' => 'Fecha actualizada correctamente.']);
+    }
+
+
    public function exportInvoices(Request $request)
    {
        $orderBy = $request->get('order_by', 'fecha');

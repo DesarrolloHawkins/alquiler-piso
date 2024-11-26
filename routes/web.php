@@ -272,6 +272,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
     Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
     Route::post('/generar-factura',[App\Http\Controllers\InvoicesController::class, 'facturar'])->name('admin.facturas.facturar');
+    Route::post('/admin/facturas/update-fecha/{id}', [App\Http\Controllers\FacturasController::class, 'updateFecha'])->name('admin.facturas.updateFecha');
+
+
 
     // Categoria de Emails
     Route::get('/category-email', [App\Http\Controllers\CategoryEmailController::class, 'index'])->name('admin.categoriaEmail.index');

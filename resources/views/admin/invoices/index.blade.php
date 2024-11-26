@@ -244,16 +244,22 @@
               <tbody>
                   @foreach ($facturas as $factura)
                       <tr>
-                          <th scope="row">{{ $factura->reference }}</th>
-                          <td>{{ $factura->cliente->nombre == '' ? $factura->cliente->alias : $factura->cliente->nombre}}</td>
-                          <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
-                          <td>{{ $factura->concepto }}</td>
-                          <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
-                          <td>{{ $factura->reserva->fecha_salida ?? 'N/A' }}</td> <!-- Mostrar Fecha de Salida -->
-                          <td>{{ \Carbon\Carbon::parse($factura->created_at)->format('d/m/Y') }}</td>
-                          <td><strong>{{ $factura->total }} €</strong></td>
-                          <td>{{ $factura->estado->name }}</td>
-                          <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
+                            <th scope="row">{{ $factura->reference }}</th>
+                            <td>{{ $factura->cliente->nombre == '' ? $factura->cliente->alias : $factura->cliente->nombre}}</td>
+                            <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
+                            <td>{{ $factura->concepto }}</td>
+                            <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
+                            <td>{{ $factura->reserva->fecha_salida ?? 'N/A' }}</td> <!-- Mostrar Fecha de Salida -->
+                            {{-- <td>{{ \Carbon\Carbon::parse($factura->created_at)->format('d/m/Y') }}</td> --}}
+                            <td>
+                                <span class="fecha-text" data-id="{{ $factura->id }}">
+                                    {{ \Carbon\Carbon::parse($factura->fecha)->format('Y-m-d') }}
+                                </span>
+                                <input type="date" class="fecha-input d-none" data-id="{{ $factura->id }}" value="{{ \Carbon\Carbon::parse($factura->fecha)->format('Y-m-d') }}">
+                            </td>
+                            <td><strong>{{ $factura->total }} €</strong></td>
+                            <td>{{ $factura->estado->name }}</td>
+                            <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
                       </tr>
                   @endforeach
               </tbody>
@@ -298,5 +304,52 @@
     });
 });
 
+
+document.addEventListener('DOMContentLoaded', function () {
+        const csrfToken = '{{ csrf_token() }}';
+
+        // Mostrar el input al hacer clic en la fecha
+        document.querySelectorAll('.fecha-text').forEach(span => {
+            span.addEventListener('click', function () {
+                const input = document.querySelector(`.fecha-input[data-id="${this.dataset.id}"]`);
+                this.classList.add('d-none');
+                input.classList.remove('d-none');
+                input.focus();
+            });
+        });
+
+        // Manejar el cambio de la fecha
+        document.querySelectorAll('.fecha-input').forEach(input => {
+            input.addEventListener('blur', function () {
+                const id = this.dataset.id;
+                const nuevaFecha = this.value;
+
+                fetch(`/admin/facturas/update-fecha/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ fecha: nuevaFecha })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const span = document.querySelector(`.fecha-text[data-id="${id}"]`);
+                        span.textContent = nuevaFecha;
+                        span.classList.remove('d-none');
+                        this.classList.add('d-none');
+                        alert('Fecha actualizada correctamente.');
+                    } else {
+                        alert('Error al actualizar la fecha.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error en la conexión.');
+                });
+            });
+        });
+    });
 </script>
 @endsection
