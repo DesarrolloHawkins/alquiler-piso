@@ -147,7 +147,7 @@
                 </div>
                 <div class="col-md-6 col-12 mb-3">
                     <label for="estado" class="form-label">Pais</label>
-                    <input type="text" inamed="estado" class="form-control"  value="{{ $cliente->estado }}">
+                    <input type="text" name="estado" class="form-control"  value="{{ $cliente->estado }}">
                 </div>
 
                 <button type="submit" class="btn btn-terminar w-100 mt-4">Actualizar</button>
