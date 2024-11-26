@@ -250,7 +250,7 @@
                           <td>{{ $factura->concepto }}</td>
                           <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
                           <td>{{ $factura->reserva->fecha_salida ?? 'N/A' }}</td> <!-- Mostrar Fecha de Salida -->
-                          <td>{{ \Carbon\Carbon::parse($invoice->created_at)->format('d/m/Y') }}</td>
+                          <td>{{ \Carbon\Carbon::parse($factura->created_at)->format('d/m/Y') }}</td>
                           <td><strong>{{ $factura->total }} €</strong></td>
                           <td>{{ $factura->estado->name }}</td>
                           <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
