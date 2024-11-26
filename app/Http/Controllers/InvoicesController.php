@@ -232,7 +232,7 @@ class InvoicesController extends Controller
 
    public function updateFecha(Request $request, $id)
     {
-        $factura = Factura::find($id);
+        $factura = Invoices::find($id);
 
         if (!$factura) {
             return response()->json(['success' => false, 'message' => 'Factura no encontrada.'], 404);
