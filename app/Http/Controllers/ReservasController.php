@@ -1254,9 +1254,14 @@ class ReservasController extends Controller
     }
 
     public function avisarAveria(Request $request){
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
+        Storage::disk('publico')->put("aviso-tecnico_{$fecha}.txt", json_encode($request->all()));
         return response()->json('Hemos avisado al tecnico para una averia.', 200);
     }
     public function avisarLimpieza(Request $request){
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
+        Storage::disk('publico')->put("aviso-limpieza_{$fecha}.txt", json_encode($request->all()));
+
         return response()->json('Hemos avisado al equipo de limpieza.', 200);
     }
 

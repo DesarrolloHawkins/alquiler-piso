@@ -167,4 +167,16 @@ class ChannexController extends Controller
 
         return response()->json('Enviado correctamente', 200);
     }
+
+    public function fullSync(Request $request){
+
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
+
+        Storage::disk('publico')->put("decline-reservation_{$fecha}.txt", json_encode($request->all()));
+
+        return response()->json('Enviado correctamente', 200);
+    }
+
+
 }
