@@ -35,6 +35,8 @@ class VerifyCsrfToken extends Middleware
         '/get-reserva-ia/*',
         '/reservas-cobradas',
         '/obtener-reservas',
-        '/obtener-reservas-ia'
+        '/obtener-reservas-ia',
+        '/avisar-tecnico',
+        '/avisar-limpieza'
     ];
 }
