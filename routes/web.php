@@ -40,6 +40,7 @@ Auth::routes();
 
 // Rutas de admin
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
+
     Route::get('/admin', function () { return view('admin.dashboard');})->name('inicio');
 
     // Apartamentos
@@ -274,6 +275,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/generar-factura',[App\Http\Controllers\InvoicesController::class, 'facturar'])->name('admin.facturas.facturar');
     Route::post('/facturas/update-fecha/{id}', [App\Http\Controllers\InvoicesController::class, 'updateFecha'])->name('admin.facturas.updateFecha');
 
+    // Estadisticas
+    Route::get('/estadisticas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.estadisticas.buscar');
+
 
 
     // Categoria de Emails
@@ -437,3 +441,5 @@ Route::post('/obtener-reservas-ia', [App\Http\Controllers\ReservasController::cl
 Route::get('/obtener-apartamentos', [App\Http\Controllers\ReservasController::class, 'obtenerApartamentos'])->name('obtenerApartamentos');
 
 Route::get('/chat/send-message', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.sendMessage');
+Route::post('/avisar-tecnico', [App\Http\Controllers\ReservasController::class, 'avisarAveria'])->name('avisarAveria');
+Route::post('/avisar-limpieza', [App\Http\Controllers\ReservasController::class, 'avisarLimpieza'])->name('avisarLimpieza');

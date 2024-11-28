@@ -1253,6 +1253,13 @@ class ReservasController extends Controller
         }
     }
 
+    public function avisarAveria(Request $request){
+        return response()->json('Hemos avisado al tecnico para una averia.', 200);
+    }
+    public function avisarLimpieza(Request $request){
+        return response()->json('Hemos avisado al equipo de limpieza.', 200);
+    }
+
 
 
 }
