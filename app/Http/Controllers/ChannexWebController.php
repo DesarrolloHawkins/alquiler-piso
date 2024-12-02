@@ -16,8 +16,9 @@ class ChannexWebController extends Controller
     // Crear Propiedad
     public function createTestProperty()
     {
-        $response = Http::withToken($this->apiToken)
-            ->post("{$this->apiUrl}/properties", [
+        $response = Http::withHeaders([
+            'user-api-key' => $this->apiToken,
+        ])->post("{$this->apiUrl}/properties", [
                 'name' => 'Test Property - Provider Name',
                 'currency' => 'USD',
                 'timezone' => 'UTC',
