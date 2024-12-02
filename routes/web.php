@@ -435,6 +435,13 @@ Route::post('/reservas-cobradas', [App\Http\Controllers\ReservasController::clas
 Route::post('/obtener-reservas', [App\Http\Controllers\ReservasController::class, 'obtenerReservas'])->name('obtenerReservas');
 
 
+// CHANNEX
+Route::prefix('channex')->group(function () {
+    Route::get('/full-sync', [App\Http\Controllers\ChannexWebController::class, 'fullSync'])->name('admin.channex.fullSync');
+    Route::get('/rate-plans-list', [App\Http\Controllers\ChannexWebController::class, 'ratePlansList'])->name('admin.channex.ratePlansList');
+});
+
+
 
 // API
 Route::post('/obtener-reservas-ia', [App\Http\Controllers\ReservasController::class, 'obtenerReservasIA'])->name('obtenerReservas');
@@ -444,6 +451,12 @@ Route::get('/chat/send-message', [App\Http\Controllers\ChatController::class, 's
 Route::post('/avisar-tecnico', [App\Http\Controllers\ReservasController::class, 'avisarAveria'])->name('avisarAveria');
 Route::post('/avisar-limpieza', [App\Http\Controllers\ReservasController::class, 'avisarLimpieza'])->name('avisarLimpieza');
 
+Route::post('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'createTestProperty'])->name('channex.createProperty');
+Route::post('/channex/room-types/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createRoomTypes'])->name('channex.createRoomTypes');
+Route::post('/channex/rate-plans', [App\Http\Controllers\ChannexWebController::class, 'createRatePlans'])->name('channex.createRatePlans');
+Route::post('/channex/distribution-channels/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createDistributionChannels'])->name('channex.createDistributionChannels');
+Route::post('/channex/bookings/{channelCode}/{propertyId}/{roomTypeId}', [App\Http\Controllers\ChannexWebController::class, 'createBooking'])->name('channex.createBooking');
+Route::post('/channex/bookings/{bookingId}/confirm', [App\Http\Controllers\ChannexWebController::class, 'confirmBooking'])->name('channex.confirmBooking');
 
 
 // Webhooks

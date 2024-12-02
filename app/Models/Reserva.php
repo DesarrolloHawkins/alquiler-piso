@@ -31,7 +31,11 @@ class Reserva extends Model
         'fecha_limpieza',
         'token',
         'numero_personas',
-        'numero_personas_plataforma'
+        'numero_personas_plataforma',
+        'neto',
+        'comision',
+        'cargo_por_pago',
+        'iva',
     ];
 
     /**

@@ -22,7 +22,8 @@ class Apartamento extends Model
         'titulo',
         'claves',
         'edificio',
-        'edificio_id'
+        'edificio_id',
+        'id_channex'
     ];
 
     /**
@@ -31,16 +32,21 @@ class Apartamento extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 
+        'created_at', 'updated_at', 'deleted_at',
     ];
 
      /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function edificioName()
     {
         return $this->belongsTo(\App\Models\Edificio::class,'edificio_id');
     }
+    public function edificioRelacion()
+    {
+        return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
+    }
+
 }

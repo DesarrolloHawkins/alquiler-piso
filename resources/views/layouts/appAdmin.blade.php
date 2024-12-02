@@ -45,7 +45,7 @@
             <div class="container-fluid h-100">
                 <div class="row h-100">
                     <!-- Sidebar -->
-                    <div class="col-auto bg-light sidebar p-3" 
+                    <div class="col-auto bg-light sidebar p-3"
                         style="height: 90vh; max-width: 300px; overflow: hidden; background-color: #0F1739 !important; margin: 20px 0 20px 20px; border-radius: 20px;">
                         <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
                             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
@@ -68,6 +68,24 @@
                                         Clientes
                                     </a>
                                 </li>
+
+                                {{-- Channex --}}
+                                <li class="nav-item w-100">
+                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
+                                    <button data-info="button" data-bs-target="#submenuChannex" href="#submenuChannex" class="nav-link fs-5 w-100 text-start {{ request()->is('channex', 'channex/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('channex', 'channex/*') ? 'true' : 'false' }}">
+                                        <i class="fa-solid fa-table me-2 fs-4" style="width:25px"></i>
+                                        Channex
+                                    </button>
+                                    <!-- Submenú para Channex, modificado para mostrar/ocultar basado en la ruta -->
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('channex*') ? 'show' : '' }}" id="submenuChannex">
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.channex.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('admin.channex.fullSync') ? 'active' : '' }}">
+                                                Full Sync
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+
 
                                 {{-- Reservas --}}
                                 <li class="nav-item w-100">
@@ -131,7 +149,7 @@
                                                 Categorias de Limpieza
                                             </a>
                                         </li>
-                                        
+
                                     </ul>
                                 </li>
 
@@ -170,12 +188,12 @@
                                 {{-- Tesoreria --}}
                                 <li class="nav-item w-100">
                                     <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*','facturas', 'facturas/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'true' : 'false' }}">
+                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'true' : 'false' }}">
                                         <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
                                         Tesoreria
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'show' : '' }}" id="submenuTesoreria">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'show' : '' }}" id="submenuTesoreria">
                                         <li class="nav-item w-100">
                                             <a href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-6 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}">
                                                 Diario de Caja
@@ -221,7 +239,7 @@
                                             Subida de Ficheros Banco
                                             </a>
                                         </li>
-                                        
+
                                     </ul>
                                 </li>
 
@@ -264,11 +282,11 @@
                                                 Sub-Cuentas Hijas Contables
                                             </a>
                                         </li>
-                                        
-                                        
+
+
                                     </ul>
                                 </li>
-                                
+
                                 {{-- Clientes --}}
                                 <li class="nav-item w-100">
                                     <a href="{{route('admin.empleados.index')}}" class="nav-link fs-5 {{ request()->is('empleados', 'empleados/*') ? 'active' : '' }}" aria-current="page">
@@ -318,8 +336,8 @@
                         </main>
                     </div>
                 </div>
-            </div> <!-- container-fluid --> 
-        </div> <!-- END APP --> 
+            </div> <!-- container-fluid -->
+        </div> <!-- END APP -->
 
 
         {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
@@ -328,7 +346,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-        
+
         {{-- Script cerrar sesion con alerta --}}
         <script>
             var sessionLifetime = {{ config('session.lifetime') * 60000 }};
@@ -361,35 +379,35 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const collapseButtons = document.querySelectorAll('[data-info="button"]');
-            
+
                 collapseButtons.forEach(button => {
                     button.addEventListener('click', function(e) {
                         // e.preventDefault()
                         const targetId = this.getAttribute('data-bs-target');
                         const target = document.querySelector(targetId);
                         console.log(target.classList)
-            
+
                         if (!target) {
                             console.error(`No se encontró el submenú con el ID: ${targetId}`);
                             return;
                         }
                         console.log(target.classList)
-            
+
                         // Verificar si el submenú actual está colapsado o expandido
                         const isExpanded = target.classList.contains('show');
                         console.log(isExpanded)
-            
+
                         // Cerrar todos los submenús
                         collapseButtons.forEach(btn => {
                             const btnTargetId = btn.getAttribute('data-bs-target');
                             const btnTarget = document.querySelector(btnTargetId);
-            
+
                             if (btnTarget && btnTarget !== target) {
                                 btnTarget.classList.remove('show');
                                 btn.setAttribute('aria-expanded', 'false');
                             }
                         });
-            
+
                         // Alternar el submenú actual
                         if (isExpanded) {
                             target.classList.remove('show');
@@ -402,11 +420,11 @@
                 });
             });
             </script>
-            
-            
-            
-        @include('sweetalert::alert')
-        @yield('scripts')
+
+
+
+            @yield('scripts')
+            @include('sweetalert::alert')
 
     </body>
 </html>
