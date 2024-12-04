@@ -19,10 +19,38 @@ class ChannexWebController extends Controller
         $response = Http::withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("{$this->apiUrl}/properties", [
-                'name' => 'Test Property - Provider Name',
-                'currency' => 'USD',
-                'timezone' => 'UTC',
-            ]);
+            'property' => [
+                'title' => 'Demo Hotel PMS',
+                'currency' => 'GBP',
+                'email' => 'hotel@channex.io',
+                'phone' => '01267237037',
+                'zip_code' => 'SA23 2JH',
+                'country' => 'GB',
+                'state' => 'Demo State',
+                'city' => 'Demo Town',
+                'address' => 'Demo Street',
+                'longitude' => '-0.2416781',
+                'latitude' => '51.5285582',
+                'timezone' => 'Europe/London',
+                'facilities' => [],
+                'property_type' => 'hotel',
+                'settings' => [
+                    'allow_availability_autoupdate_on_confirmation' => true,
+                    'allow_availability_autoupdate_on_modification' => true,
+                    'allow_availability_autoupdate_on_cancellation' => true,
+                    'min_stay_type' => 'both',
+                    'min_price' => null,
+                    'max_price' => null,
+                    'state_length' => 500,
+                    'cut_off_time' => '00:00:00',
+                    'cut_off_days' => 0,
+                ],
+                'content' => [
+                    'description' => 'Some Property Description Text',
+                    'important_information' => 'Some important notes about property',
+                ],
+            ],
+        ]);
 
         if ($response->successful()) {
             return response()->json([
@@ -36,6 +64,7 @@ class ChannexWebController extends Controller
             'error' => $response->json(),
         ], $response->status());
     }
+
 
     public function createRoomTypes($propertyId)
     {
