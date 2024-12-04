@@ -94,27 +94,40 @@
 
     let marker;
 
-    document.getElementById('address').addEventListener('change', async function() {
+    async function searchCoordinates() {
         const address = document.getElementById('address').value;
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`);
-        const data = await response.json();
+        const city = document.getElementById('city').value;
+        const zipCode = document.getElementById('zip_code').value;
 
-        if (data.length > 0) {
-            const lat = data[0].lat;
-            const lon = data[0].lon;
+        if (address && city && zipCode) {
+            const query = `${address}, ${city}, ${zipCode}`;
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+            const data = await response.json();
 
-            document.getElementById('latitude').value = lat;
-            document.getElementById('longitude').value = lon;
+            if (data.length > 0) {
+                const lat = data[0].lat;
+                const lon = data[0].lon;
 
-            if (marker) {
-                map.removeLayer(marker);
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lon;
+
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+
+                marker = L.marker([lat, lon]).addTo(map);
+                map.setView([lat, lon], 15);
+            } else {
+                alert('No se pudo encontrar la ubicación exacta con los datos proporcionados.');
             }
-
-            marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15);
         } else {
-            alert('No se pudo encontrar la dirección');
+            alert('Por favor, complete Dirección, Ciudad y Código Postal antes de buscar.');
         }
+    }
+
+    const fields = ['address', 'city', 'zip_code'];
+    fields.forEach(field => {
+        document.getElementById(field).addEventListener('change', searchCoordinates);
     });
 </script>
 @endsection
