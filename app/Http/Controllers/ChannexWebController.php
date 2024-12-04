@@ -14,6 +14,11 @@ class ChannexWebController extends Controller
     private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
 
     // Crear Propiedad
+    public function createProperty()
+    {
+
+        return view('admin.channex.createPropiedad');
+    }
     public function createTestProperty()
     {
         $response = Http::withHeaders([
@@ -64,6 +69,63 @@ class ChannexWebController extends Controller
             'error' => $response->json(),
         ], $response->status());
     }
+
+    public function store(Request $request)
+{
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'email' => 'required|email',
+        'phone' => 'required|string|max:20',
+        'address' => 'required|string|max:255',
+        'city' => 'required|string|max:255',
+        'zip_code' => 'required|string|max:20',
+        'latitude' => 'required|numeric',
+        'longitude' => 'required|numeric',
+    ]);
+
+    $response = Http::withHeaders([
+        'user-api-key' => $this->apiToken,
+    ])->post("{$this->apiUrl}/properties", [
+        'property' => [
+            'title' => $validatedData['title'],
+            'currency' => 'GBP',
+            'email' => $validatedData['email'],
+            'phone' => $validatedData['phone'],
+            'zip_code' => $validatedData['zip_code'],
+            'country' => 'GB',
+            'state' => 'Demo State',
+            'city' => $validatedData['city'],
+            'address' => $validatedData['address'],
+            'longitude' => $validatedData['longitude'],
+            'latitude' => $validatedData['latitude'],
+            'timezone' => 'Europe/London',
+            'facilities' => [],
+            'property_type' => 'hotel',
+            'settings' => [
+                'allow_availability_autoupdate_on_confirmation' => true,
+                'allow_availability_autoupdate_on_modification' => true,
+                'allow_availability_autoupdate_on_cancellation' => true,
+                'min_stay_type' => 'both',
+                'min_price' => null,
+                'max_price' => null,
+                'state_length' => 500,
+                'cut_off_time' => '00:00:00',
+                'cut_off_days' => 0,
+            ],
+            'content' => [
+                'description' => 'Some Property Description Text',
+                'important_information' => 'Some important notes about property',
+            ],
+        ],
+    ]);
+
+    if ($response->successful()) {
+        return redirect()->route('admin.propiedades.index')->with('success', 'Propiedad creada con éxito');
+    }
+
+    return redirect()->back()->withErrors(['error' => 'Error al crear la propiedad'])->withInput();
+}
+
 
 
     public function createRoomTypes($propertyId)

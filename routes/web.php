@@ -452,6 +452,8 @@ Route::post('/avisar-tecnico', [App\Http\Controllers\ReservasController::class, 
 Route::post('/avisar-limpieza', [App\Http\Controllers\ReservasController::class, 'avisarLimpieza'])->name('avisarLimpieza');
 
 Route::post('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'createTestProperty'])->name('channex.createProperty');
+Route::get('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'createProperty'])->name('channex.createPropiedad');
+Route::post('/channex/property/store', [App\Http\Controllers\ChannexWebController::class, 'createTestProperty'])->name('channex.storeProperty');
 Route::post('/channex/room-types/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createRoomTypes'])->name('channex.createRoomTypes');
 Route::post('/channex/rate-plans', [App\Http\Controllers\ChannexWebController::class, 'createRatePlans'])->name('channex.createRatePlans');
 Route::post('/channex/distribution-channels/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createDistributionChannels'])->name('channex.createDistributionChannels');
