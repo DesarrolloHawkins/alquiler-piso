@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\RatePlanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,7 @@ Route::get('/obtener-apartamentos-disponibles', [App\Http\Controllers\Api\ApiCon
 Route::post('/averias-tecnico', [App\Http\Controllers\Api\ApiController::class, 'averiasTecnico'])->name('averiasTecnico');
 Route::post('/equipo-limpieza', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
 
+Route::get('/room-types/{propertyId}', [RatePlanController::class, 'getRoomTypes']);
 
 // Webhooks
 Route::post('/channex', [App\Http\Controllers\ChannexController::class, 'webhook'])->name('channex.webhook');

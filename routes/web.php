@@ -8,6 +8,9 @@ use App\Http\Controllers\MovimientosController;
 use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\RatePlanController;
+use App\Http\Controllers\RateUpdateController;
+use App\Http\Controllers\RoomTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -452,14 +455,39 @@ Route::post('/avisar-tecnico', [App\Http\Controllers\ReservasController::class, 
 Route::post('/avisar-limpieza', [App\Http\Controllers\ReservasController::class, 'avisarLimpieza'])->name('avisarLimpieza');
 
 Route::post('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'createTestProperty'])->name('channex.createProperty');
-Route::get('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'createProperty'])->name('channex.createPropiedad');
-Route::post('/channex/property/store', [App\Http\Controllers\ChannexWebController::class, 'createTestProperty'])->name('channex.storeProperty');
-Route::post('/channex/room-types/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createRoomTypes'])->name('channex.createRoomTypes');
+Route::get('/channex/property', [App\Http\Controllers\ChannexWebController::class, 'index'])->name('channex.propiedad.index');
+Route::get('/channex/property/create', [App\Http\Controllers\ChannexWebController::class, 'createProperty'])->name('channex.createPropiedad');
+Route::post('/channex/property/store', [App\Http\Controllers\ChannexWebController::class, 'store'])->name('channex.storeProperty');
+//Route::post('/channex/room-types/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createRoomTypes'])->name('channex.createRoomTypes');
 Route::post('/channex/rate-plans', [App\Http\Controllers\ChannexWebController::class, 'createRatePlans'])->name('channex.createRatePlans');
 Route::post('/channex/distribution-channels/{propertyId}', [App\Http\Controllers\ChannexWebController::class, 'createDistributionChannels'])->name('channex.createDistributionChannels');
 Route::post('/channex/bookings/{channelCode}/{propertyId}/{roomTypeId}', [App\Http\Controllers\ChannexWebController::class, 'createBooking'])->name('channex.createBooking');
 Route::post('/channex/bookings/{bookingId}/confirm', [App\Http\Controllers\ChannexWebController::class, 'confirmBooking'])->name('channex.confirmBooking');
+Route::post('/upload-photo', [App\Http\Controllers\PhotoController::class, 'upload'])->name('photo.upload');
 
+
+Route::post('/webhook-handler', [App\Http\Controllers\WebhookController::class, 'handleWebhook']);
+
+
+// Rate Plans
+//Route::resource('/channex/rate-plans', RatePlanController::class);
+Route::get('/channex/rate-plans', [App\Http\Controllers\RatePlanController::class, 'index'])->name('channex.ratePlans.index');
+Route::get('/channex/rate-plans/create', [App\Http\Controllers\RatePlanController::class, 'create'])->name('channex.ratePlans.create');
+Route::get('/channex/rate-plans/edit', [App\Http\Controllers\RatePlanController::class, 'edit'])->name('channex.ratePlans.edit');
+Route::post('/channex/rate-plans/store', [App\Http\Controllers\RatePlanController::class, 'store'])->name('channex.ratePlans.store');
+Route::post('/channex/rate-plans/destroy', [App\Http\Controllers\RatePlanController::class, 'destroy'])->name('channex.ratePlans.destroy');
+Route::post('/channex/rate-plans/update', [App\Http\Controllers\RatePlanController::class, 'update'])->name('channex.ratePlans.update');
+
+Route::resource('/channex/rate-updates', RateUpdateController::class)->only(['create', 'store']);
+
+Route::get('/channex/room-types', [App\Http\Controllers\RoomTypeController::class, 'index'])->name('channex.roomTypes.index');
+Route::post('/channex/room-types/store', [App\Http\Controllers\RoomTypeController::class, 'store'])->name('channex.roomTypes.store');
+Route::get('/channex/room-types/create', [App\Http\Controllers\RoomTypeController::class, 'create'])->name('channex.roomTypes.create');
+Route::get('/channex/room-types/edit', [App\Http\Controllers\RoomTypeController::class, 'edit'])->name('channex.roomTypes.edit');
+Route::get('/channex/room-types/destroy', [App\Http\Controllers\RoomTypeController::class, 'destroy'])->name('channex.roomTypes.destroy');
+//Route::resource('/channex/room-types', RoomTypeController::class);
+
+Route::get('/channex/channel', [App\Http\Controllers\ChannelController::class, 'index'])->name('channex.channel.index');
 
 // Webhooks
 Route::post('/channex', [App\Http\Controllers\ChannexController::class, 'webhook'])->name('channex.webhook');

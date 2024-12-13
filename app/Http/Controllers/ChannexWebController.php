@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Apartamento;
 use App\Models\RatePlan;
 use App\Models\RatePlanOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ChannexWebController extends Controller
 {
@@ -14,9 +17,13 @@ class ChannexWebController extends Controller
     private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
 
     // Crear Propiedad
+    public function index()
+    {
+        $properties = Apartamento::all(); // Obtiene todas las propiedades
+    return view('admin.channex.index', compact('properties'));
+    }
     public function createProperty()
     {
-
         return view('admin.channex.createPropiedad');
     }
     public function createTestProperty()
@@ -71,62 +78,152 @@ class ChannexWebController extends Controller
     }
 
     public function store(Request $request)
-{
-    $validatedData = $request->validate([
-        'title' => 'required|string|max:255',
-        'email' => 'required|email',
-        'phone' => 'required|string|max:20',
-        'address' => 'required|string|max:255',
-        'city' => 'required|string|max:255',
-        'zip_code' => 'required|string|max:20',
-        'latitude' => 'required|numeric',
-        'longitude' => 'required|numeric',
-    ]);
+    {
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'currency' => 'required|string|max:10',
+            'country' => 'required|string|max:50',
+            'state' => 'required|string|max:100',
+            'timezone' => 'required|string|max:50',
+            'property_type' => 'required|string|max:50',
+            'description' => 'nullable|string',
+            'important_information' => 'nullable|string',
+            'email' => 'required|email',
+            'phone' => 'required|string|max:20',
+            'zip_code' => 'required|string|max:20',
+            'city' => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric',
+            'website' => 'nullable|url',
+            'photos' => 'nullable|array',
+            'photos.*.file' => 'required_with:photos|file|image|max:2048',
+            'photos.*.position' => 'nullable|integer',
+            'photos.*.author' => 'nullable|string',
+            'photos.*.kind' => 'nullable|string',
+            'photos.*.description' => 'nullable|string',
+        ]);
 
-    $response = Http::withHeaders([
-        'user-api-key' => $this->apiToken,
-    ])->post("{$this->apiUrl}/properties", [
-        'property' => [
-            'title' => $validatedData['title'],
-            'currency' => 'GBP',
-            'email' => $validatedData['email'],
-            'phone' => $validatedData['phone'],
-            'zip_code' => $validatedData['zip_code'],
-            'country' => 'GB',
-            'state' => 'Demo State',
-            'city' => $validatedData['city'],
-            'address' => $validatedData['address'],
-            'longitude' => $validatedData['longitude'],
-            'latitude' => $validatedData['latitude'],
-            'timezone' => 'Europe/London',
-            'facilities' => [],
-            'property_type' => 'hotel',
-            'settings' => [
-                'allow_availability_autoupdate_on_confirmation' => true,
-                'allow_availability_autoupdate_on_modification' => true,
-                'allow_availability_autoupdate_on_cancellation' => true,
-                'min_stay_type' => 'both',
-                'min_price' => null,
-                'max_price' => null,
-                'state_length' => 500,
-                'cut_off_time' => '00:00:00',
-                'cut_off_days' => 0,
-            ],
-            'content' => [
-                'description' => 'Some Property Description Text',
-                'important_information' => 'Some important notes about property',
-            ],
-        ],
-    ]);
+        $photos = [];
+        if ($request->has('photos')) {
+            foreach ($request->file('photos') as $index => $photo) {
+                // Subir el archivo al almacenamiento
+                $path = $photo['file']->store('photos', 'public');
 
-    if ($response->successful()) {
-        return redirect()->route('admin.propiedades.index')->with('success', 'Propiedad creada con éxito');
+                // Crear la entrada para las fotos
+                $photos[] = [
+                    //'url' => url(Storage::url($path)), // Asegura el esquema completo
+                    'url' => 'https://apartamentosalgeciras.com/wp-content/uploads/2022/10/HAWKINS-SUITES-26-1.jpeg', // Asegura el esquema completo
+                    'position' => $request->input("photos.{$index}.position", $index),
+                    'author' => $request->input("photos.{$index}.author"),
+                    'description' => $request->input("photos.{$index}.description"),
+                ];
+            }
+        }
+        //dd($photos);
+        $response = Http::withHeaders([
+            'user-api-key' => $this->apiToken,
+        ])->post("{$this->apiUrl}/properties", [
+            'property' => [
+                'title' => $validatedData['title'],
+                'currency' => $validatedData['currency'],
+                'email' => $validatedData['email'],
+                'phone' => $validatedData['phone'],
+                'zip_code' => $validatedData['zip_code'],
+                'country' => $validatedData['country'],
+                'state' => $validatedData['state'],
+                'city' => $validatedData['city'],
+                'address' => $validatedData['address'],
+                'longitude' => $validatedData['longitude'],
+                'latitude' => $validatedData['latitude'],
+                'timezone' => $validatedData['timezone'],
+                'website' => $validatedData['website'],
+                'property_type' => $validatedData['property_type'],
+                'content' => [
+                    'description' => $validatedData['description'],
+                    'important_information' => $validatedData['important_information'],
+                    'photos' => $photos,
+                ],
+            ],
+        ]);
+        //dd($response->json());
+
+        if ($response->successful()) {
+            $propertyId = $response->json('data.attributes.id');
+
+            // Guardar apartamento
+            $apartamento = Apartamento::create([
+                'nombre' => $validatedData['title'],
+                'titulo' => $validatedData['title'],
+                'id_channex' => $propertyId,
+                'currency' => $validatedData['currency'],
+                'country' => $validatedData['country'],
+                'state' => $validatedData['state'],
+                'city' => $validatedData['city'],
+                'address' => $validatedData['address'],
+                'zip_code' => $validatedData['zip_code'],
+                'latitude' => $validatedData['latitude'],
+                'longitude' => $validatedData['longitude'],
+                'timezone' => $validatedData['timezone'],
+                'property_type' => $validatedData['property_type'],
+                'description' => $validatedData['description'],
+                'important_information' => $validatedData['important_information'],
+                'email' => $validatedData['email'],
+                'phone' => $validatedData['phone'],
+                'website' => $validatedData['website'],
+            ]);
+
+            // Guardar fotos relacionadas
+            foreach ($photos as $photo) {
+                $apartamento->photos()->create($photo);
+            }
+
+            // Registrar webhooks
+            $this->registerWebhooks($propertyId);
+
+            return redirect()->route('channex.createProperty')->with('success', 'Propiedad creada con éxito');
+        }
+
+        return redirect()->back()->withErrors(['error' => 'Error al crear la propiedad'])->withInput();
     }
 
-    return redirect()->back()->withErrors(['error' => 'Error al crear la propiedad'])->withInput();
-}
+    private function registerWebhooks($propertyId)
+    {
+        $webhookEvents = [
+            'ari',
+            'booking',
+            'booking_unmapped_room',
+            'booking_unmapped_rate',
+            'message',
+            'sync_error',
+            'reservation_request',
+            'alteration_request',
+            'review',
+        ];
+
+        $webhookUrl = config('services.channex.webhook_url'); // Define esta URL en el archivo de configuración
+        $headers = [
+            'user-api-key' => $this->apiToken,
+        ];
+
+        foreach ($webhookEvents as $event) {
+            $response = Http::withHeaders($headers)->post("{$this->apiUrl}/webhooks", [
+                'webhook' => [
+                    'event' => $event,
+                    'url' => $webhookUrl,
+                    'property_id' => $propertyId,
+                ],
+            ]);
+
+            if (!$response->successful()) {
+                Log::error("Error creating webhook for event {$event}: " . $response->body());
+            }
+        }
+    }
 
 
+
+//return $response->json();
 
     public function createRoomTypes($propertyId)
     {

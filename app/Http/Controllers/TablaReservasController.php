@@ -24,6 +24,7 @@ class TablaReservasController extends Controller
             $reservas = Reserva::where('apartamento_id', $apartamento->id)
                                 ->whereMonth('fecha_entrada', $dateObject->month)
                                 ->whereYear('fecha_entrada', $dateObject->year)
+                                ->orderBy('fecha_entrada', 'asc')
                                 ->get();
 
             $apartamento->reservas = $reservas; // Añadir reservas al apartamento

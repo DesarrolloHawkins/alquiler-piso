@@ -11,21 +11,46 @@ class RatePlan extends Model
 
     protected $table = 'rate_plans';
 
-
     protected $fillable = [
         'title',
-        'currency',
-        'options',
-        'meal_type',
-        'rate_mode',
-        'sell_mode',
         'property_id',
         'room_type_id',
-        'id_rate_plans',
+        'tax_set_id',
+        'parent_rate_plan_id',
+        'children_fee',
+        'infant_fee',
+        'max_stay',
+        'min_stay_arrival',
+        'min_stay_through',
+        'closed_to_arrival',
+        'closed_to_departure',
+        'stop_sell',
+        'options',
+        'currency',
+        'sell_mode',
+        'rate_mode',
+        'id_channex', // ID devuelto por Channex
     ];
 
     protected $casts = [
-        'options' => 'array', // Convierte automáticamente JSON en array
+        'max_stay' => 'array',
+        'min_stay_arrival' => 'array',
+        'min_stay_through' => 'array',
+        'closed_to_arrival' => 'array',
+        'closed_to_departure' => 'array',
+        'stop_sell' => 'array',
+        'options' => 'array',
     ];
+
+    public function property()
+    {
+        return $this->belongsTo(Apartamento::class, 'property_id');
+    }
+
+    public function roomType()
+    {
+        return $this->belongsTo(RoomType::class, 'room_type_id');
+    }
+
 }
 

@@ -23,7 +23,22 @@ class Apartamento extends Model
         'claves',
         'edificio',
         'edificio_id',
-        'id_channex'
+        'id_channex',
+        'currency',
+        'country',
+        'state',
+        'city',
+        'address',
+        'zip_code',
+        'latitude',
+        'longitude',
+        'timezone',
+        'property_type',
+        'description',
+        'important_information',
+        'email',
+        'phone',
+        'website',
     ];
 
     /**
@@ -47,6 +62,17 @@ class Apartamento extends Model
     public function edificioRelacion()
     {
         return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
+    }
+     /**
+     * Relación con las fotos del apartamento.
+     */
+    public function photos()
+    {
+        return $this->hasMany(ApartamentoPhoto::class);
+    }
+    public function roomTypes()
+    {
+        return $this->hasMany(RoomType::class, 'property_id', 'id');
     }
 
 }

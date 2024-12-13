@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\RatePlan;
+use App\Models\Apartamento;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class RatePlanController extends Controller
+{
+    private $apiUrl = 'https://staging.channex.io/api/v1';
+    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
+
+    public function index()
+    {
+        $ratePlans = RatePlan::with('property')->get();
+        return view('admin.rate-plans.index', compact('ratePlans'));
+    }
+
+    public function create()
+    {
+        $properties = Apartamento::all();
+        return view('admin.rate-plans.create', compact('properties'));
+    }
+
+    public function store(Request $request)
+{
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'property_id' => 'required|exists:apartamentos,id',
+        'room_type_id' => 'nullable|string',
+        'tax_set_id' => 'nullable|string',
+        'parent_rate_plan_id' => 'nullable|string',
+        'children_fee' => 'nullable|numeric',
+        'infant_fee' => 'nullable|numeric',
+        'max_stay' => 'nullable|string', // Validar como string inicial
+        'min_stay_arrival' => 'nullable|string', // Validar como string inicial
+        'min_stay_through' => 'nullable|string', // Validar como string inicial
+        'closed_to_arrival' => 'nullable|array',
+        'closed_to_departure' => 'nullable|array',
+        'stop_sell' => 'nullable|array',
+        'options' => 'nullable',
+        'currency' => 'required|string|max:3',
+        'sell_mode' => 'required|string',
+        'rate_mode' => 'required|string',
+    ]);
+
+    // Decodificar las cadenas JSON a arrays
+    $validatedData['max_stay'] = json_decode($validatedData['max_stay'], true);
+    $validatedData['min_stay_arrival'] = json_decode($validatedData['min_stay_arrival'], true);
+    $validatedData['min_stay_through'] = json_decode($validatedData['min_stay_through'], true);
+
+    // Validar que la decodificación fue exitosa
+    if (
+        json_last_error() !== JSON_ERROR_NONE ||
+        !is_array($validatedData['max_stay']) ||
+        !is_array($validatedData['min_stay_arrival']) ||
+        !is_array($validatedData['min_stay_through'])
+    ) {
+        return redirect()->back()->withErrors(['error' => 'Uno o más campos no tienen un formato JSON válido.'])->withInput();
+    }
+    // Obtener el ID de Channex para la propiedad
+    $property = Apartamento::findOrFail($validatedData['property_id']);
+    $channexPropertyId = $property->id_channex;
+
+    // Obtener el ID de Channex para el tipo de habitación
+    $channexRoomTypeId = null;
+    if (!empty($validatedData['room_type_id'])) {
+        $roomType = \App\Models\RoomType::findOrFail($validatedData['room_type_id']);
+        $channexRoomTypeId = $roomType->id_channex;
+    }
+    // Construir la solicitud a Channex
+    $ratePlanData = [
+        'rate_plan' => [
+            'title' => $validatedData['title'],
+            'property_id' => $channexPropertyId,
+            'room_type_id' => $channexRoomTypeId,
+            'tax_set_id' => $validatedData['tax_set_id'] ?? null,
+            'parent_rate_plan_id' => $validatedData['parent_rate_plan_id'] ?? null,
+            'children_fee' => $validatedData['children_fee'] ?? '0.00',
+            'infant_fee' => $validatedData['infant_fee'] ?? '0.00',
+            'max_stay' => $validatedData['max_stay'],
+            'min_stay_arrival' => $validatedData['min_stay_arrival'],
+            'min_stay_through' => $validatedData['min_stay_through'],
+            'closed_to_arrival' => $validatedData['closed_to_arrival'] ?? [false, false, false, false, false, false, false],
+            'closed_to_departure' => $validatedData['closed_to_departure'] ?? [false, false, false, false, false, false, false],
+            'stop_sell' => $validatedData['stop_sell'] ?? [false, false, false, false, false, false, false],
+            'options' => $validatedData['options'] ?? [['occupancy' => 3, 'is_primary' => true, 'rate' => 15000]],
+            'currency' => $validatedData['currency'],
+            'sell_mode' => $validatedData['sell_mode'],
+            'rate_mode' => $validatedData['rate_mode'],
+        ],
+    ];
+
+    // Realizar la solicitud HTTP
+    $response = Http::withHeaders([
+        'user-api-key' => $this->apiToken,
+    ])->post("{$this->apiUrl}/rate_plans", $ratePlanData);
+    dd($response->json());
+    if ($response->successful()) {
+        // RatePlan::create(array_merge($validatedData, [
+        //     'id_channex' => $response->json('data.attributes.id'),
+        // ]));
+
+        return redirect()->route('channex.roomTypes.index')->with('success', 'Rate Plan creado con éxito');
+    }
+
+    return redirect()->back()->withErrors(['error' => 'Error al crear el Rate Plan: ' . $response->body()])->withInput();
+}
+
+
+
+public function getRoomTypes($propertyId)
+{
+    $property = Apartamento::findOrFail($propertyId);
+    $roomTypes = $property->roomTypes; // Relación entre Apartamento y RoomType (debes definirla)
+
+    return response()->json($roomTypes);
+}
+
+    // Similar lógica para update y destroy
+}

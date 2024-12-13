@@ -52,21 +52,159 @@
     .table-responsive {
         overflow-x: auto;
     }
-
-    .cell-45-degree-line::before {
-        content: "";
-        position: absolute;
-        width: 100%;
-        height: 1px;
-        background-color: black;
-        transform: rotate(45deg);
-        top: 50%;
-        left: 0;
+/* 
+    .hbdco-new.hbdtco div {
+        border-top-color: #ffbb3e;
+        color: white;
     }
-    
+    .hbdci-new.hbdtci div {
+        border-right-color: #ffbb3e;
+        color: white;
+    }
+    .hbdtco div {
+        border-right: 45px solid;
+        border-top: 36px solid #fff;
+        height: 0;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 0;
+    }
+    .hb-resa-cal-table td {
+        padding: 0;
+    }
+    .hbio {
+        overflow: hidden;
+        position: relative;
+    }
+    .hbdtci.hbdtco span {
+        background: #FFF;
+        display: block;
+        height: 36px;
+        left: 8px;
+        position: absolute;
+        top: -3px;
+        transform: rotate(30deg);
+        width: 2px;
+    }
+    .hbd-new .hbdlcd {
+        background: #ffbb3e;
+        color: white;
+    }
+    .hbdt a, .hbdbc {
+        text-align: center;
+    }
+    .hbdli {
+        text-indent: -5px;
+    }
+    .hbdbc, .hbdlcd {
+        color: #fff;
+        display: inline-block;
+        font-weight: 600;
+        position: relative;
+        text-align: left;
+        text-decoration: none;
+        white-space: nowrap;
+        z-index: 89;
+    }
 
+    .hbd-new.hbdt {
+        background: #ffbb3e;
+        border-right: 1px solid #ffbb3e;
+    }
+    .hb-resa-cal-table td {
+        padding: 0;
+    }
+    .hbdt {
+        color: #fff;
+    }
+
+    .hb-resa-cal-table td {
+        padding: 0;
+    }
+
+    .hbio {
+        overflow: hidden;
+        position: relative;
+    }
+    .hbdci-new.hbdtci div {
+        border-right-color: #ffbb3e;
+    }
+
+    .hbdtci div {
+        border-right: 45px solid;
+        border-top: 35px  solid #fff;
+        height: 39px;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 0;
+    }
+
+    #hb-resa-cal-table td.hb-resa-day-today-line {
+        border-right-color: rgba(0, 0, 0, 0.2);
+    }
+    .hb-resa-cal-table {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-collapse: collapse;
+        border-spacing: 0;
+        font-size: 14px;
+    }
+
+    #hb-resa-cal-table td.hb-resa-day-label {
+        border-bottom: 2px solid #E5E5E5;
+        border-right: 1px solid #e5e5e5;
+        height: 80px;
+        text-align: center;
+        width: 40px;
+        min-width: 50px;
+    }
+    .hb-resa-day-label span span {
+        display: block;
+        font-size: 12px;
+    }
+    #hb-resa-cal-table td {
+        border-bottom: 1px solid #E5E5E5;
+        height: 30px;
+        padding: 0 !important;
+        text-align: center;
+        width: 20px !important;
+        min-width: 20px;
+    }
+    td.hbio.hbdtci.hbdci-new{
+        min-width: 10px;
+
+    } */
 </style>
+<style>
+    table {
+        border-collapse: collapse;
+        width:max-content !important;
+    }
 
+    th, td {
+        border: 1px solid black;
+        text-align: center;
+        padding: 5px;
+    }
+
+    th {
+        width: 80px; /* El doble del ancho porque tiene colspan="2" */
+    }
+
+    td {
+        width: 20px; /* La mitad del espacio en cada columna de 40px */
+    }
+
+    .half-width {
+        width: 20px;
+    }
+    .tabla-reservas {
+        width: 100%;
+        overflow-x: scroll
+    }
+</style>
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
         <h2 class="mb-0 me-3 encabezado_top">{{ __('Tabla de Reservas') }}</h2>
@@ -78,84 +216,243 @@
             <h3>{{ $monthName }}</h3>
             <a href="{{ route('admin.tablaReservas.index', ['date' => \Carbon\Carbon::createFromFormat('Y-m', $date)->addMonth()->format('Y-m')]) }}" class="btn bg-color-quinto">Mes Siguiente</a>
         </div>
-
         @if ($apartamentos)
         <!-- Contenedor con scroll horizontal -->
-        <div class="table-responsive p-0">
-            <table class="table table-bordered">
+        {{-- class="table-responsive p-0" --}}
+        {{-- class="table-responsive p-0" --}}
+        {{-- class="table table-bordered" id="hb-resa-cal-table" --}}
+        <div class="tabla-reservas">
+            <table>
                 <thead>
                     <tr>
-                        <th class="apartments-column">Apartamentos</th>
+                        <th colspan="2">Apartamentos</th>
                         @for ($day = 1; $day <= $daysInMonth; $day++)
                             @php
                                 $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
                                 $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Agregar la clase si es el día de hoy
                             @endphp
-                            <th class="{{ $claseDiaHoy }}">{{ $day }}</th> <!-- Encabezado del día -->
+                            <th colspan="2" class="{{ $claseDiaHoy }}">Día {{ $day }}</th>
                         @endfor
                     </tr>
                 </thead>
-                <tbody>
-                  @foreach ($apartamentos as $apartamento)
-                  <tr>
-                      <td class="apartments-column">{{ $apartamento->titulo }}</td>
-                      
-                      @for ($day = 1; $day <= $daysInMonth; $day++)
-                          @php
-                              $found = false;
-                              $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Aplicar la clase en las celdas de hoy
-                          @endphp
-                  
-                          {{-- Buscar si hay una reserva que coincida con este día --}}
-                         
-                          @foreach ($apartamento->reservas as $itemReserva)
+                <style>
+                    .hbdbc, .hbdlcd {
+                        color: #fff;
+                        display: inline-block;
+                        font-weight: 600;
+                        position: relative;
+                        text-align: left;
+                        text-decoration: none;
+                        white-space: nowrap;
+                        z-index: 89;
+                    }
+                    .hbd-new .hbdlcd {
+                        background: #ffbb3e;
+                    }
 
-                          @php
-                              // Obtener la fecha de la reserva en formato Carbon
-                              $fechaEntrada = \Carbon\Carbon::parse($itemReserva->fecha_entrada);
-                              $fechaSalida = \Carbon\Carbon::parse($itemReserva->fecha_salida);
-                              $diasDiferencia = $fechaEntrada->diffInDays($fechaSalida) + 1; // Asegurarse de incluir el último día
-                          @endphp
-                      
-                          {{-- Si el día coincide con el inicio de la reserva --}}
-                          @if ($day >= $fechaEntrada->day && $day <= $fechaSalida->day)
-                              @php
-                                  $claseBoton = ($fechaEntrada->isToday()) ? 'btn-success' : ($fechaEntrada->isPast() ? 'btn-warning' : 'btn-info');
-                              @endphp
-                      
-                              {{-- Renderizar la celda con colspan para cubrir todo el rango de la reserva --}}
-                              <td colspan="{{ $diasDiferencia }}" class="p-0 {{ $claseDiaHoy }} position-relative">
-                                  <div class="w-100 d-flex justify-content-between align-items-center">
-                                      {{-- Botón con detalles de la reserva --}}
-                                      <button type="button" class="w-100 rounded-0 btn {{ $claseBoton }}" data-bs-toggle="modal" data-bs-target="#modalReserva{{ $itemReserva->id }}">
-                                          {{ $fechaEntrada->format('d') }} - {{ $fechaSalida->format('d') }}
-                                      </button>
-                                  </div>
-                              </td>
-                      
-                              @php
-                                  // Saltar los días cubiertos por el colspan
-                                  $day += $diasDiferencia - 1;
-                                  $found = true;
-                              @endphp
-                              @break  {{-- Salir del bucle de reservas si ya encontramos una para este día --}}
-                          @endif
-                      @endforeach
-                      
-                  
-                  
-                          {{-- Si no se encontró ninguna reserva, agregar una celda vacía con funcionalidad de crear reserva --}}
-                          @if (!$found)
-                              <td data-apartamento="{{ $apartamento->id }}" data-dia="{{ $day }}" class="{{ $claseDiaHoy }}" data-bs-toggle="modal" data-bs-target="#modalCrearReserva" onclick="openCrearReservaModal({{ $apartamento->id }}, {{ $day }})"></td>
-                          @endif
-                      @endfor
-                  </tr>
-                  @endforeach
-                  
+
+                    #hb-resa-cal-table td {
+                        border-bottom: 1px solid #E5E5E5;
+                        height: 30px;
+                        padding: 0;
+                        text-align: center;
+                        width: 20px;
+                        border: 0;
+                    }
+                    .hb-resa-cal-table td {
+                        padding: 0;
+                    }
+                    .hbio {
+                        overflow: hidden;
+                        position: relative;
+                    }
+
+
+                    .hbdci-confirmed.hbdtci div {
+                        border-right-color: #5dc807;
+                    }
+
+                    .hbdci-new.hbdtci div {
+                        border-right-color: #ffbb3e;
+                    }
+                    .hbdco-new.hbdtco div {
+                        border-top-color: #ffbb3e;
+                    }
+                    .hbdco-new-ini.hbdtco div {
+                        border-top-color: white;
+                    }
+                    .hbdtco div {
+                        border-right: 41px solid #FFF;
+                        border-top: 33px solid;
+                        height: 0;
+                        left: 0;
+                        position: absolute;
+                        top: 0;
+                        width: 0;
+                    }
+                    .hbdtci div {
+                        border-right: 41px solid #FFF;
+                        border-top: 33px solid;
+                        height: 0;
+                        left: 0;
+                        position: absolute;
+                        top: 0;
+                        width: 0;
+                    }
+                    .hbdtci.hbdtco span {
+                        background: #FFF;
+                        display: block;
+                        height: 59px;
+                        left: 15px;
+                        position: absolute;
+                        top: -12px;
+                        transform: rotate(51deg);
+                        width: 2px;
+                    }
+                    .overlap-entry-exit {
+                        background-color: #f5c6cb !important; /* Color diferente para marcar la coincidencia */
+                        color: #721c24; /* Texto rojo */
+                    }
+                    td a {
+                        color: white;
+                        font-weight: 600;
+                        text-decoration: none;
+                    }
+                
+                </style>
+                <tbody id="hb-resa-cal-table">
+                    @foreach ($apartamentos as $apartamento)
+                        <tr style="border-bottom: 2px solid rgb(231, 231, 231)">
+                            <td colspan="2">{{ $apartamento->titulo }}</td>
+                            @for ($day = 1; $day <= $daysInMonth; $day++)
+                                @php
+                                    $fechaHoy = \Carbon\Carbon::now(); // Obtener la fecha actual
+                                    $claseDiaHoy = $day == $fechaHoy->day ? 'fondo_verde' : ''; // Agregar la clase si es el día de hoy
+                                    $reservaSalida = null; // Reservas que salen el día actual
+                                    $reservaEntrada = null; // Reservas que entran el día actual
+                                    $reservaIntermedia = null; // Para detectar días intermedios entre entrada y salida
+                                    $haySolape = false; // Variable para detectar solape
+                
+                                    // Buscar si alguna reserva sale en este día
+                                    foreach ($apartamento->reservas as $itemReserva) {
+                                        if ($itemReserva->fecha_salida->day == $day) {
+                                            $reservaSalida = $itemReserva;
+                                            if ($day == 4) {
+                                                // dd('Dia 4 en Salida: '. $reservaSalida);
+
+                                            }
+                                        }
+                                    }
+                
+                                    // Buscar si alguna reserva entra en este día
+                                    foreach ($apartamento->reservas as $itemReserva) {
+                                        if ($itemReserva->fecha_entrada->day == $day) {
+                                            $reservaEntrada = $itemReserva;
+                                        }
+                
+                                        // Detectar días intermedios entre entrada y salida
+                                        if ($itemReserva->fecha_entrada->day < $day && $itemReserva->fecha_salida->day > $day) {
+                                            $reservaIntermedia = $itemReserva;
+                                        }
+                                    }
+                
+                                    // Verificar si hay solape
+                                    if ($reservaSalida && $reservaEntrada && $reservaSalida->fecha_salida->day == $reservaEntrada->fecha_entrada->day) {
+                                        $haySolape = true;
+                                    }
+                
+                                @endphp
+                                    {{-- Segunda celda del día (para la entrada) --}}
+                                @if ($reservaEntrada)
+                                    @if ($haySolape)
+                                        @if ($reservaSalida) 
+                                            @if ($haySolape)
+                                            <td class="hbio hbdtco hbdco-new hbdtci hbdci-new {{ $claseDiaHoy }}">
+                                                <div></div>
+                                                <span></span>
+                                                {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                            </td> 
+                                            <td class="half-width {{ $claseDiaHoy }} bg-warning">
+                                                <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a>
+                                            </td>
+                                            {{-- {{dd('Reserva Salida Solape')}} --}}
+                                            @else
+
+                                                <td class="hbio hbdtco hbdco-new {{ $claseDiaHoy }}">
+                                                    <div></div>
+                                                    <span></span>
+                                                    {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                                </td>  
+                                                {{dd('Reserva Salida Sin Solape')}}
+
+                                            @endif
+                                        @endif
+                                        {{-- <td class="hbio hbdtco hbdco-new hbdtci hbdci-new">
+                                            <div></div>
+                                            <span></span>
+                                        </td>  --}}
+                                        {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                        {{-- {{dd('Reserva Entrada Solape: '. $day)}} --}}
+                                        {{-- La reserva de entrada empieza en la segunda celda porque coincide con una salida --}}
+                                        {{-- <td class="half-width {{ $claseDiaHoy }} bg-warning">
+                                            <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a>
+                                        </td> --}}
+                                    @else
+                                    
+                                        <td class="hbio hbdtco hbdco-new-ini hbdtci hbdci-new {{ $claseDiaHoy }}">
+                                            <div></div>
+                                            <span></span>
+                                            {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                        </td>  
+                                        <td class="half-width {{ $claseDiaHoy }} bg-warning">
+                                            <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a>
+                                        </td>
+                                        {{-- {{dd('Reserva Entrada Sin Solape')}} --}}
+                                    @endif
+                                @elseif ($reservaSalida) 
+                                    @if ($haySolape)
+                                        {{dd('Reserva Salida Solape')}}
+                                        <td class="hbio hbdtco hbdco-new hbdtci hbdci-new {{ $claseDiaHoy }}">
+                                            <div></div>
+                                            <span></span>
+                                            {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                        </td>  
+                                    @else
+
+                                        <td class="hbio hbdtco hbdco-new {{ $claseDiaHoy }}">
+                                            <div></div>
+                                            <span></span>
+                                            {{-- <a href="#modalReserva{{ $reservaEntrada->id }}" data-bs-toggle="modal">{{ $reservaEntrada->id }}</a> --}}
+                                        </td>  
+                                        {{-- {{dd('Reserva Salida Sin Solape')}} --}}
+                                        <td class="half-width {{ $claseDiaHoy }}"></td>
+
+                                    @endif
+
+                                @elseif ($reservaIntermedia)
+                                    {{-- {{dd($reservaSalida)}}
+                                    {{dd('Reserva Intermedia en Salida: '. $day)}} --}}
+
+                                    <td class="half-width {{ $claseDiaHoy }} bg-warning">
+                                        <a href="#modalReserva{{ $reservaIntermedia->id }}" data-bs-toggle="modal">{{ $reservaIntermedia->id }}</a>
+                                    </td>
+                                    <td class="half-width {{ $claseDiaHoy }} bg-warning"></td>
+                                @else     
+                                    <td class="half-width {{ $claseDiaHoy }}"></td>
+                                    <td class="half-width {{ $claseDiaHoy }}"></td>
+
+                                @endif
+                              
+                
+                            @endfor
+                        </tr>
+                    @endforeach
                 </tbody>
+                
+                
             </table>
         </div>
-
+          
         {{-- Modal para crear nueva reserva --}}
         <div class="modal fade" id="modalCrearReserva" tabindex="-1" aria-labelledby="modalCrearReservaLabel" aria-hidden="true">
             <div class="modal-dialog">

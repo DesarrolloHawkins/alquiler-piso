@@ -28,7 +28,8 @@ class Photo extends Model
         'descripcion',
         'url',
         'cliente_id',
-        'reserva_id'
+        'reserva_id',
+        'requirement_id'
         
     ];
 
@@ -41,9 +42,23 @@ class Photo extends Model
         'created_at', 'updated_at', 'deleted_at', 
     ];
 
+
     public function categoria()
     {
         return $this->belongsTo(\App\Models\PhotoCategoria::class,'photo_categoria_id');
     }
+
+    // Define la relación con ApartamentoLimpieza
+    public function apartamentoLimpieza()
+    {
+        return $this->belongsTo(ApartamentoLimpieza::class, 'limpieza_id');
+    }
+
+    // Modelo Photo
+    public function checklistRequirement()
+    {
+        return $this->belongsTo(ChecklistPhotoRequirement::class, 'requirement_id'); // Asumiendo que el modelo relacionado es ChecklistRequirement
+    }
+
 
 }

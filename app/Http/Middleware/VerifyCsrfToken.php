@@ -39,6 +39,7 @@ class VerifyCsrfToken extends Middleware
         '/avisar-tecnico',
         '/avisar-limpieza',
         '/channex',
-        '/channex/property'
+        '/channex/property',
+        '/webhook-handler'
     ];
 }
