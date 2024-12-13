@@ -46,7 +46,7 @@ class WebhookController extends Controller
         $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
 
         Log::info("Procesando evento ARI para la propiedad {$propertyId}", $data);
-        Storage::disk('publico')->put("accepted-reservation{$fecha}.txt", json_encode($data->all()));
+        Storage::disk('publico')->put("accepted-reservation{$fecha}.txt", json_encode($data));
 
         // Lógica para manejar los cambios en ARI
     }
