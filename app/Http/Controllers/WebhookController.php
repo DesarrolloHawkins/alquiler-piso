@@ -24,13 +24,13 @@ class WebhookController extends Controller
         // Procesa el evento según el tipo
         switch ($validated['event']) {
             case 'ari':
-                $this->processAriEvent($validated['property_id'], $validated['data']);
+                $this->processAriEvent($validated['property_id'], $validated['payload']);
                 break;
             case 'booking':
-                $this->processBookingEvent($validated['property_id'], $validated['data']);
+                $this->processBookingEvent($validated['property_id'], $validated['payload']);
                 break;
             case 'booking_unmapped_room':
-                $this->processUnmappedRoomEvent($validated['property_id'], $validated['data']);
+                $this->processUnmappedRoomEvent($validated['property_id'], $validated['payload']);
                 break;
             default:
                 Log::warning("Evento desconocido recibido: {$validated['event']}");
