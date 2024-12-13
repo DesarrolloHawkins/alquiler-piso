@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
 use App\Models\Reserva;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class WebhookController extends Controller
 {
@@ -41,7 +43,11 @@ class WebhookController extends Controller
 
     private function processAriEvent($propertyId, $data)
     {
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
+
         Log::info("Procesando evento ARI para la propiedad {$propertyId}", $data);
+        Storage::disk('publico')->put("accepted-reservation{$fecha}.txt", json_encode($data->all()));
+
         // Lógica para manejar los cambios en ARI
     }
 
