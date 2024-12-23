@@ -137,6 +137,42 @@
                     </div>
 
                 </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+
+                    <div class="row p-3">
+                        <div class="col-8">
+                            <h4 class="text-start mb-0 fs-5">Ingresos</h4>
+                        </div>
+                        <div class="col-4">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+
+                    <div class="row p-3">
+                        <div class="col-8">
+                            <h4 class="text-start mb-0 fs-5">Gastos</h4>
+                        </div>
+                        <div class="col-4">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastos, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+
+                    <div class="row p-3">
+                        <div class="col-8">
+                            <h4 class="text-start mb-0 fs-5">Beneficio</h4>
+                        </div>
+                        <div class="col-4">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
         {{-- <div class="col-md-3">
