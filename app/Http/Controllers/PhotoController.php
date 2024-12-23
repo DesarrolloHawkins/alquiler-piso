@@ -7,10 +7,26 @@ use App\Models\Photo;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PhotoController extends Controller
 {
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|max:2048', // Máximo 2MB
+        ]);
+
+        // Subir la imagen al almacenamiento local o externo (e.g., AWS S3)
+        $path = $request->file('file')->store('photos', 'public');
+
+        // Generar la URL pública
+        $url = Storage::url($path);
+
+        return response()->json(['url' => $url], 200);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -68,18 +84,18 @@ class PhotoController extends Controller
             case 'image_desague':
                 return 12;
                 break;
-            
+
             default:
                 return null;
                 break;
         }
-    }   
+    }
 
     public function actualizarDormitorio($id) {
         $limpiezaBano = ApartamentoLimpieza::where('id', $id)->first();
         $limpiezaBano->dormitorio_photo = true;
         $limpiezaBano->save();
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'Guardado con correctamente',
@@ -94,7 +110,7 @@ class PhotoController extends Controller
     public function dormitorioStore($id, Request $request)
     {
         $randomPrefix = Str::random(10);
-        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();  
+        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();
         $request->image->move(public_path('images'), $imageName);
 
         $imageUrl = 'images/' . $imageName;
@@ -153,7 +169,7 @@ class PhotoController extends Controller
     {
 
         $randomPrefix = Str::random(10);
-        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();  
+        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();
         $request->image->move(public_path('images'), $imageName);
 
         $imageUrl = 'images/' . $imageName;
@@ -191,7 +207,7 @@ class PhotoController extends Controller
 
         if ($request->image_general) {
             $randomPrefix = Str::random(10);
-            $imageName = $randomPrefix . '_' . time() . '.' . $request->image_general->getClientOriginalExtension();  
+            $imageName = $randomPrefix . '_' . time() . '.' . $request->image_general->getClientOriginalExtension();
             $request->image_general->move(public_path('images'), $imageName);
 
             $imageUrl = 'images/' . $imageName;
@@ -223,7 +239,7 @@ class PhotoController extends Controller
 
         if ($request->image_sofa) {
             $randomPrefix = Str::random(10);
-            $imageNameSofa = $randomPrefix . '_' . time() . '.' . $request->image_sofa->getClientOriginalExtension();  
+            $imageNameSofa = $randomPrefix . '_' . time() . '.' . $request->image_sofa->getClientOriginalExtension();
             $request->image_sofa->move(public_path('images'), $imageNameSofa);
 
             $imageUrlSofa = 'images/' . $imageNameSofa;
@@ -299,7 +315,7 @@ class PhotoController extends Controller
     {
 
         $randomPrefix = Str::random(10);
-        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();  
+        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();
         $request->image->move(public_path('images'), $imageName);
 
         $imageUrl = 'images/' . $imageName;
@@ -371,9 +387,9 @@ class PhotoController extends Controller
      */
     public function banioStore($id, Request $request)
     {
-        
+
         $randomPrefix = Str::random(10);
-        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();  
+        $imageName = $randomPrefix . '_' . time() . '.' . $request->image->getClientOriginalExtension();
         $request->image->move(public_path('images'), $imageName);
 
         $imageUrl = 'images/' . $imageName;
@@ -420,5 +436,5 @@ class PhotoController extends Controller
         ]);
         //return redirect()->route('gestion.edit', $id);
     }
-    
+
 }

@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('rate_plans', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->foreignId('property_id')->constrained('apartamentos')->onDelete('cascade');
-            $table->foreignId('room_type_id')->nullable()->constrained('room_types')->onDelete('cascade');
+            $table->unsignedBigInteger('property_id');
+            $table->unsignedBigInteger('room_type_id')->nullable();
             $table->string('tax_set_id')->nullable();
             $table->string('parent_rate_plan_id')->nullable();
-            $table->decimal('children_fee', 10, 2)->default(0);
-            $table->decimal('infant_fee', 10, 2)->default(0);
+            $table->decimal('children_fee', 8, 2)->default(0.00);
+            $table->decimal('infant_fee', 8, 2)->default(0.00);
             $table->json('max_stay')->nullable();
             $table->json('min_stay_arrival')->nullable();
             $table->json('min_stay_through')->nullable();
@@ -27,12 +27,16 @@ return new class extends Migration
             $table->json('closed_to_departure')->nullable();
             $table->json('stop_sell')->nullable();
             $table->json('options')->nullable();
-            $table->string('currency', 3);
+            $table->string('currency');
             $table->string('sell_mode');
             $table->string('rate_mode');
-            $table->string('id_channex')->nullable(); // ID devuelto por Channex
+            $table->string('id_channex');
             $table->timestamps();
+
+            $table->foreign('property_id')->references('id')->on('apartamentos')->onDelete('cascade');
+            $table->foreign('room_type_id')->references('id')->on('room_types')->onDelete('set null');
         });
+
     }
     /**
      * Reverse the migrations.

@@ -24,7 +24,7 @@ class DiarioCajaController extends Controller
 {
     protected $sumatoria = 0;
     protected $saldoArray = [];
-    
+
     /**
      * Mostrar la lista de contactos
      *
@@ -63,66 +63,131 @@ class DiarioCajaController extends Controller
 //     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial'));
 // }
 
+    // public function index(Request $request)
+    // {
+    //     // Recuperar el saldo inicial de la base de datos
+    //     $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+    //     $saldoInicial = $anio->saldo_inicial;
+
+    //     // Inicializar la consulta
+    //     $query = DiarioCaja::query();
+
+    //     // Filtros
+    //     if ($request->filled('start_date')) {
+    //         $query->where('date', '>=', $request->start_date);
+    //     }
+
+    //     if ($request->filled('end_date')) {
+    //         $query->where('date', '<=', $request->end_date);
+    //     }
+
+    //     if ($request->filled('estado_id')) {
+    //         $query->where('estado_id', $request->estado_id);
+    //     }
+
+    //     if ($request->filled('cuenta_id')) {
+    //         $query->where('cuenta_id', $request->cuenta_id);
+    //     }
+
+    //     if ($request->filled('concepto')) {
+    //         $query->where('concepto', 'like', '%' . $request->concepto . '%');
+    //     }
+
+    //     // Obtener todas las entradas del diario de caja filtradas
+    //     $response = $query->get();
+
+    //     // Inicializar el saldo acumulado con el saldo inicial
+    //     $saldoAcumulado = $saldoInicial;
+
+    //     // Recorrer todas las líneas del diario y calcular el saldo
+    //     foreach ($response as $linea) {
+    //         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+    //         $debe = abs($linea->debe);
+    //         $haber = abs($linea->haber);
+
+    //         if ($debe > 0) {
+    //             $saldoAcumulado -= $debe;
+    //         }
+
+    //         if ($haber > 0) {
+    //             $saldoAcumulado += $haber;
+    //         }
+
+    //         // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+    //         $linea->saldo = $saldoAcumulado;
+    //     }
+
+    //     // Recuperar los estados y cuentas para los filtros
+    //     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
+    //     $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
+
+    //     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
+    // }
+
     public function index(Request $request)
-    {
-        // Recuperar el saldo inicial de la base de datos
-        $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
-        $saldoInicial = $anio->saldo_inicial;
+{
+    // Recuperar el saldo inicial de la base de datos
+    $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
+    $saldoInicial = $anio->saldo_inicial;
 
-        // Inicializar la consulta
-        $query = DiarioCaja::query();
+    // Inicializar la consulta
+    $query = DiarioCaja::query();
 
-        // Filtros
-        if ($request->filled('start_date')) {
-            $query->where('date', '>=', $request->start_date);
-        }
-
-        if ($request->filled('end_date')) {
-            $query->where('date', '<=', $request->end_date);
-        }
-
-        if ($request->filled('estado_id')) {
-            $query->where('estado_id', $request->estado_id);
-        }
-
-        if ($request->filled('cuenta_id')) {
-            $query->where('cuenta_id', $request->cuenta_id);
-        }
-
-        if ($request->filled('concepto')) {
-            $query->where('concepto', 'like', '%' . $request->concepto . '%');
-        }
-
-        // Obtener todas las entradas del diario de caja filtradas
-        $response = $query->get();
-
-        // Inicializar el saldo acumulado con el saldo inicial
-        $saldoAcumulado = $saldoInicial;
-
-        // Recorrer todas las líneas del diario y calcular el saldo
-        foreach ($response as $linea) {
-            // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
-            $debe = abs($linea->debe);
-            $haber = abs($linea->haber);
-
-            if ($debe > 0) {
-                $saldoAcumulado -= $debe;
-            }
-
-            if ($haber > 0) {
-                $saldoAcumulado += $haber;
-            }
-
-            // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
-            $linea->saldo = $saldoAcumulado;
-        }
-
-        // Recuperar los estados y cuentas para los filtros
-        $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
-        $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
-
-        return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
+    // Filtros
+    if ($request->filled('start_date')) {
+        $query->where('date', '>=', $request->start_date);
     }
+
+    if ($request->filled('end_date')) {
+        $query->where('date', '<=', $request->end_date);
+    }
+
+    if ($request->filled('estado_id')) {
+        $query->where('estado_id', $request->estado_id);
+    }
+
+    if ($request->filled('cuenta_id')) {
+        $query->where('cuenta_id', $request->cuenta_id);
+    }
+
+    if ($request->filled('concepto')) {
+        $query->where('concepto', 'like', '%' . $request->concepto . '%');
+    }
+
+    // Ordenar los resultados por fecha ascendente para calcular el saldo inicial correctamente
+    $entries = $query->orderBy('id', 'asc')->get();
+
+    // Inicializar el saldo acumulado con el saldo inicial
+    $saldoAcumulado = $saldoInicial;
+
+    // Recorrer todas las líneas del diario y calcular el saldo
+    foreach ($entries as $linea) {
+        // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+        $debe = abs($linea->debe);
+        $haber = abs($linea->haber);
+
+        if ($debe > 0) {
+            $saldoAcumulado -= $debe;
+        }
+
+        if ($haber > 0) {
+            $saldoAcumulado += $haber;
+        }
+
+        // Añadir el saldo acumulado a cada línea
+        $linea->saldo = $saldoAcumulado;
+    }
+
+    // Reordenar los resultados en orden descendente por fecha para la vista
+    $response = $entries->sortByDesc('id');
+
+    // Recuperar los estados y cuentas para los filtros
+    $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
+    $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
+
+    return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
+}
+
 
 
     /**
@@ -213,7 +278,7 @@ class DiarioCajaController extends Controller
     public function destroyDiarioCaja($id)
     {
         $diario = DiarioCaja::findOrFail($id);
-    
+
         // Verificar si hay un ingreso relacionado
         if ($diario->ingreso_id) {
             $ingreso = Ingresos::find($diario->ingreso_id);
@@ -221,7 +286,7 @@ class DiarioCajaController extends Controller
                 $ingreso->delete();
             }
         }
-    
+
         // Verificar si hay un gasto relacionado
         if ($diario->gasto_id) {
             $gasto = Gastos::find($diario->gasto_id);
@@ -229,13 +294,13 @@ class DiarioCajaController extends Controller
                 $gasto->delete();
             }
         }
-    
+
         // Eliminar la línea del Diario de Caja
         $diario->delete();
-    
+
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Registro del Diario de Caja eliminado con éxito.');
     }
-    
+
     /**
      *  Mostrar el formulario de creación de Gasto
      *
@@ -421,7 +486,7 @@ class DiarioCajaController extends Controller
             'haber.required' => 'El campo importe es obligatorio.',
             'haber.numeric' => 'El importe debe ser un número.',
         ];
-    
+
         $rules = [
             'cuenta_id' => 'required',
             'estado_id' => 'required',
@@ -430,8 +495,8 @@ class DiarioCajaController extends Controller
             'haber' => 'required|numeric',
             'estado_id' => 'required'
         ];
-        
-    
+
+
         $validatedData = $request->validate($rules, $messages);
 
         $crearIngreso = DiarioCaja::create([
@@ -446,7 +511,7 @@ class DiarioCajaController extends Controller
 
 
         Alert::success('Guardado con Exito', 'Ingreso añadido correctamente');
-        
+
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Cliente creado con éxito!');
 
     }
@@ -468,7 +533,7 @@ class DiarioCajaController extends Controller
             'debe.required' => 'El campo importe es obligatorio.',
             'debe.numeric' => 'El importe debe ser un número.',
         ];
-    
+
         $rules = [
             'cuenta_id' => 'required',
             'estado_id' => 'required',
@@ -477,8 +542,8 @@ class DiarioCajaController extends Controller
             'debe' => 'required|numeric',
             'estado_id' => 'required'
         ];
-        
-    
+
+
         $validatedData = $request->validate($rules, $messages);
 
         $crearIngreso = DiarioCaja::create([
@@ -493,7 +558,7 @@ class DiarioCajaController extends Controller
 
 
         Alert::success('Guardado con Exito', 'Gasto añadido correctamente');
-        
+
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Cliente creado con éxito!');
     }
 
@@ -552,7 +617,7 @@ class DiarioCajaController extends Controller
 
          return AjaxForm::custom([
             'message' => $validator->errors()->all(),
-         ])->jsonResponse();    
+         ])->jsonResponse();
 
     }
 
@@ -650,7 +715,7 @@ class DiarioCajaController extends Controller
         return view('admin.contabilidad.mayor.index', compact('response','invoice','grupos','responses'));
 
     }
-    
+
     /**
      * Borrar contacto
      *
@@ -708,14 +773,14 @@ class DiarioCajaController extends Controller
                 //         if ($diario->debe != null) {
                 //             return number_format($diario->debe, 2, '.', '') . ' €';
                 //         }
-                //     } 
+                //     }
                 // )
                 // ->editColumn('haber', function($diario){
                 //     if ($diario->haber != null) {
                 //         return number_format($diario->haber, 2, '.', '') . ' €';
                 //     }
-                // } 
-                // )  
+                // }
+                // )
                 ->addColumn('action', function ($diario) {
                     return '<a href="/admin/caja-diaria/'.$diario->id.'/edit" class="btn btn-xs btn-primary"><i class="fas fa-pencil-alt"></i> Editar</a>';
                 })

@@ -45,7 +45,7 @@
             <div class="container-fluid h-100">
                 <div class="row h-100">
                     <!-- Sidebar -->
-                    <div class="col-auto bg-light sidebar p-3"
+                    <div id="sidebar" class="col-auto bg-light sidebar p-3"
                         style="height: 90vh; max-width: 300px; overflow: hidden; background-color: #0F1739 !important; margin: 20px 0 20px 20px; border-radius: 20px;">
                         <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
                             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
@@ -73,11 +73,38 @@
                                 <li class="nav-item w-100">
                                     <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
                                     <button data-info="button" data-bs-target="#submenuChannex" href="#submenuChannex" class="nav-link fs-5 w-100 text-start {{ request()->is('channex', 'channex/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('channex', 'channex/*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-table me-2 fs-4" style="width:25px"></i>
+                                        <img src="/icono-channex.png" alt="" style="width: 25px; margin-right:5px">
+                                        {{-- <i class="fa-solid fa-table me-2 fs-4" style="width:25px"></i> --}}
                                         Channex
                                     </button>
                                     <!-- Submenú para Channex, modificado para mostrar/ocultar basado en la ruta -->
                                     <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('channex*') ? 'show' : '' }}" id="submenuChannex">
+                                        <li class="nav-item">
+                                            <a href="{{ route('channex.ratePlans.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.ratePlans.index') ? 'active' : '' }}">
+                                                Rate Plans
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('channex.roomTypes.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.roomTypes.index') ? 'active' : '' }}">
+                                                Room Types
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('channex.propiedad.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.propiedad.index') ? 'active' : '' }}">
+                                            Property
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('ari.index') }}" class="nav-link fs-6 {{ request()->routeIs('ari.index') ? 'active' : '' }}">
+                                            Update Rate & Availability
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('channex.channel.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.channel.index') ? 'active' : '' }}">
+                                            Channel
+                                            </a>
+                                        </li>
+
                                         <li class="nav-item">
                                             <a href="{{ route('admin.channex.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('admin.channex.fullSync') ? 'active' : '' }}">
                                                 Full Sync
@@ -324,6 +351,17 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Fondo de Sidebar Active --}}
+                    <div id="fondoActiveSidebar" class="fondo-active-sidebar hidden">
+
+                    </div>
+                    <!-- Botón de toggle para dispositivos pequeños -->
+                    <div class="d-md-none p-3" style="position: absolute;z-index: 850;right: 0;bottom: 0;text-align: right;">
+                        <button class="btn btn-primary" id="toggleSidebar" style="border-radius: 50%;height: 75px;width: 75px;">
+                            <i class="fa-solid fa-bars" style="font-size: 28px;"></i>
+                        </button>
+                    </div>
                     {{-- Content --}}
                     <div class="col p-4 contenedor-principal">
                         <div class="nav-top">
@@ -339,7 +377,60 @@
             </div> <!-- container-fluid -->
         </div> <!-- END APP -->
 
+        <style>
+            /* Sidebar animado */
+           /* Sidebar por defecto (visible en pantallas grandes) */
+            #sidebar {
+                transform: translateX(0); /* Visible por defecto */
+                position: relative;
+                z-index: 800;
+                transition: transform 0.3s ease-in-out;
+            }
 
+            /* Sidebar visible */
+            #sidebar.active {
+                transform: translateX(0);
+            }
+
+            /* Fondo de overlay */
+            .fondo-active-sidebar {
+                background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro con opacidad */
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 700;
+                display: none; /* Oculto por defecto */
+                opacity: 0; /* Transparente */
+                transition: opacity 0.3s ease-in-out; /* Transición de opacidad */
+            }
+
+            /* Fondo visible */
+            .fondo-active-sidebar.show {
+                display: block; /* Mostrar el fondo */
+                opacity: 1; /* Totalmente visible */
+            }
+
+
+            /* Ocultar sidebar en dispositivos pequeños */
+            @media (max-width: 768px) {
+                #sidebar {
+                    transform: translateX(-115%); /* Escondido por defecto */
+                    position: absolute;
+                    z-index: 800;
+                }
+                .contenedor-principal {
+                    margin-top: 40px
+                }
+            }
+
+            /* Mostrar el sidebar cuando está activo */
+            /* #sidebar.active {
+                transform: translateX(0);
+            } */
+
+        </style>
         {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
 
         {{-- Scripts --}}
@@ -375,6 +466,27 @@
             document.addEventListener('mousemove', resetSessionTimer);
             document.addEventListener('keypress', resetSessionTimer);
             document.addEventListener('click', resetSessionTimer);
+
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const toggleSidebarButton = document.getElementById('toggleSidebar');
+                const sidebar = document.getElementById('sidebar');
+                const fondo = document.getElementById('fondoActiveSidebar');
+
+                // Mostrar/Ocultar Sidebar y Fondo
+                toggleSidebarButton.addEventListener('click', function () {
+                    sidebar.classList.toggle('active'); // Alternar clase para mostrar/ocultar el sidebar
+                    fondo.classList.toggle('show'); // Alternar clase para fade del fondo
+                });
+
+                // Cerrar sidebar al hacer clic en el fondo
+                fondo.addEventListener('click', function () {
+                    sidebar.classList.remove('active');
+                    fondo.classList.remove('show');
+                });
+            });
+
+
         </script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {

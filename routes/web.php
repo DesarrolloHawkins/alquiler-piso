@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\RatePlanController;
 use App\Http\Controllers\RateUpdateController;
 use App\Http\Controllers\RoomTypeController;
+use App\Http\Controllers\ARIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -488,6 +489,12 @@ Route::get('/channex/room-types/destroy', [App\Http\Controllers\RoomTypeControll
 //Route::resource('/channex/room-types', RoomTypeController::class);
 
 Route::get('/channex/channel', [App\Http\Controllers\ChannelController::class, 'index'])->name('channex.channel.index');
+
+
+Route::get('/channex/ari', [ARIController::class, 'index'])->name('ari.index');
+Route::post('/channex/ari/update-rates', [ARIController::class, 'update'])->name('ari.updateRates');
+Route::get('/channex/ari/room-types/{property_id}', [ARIController::class, 'getByProperty']);
+Route::get('/channex/rate-plans/{propertyId}/{roomTypeId}', [ARIController::class, 'getRatePlans']);
 
 // Webhooks
 Route::post('/channex', [App\Http\Controllers\ChannexController::class, 'webhook'])->name('channex.webhook');

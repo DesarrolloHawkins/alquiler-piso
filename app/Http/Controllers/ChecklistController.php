@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Checklist;
+use App\Models\ChecklistPhotoRequirement;
 use App\Models\Edificio;
 
 class ChecklistController extends Controller
@@ -26,10 +27,22 @@ class ChecklistController extends Controller
             'nombre' => 'required',
             'edificio_id' => 'required',
         ]);
-
-        Checklist::create($request->all());
-
-        return redirect()->route('admin.checklists.index')->with('success', 'Categoria creado con éxito.');
+    
+        $checklist = Checklist::create($request->all());
+    
+        // Guardar requisitos de fotos
+        if ($request->has('photo_names')) {
+            foreach ($request->photo_names as $index => $name) {
+                ChecklistPhotoRequirement::create([
+                    'checklist_id' => $checklist->id,
+                    'nombre' => $name,
+                    'descripcion' => $request->photo_descriptions[$index] ?? null,
+                    'cantidad' => $request->photo_quantities[$index] ?? 1,
+                ]);
+            }
+        }
+    
+        return redirect()->route('admin.checklists.index')->with('success', 'Categoria creada con éxito.');
     }
 
     public function edit($id)
@@ -46,11 +59,25 @@ class ChecklistController extends Controller
             'nombre' => 'required',
             'edificio_id' => 'required',
         ]);
-
+    
         $checklist = Checklist::findOrFail($id);
         $checklist->update($request->all());
-
-        return redirect()->route('admin.checklists.index')->with('success', 'Categoria actualizado con éxito.');
+    
+        // Actualizar requisitos de fotos
+        ChecklistPhotoRequirement::where('checklist_id', $checklist->id)->delete();
+    
+        if ($request->has('photo_names')) {
+            foreach ($request->photo_names as $index => $name) {
+                ChecklistPhotoRequirement::create([
+                    'checklist_id' => $checklist->id,
+                    'nombre' => $name,
+                    'descripcion' => $request->photo_descriptions[$index] ?? null,
+                    'cantidad' => $request->photo_quantities[$index] ?? 1,
+                ]);
+            }
+        }
+    
+        return redirect()->route('admin.checklists.index')->with('success', 'Categoria actualizada con éxito.');
     }
 
     public function destroy($id)

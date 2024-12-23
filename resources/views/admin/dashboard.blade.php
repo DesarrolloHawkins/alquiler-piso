@@ -74,35 +74,68 @@
                </div>
             </form> --}}
             <div class="row">
-                <div class="col-xl-4 col-md-6 card rounded-2">
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                    <div class="row p-3">
+                        <div class="col-7">
+                            <h4 class="text-start mb-0 fs-5">Total de Reservas</h4>
+                        </div>
+                        <div class="col-5">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ $countReservas }}</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                    <div class="row p-3">
+                        <div class="col-7">
+                            <h4 class="text-start mb-0 fs-5">Ocupacción</h4>
+                        </div>
+                        <div class="col-5">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ $porcentajeOcupacion }} %</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                    <div class="row p-3">
+                        <div class="col-5">
+                            <h4 class="text-start mb-0 fs-5">Previsión</h4>
+                        </div>
+                        <div class="col-7">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                    <div class="row p-3">
+                        <div class="col-5">
+                            <h4 class="text-start mb-0 fs-5">Cobrado</h4>
+                        </div>
+                        <div class="col-7">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                    <div class="row p-3">
+                        <div class="col-7">
+                            <h4 class="text-start mb-0 fs-5">Ocupación Disponibles</h4>
+                        </div>
+                        <div class="col-5">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ $totalNochesPosibles }}</strong></h2>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+
                     <div class="row p-3">
                         <div class="col-8">
-                            <h4 class="text-start mb-0">Total de Reservas</h4>
+                            <h4 class="text-start mb-0 fs-5">Ocupación</h4>
                         </div>
                         <div class="col-4">
-                            <h2 class="text-center mb-0"><strong>{{ $countReservas }}</strong></h2>
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ $nochesOcupadas }}</strong></h2>
                         </div>
                     </div>
-                </div>
-                <div class="col-xl-4 col-md-6 card rounded-2">
-                    <div class="row p-3">
-                        <div class="col-5">
-                            <h4 class="text-start mb-0">Total en €</h4>
-                        </div>
-                        <div class="col-7">
-                            <h2 class="text-center mb-0"><strong>{{ number_format($sumPrecio, 2) }} €</strong></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-md-6 card rounded-2">
-                    <div class="row p-3">
-                        <div class="col-5">
-                            <h4 class="text-start mb-0">Cobrado</h4>
-                        </div>
-                        <div class="col-7">
-                            <h2 class="text-center mb-0"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>

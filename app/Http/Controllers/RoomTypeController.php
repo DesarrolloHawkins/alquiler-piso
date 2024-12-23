@@ -12,6 +12,9 @@ class RoomTypeController extends Controller
     private $apiUrl = 'https://staging.channex.io/api/v1';
     private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
 
+
+
+
     public function index()
     {
         $roomTypes = RoomType::with('property')->get();
