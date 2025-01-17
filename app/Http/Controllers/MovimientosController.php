@@ -43,25 +43,44 @@ class MovimientosController extends Controller
         $fileContent = file_get_contents($filePath);
         $fileBase64 = base64_encode($fileContent);
 
+        $data = Excel::toArray([], $file);
+        $rows = $data[0];
+
+
+        // Procesar el archivo para obtener solo datos relevantes
+        $header = array_map('strtolower', $rows[6]);
+        $indexFechaOperacion = array_search('fecha operación', $header);
+        $indexFechaValor = array_search('fecha valor', $header);
+        $indexConcepto = array_search('concepto', $header);
+        $indexImporte = array_search('importe', $header);
+
+
+        $movimientos = [];
+
+
+        foreach (array_slice($rows, 7) as $row) {
+            if (!isset($row[$indexFechaOperacion], $row[$indexImporte])) continue;
+
+            $movimientos[] = [
+                'fecha_operacion' => $row[$indexFechaOperacion],
+                'fecha_valor' => $row[$indexFechaValor] ?? null,
+                'concepto' => $row[$indexConcepto] ?? '',
+                'importe' => (float) str_replace(',', '.', $row[$indexImporte]),
+                'tipo' => $row[$indexImporte] > 0 ? 'Ingreso' : 'Gasto'
+            ];
+        }
 
         $prompt = '
-        "Necesito procesar un archivo de Excel con movimientos bancarios y devolver la información en un formato JSON. El archivo contiene las columnas Fecha Operación, Fecha Valor, Concepto e Importe. A continuación, los pasos que el programa debe seguir:
-        Cargar el archivo Excel desde el usuario.
-        Identificar las columnas mencionadas, incluso si los encabezados no son exactamente iguales (debería ser capaz de adaptarse a ligeros cambios de texto).
-        Convertir las fechas a un formato estándar ISO 8601 (YYYY-MM-DD).
-        Convertir el importe a formato numérico, respetando el uso de decimales y separadores europeos (puntos o comas).
-        Determinar si cada transacción es un ingreso o un gasto según el valor del importe (positivo para ingreso, negativo para gasto).
-        Generar un archivo JSON que contenga un arreglo de objetos con los siguientes campos para cada movimiento:
-        fecha_operacion (formato ISO 8601)
-        fecha_valor (formato ISO 8601, si está disponible)
-        concepto (descripción textual del movimiento)
-        importe (número decimal)
-        tipo (valor Ingreso o Gasto basado en el importe).
-        Debe asegurar que:
+        Eres un modelo de IA que ayuda a procesar movimientos bancarios. Te voy a proporcionar un JSON con los movimientos extraídos de un archivo Excel. Necesito que me devuelvas un JSON con el mismo formato, pero asegúrate de:
+        1. Convertir las fechas al formato ISO 8601 (YYYY-MM-DD).
+        2. Asegurar que el campo "importe" sea un número decimal válido.
+        3. Identificar si cada movimiento es un "Ingreso" o un "Gasto" basándote en el valor del importe.
+        4. Asegúrate de mantener la codificación UTF-8 para todos los caracteres especiales.
 
-        Los caracteres especiales (acentos, ñ, etc.) sean correctamente representados en el archivo JSON.
-        La salida sea un archivo JSON válido con codificación UTF-8.
+        Aquí está el JSON de entrada con los movimientos bancarios:
+        ' . json_encode($fileBase64, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '
         ';
+
 
         // Configuración de la solicitud a OpenAI
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
