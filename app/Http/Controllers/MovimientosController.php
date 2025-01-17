@@ -25,13 +25,14 @@ class MovimientosController extends Controller
     }
 
     public function uploadExcel(Request $request){
-        return response()->json([
-            'status' => 'success',
-            'data' => 'ok'
-        ]);
+        // return response()->json([
+        //     'status' => 'success',
+        //     'data' => 'ok'
+        // ]);
         // Validación del archivo Excel
         $request->validate([
-            'file' => 'required|mimes:xlsx'
+            'file' => 'required'
+            // 'file' => 'required|mimes:xlsx'
         ]);
         // Devolver la respuesta decodificada
         return response()->json([
