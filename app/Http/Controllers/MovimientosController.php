@@ -34,11 +34,7 @@ class MovimientosController extends Controller
             'file' => 'required'
             // 'file' => 'required|mimes:xlsx'
         ]);
-        // Devolver la respuesta decodificada
-        return response()->json([
-            'status' => 'success',
-            'data' => 'ok'
-        ]);
+
 
 
         // Cargar el archivo Excel del request
