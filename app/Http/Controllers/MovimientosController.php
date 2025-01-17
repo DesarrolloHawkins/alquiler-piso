@@ -103,6 +103,8 @@ class MovimientosController extends Controller
 
         // Decodificar y guardar la respuesta
         $responses[] = json_decode($response, true);
+        return response()->json(['status' => 'success', 'data' => json_decode($response, true)]);
+
     }
 
     // Combinar las respuestas en un solo JSON
