@@ -33,7 +33,7 @@ class MovimientosController extends Controller
         // Devolver la respuesta decodificada
         return response()->json([
             'status' => 'success',
-            'data' => $request->all();
+            'data' => $request->all()
         ]);
 
 
