@@ -24,65 +24,62 @@ class MovimientosController extends Controller
         return view('admin.movimientos.uploadBooking');
     }
 
-    public function uploadExcel(Request $request){
-        // return response()->json([
-        //     'status' => 'success',
-        //     'data' => 'ok'
-        // ]);
-        // Validación del archivo Excel
-        $request->validate([
-            'file' => 'required'
-            // 'file' => 'required|mimes:xlsx'
-        ]);
+    public function uploadExcel(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx'
+    ]);
 
+    // Cargar el archivo Excel y extraer datos relevantes
+    $file = $request->file('file');
+    $data = Excel::toArray([], $file);
+    $rows = $data[0];
 
+    // Procesar el archivo para obtener solo datos relevantes
+    $header = array_map('strtolower', $rows[6]);
+    $indexFechaOperacion = array_search('fecha operación', $header);
+    $indexFechaValor = array_search('fecha valor', $header);
+    $indexConcepto = array_search('concepto', $header);
+    $indexImporte = array_search('importe', $header);
 
-        // Cargar el archivo Excel del request
-        $file = $request->file('file');
-        // $filePath = $file->getRealPath();
-        // $fileContent = file_get_contents($filePath);
-        // $fileBase64 = base64_encode($fileContent);
+    $movimientos = [];
+    foreach (array_slice($rows, 7) as $row) {
+        if (!isset($row[$indexFechaOperacion], $row[$indexImporte])) continue;
 
-        $data = Excel::toArray([], $file);
-        $rows = $data[0];
+        $movimientos[] = [
+            'fecha_operacion' => $row[$indexFechaOperacion],
+            'fecha_valor' => $row[$indexFechaValor] ?? null,
+            'concepto' => $row[$indexConcepto] ?? '',
+            'importe' => (float) str_replace(',', '.', $row[$indexImporte]),
+            'tipo' => $row[$indexImporte] > 0 ? 'Ingreso' : 'Gasto'
+        ];
+    }
 
+    // Dividir los movimientos en bloques de 100
+    $chunks = array_chunk($movimientos, 100);
+    $responses = [];
 
-        // Procesar el archivo para obtener solo datos relevantes
-        $header = array_map('strtolower', $rows[6]);
-        $indexFechaOperacion = array_search('fecha operación', $header);
-        $indexFechaValor = array_search('fecha valor', $header);
-        $indexConcepto = array_search('concepto', $header);
-        $indexImporte = array_search('importe', $header);
-
-
-        $movimientos = [];
-
-
-        foreach (array_slice($rows, 7) as $row) {
-            if (!isset($row[$indexFechaOperacion], $row[$indexImporte])) continue;
-
-            $movimientos[] = [
-                'fecha_operacion' => $row[$indexFechaOperacion],
-                'fecha_valor' => $row[$indexFechaValor] ?? null,
-                'concepto' => $row[$indexConcepto] ?? '',
-                'importe' => (float) str_replace(',', '.', $row[$indexImporte]),
-                'tipo' => $row[$indexImporte] > 0 ? 'Ingreso' : 'Gasto'
-            ];
-        }
-
+    foreach ($chunks as $chunk) {
         $prompt = '
-        Eres un modelo de IA que ayuda a procesar movimientos bancarios. Te voy a proporcionar un JSON con los movimientos extraídos de un archivo Excel. Necesito que me devuelvas un JSON con el mismo formato, pero asegúrate de:
-        1. Convertir las fechas al formato ISO 8601 (YYYY-MM-DD).
-        2. Asegurar que el campo "importe" sea un número decimal válido.
-        3. Identificar si cada movimiento es un "Ingreso" o un "Gasto" basándote en el valor del importe.
-        4. Asegúrate de mantener la codificación UTF-8 para todos los caracteres especiales.
-
-        Aquí está el JSON de entrada con los movimientos bancarios:
-        ' . json_encode($movimientos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '
+            Aquí tienes un bloque de movimientos bancarios en formato JSON. Por favor:
+            1. Asegúrate de que las fechas estén en formato ISO 8601 (YYYY-MM-DD).
+            2. Verifica que "importe" sea un número decimal válido.
+            3. Indica si el movimiento es un "Ingreso" o "Gasto" basándote en el importe.
+            4. Devuelve un JSON con los datos procesados.
         ';
+        $jsonInput = json_encode($chunk, JSON_UNESCAPED_UNICODE);
 
+        $data = [
+            "model" => "gpt-4",
+            "messages" => [
+                [
+                    "role" => "user",
+                    "content" => $prompt . "\n\nDatos:\n" . $jsonInput
+                ]
+            ]
+        ];
 
-        // Configuración de la solicitud a OpenAI
+        // Configuración de la solicitud cURL
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/chat/completions';
         $headers = [
@@ -90,17 +87,6 @@ class MovimientosController extends Controller
             'Content-Type: application/json'
         ];
 
-        $data = [
-            "model" => "gpt-4",
-            "messages" => [
-                [
-                    "role" => "user",
-                    "content" => $prompt
-                ]
-            ]
-        ];
-
-        // Inicializar cURL y configurar las opciones
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -108,27 +94,34 @@ class MovimientosController extends Controller
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-        // Ejecutar la solicitud y obtener la respuesta
         $response = curl_exec($curl);
         curl_close($curl);
-        dd($response);
-        // Guardar la respuesta en un archivo
-        Storage::disk('public')->put('RespuestaMovimientos.json', $response);
 
-        // Decodificar la respuesta JSON
-        $response_data = json_decode($response, true);
-
-        // Manejo de errores
-        if ($response === false || !$response_data) {
+        if ($response === false) {
             return response()->json(['status' => 'error', 'message' => 'Error al realizar la solicitud']);
         }
 
-        // Devolver la respuesta decodificada
-        return response()->json([
-            'status' => 'success',
-            'data' => $response_data
-        ]);
+        // Decodificar y guardar la respuesta
+        $responses[] = json_decode($response, true);
     }
+
+    // Combinar las respuestas en un solo JSON
+    $combinedResponses = [];
+    foreach ($responses as $response) {
+        if (isset($response['choices'][0]['message']['content'])) {
+            $parsed = json_decode($response['choices'][0]['message']['content'], true);
+            if ($parsed) {
+                $combinedResponses = array_merge($combinedResponses, $parsed);
+            }
+        }
+    }
+
+    // Guardar el JSON combinado
+    Storage::disk('public')->put('MovimientosProcesados.json', json_encode($combinedResponses, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+    return response()->json(['status' => 'success', 'data' => $combinedResponses]);
+}
+
 
     public function uploadExcel2(Request $request)
     {
