@@ -24,7 +24,7 @@ class MovimientosController extends Controller
         return view('admin.movimientos.uploadBooking');
     }
 
-    public function uploadExcel(Request $request)
+    public function uploadExcel2(Request $request)
 {
     $request->validate([
         'file' => 'required'
@@ -36,14 +36,15 @@ class MovimientosController extends Controller
     $rows = $data[0];
 
     // Procesar el archivo para obtener solo datos relevantes
-    $header = array_map('strtolower', $rows[6]);
+    $header = array_map('strtolower', $rows[7]);
     $indexFechaOperacion = array_search('fecha operación', $header);
     $indexFechaValor = array_search('fecha valor', $header);
     $indexConcepto = array_search('concepto', $header);
     $indexImporte = array_search('importe', $header);
+    //return response()->json(['status' => 'success', 'data' => $rows]);
 
     $movimientos = [];
-    foreach (array_slice($rows, 7) as $row) {
+    foreach (array_slice($rows, 8) as $row) {
         if (!isset($row[$indexFechaOperacion], $row[$indexImporte])) continue;
 
         $movimientos[] = [
@@ -58,6 +59,7 @@ class MovimientosController extends Controller
     // Dividir los movimientos en bloques de 100
     $chunks = array_chunk($movimientos, 100);
     $responses = [];
+    return response()->json(['status' => 'success', 'data' => $movimientos]);
 
     foreach ($chunks as $chunk) {
         $prompt = '
@@ -103,7 +105,6 @@ class MovimientosController extends Controller
 
         // Decodificar y guardar la respuesta
         $responses[] = json_decode($response, true);
-        return response()->json(['status' => 'success', 'data' => json_decode($response, true)]);
 
     }
 
@@ -125,7 +126,7 @@ class MovimientosController extends Controller
 }
 
 
-    public function uploadExcel2(Request $request)
+    public function uploadExcel(Request $request)
     {
         // Validación del archivo
         $request->validate([
