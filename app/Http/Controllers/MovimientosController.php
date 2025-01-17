@@ -30,7 +30,11 @@ class MovimientosController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx'
         ]);
-        dd($request->all());
+        // Devolver la respuesta decodificada
+        return response()->json([
+            'status' => 'success',
+            'data' => $request->all();
+        ]);
 
 
         // Cargar el archivo Excel del request
