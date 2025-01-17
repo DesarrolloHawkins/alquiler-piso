@@ -27,7 +27,7 @@ class MovimientosController extends Controller
     public function uploadExcel(Request $request)
 {
     $request->validate([
-        'file' => 'required|mimes:xlsx'
+        'file' => 'required'
     ]);
 
     // Cargar el archivo Excel y extraer datos relevantes
