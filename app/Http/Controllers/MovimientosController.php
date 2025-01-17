@@ -39,9 +39,9 @@ class MovimientosController extends Controller
 
         // Cargar el archivo Excel del request
         $file = $request->file('file');
-        $filePath = $file->getRealPath();
-        $fileContent = file_get_contents($filePath);
-        $fileBase64 = base64_encode($fileContent);
+        // $filePath = $file->getRealPath();
+        // $fileContent = file_get_contents($filePath);
+        // $fileBase64 = base64_encode($fileContent);
 
         $data = Excel::toArray([], $file);
         $rows = $data[0];
@@ -78,7 +78,7 @@ class MovimientosController extends Controller
         4. Asegúrate de mantener la codificación UTF-8 para todos los caracteres especiales.
 
         Aquí está el JSON de entrada con los movimientos bancarios:
-        ' . json_encode($fileBase64, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '
+        ' . json_encode($movimientos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '
         ';
 
 
@@ -90,19 +90,12 @@ class MovimientosController extends Controller
             'Content-Type: application/json'
         ];
 
-        // Construir el contenido del mensaje
         $data = [
             "model" => "gpt-4",
             "messages" => [
                 [
                     "role" => "user",
                     "content" => $prompt
-                ],
-                [
-                    "role" => "user",
-                    "content" => "Aquí tienes el archivo Excel en base64 para procesar.",
-                    "name" => "file",
-                    "content" => $fileBase64
                 ]
             ]
         ];
