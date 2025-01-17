@@ -26,10 +26,10 @@
       <div class="drop-zone" id="drop-zone">
         Arrastra y suelta tu archivo aquí, o haz clic para seleccionarlo.
       </div>
-      
+
       <!-- Input oculto para soportar clic en la zona de drop -->
       <input type="file" name="file" id="fileInput" accept=".xlsx" style="display:none;"
-    
+
     </div>
 </div>
 @endsection
@@ -87,6 +87,7 @@
       })
       .then(response => response.json())
       .then(data => {
+        console.log(data)
           if (data.message) {
               // Mostrar SweetAlert si la respuesta es exitosa
               Swal.fire({
@@ -98,6 +99,8 @@
           }
       })
       .catch(error => {
+         console.log(error)
+
           // Mostrar un error si la subida falla
           Swal.fire({
               title: 'Error!',
