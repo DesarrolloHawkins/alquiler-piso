@@ -30,12 +30,15 @@ class MovimientosController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx'
         ]);
+        dd($request->all());
+
 
         // Cargar el archivo Excel del request
         $file = $request->file('file');
         $filePath = $file->getRealPath();
         $fileContent = file_get_contents($filePath);
         $fileBase64 = base64_encode($fileContent);
+
 
         $prompt = '
         "Necesito procesar un archivo de Excel con movimientos bancarios y devolver la información en un formato JSON. El archivo contiene las columnas Fecha Operación, Fecha Valor, Concepto e Importe. A continuación, los pasos que el programa debe seguir:
