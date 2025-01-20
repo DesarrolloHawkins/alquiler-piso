@@ -45,6 +45,7 @@ class ChecklistController extends Controller
         return redirect()->route('admin.checklists.index')->with('success', 'Categoria creada con éxito.');
     }
 
+
     public function store(Request $request)
     {
         $request->validate([
@@ -56,7 +57,30 @@ class ChecklistController extends Controller
 
         return redirect()->route('admin.checklists.index')->with('success', 'Categoria creado con éxito.');
     }
-    public function edit($id)
+
+    public function edit( Request $request, $id){
+        $checklist = Checklist::findOrFail($id);
+        $checklist->update($request->all());
+
+        // Actualizar requisitos de fotos
+        ChecklistPhotoRequirement::where('checklist_id', $checklist->id)->delete();
+
+        if ($request->has('photo_names')) {
+            foreach ($request->photo_names as $index => $name) {
+                ChecklistPhotoRequirement::create([
+                    'checklist_id' => $checklist->id,
+                    'nombre' => $name,
+                    'descripcion' => $request->photo_descriptions[$index] ?? null,
+                    'cantidad' => $request->photo_quantities[$index] ?? 1,
+                ]);
+            }
+        }
+
+        return redirect()->route('admin.checklists.index')->with('success', 'Categoria actualizada con éxito.');
+
+    }
+
+    public function edit_new($id)
     {
         $checklist = Checklist::findOrFail($id);
         $edificios = Edificio::all();
