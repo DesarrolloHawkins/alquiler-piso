@@ -246,7 +246,7 @@ class Kernel extends ConsoleKernel
 
             // Log para indicar que la tarea se completó
             Log::info("Facturas del mes de octubre de $anio regeneradas correctamente.");
-        })->monthlyOn(21, '16:29'); // Ejecutar el día 1 de cada mes a las 00:00
+        })->monthlyOn(21, '16:30'); // Ejecutar el día 1 de cada mes a las 00:00
 
 
 
