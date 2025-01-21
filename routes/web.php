@@ -12,6 +12,9 @@ use App\Http\Controllers\RatePlanController;
 use App\Http\Controllers\RateUpdateController;
 use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\ARIController;
+use App\Http\Controllers\AdminHolidaysController;
+use App\Http\Controllers\HolidayController;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +34,7 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
+Route::get('/regenerate-invoices-october', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
 
 Route::get('/request-data', function (Request $request) {
     return $request->all(); // Esto devolverá todos los datos de la solicitud
@@ -279,6 +283,22 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/generar-factura',[App\Http\Controllers\InvoicesController::class, 'facturar'])->name('admin.facturas.facturar');
     Route::post('/facturas/update-fecha/{id}', [App\Http\Controllers\InvoicesController::class, 'updateFecha'])->name('admin.facturas.updateFecha');
 
+
+    // Vacaciones
+    Route::get('/holiday/index', [AdminHolidaysController::class, 'index'])->name('holiday.admin.index');
+    Route::get('/holiday/admin-create', [AdminHolidaysController::class, 'create'])->name('holiday.admin.create');
+    Route::get('/holiday/store', [AdminHolidaysController::class, 'store'])->name('holiday.admin.store');
+    Route::get('/holiday/destroy', [AdminHolidaysController::class, 'destroy'])->name('holiday.admin.destroy');
+    Route::get('/holidays/admin-edit/{id}', [AdminHolidaysController::class, 'edit'])->name('holiday.admin.edit');
+    Route::post('/holidays/admin-update', [AdminHolidaysController::class, 'update'])->name('holiday.admin.update');
+    Route::get('/holidays/petitions', [AdminHolidaysController::class, 'usersPetitions'])->name('holiday.admin.petitions');
+    Route::get('/holidays/record', [AdminHolidaysController::class, 'addedRecord'])->name('holiday.admin.record');
+    Route::get('/holidays/history', [AdminHolidaysController::class, 'allHistory'])->name('holiday.admin.history');
+    Route::get('/holidays/managePetition/{id}', [AdminHolidaysController::class, 'managePetition'])->name('holiday.admin.managePetition');
+    Route::post('/holidays/acceptHolidays', [AdminHolidaysController::class, 'acceptHolidays'])->name('holiday.admin.acceptHolidays');
+    Route::post('/holidays/denyHolidays', [AdminHolidaysController::class, 'denyHolidays'])->name('holiday.admin.denyHolidays');
+    Route::post('/holidays/getDate/{holidaysPetitions}', [AdminHolidaysController::class, 'getDate'])->name('holiday.admin.getDate');
+
     // Estadisticas
     Route::get('/estadisticas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.estadisticas.buscar');
 
@@ -330,7 +350,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/fichajes/pausa/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarPausa'])->name('fichajes.pausa.finalizar');
     Route::post('/fichajes/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarJornada'])->name('fichajes.finalizar');
 
-
+    //Holidays(Vacaciones users)
+    Route::get('/holidays', [HolidayController::class, 'index'])->name('holiday.index');
+    Route::get('/holidays/edit/{id}', [HolidayController::class, 'edit'])->name('holiday.edit');
+    Route::post('/holidays/store', [HolidayController::class, 'store'])->name('holiday.store');
+    Route::get('/holidays/create', [HolidayController::class, 'create'])->name('holiday.create');
     // Más rutas que solo deben ser accesibles
 });
 
