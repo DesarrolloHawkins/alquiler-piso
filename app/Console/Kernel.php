@@ -183,70 +183,7 @@ class Kernel extends ConsoleKernel
 
         })->everyMinute();
 
-        // Tarea para corregir facturas de octubre
-        $schedule->call(function () {
-            // Definir el mes y año de octubre
-            $anio = 2024; // Cambia al año correspondiente
-            $mes = 10; // Octubre
 
-            // Filtrar todas las reservas del mes de octubre
-            $reservasOctubre = Reserva::whereYear('fecha_entrada', $anio)
-                ->whereMonth('fecha_entrada', $mes)
-                ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 4
-                ->get();
-
-            // Eliminar las facturas existentes del mes de octubre
-            $facturasOctubre = Invoices::whereYear('fecha', $anio)
-                ->whereMonth('fecha', $mes)
-                ->get();
-
-            foreach ($facturasOctubre as $factura) {
-                // Eliminar la factura
-                $factura->delete();
-            }
-
-            // Reiniciar la numeración para el mes de octubre
-            InvoicesReferenceAutoincrement::where('year', $anio)
-                ->where('month_num', $mes)
-                ->delete();
-
-            // Crear nuevas facturas para las reservas de octubre
-            foreach ($reservasOctubre as $reserva) {
-                $data = [
-                    'budget_id' => null,
-                    'cliente_id' => $reserva->cliente_id,
-                    'reserva_id' => $reserva->id,
-                    'invoice_status_id' => 1,
-                    'concepto' => 'Estancia en apartamento: ' . $reserva->apartamento->titulo,
-                    'description' => '',
-                    'fecha' => $reserva->fecha_entrada, // Fecha de entrada en la reserva
-                    'fecha_cobro' => null,
-                    'base' => $reserva->precio,
-                    'iva' => $reserva->precio * 0.10,
-                    'descuento' => null,
-                    'total' => $reserva->precio,
-                    'created_at' => $reserva->fecha_entrada,
-                    'updated_at' => $reserva->fecha_entrada,
-                ];
-
-                // Crear la factura
-                $crearFactura = Invoices::create($data);
-
-                // Generar referencia y actualizar la factura
-                $referencia = $this->generateBudgetReference($crearFactura);
-                $crearFactura->reference = $referencia['reference'];
-                $crearFactura->reference_autoincrement_id = $referencia['id'];
-                $crearFactura->invoice_status_id = 3;
-                $crearFactura->save();
-
-                // Actualizar el estado de la reserva
-                $reserva->estado_id = 5;
-                $reserva->save();
-            }
-
-            // Log para indicar que la tarea se completó
-            Log::info("Facturas del mes de octubre de $anio regeneradas correctamente.");
-        })->monthlyOn(21, '16:30'); // Ejecutar el día 1 de cada mes a las 00:00
 
 
 
