@@ -33,6 +33,8 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\CheckComprobacion::class,
+        \App\Console\Commands\FetchEmails::class,
+        \App\Console\Commands\CategorizeEmails::class,
     ];
 
 
@@ -41,6 +43,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+
+
+        // Ejecuta el comando cada hora
+        $schedule->command('emails:categorize')->everyMinute();
+
+        // Programa el comando para que se ejecute cada 5 minutos
+        $schedule->command('emails:fetch')->everyFiveMinutes();
+
 
         // Tarea programada de Limpieza de numero de telefono del cliente.
         $schedule->command('clean:phonenumbers')->twiceDaily(1, 13);
@@ -68,7 +78,7 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             // Hoy
             $hoy = Carbon::now();
-        
+
             // Solo ejecutar después de las 10 de la mañana
             if ($hoy->hour >= 8) {
                 // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
@@ -76,7 +86,7 @@ class Kernel extends ConsoleKernel
                                     ->where('estado_id', 1)
                                     ->whereDate('fecha_entrada', '=', $hoy->toDateString())
                                     ->get();
-        
+
                 foreach ($reservasEntrada as $reserva) {
                     // Comprobamos si ya existe un mensaje automático para esta reserva
                     $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
@@ -96,7 +106,7 @@ class Kernel extends ConsoleKernel
 
                         // Obtenenemos el telefono del cliente limpio
                         $telefonoCliente = $this->limpiarNumeroTelefono($cliente->telefono);
-        
+
                         foreach ($telefonosEnvios as $phone) {
                             $resultado = $this->noEntregadoDNIMensaje($cliente->alias, $reserva->codigo_reserva, $reserva->origen, $phone, $telefonoCliente, $url);
                         }
@@ -115,7 +125,7 @@ class Kernel extends ConsoleKernel
                 Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
             }
         })->everyMinute();
-    
+
 
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
@@ -127,7 +137,7 @@ class Kernel extends ConsoleKernel
             // Obtener la fecha de hoy (sin la hora)
             $hoy = Carbon::now()->subDay(1); // La fecha actual
             $juevesPasado = Carbon::now()->subDays(8); // Restar 5 días para obtener el jueves de la semana pasada
-            
+
 
             // Obtener reservas desde el jueves pasado hasta hoy (inclusive)
             $reservas = Reserva::whereDate('fecha_salida', '>=', $juevesPasado)
@@ -135,11 +145,11 @@ class Kernel extends ConsoleKernel
             // ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
             ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 5 o 6
             ->get();
-    
-    
+
+
             foreach( $reservas as $reserva){
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
-                
+
                 if ($invoice == null) {
                     $data = [
                         'budget_id' => null,
@@ -154,6 +164,8 @@ class Kernel extends ConsoleKernel
                         'iva' => $reserva->precio * 0.10,
                         'descuento' => null,
                         'total' => $reserva->precio,
+                        'created_at' => $reserva->fecha_salida,
+                        'updated_at' => $reserva->fecha_salida,
                     ];
                     // dd($data);
                     $crearFactura = Invoices::create($data);
@@ -170,7 +182,73 @@ class Kernel extends ConsoleKernel
             }
 
         })->everyMinute();
-        
+
+        // Tarea para corregir facturas de octubre
+        $schedule->call(function () {
+            // Definir el mes y año de octubre
+            $anio = 2024; // Cambia al año correspondiente
+            $mes = 10; // Octubre
+
+            // Filtrar todas las reservas del mes de octubre
+            $reservasOctubre = Reserva::whereYear('fecha_entrada', $anio)
+                ->whereMonth('fecha_entrada', $mes)
+                ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 4
+                ->get();
+
+            // Eliminar las facturas existentes del mes de octubre
+            $facturasOctubre = Invoices::whereYear('fecha', $anio)
+                ->whereMonth('fecha', $mes)
+                ->get();
+
+            foreach ($facturasOctubre as $factura) {
+                // Eliminar la factura
+                $factura->delete();
+            }
+
+            // Reiniciar la numeración para el mes de octubre
+            InvoicesReferenceAutoincrement::where('year', $anio)
+                ->where('month_num', $mes)
+                ->delete();
+
+            // Crear nuevas facturas para las reservas de octubre
+            foreach ($reservasOctubre as $reserva) {
+                $data = [
+                    'budget_id' => null,
+                    'cliente_id' => $reserva->cliente_id,
+                    'reserva_id' => $reserva->id,
+                    'invoice_status_id' => 1,
+                    'concepto' => 'Estancia en apartamento: ' . $reserva->apartamento->titulo,
+                    'description' => '',
+                    'fecha' => $reserva->fecha_entrada, // Fecha de entrada en la reserva
+                    'fecha_cobro' => null,
+                    'base' => $reserva->precio,
+                    'iva' => $reserva->precio * 0.10,
+                    'descuento' => null,
+                    'total' => $reserva->precio,
+                    'created_at' => $reserva->fecha_entrada,
+                    'updated_at' => $reserva->fecha_entrada,
+                ];
+
+                // Crear la factura
+                $crearFactura = Invoices::create($data);
+
+                // Generar referencia y actualizar la factura
+                $referencia = $this->generateBudgetReference($crearFactura);
+                $crearFactura->reference = $referencia['reference'];
+                $crearFactura->reference_autoincrement_id = $referencia['id'];
+                $crearFactura->invoice_status_id = 3;
+                $crearFactura->save();
+
+                // Actualizar el estado de la reserva
+                $reserva->estado_id = 5;
+                $reserva->save();
+            }
+
+            // Log para indicar que la tarea se completó
+            Log::info("Facturas del mes de octubre de $anio regeneradas correctamente.");
+        })->monthlyOn(23, '17:20'); // Ejecutar el día 1 de cada mes a las 00:00
+
+
 
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -257,7 +335,7 @@ class Kernel extends ConsoleKernel
             ->where('estado_id', '!=', 4)
             // ->where('dni_entregado', '!=', null)
             ->get();
-            
+
             foreach($reservas as $reserva){
 
                 // Apartamento
@@ -322,7 +400,7 @@ class Kernel extends ConsoleKernel
                         // Enviamos el mensaje
                         $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
                         $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
-                        
+
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
                                 $reserva->cliente->nombre,
@@ -345,7 +423,7 @@ class Kernel extends ConsoleKernel
                                 $enlace
                             );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
-                        
+
                         }
 
                         // Creamos la data para guardar el mensaje
@@ -368,7 +446,7 @@ class Kernel extends ConsoleKernel
                                 $reserva->apartamento->claves
                             );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
-                            
+
                         }else {
                             $mensaje = $this->clavesEmail(
                                 $idiomaCliente,
@@ -379,7 +457,7 @@ class Kernel extends ConsoleKernel
                                 $apartamentoReservado->edificio
                             );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
-                            
+
                         }
                         $enviarEmail = $this->enviarEmail(
                             $reserva->cliente->email_secundario,
@@ -503,7 +581,7 @@ class Kernel extends ConsoleKernel
         // $credentials = array(
         //     'user' => 'H11070GEV04',
         //     'pass' => 'H4Kins4p4rtamento2023'
-        // ); 
+        // );
         // $data = [
         //     'username' => 'H11070GEV04',
         //     'password' => 'H4Kins4p4rtamento2023',
@@ -532,7 +610,7 @@ class Kernel extends ConsoleKernel
         foreach ($browser->getCookieJar()->all() as $cookie) {
             $cookiesArray[$cookie->getName()] = $cookie->getValue();
         }
-        
+
         $postData = [
             'username' => 'H11070GEV04',
             'password' => 'HaKinsapartamento2024',
@@ -576,8 +654,8 @@ class Kernel extends ConsoleKernel
         mb_internal_encoding("UTF-8");
 
         $apellido = mb_convert_encoding('CASTAÑOS', 'UTF-8');
-        
-       
+
+
         $headers = [
             'Cookie' => 'FRONTAL_JSESSIONID: ' . $cookiesArray['FRONTAL_JSESSIONID'] . ' UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_: ' . $cookiesArray['UqZBpD3n3iHPAgNS9Fnn5SbNcvsF5IlbdcvFr4ieqh8_'] . ' cookiesession1: ' . $cookiesArray['cookiesession1'],
             'Accept' => 'text/html, */*; q=0.01',
@@ -606,7 +684,7 @@ class Kernel extends ConsoleKernel
 
         $response4 = $browser->getResponse();
         $statusCode4 = $response4->getStatusCode();
-        
+
         if ($browser->getResponse()->getStatusCode() == 302) {
             $crawler = $browser->followRedirect();
             // Sigue la redirección
@@ -732,7 +810,7 @@ class Kernel extends ConsoleKernel
 
     public function codigoApartamento($habitacion){
         $apartamento = Apartamento::find($habitacion);
-        
+
 
         if ($apartamento) {
             switch ($habitacion) {
@@ -742,42 +820,42 @@ class Kernel extends ConsoleKernel
                             'codigo' => $apartamento->claves
                         ];
                     break;
-    
+
                 case 2:
                     return [
                         'nombre' => '2A',
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 case 3:
                     return [
                         'nombre' => '2B',
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 case 4:
                     return [
                         'nombre' => '1A',
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 case 5:
                     return [
                         'nombre' => '1B',
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 case 6:
                     return [
                         'nombre' => 'BA',
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 case 7:
                     return [
                         'nombre' => 'BB',
@@ -832,7 +910,7 @@ class Kernel extends ConsoleKernel
                         'codigo' => $apartamento->claves
                     ];
                     break;
-    
+
                 default:
                 return [
                     'nombre' => 'Error',
@@ -841,7 +919,7 @@ class Kernel extends ConsoleKernel
                     break;
             }
         }
-        
+
     }
 
     public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'en'){
@@ -910,23 +988,23 @@ class Kernel extends ConsoleKernel
                         "type" => "body",
                         "parameters" => [
                             [
-                                "type" => "text", 
+                                "type" => "text",
                                 "text" => $nombre
                             ],
                             [
-                                "type" => "text", 
+                                "type" => "text",
                                 "text" => $codigoReserva
                             ],
                             [
-                                "type" => "text", 
+                                "type" => "text",
                                 "text" => $plataforma
                             ],
                             [
-                                "type" => "text", 
+                                "type" => "text",
                                 "text" => $telefonoCliente
                             ],
                             [
-                                "type" => "text", 
+                                "type" => "text",
                                 "text" => $url
                             ],
                         ],
@@ -961,7 +1039,7 @@ class Kernel extends ConsoleKernel
         // $responseJson = json_decode($response);
         return $response;
     }
-    
+
     public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -1076,7 +1154,7 @@ class Kernel extends ConsoleKernel
 
     public function clavesMensajeAtico($nombre, $apartamento, $puertaPrincipal, $codigoApartamento, $telefono, $idioma = 'en', $template, $url, $url2){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-        
+
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
@@ -1565,7 +1643,7 @@ class Kernel extends ConsoleKernel
                     Olá '.$cliente.'!! A localização dos apartamentos é: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    "Seu apartamento é o '.$apartamento.', os códigos para entrar no apartamento são: Para a porta principal '.$claveEntrada.' e para a porta do seu apartamento '.$clavePiso.'."                
+                    "Seu apartamento é o '.$apartamento.', os códigos para entrar no apartamento são: Para a porta principal '.$claveEntrada.' e para a porta do seu apartamento '.$clavePiso.'."
                 </p>
                 <p style="margin: 0 !important">
                     Espero que tenha uma estadia maravilhosa.
@@ -1586,7 +1664,7 @@ class Kernel extends ConsoleKernel
                     Ciao  '.$cliente.'!! La posizione degli appartamenti è: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    "Il tuo appartamento è il '.$apartamento.', i codici per entrare nell ´ appartamento sono: per la porta principale '.$claveEntrada.' e per la porta del tuo appartamento '.$clavePiso.'."        
+                    "Il tuo appartamento è il '.$apartamento.', i codici per entrare nell ´ appartamento sono: per la porta principale '.$claveEntrada.' e per la porta del tuo appartamento '.$clavePiso.'."
                 </p>
                 <p style="margin: 0 !important">
                     Spero che tu abbia un soggiorno meraviglioso.
@@ -1682,7 +1760,7 @@ class Kernel extends ConsoleKernel
                     <h3 style="color:#0F1739; text-align: center">
                         شكرًا لحجزك في شقق هوكينز!!
                     </h3>
-                
+
                     <p style="margin: 0 !important">
                     مرحبًا '.$cliente.'!!
                     </p>
@@ -1706,14 +1784,14 @@ class Kernel extends ConsoleKernel
                     ';
                     return $temaplate;
                     break;
-                
+
 
                 case 'de':
                     $temaplate = '
                     <h3 style="color:#0F1739; text-align: center">
                         Danke für Ihre Buchung bei den Hawkins Apartments!!
                     </h3>
-                
+
                     <p style="margin: 0 !important">
                     Hallo '.$cliente.'!!
                     </p>
@@ -1737,14 +1815,14 @@ class Kernel extends ConsoleKernel
                     ';
                     return $temaplate;
                     break;
-                
+
 
                     case 'pt':
                         $temaplate = '
                         <h3 style="color:#0F1739; text-align: center">
                             Obrigado por reservar nos apartamentos Hawkins!!
                         </h3>
-                    
+
                         <p style="margin: 0 !important">
                         Olá '.$cliente.'!!
                         </p>
@@ -1768,14 +1846,14 @@ class Kernel extends ConsoleKernel
                         ';
                         return $temaplate;
                         break;
-                    
+
 
                         case 'it':
                             $temaplate = '
                             <h3 style="color:#0F1739; text-align: center">
                                 Grazie per aver prenotato presso Hawkins Apartments!!
                             </h3>
-                        
+
                             <p style="margin: 0 !important">
                             Ciao '.$cliente.'!!
                             </p>
@@ -1799,7 +1877,7 @@ class Kernel extends ConsoleKernel
                             ';
                             return $temaplate;
                             break;
-                        
+
 
             default:
                 //en
@@ -1807,7 +1885,7 @@ class Kernel extends ConsoleKernel
                     <h3 style="color:#0F1739; text-align: center">
                         Thank you for booking at Hawkins Apartments!!
                     </h3>
-                
+
                     <p style="margin: 0 !important">
                     Hello '.$cliente.'!!
                     </p>
@@ -1830,7 +1908,7 @@ class Kernel extends ConsoleKernel
                     <p style="margin: 0 !important">Thank you for using our app!</p>
                     ';
                     return $temaplate;
-                    break;                
+                    break;
         }
 
     }
@@ -1862,6 +1940,7 @@ class Kernel extends ConsoleKernel
            return "temp_" . $formattedNumber;
        }
    }
+
    private function generateReferenceDelete($reference){
         // Extrae los dos dígitos del final de la cadena usando expresiones regulares
         preg_match('/delete_(\d{2})/', $reference, $matches);
@@ -1880,11 +1959,11 @@ class Kernel extends ConsoleKernel
         // Obtener la fecha actual del presupuesto
         $budgetCreationDate = $invoices->created_at ?? now();
         $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
- 
+
         // Formatear la fecha para obtener los componentes necesarios
         $year = $datetimeBudgetCreationDate->format('Y');
         $monthNum = $datetimeBudgetCreationDate->format('m');
- 
+
         //dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
         // Buscar la última referencia autoincremental para el año y mes actual
         $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
@@ -1894,13 +1973,13 @@ class Kernel extends ConsoleKernel
          //dd($latestReference->reference_autoincrement);
         // Si no existe, empezamos desde 1, de lo contrario, incrementamos
         $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
- 
+
         // Formatear el número autoincremental a 6 dígitos
         $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
- 
+
         // Crear la referencia
         $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
- 
+
         // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
         $referenceToSave = new InvoicesReferenceAutoincrement([
             'reference_autoincrement' => $newReferenceAutoincrement,
@@ -1909,7 +1988,7 @@ class Kernel extends ConsoleKernel
             // Otros campos pueden ser asignados si son necesarios
         ]);
         $referenceToSave->save();
- 
+
         // Devolver el resultado
         return [
             'id' => $referenceToSave->id,
