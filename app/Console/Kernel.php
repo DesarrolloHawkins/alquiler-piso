@@ -32,9 +32,9 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Console\Commands\CheckComprobacion::class,
-        \App\Console\Commands\FetchEmails::class,
-        \App\Console\Commands\CategorizeEmails::class,
+        // \App\Console\Commands\CheckComprobacion::class,
+        // \App\Console\Commands\FetchEmails::class,
+        // \App\Console\Commands\CategorizeEmails::class,
     ];
 
 
