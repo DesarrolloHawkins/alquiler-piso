@@ -92,7 +92,7 @@
                         </form>
                     </div>
                 </div>
-                <div class="col-12">
+                <div class="col-sm-12 col-md-6">
                     <a href="{{ route('admin.facturas.export', [
                             'order_by' => request()->get('order_by'),
                             'direction' => request()->get('direction'),
@@ -104,6 +104,15 @@
                         Exportar a Excel
                     </a>
                 </div>
+                <div class="col-sm-12 col-md-6">
+                    <a href="#"
+                       id="generate-zip-button"
+                       class="btn bg-color-primero"
+                       onclick="generateZip(event)">
+                        Descargar Facturas en ZIP
+                    </a>
+                </div>
+
             </div>
             @php
               $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
@@ -304,8 +313,24 @@
     });
 });
 
+function generateZip(event) {
+    event.preventDefault();
 
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+
+    if (!fechaInicio || !fechaFin) {
+        alert('Por favor selecciona un rango de fechas válido.');
+        return;
+    }
+
+    // Redirigir a la ruta con los parámetros de fecha
+    const url = `/admin/facturas/download-zip?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+    window.location.href = url;
+}
 document.addEventListener('DOMContentLoaded', function () {
+
+
         const csrfToken = '{{ csrf_token() }}';
 
         // Mostrar el input al hacer clic en la fecha

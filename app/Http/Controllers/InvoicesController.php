@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Webklex\IMAP\Facades\Client;
+use ZipArchive;
 
 class InvoicesController extends Controller
 {
@@ -37,10 +38,19 @@ class InvoicesController extends Controller
             $factura->delete();
         }
 
-        // Reiniciar la numeración para el mes de octubre
+        // Eliminar referencias autoincrementales del mes de octubre
         InvoicesReferenceAutoincrement::where('year', $anio)
             ->where('month_num', $mes)
             ->delete();
+
+        // Verifica si todas las facturas y referencias fueron eliminadas
+        if (
+            Invoices::whereYear('fecha', $anio)->whereMonth('fecha', $mes)->exists() ||
+            InvoicesReferenceAutoincrement::where('year', $anio)->where('month_num', $mes)->exists()
+        ) {
+            Log::error("Error al eliminar facturas o referencias del mes de $anio/$mes.");
+            return response()->json(['error' => "No se pudieron eliminar todas las facturas o referencias del mes de $anio/$mes."]);
+        }
 
         // Crear nuevas facturas para las reservas de octubre
         foreach ($reservasOctubre as $reserva) {
@@ -64,8 +74,8 @@ class InvoicesController extends Controller
             // Crear la factura
             $crearFactura = Invoices::create($data);
 
-            // Generar referencia y actualizar la factura
-            $referencia = $this->generateBudgetReference($crearFactura);
+            // Generar referencia específica y actualizar la factura
+            $referencia = $this->generateSpecificBudgetReference($crearFactura, $anio, $mes);
             $crearFactura->reference = $referencia['reference'];
             $crearFactura->reference_autoincrement_id = $referencia['id'];
             $crearFactura->invoice_status_id = 3;
@@ -83,64 +93,174 @@ class InvoicesController extends Controller
     }
 
 
+    /**
+     * Generar referencias presupuestarias específicas para un año y mes
+     */
+    protected function generateSpecificBudgetReference(Invoices $invoices, $anio, $mes)
+    {
+        do {
+            // Buscar la última referencia autoincremental para el año y mes proporcionados
+            $latestReference = InvoicesReferenceAutoincrement::where('year', $anio)
+                ->where('month_num', $mes)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            // Si no existe, empezamos desde 1, de lo contrario, incrementamos
+            $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
+
+            // Formatear el número autoincremental a 6 dígitos
+            $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
+
+            // Crear la referencia
+            $reference = $anio . '/' . $mes . '/' . $formattedAutoIncrement;
+
+            // Verificar si ya existe en la tabla de facturas
+            $exists = Invoices::where('reference', $reference)->exists();
+
+            if (!$exists) {
+                break;
+            }
+
+            // Si existe, incrementar el autoincremento manualmente para evitar colisiones
+            $newReferenceAutoincrement++;
+        } while (true);
+
+        // Guardar o actualizar la referencia autoincremental
+        $referenceToSave = new InvoicesReferenceAutoincrement([
+            'reference_autoincrement' => $newReferenceAutoincrement,
+            'year' => $anio,
+            'month_num' => $mes,
+        ]);
+        $referenceToSave->save();
+
+        // Devolver el resultado
+        return [
+            'id' => $referenceToSave->id,
+            'reference' => $reference,
+            'reference_autoincrement' => $newReferenceAutoincrement,
+        ];
+    }
+
+
+
 
 
     public function index(Request $request)
+    {
+        $orderBy = $request->get('order_by', 'fecha');
+        $direction = $request->get('direction', 'asc');
+        $perPage = $request->get('perPage', 10);
+        $searchTerm = $request->get('search', '');
+        $fechaInicio = $request->get('fecha_inicio');
+        $fechaFin = $request->get('fecha_fin');
+
+        // Query inicial para facturas con su cliente y reserva asociados
+        $query = Invoices::with(['cliente', 'reserva']); // Asegúrate de incluir las relaciones
+
+        // Filtro de búsqueda por cliente, concepto, total, etc.
+        if (!empty($searchTerm)) {
+            $query->where(function($subQuery) use ($searchTerm) {
+                $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
+                    $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
+                })
+                ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Filtro por rango de fechas
+        if (!empty($fechaInicio) || !empty($fechaFin)) {
+            if (!empty($fechaInicio) && !empty($fechaFin)) {
+                $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+            } elseif (!empty($fechaInicio)) {
+                $query->where('fecha', '>=', $fechaInicio);
+            } elseif (!empty($fechaFin)) {
+                $query->where('fecha', '<=', $fechaFin);
+            }
+        }
+
+        // Filtro por estado de factura (si es necesario)
+        if ($request->has('estado')) {
+            $query->where('invoice_status_id', $request->get('estado'));
+        }
+
+        // Aplicar orden por columna y dirección
+        $facturas = $query->orderBy($orderBy, $direction)
+                    ->paginate($perPage)
+                    ->appends([
+                        'order_by' => $orderBy,
+                        'direction' => $direction,
+                        'search' => $searchTerm,
+                        'perPage' => $perPage,
+                        'fecha_inicio' => $fechaInicio,
+                        'fecha_fin' => $fechaFin,
+                    ]);
+
+        $sumatorio = $facturas->sum('total');
+
+        return view('admin.invoices.index', compact('facturas', 'sumatorio'));
+    }
+
+    public function downloadInvoicesZip(Request $request)
 {
-    $orderBy = $request->get('order_by', 'fecha');
-    $direction = $request->get('direction', 'asc');
-    $perPage = $request->get('perPage', 10);
-    $searchTerm = $request->get('search', '');
     $fechaInicio = $request->get('fecha_inicio');
     $fechaFin = $request->get('fecha_fin');
 
-    // Query inicial para facturas con su cliente y reserva asociados
-    $query = Invoices::with(['cliente', 'reserva']); // Asegúrate de incluir las relaciones
-
-    // Filtro de búsqueda por cliente, concepto, total, etc.
-    if (!empty($searchTerm)) {
-        $query->where(function($subQuery) use ($searchTerm) {
-            $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
-                $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
-            })
-            ->orWhere('reference', 'LIKE', '%' . $searchTerm . '%')
-            ->orWhere('concepto', 'LIKE', '%' . $searchTerm . '%')
-            ->orWhere('total', 'LIKE', '%' . $searchTerm . '%');
-        });
+    // Validar que las fechas estén presentes
+    if (!$fechaInicio || !$fechaFin) {
+        return redirect()->back()->with('error', 'Debes seleccionar un rango de fechas.');
     }
 
-    // Filtro por rango de fechas
-    if (!empty($fechaInicio) || !empty($fechaFin)) {
-        if (!empty($fechaInicio) && !empty($fechaFin)) {
-            $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
-        } elseif (!empty($fechaInicio)) {
-            $query->where('fecha', '>=', $fechaInicio);
-        } elseif (!empty($fechaFin)) {
-            $query->where('fecha', '<=', $fechaFin);
+    // Obtener las facturas en el rango de fechas
+    $facturas = Invoices::whereBetween('fecha', [$fechaInicio, $fechaFin])->get();
+
+    if ($facturas->isEmpty()) {
+        return redirect()->back()->with('error', 'No se encontraron facturas en el rango de fechas seleccionado.');
+    }
+
+    // Crear un archivo ZIP temporal
+    $zipFileName = 'facturas_' . $fechaInicio . '_to_' . $fechaFin . '.zip';
+    $zipFilePath = storage_path('app/' . $zipFileName);
+    $zip = new ZipArchive;
+
+    if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+        foreach ($facturas as $invoice) {
+            // Obtener conceptos relacionados con la reserva
+            $conceptos = Reserva::where('id', $invoice->reserva_id)->get();
+            foreach ($conceptos as $concepto) {
+                $apartamento = $concepto->apartamento;
+                $edificio = $concepto->apartamento->edificioName;
+                $concepto['apartamento'] = $apartamento;
+                $concepto['edificio'] = $edificio;
+            }
+
+            // Preparar datos para la vista del PDF
+            $data = [
+                'title' => 'Factura ' . $invoice->reference,
+                'invoice' => $invoice,
+            ];
+            $invoice['conceptos'] = $conceptos;
+
+            // Generar el PDF
+            $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data', 'invoice', 'conceptos'));
+
+            // Generar el nombre del archivo PDF
+            $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
+
+            // Añadir el PDF al ZIP
+            $zip->addFromString($fileName, $pdf->output());
         }
+
+        $zip->close();
+    } else {
+        return redirect()->back()->with('error', 'No se pudo crear el archivo ZIP.');
     }
 
-    // Filtro por estado de factura (si es necesario)
-    if ($request->has('estado')) {
-        $query->where('invoice_status_id', $request->get('estado'));
-    }
-
-    // Aplicar orden por columna y dirección
-    $facturas = $query->orderBy($orderBy, $direction)
-                ->paginate($perPage)
-                ->appends([
-                    'order_by' => $orderBy,
-                    'direction' => $direction,
-                    'search' => $searchTerm,
-                    'perPage' => $perPage,
-                    'fecha_inicio' => $fechaInicio,
-                    'fecha_fin' => $fechaFin,
-                ]);
-
-    $sumatorio = $facturas->sum('total');
-
-    return view('admin.invoices.index', compact('facturas', 'sumatorio'));
+    // Descargar el archivo ZIP
+    return response()->download($zipFilePath)->deleteFileAfterSend(true);
 }
+
 
 
 
@@ -248,6 +368,7 @@ class InvoicesController extends Controller
            return "delete_" . $formattedNumber;
        }
    }
+
 
     public function generateBudgetReference(Invoices $invoices) {
 
