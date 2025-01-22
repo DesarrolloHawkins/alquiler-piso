@@ -58,7 +58,7 @@
                 <tr>
                     <td align="left" style="width: 40%;padding-left:20px;">
                         <p><strong>Ref.:</strong> {{ $invoice->reference }}</p>
-                        <p><strong>Fecha de Factura:</strong> {{ \Carbon\Carbon::parse($invoice->created_at)->format('d/m/Y') }}</p>
+                        <p><strong>Fecha de Factura:</strong> {{ \Carbon\Carbon::parse($invoice->fecha)->format('d/m/Y') }}</p>
                         <p><strong>Concepto:</strong> {{ $invoice->concepto }}</p>
                         <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
                     </td>
