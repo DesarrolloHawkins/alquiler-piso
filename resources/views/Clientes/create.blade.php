@@ -125,7 +125,7 @@
                     @enderror
                 </div>
 
-                <h3>Domicilio de Facturación</h3>
+                {{-- <h3>Domicilio de Facturación</h3>
 
                 <div class="col-md-6 col-12 mb-3">
                     <label for="direccion" class="form-label">Dirección</label>
@@ -146,7 +146,7 @@
                 <div class="col-md-6 col-12 mb-3">
                     <label for="estado" class="form-label">Pais</label>
                     <input type="text" name="estado" class="form-control"  value="{{ $cliente->estado }}">
-                </div>
+                </div> --}}
                 <button type="submit" class="btn btn-terminar w-100 fs-4 mt-4">Guardar</button>
             </form>
 
