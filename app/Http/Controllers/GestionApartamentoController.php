@@ -337,12 +337,15 @@ class GestionApartamentoController extends Controller
      */
     public function finalizar(ApartamentoLimpieza $apartamentoLimpieza)
     {
+        $hoy = Carbon::now();
         $apartamentoLimpieza->status_id = 3;
-        $apartamentoLimpieza->fecha_fin = Carbon::now();
+        $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
         $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
-        $reserva->fecha_limpieza = Carbon::now();
-        $reserva->save();
+        if ($reserva != null) {
+            $reserva->fecha_limpieza = $hoy;
+            $reserva->save();
+        }
         // dd($reserva);
         Alert::success('Fizalizado con Exito', 'Apartamento Fizalizado correctamente');
 
