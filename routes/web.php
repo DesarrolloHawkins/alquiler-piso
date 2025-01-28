@@ -14,6 +14,7 @@ use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\ARIController;
 use App\Http\Controllers\AdminHolidaysController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\PresupuestoController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -34,7 +35,7 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
-Route::get('/regenerate-invoices-october', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
+Route::get('/regenerate-invoices', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
 
 Route::get('/request-data', function (Request $request) {
     return $request->all(); // Esto devolverá todos los datos de la solicitud
@@ -57,6 +58,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
+    Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
 
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');
@@ -335,6 +337,16 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/emails/{email}', [EmailController::class, 'show'])->name('admin.emails.show');
 
     Route::get('/emails-recive',[EmailController::class, 'email'])->name('admin.facturas.email');
+
+    Route::prefix('presupuestos')->group(function () {
+        Route::get('/', [PresupuestoController::class, 'index'])->name('presupuestos.index');
+        Route::get('/create', [PresupuestoController::class, 'create'])->name('presupuestos.create');
+        Route::post('/', [PresupuestoController::class, 'store'])->name('presupuestos.store');
+        Route::get('/{id}', [PresupuestoController::class, 'show'])->name('presupuestos.show');
+        Route::get('/{id}/edit', [PresupuestoController::class, 'edit'])->name('presupuestos.edit');
+        Route::put('/{id}', [PresupuestoController::class, 'update'])->name('presupuestos.update');
+        Route::delete('/{id}', [PresupuestoController::class, 'destroy'])->name('presupuestos.destroy');
+    });
 
     // admin.facturas.export
 });

@@ -20,8 +20,8 @@ class InvoicesController extends Controller
 
     public function regenerateInvoicesForOctober()
     {
-        $anio = 2024; // Cambia al año correspondiente
-        $mes = 10; // Octubre
+        $anio = 2025; // Cambia al año correspondiente
+        $mes = 1; // Enero
 
         // Filtrar todas las reservas del mes de octubre
         $reservasOctubre = Reserva::whereYear('fecha_entrada', $anio)
@@ -29,19 +29,19 @@ class InvoicesController extends Controller
             ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 4
             ->get();
 
-        // Eliminar las facturas existentes del mes de octubre
+        // Eliminar las facturas existentes del mes de enero
         $facturasOctubre = Invoices::whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
             ->get();
 
         foreach ($facturasOctubre as $factura) {
-            $factura->delete();
+            $factura->forceDelete();
         }
 
         // Eliminar referencias autoincrementales del mes de octubre
         InvoicesReferenceAutoincrement::where('year', $anio)
             ->where('month_num', $mes)
-            ->delete();
+            ->forceDelete();
 
         // Verifica si todas las facturas y referencias fueron eliminadas
         if (
@@ -92,9 +92,9 @@ class InvoicesController extends Controller
         }
 
         // Log para indicar que la tarea se completó
-        Log::info("Facturas del mes de octubre de $anio regeneradas correctamente.");
+        Log::info("Facturas del mes de enero de $anio regeneradas correctamente.");
 
-        return response()->json(['message' => "Facturas del mes de octubre de $anio regeneradas correctamente."]);
+        return response()->json(['message' => "Facturas del mes de enero de $anio regeneradas correctamente."]);
     }
 
 
