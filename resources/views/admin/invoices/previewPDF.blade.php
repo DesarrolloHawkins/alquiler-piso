@@ -142,7 +142,7 @@
                     <th style="text-align:center">Bruto</th>
                     <th style="text-align:center">Dto.</th>
                     <th style="text-align:center">Base</th>
-                    <th style="text-align:center">IVA {{ $invoice->iva_percentage }}%</th>
+                    <th style="text-align:center">IVA  10% {{ $invoice->iva }}%</th>
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
