@@ -139,17 +139,18 @@
         <div class="information">
             <table id="summary" width="100%" style="margin-top: 70px;">
                 <tr>
-                    <th style="text-align:center">Bruto</th>
-                    <th style="text-align:center">Dto.</th>
+                    {{-- <th style="text-align:center">Bruto</th> --}}
                     <th style="text-align:center">Base</th>
-                    <th style="text-align:center">IVA  10% {{ $invoice->iva }}%</th>
+                    <th style="text-align:center">Dto.</th>
+                    <th style="text-align:center">IVA - 10%</th>
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
-                    <td style="text-align:center">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
+                    <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
                     <td style="text-align:center">{{ number_format($invoice->descuento, 2) }} &euro;</td>
-                    <td style="text-align:center">{{ number_format($invoice->base - $invoice->iva , 2) }} &euro;</td>
-                    <td style="text-align:center">10%</td>
+                    {{-- <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td> --}}
+                    <td style="text-align:center">{{ number_format($invoice->iva , 2) }} &euro;</td>
+                    {{-- <td style="text-align:center">10%</td> --}}
                     <td style="text-align:right" class="total-amount">{{ number_format($invoice->total, 2) }} &euro;</td>
                 </tr>
             </table>
