@@ -121,9 +121,9 @@
                 @php
                     $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
                 @endphp
-                @if (session('status'))
+                @if (session('success'))
                     <div class="alert alert-success" role="alert">
-                        {{ session('status') }}
+                        {{ session('success') }}
                     </div>
                 @endif
                 <h6 class="text-uppercase"><i class="fa-solid fa-filter me-1"></i> Filtros</h6>
@@ -154,7 +154,7 @@
                                 <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
                                 <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
                                 <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-                                
+
                                 <div class="d-flex align-items-center">
                                     <input type="text" class="form-control me-2" id="search" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
 
@@ -169,15 +169,15 @@
                                         <label class="input-group-text" for="fecha_salida" id="label_fecha_salida">Fecha de Salida</label>
                                         <input type="text" class="form-control" id="fecha_salida" name="fecha_salida" value="{{ request()->get('fecha_salida') }}">
                                     </div>
-                            
+
                                     <!-- Botones -->
                                     <button type="button" class="btn bg-color-segundo me-2"><i class="fa-solid fa-trash"></i></button>
                                     <button type="submit" class="btn bg-color-primero">Buscar</button>
                                 </div>
                             </form>
-                            
-                            
-                            
+
+
+
                         </div>
                     </div>
                 </div>
@@ -328,7 +328,7 @@
                 });
             }
         });
-    
+
         flatpickr("#fecha_salida", {
             dateFormat: "Y-m-d",
             locale: "es", // Configurar el idioma español usando "es"
@@ -343,5 +343,5 @@
         });
     });
     </script>
-    
+
 @endsection

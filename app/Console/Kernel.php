@@ -151,6 +151,11 @@ class Kernel extends ConsoleKernel
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
 
                 if ($invoice == null) {
+                     // Cálculo correcto de la base imponible y el IVA
+                    $total = $reserva->precio;
+                    $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+                    $iva = $total - $base; // Calcular el IVA
+
                     $data = [
                         'budget_id' => null,
                         'cliente_id' => $reserva->cliente_id,
@@ -160,10 +165,10 @@ class Kernel extends ConsoleKernel
                         'description' => '',
                         'fecha' => $reserva->fecha_salida,
                         'fecha_cobro' => null,
-                        'base' => $reserva->precio,
-                        'iva' => $reserva->precio * 0.10,
+                        'base' => round($base, 2), // Redondear la base a 2 decimales
+                        'iva' => round($iva, 2), // Redondear el IVA a 2 decimales
                         'descuento' => null,
-                        'total' => $reserva->precio,
+                        'total' => round($total, 2), // Asegurarse de que el total también esté redondeado
                         'created_at' => $reserva->fecha_salida,
                         'updated_at' => $reserva->fecha_salida,
                     ];

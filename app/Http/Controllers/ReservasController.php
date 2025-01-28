@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apartamento;
 use App\Models\ChatGpt;
 use App\Models\Cliente;
+use App\Models\Estado;
 use App\Models\Huesped;
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
@@ -109,7 +110,8 @@ class ReservasController extends Controller
     {
         $clientes = Cliente::all();
         $apartamentos = Apartamento::all();
-        return view('reservas.create', compact('clientes','apartamentos'));
+        $estados = Estado::all();
+        return view('reservas.create', compact('clientes','apartamentos','estados'));
     }
 
     /**

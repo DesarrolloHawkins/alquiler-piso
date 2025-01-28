@@ -54,6 +54,11 @@ class InvoicesController extends Controller
 
         // Crear nuevas facturas para las reservas de octubre
         foreach ($reservasOctubre as $reserva) {
+            // Cálculo correcto de la base imponible y el IVA
+            $total = $reserva->precio;
+            $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+            $iva = $total - $base; // Calcular el IVA
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -63,10 +68,10 @@ class InvoicesController extends Controller
                 'description' => '',
                 'fecha' => $reserva->fecha_entrada, // Fecha de entrada en la reserva
                 'fecha_cobro' => null,
-                'base' => $reserva->precio,
-                'iva' => $reserva->precio * 0.10,
+                'base' => round($base, 2), // Redondear la base a 2 decimales
+                'iva' => round($iva, 2), // Redondear el IVA a 2 decimales
                 'descuento' => null,
-                'total' => $reserva->precio,
+                'total' => round($total, 2), // Asegurarse de que el total también esté redondeado
                 'created_at' => $reserva->fecha_entrada,
                 'updated_at' => $reserva->fecha_entrada,
             ];
