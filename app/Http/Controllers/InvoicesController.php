@@ -19,83 +19,102 @@ class InvoicesController extends Controller
 {
 
     public function regenerateInvoicesForOctober()
-{
-    $anio = 2025; // Cambia al año correspondiente
-    $mes = 1; // Enero
+    {
+        $anio = 2025; // Cambia al año correspondiente
+        $mes = 1; // Enero
 
-    // Filtrar todas las reservas del mes de enero
-    $reservasMes = Reserva::whereYear('fecha_entrada', $anio)
-        ->whereMonth('fecha_entrada', $mes)
-        ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 4
-        ->get();
+        // Iniciar una transacción para mantener consistencia
+        \Illuminate\Support\Facades\DB::beginTransaction();
 
-    // Eliminar las facturas existentes del mes de enero
-    $facturasMes = Invoices::whereYear('fecha', $anio)
-        ->whereMonth('fecha', $mes)
-        ->get();
+        try {
+            // Filtrar todas las reservas del mes de enero
+            $reservasMes = Reserva::whereYear('fecha_entrada', $anio)
+                ->whereMonth('fecha_entrada', $mes)
+                ->whereNotIn('estado_id', [4]) // Filtrar estado_id diferente de 4
+                ->get();
 
-    foreach ($facturasMes as $factura) {
-        $factura->forceDelete(); // Eliminar facturas permanentemente
+            // Eliminar las facturas existentes del mes de enero
+            $facturasMes = Invoices::whereYear('fecha', $anio)
+                ->whereMonth('fecha', $mes)
+                ->get();
+
+            foreach ($facturasMes as $factura) {
+                $factura->forceDelete(); // Eliminar facturas permanentemente
+            }
+
+            // Deshabilitar las restricciones de claves foráneas temporalmente
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // Eliminar referencias autoincrementales del mes de enero
+            InvoicesReferenceAutoincrement::where('year', $anio)
+                ->where('month_num', $mes)
+                ->forceDelete();
+
+            // Habilitar nuevamente las restricciones de claves foráneas
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            // Verifica si todas las facturas y referencias fueron eliminadas
+            if (
+                Invoices::whereYear('fecha', $anio)->whereMonth('fecha', $mes)->exists() ||
+                InvoicesReferenceAutoincrement::where('year', $anio)->where('month_num', $mes)->exists()
+            ) {
+                throw new \Exception("No se pudieron eliminar todas las facturas o referencias del mes de $anio/$mes.");
+            }
+
+            // Crear nuevas facturas para las reservas del mes
+            foreach ($reservasMes as $reserva) {
+                // Cálculo correcto de la base imponible y el IVA
+                $total = $reserva->precio;
+                $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+                $iva = $total - $base; // Calcular el IVA
+
+                $data = [
+                    'budget_id' => null,
+                    'cliente_id' => $reserva->cliente_id,
+                    'reserva_id' => $reserva->id,
+                    'invoice_status_id' => 1,
+                    'concepto' => 'Estancia en apartamento: ' . $reserva->apartamento->titulo,
+                    'description' => '',
+                    'fecha' => $reserva->fecha_entrada, // Fecha de entrada en la reserva
+                    'fecha_cobro' => null,
+                    'base' => round($base, 2), // Redondear la base a 2 decimales
+                    'iva' => round($iva, 2), // Redondear el IVA a 2 decimales
+                    'descuento' => null,
+                    'total' => round($total, 2), // Asegurarse de que el total también esté redondeado
+                    'created_at' => $reserva->fecha_entrada,
+                    'updated_at' => $reserva->fecha_entrada,
+                ];
+
+                // Crear la factura
+                $crearFactura = Invoices::create($data);
+
+                // Generar referencia específica y actualizar la factura
+                $referencia = $this->generateSpecificBudgetReference($crearFactura, $anio, $mes);
+                $crearFactura->reference = $referencia['reference'];
+                $crearFactura->reference_autoincrement_id = $referencia['id'];
+                $crearFactura->invoice_status_id = 3;
+                $crearFactura->save();
+
+                // Actualizar el estado de la reserva
+                $reserva->estado_id = 5;
+                $reserva->save();
+            }
+
+            // Confirmar transacción
+            \Illuminate\Support\Facades\DB::commit();
+
+            // Log para indicar que la tarea se completó
+            Log::info("Facturas del mes de enero de $anio regeneradas correctamente.");
+
+            return response()->json(['message' => "Facturas del mes de enero de $anio regeneradas correctamente."]);
+        } catch (\Exception $e) { // Corregir el uso del espacio de nombres para Exception
+            // Revertir transacción si ocurre algún error
+            \Illuminate\Support\Facades\DB::rollBack(); // Corregir el uso del espacio de nombres para DB
+            Log::error("Error al regenerar facturas del mes de $anio/$mes: " . $e->getMessage());
+            return response()->json(['error' => "Error al regenerar facturas: " . $e->getMessage()], 500);
+        }
     }
 
-    // Ahora eliminar referencias autoincrementales del mes de enero
-    InvoicesReferenceAutoincrement::where('year', $anio)
-        ->where('month_num', $mes)
-        ->forceDelete();
-
-    // Verifica si todas las facturas y referencias fueron eliminadas
-    if (
-        Invoices::whereYear('fecha', $anio)->whereMonth('fecha', $mes)->exists() ||
-        InvoicesReferenceAutoincrement::where('year', $anio)->where('month_num', $mes)->exists()
-    ) {
-        Log::error("Error al eliminar facturas o referencias del mes de $anio/$mes.");
-        return response()->json(['error' => "No se pudieron eliminar todas las facturas o referencias del mes de $anio/$mes."]);
-    }
-
-    // Crear nuevas facturas para las reservas del mes
-    foreach ($reservasMes as $reserva) {
-        // Cálculo correcto de la base imponible y el IVA
-        $total = $reserva->precio;
-        $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
-        $iva = $total - $base; // Calcular el IVA
-
-        $data = [
-            'budget_id' => null,
-            'cliente_id' => $reserva->cliente_id,
-            'reserva_id' => $reserva->id,
-            'invoice_status_id' => 1,
-            'concepto' => 'Estancia en apartamento: ' . $reserva->apartamento->titulo,
-            'description' => '',
-            'fecha' => $reserva->fecha_entrada, // Fecha de entrada en la reserva
-            'fecha_cobro' => null,
-            'base' => round($base, 2), // Redondear la base a 2 decimales
-            'iva' => round($iva, 2), // Redondear el IVA a 2 decimales
-            'descuento' => null,
-            'total' => round($total, 2), // Asegurarse de que el total también esté redondeado
-            'created_at' => $reserva->fecha_entrada,
-            'updated_at' => $reserva->fecha_entrada,
-        ];
-
-        // Crear la factura
-        $crearFactura = Invoices::create($data);
-
-        // Generar referencia específica y actualizar la factura
-        $referencia = $this->generateSpecificBudgetReference($crearFactura, $anio, $mes);
-        $crearFactura->reference = $referencia['reference'];
-        $crearFactura->reference_autoincrement_id = $referencia['id'];
-        $crearFactura->invoice_status_id = 3;
-        $crearFactura->save();
-
-        // Actualizar el estado de la reserva
-        $reserva->estado_id = 5;
-        $reserva->save();
-    }
-
-    // Log para indicar que la tarea se completó
-    Log::info("Facturas del mes de enero de $anio regeneradas correctamente.");
-
-    return response()->json(['message' => "Facturas del mes de enero de $anio regeneradas correctamente."]);
-}
 
 
 
