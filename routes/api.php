@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\RatePlanController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -47,3 +48,17 @@ Route::post('/disconnect-listing', [App\Http\Controllers\ChannexController::clas
 Route::post('/rate-error', [App\Http\Controllers\ChannexController::class, 'rateError'])->name('channex.rateError');
 Route::post('/accepted-reservation', [App\Http\Controllers\ChannexController::class, 'acceptedReservation'])->name('channex.acceptedReservation');
 Route::post('/decline-reservation', [App\Http\Controllers\ChannexController::class, 'declineReservation'])->name('channex.declineReservation');
+
+
+// WEBHOOOKS POR APARTAMENTOS
+Route::prefix('/webhooks')->group(function () {
+    Route::post('{id}/ari-changes', [App\Http\Controllers\WebhookController::class, 'ariChanges'])->name('webhook.channex.ariChanges');
+    Route::post('{id}/booking-any', [App\Http\Controllers\WebhookController::class, 'bookingAny'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/booking-unmapped-room', [App\Http\Controllers\WebhookController::class, 'bookingUnmappedRoom'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/booking-unmapped-rate', [App\Http\Controllers\WebhookController::class, 'bookingUnmappedRate'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/message', [App\Http\Controllers\WebhookController::class, 'message'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/review', [App\Http\Controllers\WebhookController::class, 'review'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/alteration_request', [App\Http\Controllers\WebhookController::class, 'alterationRequest'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/reservation-request', [App\Http\Controllers\WebhookController::class, 'reservationRequest'])->name('webhook.channex.bookingAny');
+    Route::post('{id}/sync-error', [App\Http\Controllers\WebhookController::class, 'syncError'])->name('webhook.channex.syncWarning');
+});

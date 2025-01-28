@@ -11,6 +11,146 @@ use Illuminate\Support\Facades\Storage;
 
 class WebhookController extends Controller
 {
+
+    private function saveToWebhooksFolder($filename, $data)
+    {
+        // Ruta completa para guardar en la carpeta "webhooks"
+        $path = "webhooks/{$filename}";
+        Storage::disk('publico')->put($path, json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    public function ariChanges(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Formato para el nombre del archivo
+        $filename = "ariChanges_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function bookingAny(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "bookingAny_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function bookingUnmappedRoom(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "bookingUnmappedRoom_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function bookingUnmappedRate(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "bookingUnmappedRate_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function message(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "message_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function review(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "review_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function reservationRequest(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "reservationRequest_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function syncError(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "syncError_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+    public function alterationRequest(Request $request, $id)
+    {
+        $apartamento = Apartamento::find($id);
+
+        $fecha = Carbon::now()->format('Y-m-d_H-i-s');
+        $filename = "alterationRequest_{$fecha}.txt";
+
+        $this->saveToWebhooksFolder($filename, $request->all());
+
+        return response()->json(['status' => true]);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public function handleWebhook(Request $request)
     {
         // Log de ejemplo para depuración

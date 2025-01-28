@@ -36,6 +36,7 @@ Route::get('/', function () {
     return view('welcome');
 })->name('inicio.welcome');
 Route::get('/regenerate-invoices', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
+Route::get('/registrar-webhooks/{id}', [App\Http\Controllers\ApartamentosController::class, 'registrarWebhooks']);
 
 Route::get('/request-data', function (Request $request) {
     return $request->all(); // Esto devolverá todos los datos de la solicitud
