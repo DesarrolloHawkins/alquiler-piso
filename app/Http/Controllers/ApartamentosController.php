@@ -150,7 +150,7 @@ class ApartamentosController extends Controller
 
             $data = [
                 "property_id" => $apartamento->id_channex,
-                "callback_url" => "https://crm.apartamentosalgeciras.com/api/". $apartamento->id ."/" . $mask['url'],
+                "callback_url" => "https://crm.apartamentosalgeciras.com/api/webhooks/". $apartamento->id ."/" . $mask['url'],
                 "event_mask" => $mask['nombre'],
                 "request_params" => [],
                 "headers" => [],
