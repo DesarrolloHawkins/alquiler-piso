@@ -8,9 +8,12 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class WebhookController extends Controller
 {
+    private $apiUrl = 'https://staging.channex.io/api/v1';
+    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
 
     private function saveToWebhooksFolder($filename, $data)
     {
@@ -39,8 +42,25 @@ class WebhookController extends Controller
         $filename = "bookingAny_{$fecha}.txt";
 
         $this->saveToWebhooksFolder($filename, $request->all());
+        // Extraer revision_id del payload
+        $revisionId = $request->input('payload.revision_id');
 
-        return response()->json(['status' => true]);
+        if (!$revisionId) {
+            return response()->json(['status' => false, 'message' => 'No revision_id found'], 400);
+        }
+        $url = "https://staging.channex.io/api/v1/booking_revisions/{$revisionId}/ack";
+
+        // Hacer la petición POST
+        $response = Http::withHeaders([
+            'user-api-key' => $this->apiToken, // Asegúrate de que $this->apiToken está definido
+        ])->post($url, ['values' => []]); // Enviar datos vacíos si no hay updates
+
+        // Verificar la respuesta
+        if ($response->successful()) {
+            return response()->json(['status' => true, 'message' => 'Acknowledged successfully']);
+        } else {
+            return response()->json(['status' => false, 'message' => 'Error in acknowledgment', 'error' => $response->body()], $response->status());
+        }
     }
 
     public function bookingUnmappedRoom(Request $request, $id)
