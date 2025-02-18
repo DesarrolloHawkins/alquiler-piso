@@ -139,12 +139,12 @@
                                 {{-- Gestion --}}
                                 <li class="nav-item w-100">
                                     <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuGestion" href="#submenuGestion" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*') ? 'true' : 'false' }}">
+                                    <button data-bs-target="#submenuGestion" href="#submenuGestion" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'true' : 'false' }}">
                                         <i class="fa-solid fa-list-check me-2 fs-4" style="width:25px"></i>
                                         Gestión
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*') ? 'show' : '' }}" id="submenuGestion">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'show' : '' }}" id="submenuGestion">
 
                                         <li class="nav-item w-100">
                                             <a href="{{route('apartamentos.admin.index')}}" class="nav-link fs-6 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}">
@@ -164,6 +164,16 @@
                                         <li class="nav-item">
                                             <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-6 {{ request()->is('gestion', 'gestion/*') ? 'active' : '' }}">
                                                 Limpieza
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a target="blank" href="{{route('holiday.admin.index')}}" class="nav-link fs-6 {{ request()->is('holidays', 'holidays/index') ? 'active' : '' }}">
+                                                Vacaciones
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a target="blank" href="{{route('holiday.admin.petitions')}}" class="nav-link fs-6 {{ request()->is('holidays', 'holidays/petitions') ? 'active' : '' }}">
+                                                Gestion Vacaciones
                                             </a>
                                         </li>
                                         <li class="nav-item">
@@ -215,12 +225,12 @@
                                 {{-- Tesoreria --}}
                                 <li class="nav-item w-100">
                                     <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'true' : 'false' }}">
+                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'true' : 'false' }}">
                                         <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
                                         Tesoreria
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*') ? 'show' : '' }}" id="submenuTesoreria">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'show' : '' }}" id="submenuTesoreria">
                                         <li class="nav-item w-100">
                                             <a href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-6 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}">
                                                 Diario de Caja
@@ -229,6 +239,11 @@
                                         <li class="nav-item">
                                             <a href="{{route('admin.estadosDiario.index')}}" class="nav-link fs-6 {{ request()->is('estados-diario', 'estados-diario/*') ? 'active' : '' }}" >
                                             Estados del Diario
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{route('presupuestos.index')}}" class="nav-link fs-6 {{ request()->is('presupuestos', 'presupuestos/*') ? 'active' : '' }}" >
+                                            Presupuestos
                                             </a>
                                         </li>
                                         <li class="nav-item">
@@ -358,7 +373,7 @@
                     </div>
                     <!-- Botón de toggle para dispositivos pequeños -->
                     <div class="d-md-none p-3" style="position: absolute;z-index: 850;right: 0;bottom: 0;text-align: right;">
-                        <button class="btn btn-primary" id="toggleSidebar" style="border-radius: 50%;height: 75px;width: 75px;">
+                        <button class="btn bg-color-tercero" id="toggleSidebar" style="border-radius: 50%;height: 75px;width: 75px;">
                             <i class="fa-solid fa-bars" style="font-size: 28px;"></i>
                         </button>
                     </div>
@@ -421,7 +436,10 @@
                     z-index: 800;
                 }
                 .contenedor-principal {
-                    margin-top: 40px
+                    margin-top: 0
+                }
+                .btn {
+                    width: 100%;
                 }
             }
 

@@ -14,7 +14,7 @@
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#59bcff",endColorstr="#90dffe",GradientType=1);
     }
 </style>
-<div class="container px-4" style="background-color: #f4f4f4;">
+<div class="container">
     <form action="{{route('dashboard.index')}}" class="row  align-items-end" method="GET">
         <div class="col-md-3">
             <label for="fecha_inicio">Fecha Inicio</label>
@@ -28,8 +28,8 @@
                 value="{{ request('fecha_fin', '') }}" placeholder="Selecciona Fecha Fin">
         </div>
 
-        <div class="col-md-3">
-            <button type="submit" class="btn bg-color-primero mt-4">Buscar</button>
+        <div class="col-md-3 col-sm-12 mt-4">
+            <button type="submit" class="btn bg-color-primero w-sm-100  text-uppercase">Buscar</button>
         </div>
     </form>
     <div class="row" style="padding: 1rem;">
@@ -76,10 +76,10 @@
             <div class="row">
                 <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
                     <div class="row p-3">
-                        <div class="col-7">
+                        <div class="col-md-7 col-sm-6">
                             <h4 class="text-start mb-0 fs-5">Total de Reservas</h4>
                         </div>
-                        <div class="col-5">
+                        <div class="col-md-5 col-sm-6">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ $countReservas }}</strong></h2>
                         </div>
                     </div>

@@ -42,9 +42,9 @@
     --bs-btn-color: #fff;
     --bs-btn-bg: #3B3F64;
     --bs-btn-border-color: #3B3F64;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: #3B3F64;
-    --bs-btn-hover-border-color: #3B3F64;
+    --bs-btn-hover-color: #3B3F64;
+    --bs-btn-hover-bg: #BBB6D4;
+    --bs-btn-hover-border-color: #BBB6D4;
     --bs-btn-focus-shadow-rgb: 49, 132, 253;
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: #3B3F64;
@@ -59,7 +59,7 @@
     --bs-btn-bg: #757191;
     --bs-btn-border-color: #757191;
     --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: #757191;
+    --bs-btn-hover-bg: #3B3F64;
     --bs-btn-hover-border-color: #757191;
     --bs-btn-focus-shadow-rgb: 49, 132, 253;
     --bs-btn-active-color: #fff;
@@ -69,6 +69,7 @@
     --bs-btn-disabled-color: #fff;
     --bs-btn-disabled-bg: #757191;
     --bs-btn-disabled-border-color: #757191;
+    height: max-content;
 }
 
 .btn-foto {
@@ -86,6 +87,23 @@
     --bs-btn-disabled-color: #fff;
     --bs-btn-disabled-bg: #3B3F64;
     --bs-btn-disabled-border-color: #3B3F64;
+}
+
+.btn-foto-apartamento {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #4862d3;
+    --bs-btn-border-color: #4862d3;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #3B3F64;
+    --bs-btn-hover-border-color: #3B3F64;
+    --bs-btn-focus-shadow-rgb: 49, 132, 253;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #4862d3;
+    --bs-btn-active-border-color: #4862d3;
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #4862d3;
+    --bs-btn-disabled-border-color: #4862d3;
 }
 
 .btn-secundario {
@@ -116,11 +134,20 @@
     background-color: #3B3F64;
     border-color: #3B3F64;
 }
+.form-label{
+    font-weight: bold;
+    color: gray;
+}
 
 .encabezado_top {
     font-weight: bold;
-    font-size: 2rem;
+    font-size: 1.7rem;
 }
+.icon_encabezado{
+    font-size: 1.2rem;
+    margin-right: 30px;
+}
+
 .page-link.active, .active > .page-link {
     color: white;
     background-color: $color-primero;
@@ -186,7 +213,7 @@
 
 .nav-pills::-webkit-scrollbar-button:increment,.contenedor::-webkit-scrollbar-button {
     display: none;
-} 
+}
 
 .nav-pills::-webkit-scrollbar:horizontal {
     height: 10px;
@@ -198,5 +225,32 @@
 }
 
 .nav-pills::-webkit-scrollbar-track {
-    border-radius: 10px;  
+    border-radius: 10px;
 }
+
+
+
+/* Media queries para dispositivos móviles, tabletas y escritorios */
+@media (max-width: 576px) { /* Móviles */
+    .width-auto {
+        width: 100%;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) { /* Tabletas */
+    .width-auto {
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) { /* Escritorios */
+    .width-auto {
+        width: auto;
+    }
+}
+
+.link-breadcrumb {
+    color: $color-octavo;
+    text-decoration: none;
+}
+

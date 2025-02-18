@@ -22,7 +22,8 @@ class Email extends Model
         'status_id',
         'category_id',
         'view',
-        'message_id'
+        'message_id',
+        'response'
     ];
     
 

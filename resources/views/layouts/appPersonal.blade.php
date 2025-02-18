@@ -122,13 +122,10 @@
                    </a>
                 </div>
                 <div class="col-3">
-                    <a href="#" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
-                         <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                         </div>
-                         {{-- <div class="texto fs-6 p-0 text-muted">
-                            Historial
-                         </div> --}}
+                    <a href="{{route('holiday.index')}}" class="text-decoration-none text-center boton rounded d-block h-100 w-100">
+                        <div class="icon fs-1 m-0 ext-secondary" style="color: #b8c2d7 !important">
+                            <i class="fa-solid fa-umbrella-beach"></i>
+                        </div>
                     </a>
                 </div>
                 <div class="col-3">
@@ -191,7 +188,7 @@
         document.addEventListener('keypress', resetSessionTimer);
         document.addEventListener('click', resetSessionTimer);
     </script>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @include('sweetalert::alert')
 

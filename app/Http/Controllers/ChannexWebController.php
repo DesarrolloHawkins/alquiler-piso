@@ -97,7 +97,7 @@ class ChannexWebController extends Controller
             'latitude' => 'required|numeric',
             'website' => 'nullable|url',
             'photos' => 'nullable|array',
-            'photos.*.file' => 'required_with:photos|file|image|max:2048',
+            'photos.*.file' => 'nullable|file|image|max:2048',
             'photos.*.position' => 'nullable|integer',
             'photos.*.author' => 'nullable|string',
             'photos.*.kind' => 'nullable|string',
@@ -105,7 +105,7 @@ class ChannexWebController extends Controller
         ]);
 
         $photos = [];
-        if ($request->has('photos')) {
+        if ($request->has('photos') && isset($request->photos[0]->file)) {
             foreach ($request->file('photos') as $index => $photo) {
                 // Subir el archivo al almacenamiento
                 $path = $photo['file']->store('photos', 'public');
@@ -171,6 +171,7 @@ class ChannexWebController extends Controller
                 'email' => $validatedData['email'],
                 'phone' => $validatedData['phone'],
                 'website' => $validatedData['website'],
+                'edificio_id' => $validatedData['edificio_id'],
             ]);
 
             // Guardar fotos relacionadas
@@ -392,7 +393,7 @@ class ChannexWebController extends Controller
     public function fullSync(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'u0SoUIukKf1fMtagxFQaq7IIJOjKkS4nmB5L/K8j8HsHR6AG6+0mNMWf4INuyoBX'; // Cambia esto por tu API Key real
+        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
         $providerCode = 'OpenChannel'; // Cambia esto por tu código de proveedor real
         $hotelCode = '12152494'; // Cambia esto por tu código de hotel real
 
@@ -430,7 +431,7 @@ class ChannexWebController extends Controller
     public function ratePlansList(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'u0SoUIukKf1fMtagxFQaq7IIJOjKkS4nmB5L/K8j8HsHR6AG6+0mNMWf4INuyoBX'; // Cambia esto por tu API Key real
+        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
         $url = 'https://staging.channex.io/api/v1/rate_plans';
 
         try {
@@ -501,7 +502,7 @@ class ChannexWebController extends Controller
     public function ratePlansUpdate(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'u0SoUIukKf1fMtagxFQaq7IIJOjKkS4nmB5L/K8j8HsHR6AG6+0mNMWf4INuyoBX'; // Cambia esto por tu API Key real
+        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
         $url = 'https://staging.channex.io/api/v1/rate_plans';
 
         try {

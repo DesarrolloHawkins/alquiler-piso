@@ -39,13 +39,40 @@
                                 </td>
                                 <td>
                                     <a href="{{ route('admin.emails.show', $email->id) }}" class="text-decoration-none">
-                                        {{ $email->subject }}
+                                        {{-- Imprimir carateres especiales --}}
+                                        {{-- =?us-ascii?Q?[Wordfence_Alert]_Problems_found_on_ontarifa.co?= =?us-ascii?Q?m?= --}}
+                                        @php
+                                            $subject = str_replace('[', '&#91;', $email->subject);
+                                            $subject = str_replace(']', '&#93;', $subject);
+                                            $textoDecodificado = mb_decode_mimeheader($email->subject);
+
+                                            echo $textoDecodificado;
+                                        @endphp
+                                            {{ $email->subject }}
+
+                                        {{-- @if (strpos($email->subject, '[') !== false)
+                                        @else
+                                        @endif --}}
+                                        {{-- {{ $email->subject }} --}}
                                     </a>
                                 </td>
-                                <td>{{ $email->category->name }}</td>
                                 <td>
+                                    @if (isset($email->category->name))
+                                        {{$email->category->name}}
+                                    @else
+                                        <span class="badge bg-danger">Sin categoria</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (isset($email->status->name))
+                                        <!-- Mostrar estado con colores o etiquetas -->
+                                        <span class="badge bg-{{ $email->status->color }}">{{ $email->status->name }}</span>
+                                    @else
+                                        <span class="badge bg-danger">Sin estado</span>
+                                        
+                                    @endif
                                     <!-- Mostrar estado con colores o etiquetas -->
-                                    <span class="badge bg-{{ $email->status->color }}">{{ $email->status->name }}</span>
+                                    {{-- <span class="badge bg-{{ $email->status->color }}">{{ $email->status->name }}</span> --}}
                                 </td>
                                 <td>{{ $email->created_at->format('g:i A') }}</td>
                             </tr>
