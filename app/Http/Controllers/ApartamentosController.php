@@ -152,8 +152,8 @@ class ApartamentosController extends Controller
                 "property_id" => $apartamento->id_channex,
                 "callback_url" => "https://crm.apartamentosalgeciras.com/api/webhooks/". $apartamento->id ."/" . $mask['url'],
                 "event_mask" => $mask['nombre'],
-                "request_params" => [],
-                "headers" => [],
+                "request_params" => new \stdClass(), // Según la documentación, debe ser un objeto vacío si no se usan parámetros
+                "headers" => new \stdClass(),       // Según la documentación, debe ser un objeto vacío si no se usan encabezados
                 "is_active" => true, // Espacio extra eliminado
                 "send_data" => true,
             ];
