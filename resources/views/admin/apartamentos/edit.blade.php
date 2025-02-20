@@ -63,9 +63,16 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-
+        <!-- Claves -->
+        <div class="col-sm-12 col-md-3 mb-3">
+            <label for="claves" class="form-label">Claves de Acceso</label>
+            <input type="text" class="form-control @error('claves') is-invalid @enderror" id="claves" name="claves" placeholder="Claves para acceder al apartamento" value="{{ old('claves', $apartamento->claves) }}">
+            @error('claves')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
         {{-- Moneda --}}
-        <div class="col-sm-12 col-md-4 mb-3">
+        <div class="col-sm-12 col-md-3 mb-3">
             <label for="currency" class="form-label">Moneda</label>
             <select class="form-select @error('currency') is-invalid @enderror" id="currency" name="currency">
                 <option value="EUR" {{ old('currency', $apartamento->currency) == 'EUR' ? 'selected' : '' }}>EUR - Euro</option>
@@ -80,7 +87,7 @@
         </div>
 
         {{-- País --}}
-        <div class="col-sm-12 col-md-4 mb-3">
+        <div class="col-sm-12 col-md-3 mb-3">
             <label for="country" class="form-label">País</label>
             <select class="form-select @error('country') is-invalid @enderror" id="country" name="country">
                 <option value="ES" {{ old('country', $apartamento->country) == 'ES' ? 'selected' : '' }}>España</option>
@@ -95,7 +102,7 @@
         </div>
 
         {{-- Estado/Provincia --}}
-        <div class="col-sm-12 col-md-4 mb-3">
+        <div class="col-sm-12 col-md-3 mb-3">
             <label for="state" class="form-label">Estado/Provincia</label>
             <select class="form-select @error('state') is-invalid @enderror" id="state" name="state">
                 <option value="Cádiz" {{ old('state', $apartamento->state) == 'Cádiz' ? 'selected' : '' }}>Cádiz</option>
@@ -215,14 +222,7 @@
                     @enderror
                 </div>
 
-                <!-- Información Importante -->
-                <div class="col-sm-12 col-md-6 mb-3">
-                    <label for="claves" class="form-label">Claves de Acceso</label>
-                    <input type="text" class="form-control @error('claves') is-invalid @enderror" id="claves" name="claves" placeholder="Claves para acceder al apartamento" value="{{ old('claves', $apartamento->claves) }}">
-                    @error('claves')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+
             </div>
 
         </div>
