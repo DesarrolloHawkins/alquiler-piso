@@ -214,6 +214,15 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <!-- Información Importante -->
+                <div class="col-sm-12 col-md-6 mb-3">
+                    <label for="claves" class="form-label">Información Importante</label>
+                    <textarea class="form-control @error('claves') is-invalid @enderror" id="claves" name="claves" placeholder="Claves para acceder al apartamento">{{ old('claves', $apartamento->claves) }}</textarea>
+                    @error('claves')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
         </div>
