@@ -47,7 +47,7 @@
                         </tr>
                         <tr>
                             <th style="width: 140px" scope="row">Precio</th>
-                            <td>{{$reserva->precio}}</td>
+                            <td>{{ number_format($reserva->precio, 2) }} €</td>
                         </tr>
                         <tr>
                             <th style="width: 140px" scope="row">Dni Entregado</th>
