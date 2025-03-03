@@ -282,6 +282,9 @@
                                 </a>
                             </th>
                             <th scope="col">
+                                Precio
+                            </th>
+                            <th scope="col">
                                 Accion
                             </th>
                         </tr>
@@ -297,6 +300,7 @@
                                 <td>{{$reserva->fecha_salida}}</td>
                                 <td>{{$reserva->origen}}</td>
                                 <td>{{$reserva->codigo_reserva}}</td>
+                                <td>{{ number_format($reserva->precio, 2) }} €</td>
                                 <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a></td>
                             </tr>
                         @endforeach
