@@ -160,13 +160,13 @@
 
                                     <!-- Fecha de Entrada -->
                                     <div class="input-group me-2">
-                                        <label class="input-group-text" for="fecha_entrada" id="label_fecha_entrada">Fecha de Entrada</label>
+                                        <label class="input-group-text" for="fecha_entrada" id="label_fecha_entrada">Fecha de Inicio</label>
                                         <input type="text" class="form-control" id="fecha_entrada" name="fecha_entrada" value="{{ request()->get('fecha_entrada') }}">
                                     </div>
 
                                     <!-- Fecha de Salida -->
                                     <div class="input-group me-2">
-                                        <label class="input-group-text" for="fecha_salida" id="label_fecha_salida">Fecha de Salida</label>
+                                        <label class="input-group-text" for="fecha_salida" id="label_fecha_salida">Fecha de Fin</label>
                                         <input type="text" class="form-control" id="fecha_salida" name="fecha_salida" value="{{ request()->get('fecha_salida') }}">
                                     </div>
 

@@ -291,13 +291,14 @@ class DashboardController extends Controller
 
         // Filtrar reservas por rango de fechas
         // Filtrar reservas por rango de fechas
-        $reservas = Reserva::where(function ($query) use ($fechaInicio, $fechaFin) {
+        $reservas = Reserva::where('estado_id', '!=', 4)->where(function ($query) use ($fechaInicio, $fechaFin) {
             $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
                 ->orWhereBetween('fecha_salida', [$fechaInicio, $fechaFin])
                 ->orWhere(function ($subQuery) use ($fechaInicio, $fechaFin) {
                     $subQuery->where('fecha_entrada', '<=', $fechaInicio)
                             ->where('fecha_salida', '>=', $fechaFin);
                 });
+
         })->get();
         // $fechaFin2 = Carbon::now();
         $fechaFin2 = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));

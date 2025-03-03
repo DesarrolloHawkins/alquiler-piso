@@ -11,7 +11,9 @@ use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\MensajeAuto;
 use App\Models\Photo;
+use App\Models\RatePlan;
 use App\Models\Reserva;
+use App\Models\RoomType;
 use App\Services\ChatGptService;
 use Carbon\Carbon;
 use Carbon\Cli\Invoker;
@@ -42,25 +44,26 @@ class ReservasController extends Controller
 
     $query = Reserva::with('cliente')->where('estado_id', '!=', 4);
 
-    if (!empty($searchTerm)) {
-        $query->where(function($subQuery) use ($searchTerm) {
-            $subQuery->whereHas('cliente', function($q) use ($searchTerm) {
-                $q->where('alias', 'LIKE', '%' . $searchTerm . '%');
-            })
-            ->orWhere('codigo_reserva', 'LIKE', '%' . $searchTerm . '%')
-            ->orWhere('fecha_entrada', 'LIKE', '%' . $searchTerm . '%')
-            ->orWhere('fecha_salida', 'LIKE', '%' . $searchTerm . '%')
-            ->orWhere('origen', 'LIKE', '%' . $searchTerm . '%');
+   // Aplicar filtros de fechas solo si se proporcionan
+    if (!empty($fechaEntrada) && !empty($fechaSalida)) {
+        $query->where(function ($q) use ($fechaEntrada, $fechaSalida) {
+            $q->whereBetween('fecha_entrada', [$fechaEntrada, $fechaSalida])
+            ->orWhereBetween('fecha_salida', [$fechaEntrada, $fechaSalida])
+            ->orWhere(function ($q) use ($fechaEntrada, $fechaSalida) {
+                $q->where('fecha_entrada', '<=', $fechaEntrada)
+                    ->where('fecha_salida', '>=', $fechaSalida);
+            });
         });
     }
 
-    // Aplicar filtros de fechas solo si se proporcionan
-    if (!empty($fechaEntrada)) {
-        $query->whereDate('fecha_entrada', '=', $fechaEntrada);
-    }
-    if (!empty($fechaSalida)) {
-        $query->whereDate('fecha_salida', '=', $fechaSalida);
-    }
+
+    // // Aplicar filtros de fechas solo si se proporcionan
+    // if (!empty($fechaEntrada)) {
+    //     $query->whereDate('fecha_entrada', '=', $fechaEntrada);
+    // }
+    // if (!empty($fechaSalida)) {
+    //     $query->whereDate('fecha_salida', '=', $fechaSalida);
+    // }
 
     $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
         'order_by' => $orderBy,
@@ -110,8 +113,10 @@ class ReservasController extends Controller
     {
         $clientes = Cliente::all();
         $apartamentos = Apartamento::all();
+        $roomTypes = RoomType::all();
+        $ratePlans = RatePlan::all();
         $estados = Estado::all();
-        return view('reservas.create', compact('clientes','apartamentos','estados'));
+        return view('reservas.create', compact('clientes','apartamentos','estados','roomTypes','ratePlans'));
     }
 
     /**
@@ -1095,28 +1100,28 @@ class ReservasController extends Controller
             return $response_data;
         }
     }
-    public function enviarMensajeAsistente($mensaje, $asistenteId)
-    {
-        try {
-            // Enviar el mensaje al asistente con el ID específico
-            $response = $this->client->chat()->create([
-                'model' => 'gpt-3.5-turbo', // Modelo subyacente, aunque el asistente ya está preconfigurado
-                'assistant' => $asistenteId, // ID del asistente
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $mensaje,
-                    ],
-                ],
-            ]);
+    // public function enviarMensajeAsistente($mensaje, $asistenteId)
+    // {
+    //     try {
+    //         // Enviar el mensaje al asistente con el ID específico
+    //         $response = $this->client->chat()->create([
+    //             'model' => 'gpt-3.5-turbo', // Modelo subyacente, aunque el asistente ya está preconfigurado
+    //             'assistant' => $asistenteId, // ID del asistente
+    //             'messages' => [
+    //                 [
+    //                     'role' => 'user',
+    //                     'content' => $mensaje,
+    //                 ],
+    //             ],
+    //         ]);
 
-            return $this->parseResponse($response);
+    //         return $this->parseResponse($response);
 
-        } catch (\Exception $e) {
-            // Manejo de errores
-            return "Lo siento, ocurrió un error al procesar tu solicitud: " . $e->getMessage();
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         // Manejo de errores
+    //         return "Lo siento, ocurrió un error al procesar tu solicitud: " . $e->getMessage();
+    //     }
+    // }
 
     public function reservasCobradas(Request $request){
 

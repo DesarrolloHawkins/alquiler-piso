@@ -15,7 +15,7 @@
     }
 </style>
 <div class="container">
-    <form action="{{route('dashboard.index')}}" class="row  align-items-end" method="GET">
+    <form action="{{route('dashboard.index')}}" class="row align-items-end" method="GET">
         <div class="col-md-3">
             <label for="fecha_inicio">Fecha Inicio</label>
             <input type="text" id="fecha_inicio" name="fecha_inicio" class="form-control flatpickr"
@@ -28,53 +28,14 @@
                 value="{{ request('fecha_fin', '') }}" placeholder="Selecciona Fecha Fin">
         </div>
 
-        <div class="col-md-3 col-sm-12 mt-4">
-            <button type="submit" class="btn bg-color-primero w-sm-100  text-uppercase">Buscar</button>
+        <div class="col-md-6 col-sm-12 mt-4">
+            <button type="submit" class="btn bg-color-primero w-sm-100 w-auto text-uppercase">Buscar</button>
         </div>
     </form>
     <div class="row" style="padding: 1rem;">
         <div class="col-12 mb-5">
-            {{-- <form action="{{route('dashboard.index')}}" class="row  align-items-end" method="GET">
-                <div class="col-md-6 col-sm-12">
-                    <h1 class="mb-0">Dashboard</h1>
-                </div>
-                <div class="col-md-2">
-                   <label for="mes">
-                        Mes - {{$mesReturn}}
-                   </label>
-                   <select class="form-control" name="mes" id="mes" required>
-                        <option value="">-- Selecciona Mes --</option>
-                        <option value="01" @if(isset($mesReturn) && $mesReturn == '01') selected @endif>Enero</option>
-                        <option value="02" @if(isset($mesReturn) && $mesReturn == '02') selected @endif>Febrero</option>
-                        <option value="03" @if(isset($mesReturn) && $mesReturn == '03') selected @endif>Marzo</option>
-                        <option value="04" @if(isset($mesReturn) && $mesReturn == '04') selected @endif>Abril</option>
-                        <option value="05" @if(isset($mesReturn) && $mesReturn == '05') selected @endif>Mayo</option>
-                        <option value="06" @if(isset($mesReturn) && $mesReturn == '06') selected @endif>Junio</option>
-                        <option value="07" @if(isset($mesReturn) && $mesReturn == '07') selected @endif>Julio</option>
-                        <option value="08" @if(isset($mesReturn) && $mesReturn == '08') selected @endif>Agosto</option>
-                        <option value="09" @if(isset($mesReturn) && $mesReturn == '09') selected @endif>Septiembre</option>
-                        <option value="10" @if(isset($mesReturn) && $mesReturn == '10') selected @endif>Octubre</option>
-                        <option value="11" @if(isset($mesReturn) && $mesReturn == '11') selected @endif>Noviembre</option>
-                        <option value="12" @if(isset($mesReturn) && $mesReturn == '12') selected @endif>Diciembre</option>
-                    </select>
-               </div>
-
-               <div class="col-md-2">
-                   <label for="anio">
-                   Año
-                   </label>
-                   <select class="form-control" name="anio" id="anio" require>
-                    <option @if(isset($anioReturn) && $anioReturn == $anioActual) selected @endif value="{{ $anioActual }}">{{ $anioActual }}</option>
-                    <option @if(isset($anioReturn) && $anioReturn == $anioAnterior) selected @endif value="{{ $anioAnterior }}">{{ $anioAnterior }}</option>
-                   </select>
-               </div>
-
-               <div class="col-md-2">
-                    <button type="submit" class="btn bg-color-primero">Buscar</button>
-               </div>
-            </form> --}}
-            <div class="row">
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+            <div class="row g-3">
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
                         <div class="col-md-7 col-sm-6">
                             <h4 class="text-start mb-0 fs-5">Total de Reservas</h4>
@@ -84,7 +45,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
                         <div class="col-7">
                             <h4 class="text-start mb-0 fs-5">Ocupacción</h4>
@@ -94,17 +55,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
                         <div class="col-5">
-                            <h4 class="text-start mb-0 fs-5">Previsión</h4>
+                            <h4 class="text-start mb-0 fs-5">Facturación</h4>
                         </div>
                         <div class="col-7">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
                         <div class="col-5">
                             <h4 class="text-start mb-0 fs-5">Cobrado</h4>
@@ -114,7 +75,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
                         <div class="col-7">
                             <h4 class="text-start mb-0 fs-5">Ocupación Disponibles</h4>
@@ -125,7 +86,7 @@
                     </div>
 
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
 
                     <div class="row p-3">
                         <div class="col-8">
@@ -137,38 +98,48 @@
                     </div>
 
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
 
                     <div class="row p-3">
-                        <div class="col-8">
+                        <div class="col-6">
                             <h4 class="text-start mb-0 fs-5">Ingresos</h4>
                         </div>
-                        <div class="col-4">
+                        <div class="col-6">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
                         </div>
                     </div>
 
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
+                <div class="col-xl-4 col-md-6 card">
 
                     <div class="row p-3">
-                        <div class="col-8">
+                        <div class="col-6">
                             <h4 class="text-start mb-0 fs-5">Gastos</h4>
                         </div>
-                        <div class="col-4">
+                        <div class="col-6">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastos, 2) }} €</strong></h2>
                         </div>
                     </div>
 
                 </div>
-                <div class="col-xl-3 col-md-6 card rounded-2 me-2 mt-2">
-
+                <div class="col-xl-4 col-md-6 card">
                     <div class="row p-3">
-                        <div class="col-8">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-5">Cash Flow</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-xl-4 col-md-6 card">
+                    <div class="row p-3">
+                        <div class="col-6">
                             <h4 class="text-start mb-0 fs-5">Beneficio</h4>
                         </div>
-                        <div class="col-4">
-                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio - $gastos, 2) }} €</strong></h2>
                         </div>
                     </div>
 
@@ -286,9 +257,11 @@
                     <p class="fs-4 mb-0 text-center"><strong>{{ $countReservas }}</strong></p>
                     <p class="mb-0 text-center fs-5">Total de Ingresos:</p>
                     <p class="fs-4 mb-0 text-center"><strong>{{ number_format($sumPrecio, 2) }} €</strong></p>
-                    <button class="btn btn-warning text-white w-100 mt-3" data-bs-toggle="modal" data-bs-target="#reservasModal">
+                    {{-- <button class="btn btn-warning text-white w-100 mt-3" data-bs-toggle="modal" data-bs-target="#reservasModal">
                         Ver reservas
-                    </button>
+                    </button> --}}
+                    <button id="verReservasBtn" class="btn btn-warning text-white mt-3 w-100">Ver Reservas</button>
+
                 </div>
 
             </div>
@@ -360,6 +333,27 @@
         });
     });
 </script>
+<script>
+    document.getElementById("verReservasBtn").addEventListener("click", function () {
+        // Obtener las fechas de entrada y salida desde los inputs
+        let fechaEntrada = document.getElementById("fecha_inicio").value;
+        let fechaSalida = document.getElementById("fecha_fin").value;
+
+        // Si no hay fechas, dejar los parámetros vacíos
+        let url = "/reservas?order_by=fecha_entrada&direction=asc&perPage=&search=";
+
+        if (fechaEntrada) {
+            url += `&fecha_entrada=${fechaEntrada}`;
+        }
+        if (fechaSalida) {
+            url += `&fecha_salida=${fechaSalida}`;
+        }
+
+        // Abrir en una nueva pestaña
+        window.open(url, "_blank");
+    });
+</script>
+
 <script>
     var ingresos = @json($ingresos);
     var gastos = @json($gastos);
