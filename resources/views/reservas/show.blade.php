@@ -46,6 +46,10 @@
                             <td>{{$reserva->fecha_salida}}</td>
                         </tr>
                         <tr>
+                            <th style="width: 140px" scope="row">Precio</th>
+                            <td>{{$reserva->precio}}</td>
+                        </tr>
+                        <tr>
                             <th style="width: 140px" scope="row">Dni Entregado</th>
                             <td>
                                 @if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif
