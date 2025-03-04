@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Reserva extends Model
 {
     use HasFactory, SoftDeletes;
-    
+
       /**
      * The attributes that are mass assignable.
      *
@@ -19,6 +19,9 @@ class Reserva extends Model
     protected $fillable = [
         'cliente_id',
         'apartamento_id',
+        'room_type_id',
+        'rate_plans_id',
+        'id_channex',
         'estado_id',
         'origen',
         'fecha_entrada',
@@ -35,7 +38,7 @@ class Reserva extends Model
         'neto',
         'comision',
         'cargo_por_pago',
-        'iva',
+        'iva'
     ];
 
     /**
@@ -44,12 +47,12 @@ class Reserva extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 
+        'created_at', 'updated_at', 'deleted_at',
     ];
 
     /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function cliente()
@@ -59,17 +62,17 @@ class Reserva extends Model
 
      /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function apartamento()
     {
         return $this->belongsTo(\App\Models\Apartamento::class,'apartamento_id');
     }
-    
+
       /**
      * Obtener el usuario
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function estado()
@@ -79,31 +82,31 @@ class Reserva extends Model
 
      /**
      * Obtener apartamentos pendientes para el dia de hoy
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public static function apartamentosPendiente()
     {
         $hoy = Carbon::now()->toDateString(); // Asegurarse de obtener la fecha en formato adecuado
-    
+
         // Obtener las reservas cuya fecha de salida es hoy y no tienen asignada fecha de limpieza
         $reservasPendientes = self::whereNull('fecha_limpieza')->whereDate('fecha_salida', $hoy)->get();
-    
+
         // Obtener las limpiezas de fondo programadas para hoy
         $limpiezasDeFondo = LimpiezaFondo::whereDate('fecha', $hoy)->get();
-    
+
         // Obtener los apartamentos que ya tienen una limpieza registrada hoy en ApartamentosLimpieza
         $apartamentosLimpieza = ApartamentoLimpieza::whereDate('fecha_comienzo', $hoy)->pluck('apartamento_id')->toArray();
-    
+
         $apartamentos = collect(); // Colección para almacenar todos los resultados
-    
+
         // Agregar las reservas pendientes, excluyendo los que ya tienen una limpieza registrada
         foreach ($reservasPendientes as $reserva) {
             if (!in_array($reserva->apartamento_id, $apartamentosLimpieza)) {
                 $apartamentos->push($reserva);
             }
         }
-    
+
         // Agregar los apartamentos de limpieza de fondo si no están ya considerados ni ya limpiados
         foreach ($limpiezasDeFondo as $limpieza) {
             if (!in_array($limpieza->apartamento_id, $apartamentosLimpieza) && !$apartamentos->contains('apartamento_id', $limpieza->apartamento_id)) {
@@ -113,18 +116,18 @@ class Reserva extends Model
                 $simulatedReserva->fecha_salida = $hoy; // Asumir la fecha de salida igual a hoy
                 $simulatedReserva->fecha_limpieza = $hoy; // Asumir que la limpieza está programada para hoy
                 $simulatedReserva->limpieza_fondo = true; // Indicar que es una limpieza de fondo
-    
+
                 // Añadir al resultado
                 $apartamentos->push($simulatedReserva);
             }
         }
-    
+
         return $apartamentos;
     }
-    
+
     /**
      * Obtener apartamentos ocupados para el dia de hoy
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public static function apartamentosOcupados()
@@ -135,7 +138,7 @@ class Reserva extends Model
 
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public static function apartamentosSalida()
@@ -146,7 +149,7 @@ class Reserva extends Model
 
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public static function apartamentosLimpiados()

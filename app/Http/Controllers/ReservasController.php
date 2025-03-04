@@ -19,10 +19,13 @@ use Carbon\Carbon;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ReservasController extends Controller
 {
     protected $chatGptService;
+    private $apiUrl = 'https://staging.channex.io/api/v1';
+    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
 
     public function __construct(ChatGptService $ChatGptService)
     {
@@ -112,12 +115,19 @@ class ReservasController extends Controller
     public function create()
     {
         $clientes = Cliente::all();
-        $apartamentos = Apartamento::all();
-        $roomTypes = RoomType::all();
+        $apartamentos = Apartamento::with('roomTypes')->get(); // Incluir roomTypes en la consulta
         $ratePlans = RatePlan::all();
         $estados = Estado::all();
-        return view('reservas.create', compact('clientes','apartamentos','estados','roomTypes','ratePlans'));
+
+        return view('reservas.create', compact('clientes', 'apartamentos', 'estados', 'ratePlans'));
     }
+
+    public function getRoomTypes($apartamento_id)
+    {
+        $roomTypes = RoomType::where('property_id', $apartamento_id)->get();
+        return response()->json($roomTypes);
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -129,6 +139,7 @@ class ReservasController extends Controller
             'apartamento_id' => 'required|integer',
             'estado_id' => 'required|integer',
             'origen' => 'required|string',
+            'room_type_id' => 'required|string',
             'fecha_entrada' => 'required|date',
             'fecha_salida' => 'required|date',
             'codigo_reserva' => 'required|string',
@@ -142,8 +153,50 @@ class ReservasController extends Controller
         $reserva = new Reserva($request->all());
         $reserva->save();
 
+        // Llamar a la función para actualizar la disponibilidad en Channex
+        $response = $this->updateChannexAvailability($reserva);
+        return response()->json($response);
         return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
+
+    /**
+     * Envía la actualización de disponibilidad a Channex después de crear una reserva.
+     */
+    private function updateChannexAvailability(Reserva $reserva)
+{
+    $startDate = Carbon::parse($reserva->fecha_entrada);
+    $endDate = Carbon::parse($reserva->fecha_salida)->subDay(); // Restamos un día a la fecha de salida
+
+    $apartamento = Apartamento::find($reserva->apartamento_id);
+    $roomType = RoomType::find($reserva->room_type_id);
+
+    if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
+        return; // Si falta algún ID necesario, no hacemos nada
+    }
+
+    $update = [
+        'property_id' => $apartamento->id_channex,
+        'room_type_id' => $roomType->id_channex,
+        'date_from' => $startDate->toDateString(),
+        'date_to' => $endDate->toDateString(),
+        'update_type' => 'availability',
+        'availability' => 0, // Bloqueamos la disponibilidad
+    ];
+
+    // Enviar actualización a Channex
+    $response = Http::withHeaders([
+        'user-api-key' => $this->apiToken,
+    ])->post("{$this->apiUrl}/availability", ['values' => [$update]]);
+
+    if (!$response->successful()) {
+        \Log::error('Error al actualizar disponibilidad en Channex', [
+            'error' => $response->body(),
+            'data' => $update
+        ]);
+    }
+    return [$response->json(), $update];
+}
+
 
     /**
      * Display the specified resource.

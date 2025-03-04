@@ -48,6 +48,18 @@
                     @enderror
                 </div>
 
+                <!-- Nuevo campo para seleccionar Room Type dinámicamente -->
+                <div class="col-md-6 col-12 mb-3">
+                    <label for="room_type_id" class="form-label">Tipo de Habitación</label>
+                    <select class="form-control {{ $errors->has('room_type_id') ? 'is-invalid' : '' }}" name="room_type_id" id="room_type_id">
+                        <option value="">Seleccione un tipo de habitación</option>
+                    </select>
+                    @error('room_type_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+
                 <div class="col-md-6 col-12 mb-3">
                     <label for="origen" class="form-label">Origen</label>
                     <select class="form-control {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
@@ -55,6 +67,7 @@
                         <option value="Airbnb" {{ old('origen') == 'Airbnb' ? 'selected' : '' }}>Airbnb</option>
                         <option value="Booking" {{ old('origen') == 'Booking' ? 'selected' : '' }}>Booking</option>
                         <option value="Web" {{ old('origen') == 'Web' ? 'selected' : '' }}>Web</option>
+                        <option value="Presencial" {{ old('origen') == 'Presencial' ? 'selected' : '' }}>Presencial</option>
                     </select>
                     @error('origen')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -147,6 +160,30 @@
 @endsection
 @section('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#apartamento_id').change(function () {
+            var apartamentoId = $(this).val();
+            $('#room_type_id').html('<option value="">Cargando...</option>'); // Mensaje temporal
+
+            if (apartamentoId) {
+                $.ajax({
+                    url: '/get-room-types/' + apartamentoId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#room_type_id').html('<option value="">Seleccione un tipo de habitación</option>');
+                        $.each(data, function (key, value) {
+                            $('#room_type_id').append('<option value="' + value.id + '">' + value.title + '</option>');
+                        });
+                    }
+                });
+            } else {
+                $('#room_type_id').html('<option value="">Seleccione un apartamento primero</option>');
+            }
+        });
+    });
+</script>
 
 <script>
     $(document).ready(function() {
