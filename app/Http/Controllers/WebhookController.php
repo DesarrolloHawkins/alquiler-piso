@@ -69,7 +69,7 @@ class WebhookController extends Controller
     public function bookingAny(Request $request, $id)
 {
     // Buscar el apartamento en la base de datos
-    $apartamento = Apartamento::where('id_channex', $id)->first();
+    $apartamento = Apartamento::where('id', $id)->first();
 
     if (!$apartamento) {
         return response()->json(['status' => false, 'message' => 'Apartamento no encontrado'], 404);
