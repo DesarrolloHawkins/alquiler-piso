@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
 use App\Models\Cliente;
+use App\Models\RatePlan;
 use App\Models\Reserva;
 use App\Models\RoomType;
 use Carbon\Carbon;
