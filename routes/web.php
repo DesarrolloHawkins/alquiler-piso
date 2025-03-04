@@ -533,6 +533,7 @@ Route::get('/channex/channel', [App\Http\Controllers\ChannelController::class, '
 
 Route::get('/channex/ari', [ARIController::class, 'index'])->name('ari.index');
 Route::post('/channex/full-sync', [ARIController::class, 'fullSync'])->name('ari.fullSync');
+
 Route::post('/channex/ari/update-rates', [ARIController::class, 'update'])->name('ari.updateRates');
 Route::get('/channex/ari/room-types/{property_id}', [ARIController::class, 'getByProperty']);
 Route::get('/channex/rate-plans/{propertyId}/{roomTypeId}', [ARIController::class, 'getRatePlans']);
