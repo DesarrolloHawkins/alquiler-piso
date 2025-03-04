@@ -38,6 +38,27 @@
         </script>
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                @if(session('swal_success'))
+                    Swal.fire({
+                        title: "¡Éxito!",
+                        text: "{{ session('swal_success') }}",
+                        icon: "success",
+                        confirmButtonText: "Aceptar"
+                    });
+                @endif
+
+                @if(session('swal_error'))
+                    Swal.fire({
+                        title: "Error",
+                        text: "{{ session('swal_error') }}",
+                        icon: "error",
+                        confirmButtonText: "Aceptar"
+                    });
+                @endif
+            });
+        </script>
 
     </head>
     <body>
@@ -104,12 +125,17 @@
                                             Channel
                                             </a>
                                         </li>
-
                                         <li class="nav-item">
+                                            <button id="fullSyncBtn" class="nav-link fs-6">
+                                                Full Sync
+                                            </button>
+                                        </li>
+
+                                        {{-- <li class="nav-item">
                                             <a href="{{ route('ari.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('ari.fullSync') ? 'active' : '' }}">
                                                 Full Sync
                                             </a>
-                                        </li>
+                                        </li> --}}
                                     </ul>
                                 </li>
 
@@ -455,6 +481,42 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                document.getElementById("fullSyncBtn").addEventListener("click", function () {
+                    Swal.fire({
+                        title: "¿Estás seguro?",
+                        text: "Esto sincronizará todas las disponibilidades con Channex.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Sí, sincronizar",
+                        cancelButtonText: "Cancelar"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch("{{ route('ari.fullSync') }}", {
+                                method: "POST",
+                                headers: {
+                                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({})
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire("¡Éxito!", data.message, "success");
+                                } else {
+                                    Swal.fire("Error", data.message, "error");
+                                }
+                            })
+                            .catch(error => {
+                                Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+                            });
+                        }
+                    });
+                });
+            });
+        </script>
 
         {{-- Script cerrar sesion con alerta --}}
         <script>
