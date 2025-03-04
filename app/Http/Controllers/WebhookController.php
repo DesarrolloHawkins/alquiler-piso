@@ -145,6 +145,7 @@ class WebhookController extends Controller
             'numero_personas' => $room['occupancy']['adults'],
             'neto' => $bookingData['amount'],
             'comision' => $bookingData['ota_commission'],
+            'estado_id' => 1,
         ]);
     }
 
