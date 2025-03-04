@@ -88,6 +88,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
     Route::post('/reservas/update/{id}', [App\Http\Controllers\ReservasController::class, 'update'])->name('reservas.update');
     Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
+    Route::get('/get-room-types/{apartamento_id}', [App\Http\Controllers\ReservasController::class, 'getRoomTypes']);
 
     // Huespedes
     Route::get('/huespedes', [App\Http\Controllers\HuespedesController::class, 'index'])->name('huespedes.index');
@@ -530,6 +531,7 @@ Route::get('/channex/channel', [App\Http\Controllers\ChannelController::class, '
 
 
 Route::get('/channex/ari', [ARIController::class, 'index'])->name('ari.index');
+Route::get('/channex/full-sync', [ARIController::class, 'fullSync'])->name('ari.fullSync');
 Route::post('/channex/ari/update-rates', [ARIController::class, 'update'])->name('ari.updateRates');
 Route::get('/channex/ari/room-types/{property_id}', [ARIController::class, 'getByProperty']);
 Route::get('/channex/rate-plans/{propertyId}/{roomTypeId}', [ARIController::class, 'getRatePlans']);
