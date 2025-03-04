@@ -106,7 +106,7 @@
                                         </li>
 
                                         <li class="nav-item">
-                                            <a href="{{ route('admin.channex.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('admin.channex.fullSync') ? 'active' : '' }}">
+                                            <a href="{{ route('ari.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('ari.fullSync') ? 'active' : '' }}">
                                                 Full Sync
                                             </a>
                                         </li>

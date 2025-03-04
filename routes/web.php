@@ -482,6 +482,7 @@ Route::post('/obtener-reservas', [App\Http\Controllers\ReservasController::class
 Route::prefix('channex')->group(function () {
     Route::get('/full-sync', [App\Http\Controllers\ChannexWebController::class, 'fullSync'])->name('admin.channex.fullSync');
     Route::get('/rate-plans-list', [App\Http\Controllers\ChannexWebController::class, 'ratePlansList'])->name('admin.channex.ratePlansList');
+
 });
 
 
