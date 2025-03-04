@@ -155,7 +155,7 @@ class ReservasController extends Controller
 
         // Llamar a la función para actualizar la disponibilidad en Channex
         $response = $this->updateChannexAvailability($reserva);
-        return response()->json($response);
+        // return response()->json($response);
         return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
 
