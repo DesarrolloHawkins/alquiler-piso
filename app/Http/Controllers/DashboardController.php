@@ -527,6 +527,20 @@ class DashboardController extends Controller
 
             $categoriasLabels = $porcentajesGastos->keys()->toArray();
             $categoriasData = $porcentajesGastos->values()->toArray();
+            $hoy = Carbon::today();
+
+            // Obtener apartamentos ocupados hoy
+            $apartamentosOcupadosHoy = Reserva::where('estado_id', '!=', 4)
+                ->where(function ($query) use ($hoy) {
+                    $query->where('fecha_entrada', '<=', $hoy)
+                        ->where('fecha_salida', '>=', $hoy);
+                })
+                ->pluck('apartamento_id');
+
+            // Obtener apartamentos libres hoy
+            $apartamentosLibresHoy = Apartamento::whereNotIn('id', $apartamentosOcupadosHoy)
+                ->whereNotNull('edificio')
+                ->get();
 
             return view('admin.dashboard', compact(
                 'countReservas',
@@ -553,6 +567,7 @@ class DashboardController extends Controller
                 'nochesOcupadas',
                 // 'diasDelMes',
                 'totalNochesPosibles',
+                'apartamentosLibresHoy'
                 // 'apartamentosDisponibles'
 
             ));
