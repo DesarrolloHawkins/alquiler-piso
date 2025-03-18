@@ -55,7 +55,7 @@ class MetalicoController extends Controller
         // Ordenar en orden descendente para la vista
         $response = $entries->sortByDesc('id');
 
-        return view('metalicos.index', compact('response', 'saldoInicial'));
+        return view('admin.metalicos.index', compact('response', 'saldoInicial'));
     }
 
     public function store(Request $request)
