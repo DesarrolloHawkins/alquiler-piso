@@ -96,12 +96,12 @@ class MetalicoController extends Controller
 
     public function show(Metalico $metalico)
     {
-        return view('admin.metalicos.show', compact('metalico'));
+        return view('metalicos.show', compact('metalico'));
     }
 
     public function edit(Metalico $metalico)
     {
-        return view('admin.metalicos.edit', compact('metalico'));
+        return view('metalicos.edit', compact('metalico'));
     }
 
     public function update(Request $request, Metalico $metalico)
@@ -123,7 +123,7 @@ class MetalicoController extends Controller
     {
         $metalico->delete();
 
-        return redirect()->route('admin.metalicos.index')->with('success', 'Registro eliminado correctamente.');
+        return redirect()->route('metalicos.index')->with('success', 'Registro eliminado correctamente.');
     }
 }
 
