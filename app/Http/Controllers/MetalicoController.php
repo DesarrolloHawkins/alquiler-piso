@@ -76,7 +76,7 @@ class MetalicoController extends Controller
 
     public function create()
     {
-        return view('metalicos.create');
+        return view('admin.metalicos.create');
     }
 
     public function store2(Request $request)
@@ -96,12 +96,12 @@ class MetalicoController extends Controller
 
     public function show(Metalico $metalico)
     {
-        return view('metalicos.show', compact('metalico'));
+        return view('admin.metalicos.show', compact('metalico'));
     }
 
     public function edit(Metalico $metalico)
     {
-        return view('metalicos.edit', compact('metalico'));
+        return view('admin.metalicos.edit', compact('metalico'));
     }
 
     public function update(Request $request, Metalico $metalico)
