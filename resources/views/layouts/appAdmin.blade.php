@@ -256,7 +256,7 @@
                                         Tesoreria
                                     </button>
                                     <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'show' : '' }}" id="submenuTesoreria">
+                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('metalicos','metalicos/*','diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'show' : '' }}" id="submenuTesoreria">
                                         <li class="nav-item w-100">
                                             <a href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-6 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}">
                                                 Diario de Caja
@@ -305,6 +305,11 @@
                                         <li class="nav-item">
                                             <a href="{{route('admin.upload.files')}}" class="nav-link fs-6 {{ request()->is('upload-files', 'upload-files/*') ? 'active' : '' }}" >
                                             Subida de Ficheros Banco
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{route('metalicos.index')}}" class="nav-link fs-6 {{ request()->is('metalicos', 'metalicos/*') ? 'active' : '' }}" >
+                                            Metalicos
                                             </a>
                                         </li>
 

@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminHolidaysController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\PresupuestoController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\MetalicoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,10 @@ Auth::routes();
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     Route::get('/admin', function () { return view('admin.dashboard');})->name('inicio');
+
+    Route::resource('metalicos', MetalicoController::class);
+    // Route::get('/metalico/create-gasto', [App\Http\Controllers\MetalicoController::class, 'createGasto'])->name('metalicos.createGasto');
+    // Route::post('/metalico/store', [App\Http\Controllers\MetalicoController::class, 'storeGasto'])->name('metalicos.storeGasto');
 
     // Apartamentos
     Route::get('/apartamentos', [App\Http\Controllers\ApartamentosController::class, 'indexAdmin'])->name('apartamentos.admin.index');
