@@ -9,8 +9,13 @@ use Illuminate\Support\Facades\Http;
 
 class RoomTypeController extends Controller
 {
-    private $apiUrl = 'https://staging.channex.io/api/v1';
-    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
+    private $apiUrl;
+    private $apiToken;
+    public function __construct()
+    {
+        $this->apiUrl = env('CHANNEX_URL');
+        $this->apiToken = env('CHANNEX_TOKEN');
+    }
 
 
 
@@ -32,21 +37,21 @@ class RoomTypeController extends Controller
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'property_id' => 'required|exists:apartamentos,id',
-            'count_of_rooms' => 'required|integer|min:1',
-            'occ_adults' => 'required|integer|min:1',
-            'occ_children' => 'nullable|integer|min:0',
-            'occ_infants' => 'nullable|integer|min:0',
-            'default_occupancy' => 'required|integer|min:1',
+            'count_of_rooms' => 'required|min:1',
+            'occ_adults' => 'required|min:1',
+            'occ_children' => 'nullable|min:0',
+            'occ_infants' => 'nullable|min:0',
+            'default_occupancy' => 'required|min:1',
             'facilities' => 'nullable|array',
             'room_kind' => 'nullable|string|max:50',
-            'capacity' => 'nullable|integer|min:1',
+            'capacity' => 'nullable|min:1',
             'description' => 'nullable|string',
             'photos' => 'nullable|array',
             'photos.*.url' => 'required_with:photos|string|url',
             'photos.*.author' => 'nullable|string',
             'photos.*.description' => 'nullable|string',
             'photos.*.kind' => 'nullable|string',
-            'photos.*.position' => 'nullable|integer',
+            'photos.*.position' => 'nullable',
         ]);
 
         $property = Apartamento::findOrFail($validatedData['property_id']);

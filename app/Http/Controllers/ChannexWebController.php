@@ -12,9 +12,15 @@ use Illuminate\Support\Facades\Storage;
 
 class ChannexWebController extends Controller
 {
-
-    private $apiUrl = 'https://staging.channex.io/api/v1'; // Base URL de la API
-    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
+    private $apiUrl;
+    private $apiToken;
+    public function __construct()
+    {
+        $this->apiUrl = env('CHANNEX_URL');
+        $this->apiToken = env('CHANNEX_TOKEN');
+    }
+    // private $apiUrl = 'https://staging.channex.io/api/v1';
+    // private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx';
 
     // Crear Propiedad
     public function index()
@@ -393,7 +399,7 @@ class ChannexWebController extends Controller
     public function fullSync(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
+        // $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
         $providerCode = 'OpenChannel'; // Cambia esto por tu código de proveedor real
         $hotelCode = '12152494'; // Cambia esto por tu código de hotel real
 
@@ -403,7 +409,7 @@ class ChannexWebController extends Controller
         try {
             // Realizar la solicitud POST
             $response = Http::withHeaders([
-                'user-api-key' => $apiKey,
+                'user-api-key' => $this->apiToken,
             ])->post($url, [
                 'provider_code' => $providerCode,
                 'hotel_code' => $hotelCode,
@@ -431,14 +437,14 @@ class ChannexWebController extends Controller
     public function ratePlansList(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
-        $url = 'https://staging.channex.io/api/v1/rate_plans';
+        // $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
+        // $url = 'https://staging.channex.io/api/v1/rate_plans';
 
         try {
             // Realizar la solicitud GET
             $response = Http::withHeaders([
-                'user-api-key' => $apiKey,
-            ])->get($url);
+                'user-api-key' => $this->apiToken,
+            ])->get("{$this->apiUrl}/rate_plans");
 
             // Verificar el estado de la respuesta y retornar directamente
             if ($response->successful()) {
@@ -502,14 +508,14 @@ class ChannexWebController extends Controller
     public function ratePlansUpdate(Request $request)
     {
         // Datos necesarios para la solicitud
-        $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
-        $url = 'https://staging.channex.io/api/v1/rate_plans';
+        // $apiKey = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Cambia esto por tu API Key real
+        // $url = 'https://staging.channex.io/api/v1/rate_plans';
 
         try {
             // Realizar la solicitud GET
             $response = Http::withHeaders([
-                'user-api-key' => $apiKey,
-            ])->get($url);
+                'user-api-key' => $this->apiToken,
+            ])->get("{$this->apiUrl}/rate_plans");
 
             // Verificar el estado de la respuesta y retornar directamente
             if ($response->successful()) {

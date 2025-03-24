@@ -49,6 +49,8 @@ Route::get('/get-reservas-json', [App\Http\Controllers\HomeController::class, 'g
 
 Auth::routes();
 
+Route::get('/test-chat-gpt', [App\Http\Controllers\TestController::class, 'chatGpt'])->name('test.chatGpt');
+
 // Rutas de admin
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 

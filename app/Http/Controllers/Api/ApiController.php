@@ -144,6 +144,7 @@ class ApiController extends Controller
      */
     public function averiasTecnico(Request $request)
     {
+        $phone = $request->phone;
         return response()->json('Averias tecnico enviada', 200);
     }
     /**
@@ -151,6 +152,7 @@ class ApiController extends Controller
      */
     public function equipoLimpieza(Request $request)
     {
+        $phone = $request->phone;
         return response()->json('Equipo de limpieza enviada', 200);
     }
 

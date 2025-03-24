@@ -86,7 +86,7 @@ class WebhookController extends Controller
     // Obtener la información completa de la reserva desde Channex
     $bookingResponse = Http::withHeaders([
         'user-api-key' => $this->apiToken,
-    ])->get("https://staging.channex.io/api/v1/bookings/{$bookingId}");
+    ])->get("https://app.channex.io/api/v1/bookings/{$bookingId}");
 
     if (!$bookingResponse->successful()) {
         return response()->json([
@@ -153,7 +153,7 @@ class WebhookController extends Controller
     // Marcar la reserva como revisada en Channex
     $ackResponse = Http::withHeaders([
         'user-api-key' => $this->apiToken,
-    ])->post("https://staging.channex.io/api/v1/booking_revisions/{$revisionId}/ack", ['values' => []]);
+    ])->post("https://app.channex.io/api/v1/booking_revisions/{$revisionId}/ack", ['values' => []]);
 
     if (!$ackResponse->successful()) {
         return response()->json([

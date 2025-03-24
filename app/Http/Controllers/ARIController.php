@@ -13,9 +13,13 @@ use Carbon\Carbon;
 
 class ARIController extends Controller
 {
-    private $apiUrl = 'https://staging.channex.io/api/v1';
-    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
-
+    private $apiUrl;
+    private $apiToken;
+    public function __construct()
+    {
+        $this->apiUrl = env('CHANNEX_URL');
+        $this->apiToken = env('CHANNEX_TOKEN');
+    }
     public function index()
     {
         $properties = Apartamento::where('id_channex','!=', null)->get(); // Obtenemos las propiedades
