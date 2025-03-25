@@ -177,9 +177,10 @@
     // Lista de apartamentos a excluir
     $apartamentosExcluir = ['16', '17','18','19','20','23','22']; // O usa los IDs
     @endphp
-
+    {{-- {{dd($apartamentos[1])}} --}}
     <!-- Filas de apartamentos (flex) -->
     @foreach($apartamentos as $apt)
+
 
         @php
             // Comprobar si el apartamento está en la lista de exclusión
