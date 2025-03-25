@@ -173,10 +173,10 @@
       @endfor
     </div>
 
-        @php
-        // Lista de apartamentos a excluir
-        $apartamentosExcluir = ['16', '17','18','19','20','23','22']; // O usa los IDs
-        @endphp
+    @php
+    // Lista de apartamentos a excluir
+    $apartamentosExcluir = ['16', '17','18','19','20','23','22']; // O usa los IDs
+    @endphp
 
     <!-- Filas de apartamentos (flex) -->
     @foreach($apartamentos as $apt)
@@ -210,7 +210,7 @@
 
       <div class="gantt-row">
         <!-- Etiqueta apto (sticky) -->
-        <div class="gantt-row-label">
+        <div class="gantt-row-label" id="apt{{ $apt->id }}">
           {{ $apt->titulo }}
         </div>
 
@@ -227,49 +227,56 @@
           <!-- Reservas -->
           @foreach($apt->reservas as $reserva)
             @php
-              // recorte al mes
-              $startDay = $reserva->fecha_entrada->day;
-              $endDay   = $reserva->fecha_salida->day;
+              // Compara las fechas completas (no solo el día)
+              $startFecha = $reserva->fecha_entrada;
+              $endFecha   = $reserva->fecha_salida;
 
-              if($startDay < $startOfMonth->day) $startDay = $startOfMonth->day;
-              if($endDay   > $endOfMonth->day)   $endDay   = $endOfMonth->day;
-              if($endDay < $startOfMonth->day || $startDay > $endOfMonth->day) continue;
-
-              // medio día
-              if($startDay == $endDay) {
-                $startOffsetH = ($startDay-1)*24;
-                $endOffsetH   = $startOffsetH + 24;
-              } else {
-                $startOffsetH = (($startDay-1)*24) + 12;
-                $endOffsetH   = (($endDay-1)*24)   + 12;
+              // Asegúrate de que las fechas están dentro del rango
+              if ($startFecha->lt($startOfMonth) && $endFecha->lt($startOfMonth)) {
+                  continue; // Si la reserva empieza antes de este mes y termina antes, la excluimos
               }
-              $durationH = $endOffsetH - $startOffsetH;
-              if($durationH < 0) continue;
+
+              if ($startFecha->gt($endOfMonth) && $endFecha->gt($endOfMonth)) {
+                  continue; // Si la reserva empieza después de este mes y termina después, la excluimos
+              }
+
+              // Ajusta las fechas si es necesario
+              $startFecha = max($startFecha, $startOfMonth); // Si la entrada es antes del inicio del mes, ajusta al inicio
+              $endFecha = min($endFecha, $endOfMonth); // Si la salida es después del final del mes, ajusta al final
+
+              $startDay = $startFecha->day;
+              $endDay   = $endFecha->day;
 
               $pxPerHour = $dayWidth / 24.0;
-              $leftPx  = $startOffsetH * $pxPerHour;
-              $widthPx = $durationH   * $pxPerHour;
+              $startOffsetH = (($startDay - 1) * 24) + 12;
+              $endOffsetH = (($endDay - 1) * 24) + 12;
+
+              $durationH = $endOffsetH - $startOffsetH;
+              if ($durationH < 0) continue;
+
+              $leftPx = $startOffsetH * $pxPerHour;
+              $widthPx = $durationH * $pxPerHour;
 
               // gap de 8px total
-              $gap=8;
-              $adjLeft  = $leftPx + $gap/2;
+              $gap = 8;
+              $adjLeft = $leftPx + $gap / 2;
               $adjWidth = max(0, $widthPx - $gap);
 
               // flecha
               $arrow = '';
-              if($reserva->fecha_salida->day > $endOfMonth->day) {
-                $arrow = ' →';
+              if ($endFecha->gt($endOfMonth)) {
+                  $arrow = ' →';
               }
-              $badgeText = ($reserva->cliente->nombre ?? $reserva->cliente->alias).$arrow;
+              $badgeText = ($reserva->cliente->nombre ?? $reserva->cliente->alias) . $arrow;
             @endphp
 
             <div class="reserva-badge"
                  style="left:{{ $adjLeft }}px; width:{{ $adjWidth }}px;background-color: {{ $color }}"
                  title="Reserva #{{ $reserva->id }}"
             >
-            <span id="badgeText">
+              <span id="badgeText">
                 {{ $badgeText }}
-            </span>
+              </span>
             </div>
           @endforeach
         </div><!-- .gantt-row-days -->
@@ -277,6 +284,7 @@
     @endforeach
   </div><!-- .gantt-container -->
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
       var badgeText = document.querySelectorAll('#badgeText');
@@ -288,6 +296,5 @@
       }
     });
 </script>
-
 
 @endsection
