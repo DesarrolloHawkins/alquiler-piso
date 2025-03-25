@@ -12,11 +12,14 @@ class TablaReservasController extends Controller
 {
     public function index(Request $request)
     {
+
         $date = $request->get('date', now()->format('Y-m'));
+        $carbonDate   = \Carbon\Carbon::createFromFormat('Y-m', $date);
         $dateObject = Carbon::createFromFormat('Y-m', $date);
         $daysInMonth = $dateObject->daysInMonth;
-        $monthName = ucfirst($dateObject->locale('es')->isoFormat('MMMM YYYY')); // Formatea el mes en español
 
+        $monthName = ucfirst($dateObject->locale('es')->isoFormat('MMMM YYYY')); // Formatea el mes en español
+        $year         = $dateObject->year; // año
         $apartamentos = Apartamento::all();
 
         foreach ($apartamentos as $apartamento) {
@@ -39,7 +42,7 @@ class TablaReservasController extends Controller
             }
         }
 
-        return view('admin.reservas.tabla', compact('apartamentos', 'date', 'daysInMonth', 'monthName'));
+        return view('admin.reservas.tabla', compact('apartamentos', 'daysInMonth', 'monthName','carbonDate','date','year'));
     }
 
 }
