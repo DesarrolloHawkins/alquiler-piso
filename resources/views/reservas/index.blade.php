@@ -301,7 +301,10 @@
                                 <td>{{$reserva->origen}}</td>
                                 <td>{{$reserva->codigo_reserva}}</td>
                                 <td>{{ number_format($reserva->precio, 2) }} €</td>
-                                <td><a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a></td>
+                                <td>
+                                    <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>
+                                    <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
