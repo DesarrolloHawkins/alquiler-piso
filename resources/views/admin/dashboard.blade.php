@@ -309,293 +309,343 @@
 <!-- Modal de Reservas Totales -->
 <div class="modal fade" id="modalReservasTotales" tabindex="-1" aria-labelledby="modalReservasTotalesLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalReservasTotalesLabel">{{ $countReservas }} Reservas entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="filtroApartamento" class="form-label">Filtrar por Apartamento</label>
-                    <select id="filtroApartamento" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
-                            <option value="{{ $apartamento }}">{{ $apartamento }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="filtroOrigen" class="form-label">Filtrar por Origen</label>
-                    <select id="filtroOrigen" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
-                            <option value="{{ $origen }}">{{ $origen }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="searchTable" class="form-label">Buscar</label>
-                    <input type="text" id="searchTable" class="form-control" placeholder="Buscar en la tabla...">
-                </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReservasTotalesLabel">{{ $countReservas }} Reservas entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <h3 id="totalPrecioFiltrado" class="text-end my-3">Total: 0.00 €</h3>
-
-          <table id="tablaReservasTotales" class="display table table-bordered">
-              <thead>
-                  <tr>
-                      <th>Cliente</th>
-                      <th>Apartamento</th>
-                      <th>Entrada</th>
-                      <th>Salida</th>
-                      <th>Precio</th>
-                      <th>Nº Personas</th>
-                      <th>Origen</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  @foreach($reservas as $reserva)
-                      <tr>
-                          <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
-                          <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
-                          <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
-                          <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
-                          <td>{{ number_format($reserva->precio, 2) }} €</td>
-                          <td>{{ $reserva->numero_personas }}</td>
-                          <td>{{ $reserva->origen ?? 'No definido' }}</td>
-                      </tr>
-                  @endforeach
-              </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Modal de Facturación -->
-<div class="modal fade" id="modalFacturacion" tabindex="-1" aria-labelledby="modalFacturacionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalFacturacionLabel">Detalle de Facturación</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="filtroApartamentoFacturacion" class="form-label">Filtrar por Apartamento</label>
-                    <select id="filtroApartamentoFacturacion" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
-                            <option value="{{ $apartamento }}">{{ $apartamento }}</option>
-                        @endforeach
-                    </select>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="filtroApartamento" class="form-label">Filtrar por Apartamento</label>
+                        <select id="filtroApartamento" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
+                                <option value="{{ $apartamento }}">{{ $apartamento }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="filtroOrigen" class="form-label">Filtrar por Origen</label>
+                        <select id="filtroOrigen" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
+                                <option value="{{ $origen }}">{{ $origen }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchTable" class="form-label">Buscar</label>
+                        <input type="text" id="searchTable" class="form-control" placeholder="Buscar en la tabla...">
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label for="filtroOrigenFacturacion" class="form-label">Filtrar por Origen</label>
-                    <select id="filtroOrigenFacturacion" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
-                            <option value="{{ $origen }}">{{ $origen }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="searchFacturacion" class="form-label">Buscar</label>
-                    <input type="text" id="searchFacturacion" class="form-control" placeholder="Buscar...">
-                </div>
-            </div>
-
-            <h3>Total filtrado: <span id="totalFiltradoFacturacion">{{ number_format($reservas->sum('precio'), 2) }} €</span></h3>
-
-            <table id="tablaFacturacion" class="display table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Apartamento</th>
-                        <th>Entrada</th>
-                        <th>Salida</th>
-                        <th>Precio</th>
-                        <th>Nº Personas</th>
-                        <th>Origen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($reservas as $reserva)
+                <h3 id="totalPrecioFiltrado" class="text-end my-3">Total: 0.00 €</h3>
+                <table id="tablaReservasTotales" class="display table table-bordered">
+                    <thead>
                         <tr>
-                            <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
-                            <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
-                            <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
-                            <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
-                            <td>{{ $reserva->numero_personas }}</td>
-                            <td>{{ $reserva->origen ?? 'No definido' }}</td>
+                            <th>Cliente</th>
+                            <th>Apartamento</th>
+                            <th>Entrada</th>
+                            <th>Salida</th>
+                            <th>Precio</th>
+                            <th>Nº Personas</th>
+                            <th>Origen</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($reservas as $reserva)
+                            <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
+                                <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
+                                <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
+                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
+                                <td>{{ number_format($reserva->precio, 2) }} €</td>
+                                <td>{{ $reserva->numero_personas }}</td>
+                                <td>{{ $reserva->origen ?? 'No definido' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('#tablaReservasTotales tbody').on('click', 'tr', function () {
+        var idReserva = $(this).data('id');
+        if (idReserva) {
+            window.open('/reservas/' + idReserva + '/show', '_blank');
+        }
+    });
+});
+</script>
+
+
+<!-- Modal de Facturación -->
+<div class="modal fade" id="modalFacturacion" tabindex="-1" aria-labelledby="modalFacturacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFacturacionLabel">Detalle de Facturación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="filtroApartamentoFacturacion" class="form-label">Filtrar por Apartamento</label>
+                        <select id="filtroApartamentoFacturacion" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
+                                <option value="{{ $apartamento }}">{{ $apartamento }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="filtroOrigenFacturacion" class="form-label">Filtrar por Origen</label>
+                        <select id="filtroOrigenFacturacion" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
+                                <option value="{{ $origen }}">{{ $origen }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchFacturacion" class="form-label">Buscar</label>
+                        <input type="text" id="searchFacturacion" class="form-control" placeholder="Buscar...">
+                    </div>
+                </div>
+                <h3>Total filtrado: <span id="totalFiltradoFacturacion">{{ number_format($reservas->sum('precio'), 2) }} €</span></h3>
+                <table id="tablaFacturacion" class="display table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Apartamento</th>
+                            <th>Entrada</th>
+                            <th>Salida</th>
+                            <th>Precio</th>
+                            <th>Nº Personas</th>
+                            <th>Origen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($reservas as $reserva)
+                            <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
+                                <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
+                                <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
+                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
+                                <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
+                                <td>{{ $reserva->numero_personas }}</td>
+                                <td>{{ $reserva->origen ?? 'No definido' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('#tablaFacturacion tbody').on('click', 'tr', function () {
+        var idFacturacion = $(this).data('id');
+        if (idFacturacion) {
+            window.open('/facturas/' + idFacturacion + '/edit', '_blank');
+        }
+    });
+});
+</script>
 
 <!-- Modal de Cobrado -->
 <div class="modal fade" id="modalCobrado" tabindex="-1" aria-labelledby="modalCobradoLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalCobradoLabel">Cobros entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="filtroConceptoCobrado" class="form-label">Filtrar por Concepto</label>
-              <select id="filtroConceptoCobrado" class="form-select">
-                <option value="">Todos</option>
-                @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                  <option value="{{ $concepto }}">{{ $concepto }}</option>
-                @endforeach
-              </select>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCobradoLabel">Cobros entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="col-md-4">
-              <label for="searchCobrado" class="form-label">Buscar</label>
-              <input type="text" id="searchCobrado" class="form-control" placeholder="Buscar en la tabla...">
-            </div>
-            <div class="col-md-4 text-end">
-              <h4>Total Cobrado: <span id="totalFiltradoCobrado">{{ number_format($ingresos, 2) }} €</span></h4>
-            </div>
-          </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="filtroConceptoCobrado" class="form-label">Filtrar por Concepto</label>
+                        <select id="filtroConceptoCobrado" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
+                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchCobrado" class="form-label">Buscar</label>
+                        <input type="text" id="searchCobrado" class="form-control" placeholder="Buscar en la tabla...">
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h4>Total Cobrado: <span id="totalFiltradoCobrado">{{ number_format($ingresos, 2) }} €</span></h4>
+                    </div>
+                </div>
 
-          <table id="tablaCobrado" class="display table table-bordered">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Cantidad</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($ingresosLista as $ingreso)
-                <tr>
-                  <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
-                  <td>{{ $ingreso->title }}</td>
-                  <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
+                <table id="tablaCobrado" class="display table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($ingresosLista as $ingreso)
+                            <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
+                                <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                <td>{{ $ingreso->title }}</td>
+                                <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('#tablaCobrado tbody').on('click', 'tr', function () {
+        var idCobrado = $(this).data('id');
+        if (idCobrado) {
+            window.open('/ingresos/' + idCobrado + '/edit', '_blank');
+        }
+    });
+});
+</script>
 
 <!-- Modal de Ingresos -->
 <div class="modal fade" id="modalIngresos" tabindex="-1" aria-labelledby="modalIngresosLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalIngresosLabel">Ingresos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="filtroConceptoIngresos" class="form-label">Filtrar por Concepto</label>
-              <select id="filtroConceptoIngresos" class="form-select">
-                <option value="">Todos</option>
-                @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                  <option value="{{ $concepto }}">{{ $concepto }}</option>
-                @endforeach
-              </select>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalIngresosLabel">Ingresos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="col-md-4">
-              <label for="searchIngresos" class="form-label">Buscar</label>
-              <input type="text" id="searchIngresos" class="form-control" placeholder="Buscar en la tabla...">
-            </div>
-            <div class="col-md-4 text-end">
-              <h4>Total Ingresos: <span id="totalFiltradoIngresos">{{ number_format($ingresos, 2) }} €</span></h4>
-            </div>
-          </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="filtroConceptoIngresos" class="form-label">Filtrar por Concepto</label>
+                        <select id="filtroConceptoIngresos" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
+                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchIngresos" class="form-label">Buscar</label>
+                        <input type="text" id="searchIngresos" class="form-control" placeholder="Buscar en la tabla...">
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h4>Total Ingresos: <span id="totalFiltradoIngresos">{{ number_format($ingresos, 2) }} €</span></h4>
+                    </div>
+                </div>
 
-          <table id="tablaIngresos" class="display table table-bordered">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Cantidad</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($ingresosLista as $ingreso)
-                <tr>
-                  <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
-                  <td>{{ $ingreso->title }}</td>
-                  <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
+                <table id="tablaIngresos" class="display table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($ingresosLista as $ingreso)
+                            <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
+                                <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                <td>{{ $ingreso->title }}</td>
+                                <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('#tablaIngresos tbody').on('click', 'tr', function () {
+        var idIngreso = $(this).data('id');
+        if (idIngreso) {
+            window.open('/ingresos/' + idIngreso + '/edit', '_blank');
+        }
+    });
+});
+</script>
 
 <!-- Modal de Gastos -->
 <div class="modal fade" id="modalGastos" tabindex="-1" aria-labelledby="modalGastosLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalGastosLabel">Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="filtroCategoriaGastos" class="form-label">Filtrar por Categoría</label>
-              <select id="filtroCategoriaGastos" class="form-select">
-                <option value="">Todas</option>
-                @foreach($categoriasGastos->pluck('nombre')->unique()->filter()->sort() as $categoria)
-                  <option value="{{ $categoria }}">{{ $categoria }}</option>
-                @endforeach
-              </select>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalGastosLabel">Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="col-md-4">
-              <label for="searchGastos" class="form-label">Buscar</label>
-              <input type="text" id="searchGastos" class="form-control" placeholder="Buscar en la tabla...">
-            </div>
-            <div class="col-md-4 text-end">
-              <h4>Total Gastos: <span id="totalFiltradoGastos">{{ number_format($gastos, 2) }} €</span></h4>
-            </div>
-          </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="filtroCategoriaGastos" class="form-label">Filtrar por Categoría</label>
+                        <select id="filtroCategoriaGastos" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach($categoriasGastos->pluck('nombre')->unique()->filter()->sort() as $categoria)
+                                <option value="{{ $categoria }}">{{ $categoria }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchGastos" class="form-label">Buscar</label>
+                        <input type="text" id="searchGastos" class="form-control" placeholder="Buscar en la tabla...">
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h4>Total Gastos: <span id="totalFiltradoGastos">{{ number_format($gastos, 2) }} €</span></h4>
+                    </div>
+                </div>
 
-          <table id="tablaGastos" class="display table table-bordered">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Categoría</th>
-                <th>Concepto</th>
-                <th>Cantidad</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($gastosLista as $gasto)
-                <tr>
-                  <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
-                  <td>{{ $gasto->categoria->nombre }}</td>
-                  <td>{{ $gasto->title }}</td>
-                  <td data-cantidad="{{ $gasto->quantity }}">{{ number_format($gasto->quantity, 2) }} €</td>
-                </tr>
-              @endforeach
-            </tbody>
-          </table>
+                <table id="tablaGastos" class="display table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Concepto</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($gastosLista as $gasto)
+                            <tr data-id="{{ $gasto->id }}" style="cursor: pointer">
+                                <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                <td>{{ $gasto->categoria->nombre }}</td>
+                                <td>{{ $gasto->title }}</td>
+                                <td data-cantidad="{{ $gasto->quantity }}">{{ number_format($gasto->quantity, 2) }} €</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('#tablaGastos tbody').on('click', 'tr', function () {
+        var idGasto = $(this).data('id');
+        if (idGasto) {
+            window.open('/gastos/' + idGasto + '/edit', '_blank');
+        }
+    });
+});
+</script>
 
 
 
