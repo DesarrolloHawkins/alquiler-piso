@@ -72,24 +72,21 @@ class WebhookController extends Controller
     // }
 
     public function bookingAny(Request $request, $id)
-{
-    // Buscar el apartamento en la base de datos
-    $apartamento = Apartamento::where('id', $id)->first();
+    {
+        // Buscar el apartamento
+        $apartamento = Apartamento::find($id);
+        if (!$apartamento) {
+            return response()->json(['status' => false, 'message' => 'Apartamento no encontrado'], 404);
+        }
 
-    if (!$apartamento) {
-        return response()->json(['status' => false, 'message' => 'Apartamento no encontrado'], 404);
-    }
+        $revisionId = $request['revision_id'];
+        $bookingId = $request['booking_id'];
 
-    // Extraer IDs desde el payload
-    // $revisionId = $request->input('payload.revision_id');
-    // $bookingId = $request->input('payload.booking_id');
-    $revisionId = $request['revision_id'];
-    $bookingId = $request['booking_id'];
+        if (!$revisionId || !$bookingId) {
+            return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found']);
+        }
 
-    if (!$revisionId || !$bookingId) {
-        return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found']);
-    }else {
-        // Obtener la información completa de la reserva desde Channex
+        // Obtener la reserva desde Channex
         $bookingResponse = Http::withHeaders([
             'user-api-key' => $this->apiToken,
         ])->get("https://app.channex.io/api/v1/bookings/{$bookingId}");
@@ -102,10 +99,25 @@ class WebhookController extends Controller
             ], $bookingResponse->status());
         }
 
-        // Parsear la respuesta
         $bookingData = $bookingResponse->json()['data']['attributes'];
+        $estadoReserva = $bookingData['status']; // Ej: "new", "cancelled"
 
-        // Buscar o crear el cliente en base al email
+        // Si la reserva ha sido cancelada
+        if ($estadoReserva === 'cancelled') {
+            $codigoReserva = $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'];
+
+            $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
+            if ($reserva) {
+                $reserva->estado_id = 4; // ID 4 es "Cancelado"
+                $reserva->save();
+
+                return response()->json(['status' => true, 'message' => 'Reserva cancelada actualizada en el sistema']);
+            } else {
+                return response()->json(['status' => false, 'message' => 'Reserva cancelada no encontrada en la base de datos']);
+            }
+        }
+
+        // Si la reserva es nueva o confirmada, continuar con el flujo normal
         $cliente = Cliente::firstOrCreate(
             ['email' => $bookingData['customer']['mail']],
             [
@@ -118,33 +130,26 @@ class WebhookController extends Controller
             ]
         );
 
-        // Iterar sobre las habitaciones de la reserva
         foreach ($bookingData['rooms'] as $room) {
-            $ratePlanId = $room['rate_plan_id'] ?? null; // Extraer el rate_plan_id
-
+            $ratePlanId = $room['rate_plan_id'] ?? null;
             if (!$ratePlanId) {
                 \Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
-                continue; // Si no hay rate_plan_id, saltamos esta iteración
+                continue;
             }
 
-            // Buscar el RatePlan en la base de datos
             $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
-
             if (!$ratePlan) {
                 \Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
                 continue;
             }
 
-            // Obtener el room_type_id desde el RatePlan
             $roomTypeId = $ratePlan->room_type_id;
 
-            // Crear la reserva en el CRM
-            $reserva = Reserva::create([
+            Reserva::create([
                 'cliente_id' => $cliente->id,
                 'apartamento_id' => $apartamento->id,
                 'room_type_id' => $roomTypeId,
                 'origen' => 'Booking',
-                // 'origen' => $bookingData['ota_name'] ?? 'Desconocido',
                 'fecha_entrada' => $room['checkin_date'],
                 'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                 'codigo_reserva' => $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'],
@@ -152,10 +157,11 @@ class WebhookController extends Controller
                 'numero_personas' => $room['occupancy']['adults'],
                 'neto' => $bookingData['amount'],
                 'comision' => $bookingData['ota_commission'],
-                'estado_id' => 1,
+                'estado_id' => 1, // Nueva reserva
             ]);
         }
-        // Marcar la reserva como revisada en Channex
+
+        // Marcar la revisión como revisada en Channex
         $ackResponse = Http::withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("https://app.channex.io/api/v1/booking_revisions/{$revisionId}/ack", ['values' => []]);
@@ -171,8 +177,6 @@ class WebhookController extends Controller
         return response()->json(['status' => true, 'message' => 'Reserva guardada y marcada como revisada']);
     }
 
-
-}
 
 
 
