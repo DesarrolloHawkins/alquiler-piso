@@ -87,7 +87,7 @@ class WebhookController extends Controller
     $bookingId = $request['booking_id'];
 
     if (!$revisionId || !$bookingId) {
-        return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found'], 400);
+        return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found']);
     }else {
         // Obtener la información completa de la reserva desde Channex
         $bookingResponse = Http::withHeaders([
