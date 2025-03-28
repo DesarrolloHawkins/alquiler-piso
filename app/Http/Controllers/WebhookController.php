@@ -81,8 +81,10 @@ class WebhookController extends Controller
     }
 
     // Extraer IDs desde el payload
-    $revisionId = $request->input('payload.revision_id');
-    $bookingId = $request->input('payload.booking_id');
+    // $revisionId = $request->input('payload.revision_id');
+    // $bookingId = $request->input('payload.booking_id');
+    $revisionId = $request['payload.revision_id'];
+    $bookingId = $request['payload.booking_id'];
 
     if (!$revisionId || !$bookingId) {
         return response()->json(['status' => false, 'message' => 'No revision_id or booking_id found'], 400);
