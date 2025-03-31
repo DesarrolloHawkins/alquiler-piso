@@ -238,7 +238,7 @@ class DNIController extends Controller
         } else {
             $paisCliente = "No disponible"; // o cualquier valor por defecto que prefieras
         }
-        
+
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
             if($reserva->dni_entregado == true){
@@ -957,7 +957,7 @@ class DNIController extends Controller
             case 'P':
                 return "PASAPORTE";
                 break;
-            
+
             default:
                 # code...
                 break;
@@ -1195,26 +1195,37 @@ class DNIController extends Controller
             "ZIMBABWE" => ["value" => "A9357AAAAA", "isEuropean" => in_array("ZIMBABWE", $paisesEuropeos)]
         ];
 
-        // Convertir tipo a mayúsculas para manejar la consistencia
-        $tipo = mb_strtoupper($tipo);
+        // Normalizar entrada: mayúsculas y sin tildes
+        $tipoNormalizado = $this->normalizarPais($tipo);
 
-        if (array_key_exists($tipo, $paisesDni)) {
-            // Devuelve el valor, si es europeo y el nombre del país (índice)
+        if (array_key_exists($tipoNormalizado, $paisesDni)) {
             return [
-                'index' => $tipo,
-                'value' => $paisesDni[$tipo]['value'],
-                'isEuropean' => $paisesDni[$tipo]['isEuropean']
+                'index' => $tipoNormalizado,
+                'value' => $paisesDni[$tipoNormalizado]['value'],
+                'isEuropean' => $paisesDni[$tipoNormalizado]['isEuropean']
             ];
         } else {
-            // Devuelve null o algún valor por defecto si el país no se encuentra
             return null;
         }
     }
+    private function normalizarPais($texto) {
+        $texto = mb_strtoupper($texto, 'UTF-8');
+        $texto = strtr($texto, [
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+            'À' => 'A', 'È' => 'E', 'Ì' => 'I', 'Ò' => 'O', 'Ù' => 'U',
+            'Ä' => 'A', 'Ë' => 'E', 'Ï' => 'I', 'Ö' => 'O', 'Ü' => 'U',
+            'Â' => 'A', 'Ê' => 'E', 'Î' => 'I', 'Ô' => 'O', 'Û' => 'U',
+            'Ñ' => 'N', 'Ç' => 'C'
+        ]);
+        return $texto;
+    }
+
+
 
     public function store(Request $request)
     {
         // dd($request->all());
-        
+
         // Definir las reglas de validación
         // $rules = [
         //     'nombre' => 'required|string|max:255',
@@ -1245,7 +1256,7 @@ class DNIController extends Controller
         for ($i=0; $i < $reserva->numero_personas; $i++) {
             if ($i == 0 ) {
                 // dd($request->input('nacionalidad_'.$i));
-                
+
                 $cliente = Cliente::where('id', $reserva->cliente_id)->first();
                 $resultado = $this->obtenerNacionalidad($request->input('nacionalidad_'.$i));
                 // Comprobamos si la reserva ya tiene los dni entregados
@@ -1265,7 +1276,7 @@ class DNIController extends Controller
                 // $cliente->data_dni = true;
                 $cliente->save();
                 // $data = [
-                //     'jsonHiddenComunes'=> null, 
+                //     'jsonHiddenComunes'=> null,
                 //     'idHospederia' => $idHospederia,
                 //     'nombre' => 'DANI',
                 //     'apellido1' => $apellido,
