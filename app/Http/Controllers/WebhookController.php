@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class WebhookController extends Controller
 {
@@ -73,6 +74,10 @@ class WebhookController extends Controller
 
     public function bookingAny(Request $request, $id)
     {
+        // Guardar la request entrante como archivo para depuración
+        $fileName = 'booking_' . now()->format('Ymd_His') . '_' . Str::random(6) . '.json';
+        Storage::disk('local')->put('logs/bookings/' . $fileName, json_encode($request->all(), JSON_PRETTY_PRINT));
+
         // Buscar el apartamento
         $apartamento = Apartamento::find($id);
         if (!$apartamento) {
