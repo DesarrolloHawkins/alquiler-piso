@@ -139,22 +139,34 @@ class ApiController extends Controller
     }
 
 
-    /**
+   /**
      * Averias tecnico
      */
     public function averiasTecnico(Request $request)
     {
         $phone = $request->phone;
+
+        // Guardar la solicitud en un archivo .txt
+        $data = "Averias tecnico: " . json_encode($request->all()) . "\n";
+        file_put_contents(storage_path('app/averias_tecnico.txt'), $data, FILE_APPEND);
+
         return response()->json('Averias tecnico enviada', 200);
     }
+
     /**
-     * Averias tecnico
+     * Equipo de limpieza
      */
     public function equipoLimpieza(Request $request)
     {
         $phone = $request->phone;
+
+        // Guardar la solicitud en un archivo .txt
+        $data = "Equipo de limpieza: " . json_encode($request->all()) . "\n";
+        file_put_contents(storage_path('app/equipo_limpieza.txt'), $data, FILE_APPEND);
+
         return response()->json('Equipo de limpieza enviada', 200);
     }
+
 
 
 }
