@@ -17,7 +17,7 @@ use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller; // Asegúrate de que esta línea esté presente
-
+use App\Models\Reparaciones;
 
 class ApiController extends Controller
 {
@@ -121,7 +121,7 @@ class ApiController extends Controller
             ->pluck('apartamento_id');
 
         // Obtener los apartamentos que no están en las reservas de hoy
-        $apartamentosDisponibles = Apartamento::whereNotIn('id', $reservasHoy)->get();
+        $apartamentosDisponibles = Apartamento::whereNotIn('id', $reservasHoy)->where('id_booking', '!=', 1)->get();
 
         // Formatear los datos para la respuesta
         $data = $apartamentosDisponibles->map(function ($apartamento) {
@@ -144,6 +144,8 @@ class ApiController extends Controller
      */
     public function averiasTecnico(Request $request)
     {
+        $manitas = Reparaciones::all();
+
         $phone = $request->phone;
 
         // Guardar la solicitud en un archivo .txt
@@ -167,6 +169,113 @@ class ApiController extends Controller
         return response()->json('Equipo de limpieza enviada', 200);
     }
 
+    public function mensajesPlantillaAverias($nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoManitas,
+            "type" => "template",
+            "template" => [
+                "name" => 'reparaciones',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $nombreManita],
+                            ["type" => "text", "text" => $apartamento],
+                            ["type" => "text", "text" => $edificio],
+                            ["type" => "text", "text" => $mensaje],
+                            ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
+
+
+    public function mensajesPlantillaLimpiadora($apartamento, $edificio, $mensaje, $telefono, $telefonoLimpiadora, $idioma = 'es'){
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $telefonoLimpiadora,
+            "type" => "template",
+            "template" => [
+                "name" => '',
+                "language" => ["code" => $idioma],
+                "components" => [
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            ["type" => "text", "text" => $apartamento],
+                            ["type" => "text", "text" => $edificio],
+                            ["type" => "text", "text" => $mensaje],
+                            ["type" => "text", "text" => $telefono],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$token
+            ),
+
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        // $responseJson = json_decode($response);
+        return $response;
+
+    }
 
 
 }
