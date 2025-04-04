@@ -43,37 +43,9 @@ class WebhookController extends Controller
         return response()->json(['status' => true]);
     }
 
-    // public function bookingAny(Request $request, $id)
-    // {
-    //     $apartamento = Apartamento::find($id);
-
-    //     $fecha = Carbon::now()->format('Y-m-d_H-i-s');
-    //     $filename = "bookingAny_{$fecha}.txt";
-
-    //     $this->saveToWebhooksFolder($filename, $request->all());
-    //     // Extraer revision_id del payload
-    //     $revisionId = $request->input('payload.revision_id');
-
-    //     if (!$revisionId) {
-    //         return response()->json(['status' => false, 'message' => 'No revision_id found'], 400);
-    //     }
-    //     $url = "https://staging.channex.io/api/v1/booking_revisions/{$revisionId}/ack";
-
-    //     // Hacer la petición POST
-    //     $response = Http::withHeaders([
-    //         'user-api-key' => $this->apiToken, // Asegúrate de que $this->apiToken está definido
-    //     ])->post($url, ['values' => []]); // Enviar datos vacíos si no hay updates
-
-    //     // Verificar la respuesta
-    //     if ($response->successful()) {
-    //         return response()->json(['status' => true, 'message' => 'Acknowledged successfully']);
-    //     } else {
-    //         return response()->json(['status' => false, 'message' => 'Error in acknowledgment', 'error' => $response->body()], $response->status());
-    //     }
-    // }
-
     public function bookingAny(Request $request, $id)
     {
+        // dd($request->all());
         // Guardar la request entrante como archivo para depuración
         $fileName = 'booking_' . now()->format('Ymd_His') . '_' . Str::random(6) . '.json';
         Storage::disk('local')->put('logs/bookings/' . $fileName, json_encode($request->all(), JSON_PRETTY_PRINT));
@@ -84,8 +56,9 @@ class WebhookController extends Controller
             return response()->json(['status' => false, 'message' => 'Apartamento no encontrado'], 404);
         }
 
-        $revisionId = $request['revision_id'];
-        $bookingId = $request['booking_id'];
+        $request->input('payload.revision_id');
+        $request->input('payload.booking_id');
+        
 
         if (!$revisionId || !$bookingId) {
             return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found']);
