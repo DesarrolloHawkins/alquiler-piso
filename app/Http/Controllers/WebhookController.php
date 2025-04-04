@@ -56,9 +56,9 @@ class WebhookController extends Controller
             return response()->json(['status' => false, 'message' => 'Apartamento no encontrado'], 404);
         }
 
-        $request->input('payload.revision_id');
-        $request->input('payload.booking_id');
-        
+        $revisionId = $request->input('payload.revision_id');
+        $bookingId = $request->input('payload.booking_id');
+
 
         if (!$revisionId || !$bookingId) {
             return response()->json(['status' => true, 'message' => 'No revision_id or booking_id found']);
