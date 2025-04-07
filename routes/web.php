@@ -37,6 +37,11 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
+
+Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ics'])->name('calendario.ics');
+
+
+
 Route::get('/regenerate-invoices', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
 Route::get('/registrar-webhooks/{id}', [App\Http\Controllers\ApartamentosController::class, 'registrarWebhooks']);
 
@@ -101,7 +106,6 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
 
-    Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ics'])->name('calendario.ics');
 
 
     // Huespedes
