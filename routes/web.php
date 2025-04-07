@@ -17,6 +17,7 @@ use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\PresupuestoController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\MetalicoController;
+use App\Http\Controllers\CalendarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,6 +100,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
+
+    Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ics'])->name('calendario.ics');
 
 
     // Huespedes
