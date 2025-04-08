@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
 use App\Models\Cliente;
+use App\Models\MensajeChat;
 use App\Models\RatePlan;
 use App\Models\Reserva;
 use App\Models\RoomType;
@@ -18,10 +19,14 @@ class WebhookController extends Controller
 {
     private $apiUrl;
     private $apiToken;
+    private $openaiApiKey;
+
     public function __construct()
     {
         $this->apiUrl = env('CHANNEX_URL');
         $this->apiToken = env('CHANNEX_TOKEN');
+        $this->openaiApiKey = env('OPENAI_API_KEY'); // Asegúrate de tener tu API key de OpenAI en .env
+
     }
 
     private function saveToWebhooksFolder($filename, $data)
@@ -49,6 +54,45 @@ class WebhookController extends Controller
         // Guardar la request entrante como archivo para depuración
         $fileName = 'booking_' . now()->format('Ymd_His') . '_' . Str::random(6) . '.json';
         Storage::disk('local')->put('logs/bookings/' . $fileName, json_encode($request->all(), JSON_PRETTY_PRINT));
+
+        $evento = $request->input('event');
+
+        // === GESTIÓN DE MENSAJES ===
+        if ($evento === 'message') {
+            $payload = $request->input('payload');
+            $messageId = $payload['ota_message_id'];
+
+            if (!MensajeChat::where('channex_message_id', $messageId)->exists()) {
+                // Guardamos el mensaje en la base de datos
+                $mensajeChat = MensajeChat::create([
+                    'channex_message_id' => $messageId,
+                    'booking_id' => $payload['booking_id'],
+                    'thread_id' => $payload['message_thread_id'], // Channex thread_id
+                    'property_id' => $payload['property_id'],
+                    'sender' => $payload['sender'],
+                    'message' => $payload['message'],
+                    'attachments' => $payload['attachments'] ?? [],
+                    'have_attachment' => $payload['have_attachment'] ?? false,
+                    'received_at' => Carbon::parse($request->input('timestamp')),
+                    'openai_thread_id' => null, // Inicialmente vacío, se llenará después
+                ]);
+
+                // Verificar si ya existe un hilo de OpenAI asociado o crearlo
+                $openaiThreadId = $this->getOrCreateOpenAIThread($payload['message_thread_id']);  // Obtén o crea el hilo de OpenAI
+
+                // Actualizar el mensaje con el ID del hilo de OpenAI
+                $mensajeChat->update(['openai_thread_id' => $openaiThreadId]);
+
+                // Procesar el mensaje con OpenAI y obtener la respuesta
+                $responseMessage = $this->procesarMensajeConAsistente($payload['message'], $openaiThreadId);
+
+                // Enviar la respuesta a Channex
+                $this->enviarRespuestaAChannex($responseMessage, $payload['booking_id']);
+            }
+
+            return response()->json(['status' => true, 'message' => 'Mensaje registrado']);
+        }
+
 
         // Buscar el apartamento
         $apartamento = Apartamento::find($id);
@@ -154,9 +198,326 @@ class WebhookController extends Controller
 
         return response()->json(['status' => true, 'message' => 'Reserva guardada y marcada como revisada']);
     }
+// Función para obtener el estado de la ejecución del hilo en OpenAI
+private function ejecutarHiloStatus($id_thread, $id_runs)
+{
+    $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+    $url = 'https://api.openai.com/v1/threads/' . $id_thread . '/runs/' . $id_runs;
+
+    $headers = [
+        'Authorization: Bearer ' . $token,
+        "OpenAI-Beta: assistants=v2"
+    ];
+
+    // Inicializar cURL y configurar las opciones
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_POST, false);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+    // Ejecutar la solicitud y obtener la respuesta
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    // Verificar si hubo un error
+    if ($response === false) {
+        Log::error("Error al obtener el estado del hilo de OpenAI: " . curl_error($curl));
+        return [
+            'status' => 'error',
+            'message' => 'Error al obtener el estado del hilo de OpenAI',
+        ];
+    }
+
+    // Procesar la respuesta
+    $response_data = json_decode($response, true);
+
+    // Si hay un error en la respuesta, lo manejamos
+    if (isset($response_data['error'])) {
+        Log::error("Error en la respuesta de OpenAI: " . $response_data['error']['message']);
+        return [
+            'status' => 'error',
+            'message' => 'Error en la respuesta de OpenAI: ' . $response_data['error']['message'],
+        ];
+    }
+
+    return $response_data;
+}
+// Función para obtener los pasos de la ejecución de un hilo en OpenAI
+private function ejecutarHiloISteeps($id_thread, $id_runs)
+{
+    $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+    $url = 'https://api.openai.com/v1/threads/'.$id_thread.'/runs/'.$id_runs.'/steps';
+
+    $headers = [
+        'Authorization: Bearer ' . $token,
+        "OpenAI-Beta: assistants=v2"
+    ];
+
+    // Inicializar cURL y configurar las opciones
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_POST, false);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+    // Ejecutar la solicitud y obtener la respuesta
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    // Verificar si hubo un error
+    if ($response === false) {
+        Log::error("Error al obtener los pasos del hilo de OpenAI: " . curl_error($curl));
+        return [
+            'status' => 'error',
+            'message' => 'Error al obtener los pasos del hilo de OpenAI',
+        ];
+    }
+
+    // Procesar la respuesta
+    $response_data = json_decode($response, true);
+
+    // Si hay un error en la respuesta, lo manejamos
+    if (isset($response_data['error'])) {
+        Log::error("Error en la respuesta de OpenAI: " . $response_data['error']['message']);
+        return [
+            'status' => 'error',
+            'message' => 'Error en la respuesta de OpenAI: ' . $response_data['error']['message'],
+        ];
+    }
+
+    return $response_data;
+}
+// Función para listar los mensajes de un hilo en OpenAI
+private function listarMensajes($id_thread)
+{
+    $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+    $url = 'https://api.openai.com/v1/threads/' . $id_thread . '/messages';
+
+    $headers = [
+        'Authorization: Bearer ' . $token,
+        "OpenAI-Beta: assistants=v2"
+    ];
+
+    // Inicializar cURL y configurar las opciones
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+    // Ejecutar la solicitud y obtener la respuesta
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    // Verificar si hubo un error
+    if ($response === false) {
+        Log::error("Error al listar los mensajes del hilo de OpenAI: " . curl_error($curl));
+        return [
+            'status' => 'error',
+            'message' => 'Error al listar los mensajes del hilo de OpenAI',
+        ];
+    }
+
+    // Procesar la respuesta
+    $response_data = json_decode($response, true);
+
+    // Si hay un error en la respuesta, lo manejamos
+    if (isset($response_data['error'])) {
+        Log::error("Error en la respuesta de OpenAI: " . $response_data['error']['message']);
+        return [
+            'status' => 'error',
+            'message' => 'Error en la respuesta de OpenAI: ' . $response_data['error']['message'],
+        ];
+    }
+
+    // Retorna los mensajes del hilo
+    return $response_data;
+}
 
 
+    // Obtener o crear el hilo de OpenAI
+    private function getOrCreateOpenAIThread($channexThreadId)
+    {
+        // Verifica si existe un hilo de OpenAI para este mensaje de Channex
+        $mensajeChat = MensajeChat::where('channex_message_id', $channexThreadId)->first();
 
+        if ($mensajeChat && $mensajeChat->openai_thread_id) {
+            return $mensajeChat->openai_thread_id;  // Ya existe un hilo de OpenAI
+        }
+
+        // Si no existe, creamos un nuevo hilo de OpenAI
+        $hilo = $this->crearHilo();
+        // Guardamos el ID del hilo de OpenAI
+        return $hilo['id'];
+    }
+
+    private function procesarMensajeConAsistente($mensaje, $threadId)
+    {
+        // Enviar el mensaje al asistente dentro del hilo de OpenAI
+        $this->mensajeHilo($threadId, $mensaje);
+
+        // Ejecutar el hilo y esperar la respuesta
+        $ejecucion = $this->ejecutarHilo($threadId);
+        $ejecucionStatus = $this->ejecutarHiloStatus($threadId, $ejecucion['id']);
+
+        // Esperar hasta que el hilo se complete
+        while ($ejecucionStatus['status'] === 'in_progress') {
+            sleep(2); // Espera activa antes de verificar el estado nuevamente
+
+            // Verificar el estado del paso actual del hilo
+            $pasosHilo = $this->ejecutarHiloISteeps($threadId, $ejecucion['id']);
+            if ($pasosHilo['data'][0]['status'] === 'completed') {
+                $ejecucionStatus = $this->ejecutarHiloStatus($threadId, $ejecucion['id']);
+            }
+        }
+
+        if ($ejecucionStatus['status'] === 'completed') {
+            // El hilo ha completado su ejecución, obtener la respuesta final
+            $mensajes = $this->listarMensajes($threadId);
+            return $mensajes['data'][0]['content'][0]['text']['value'] ?? "No se pudo obtener una respuesta válida.";
+        }
+
+        return "Hubo un error en la ejecución del asistente.";
+    }
+
+    // Función para crear un nuevo hilo de OpenAI
+    private function crearHilo()
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads';
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token,
+            "OpenAI-Beta: assistants=v2"
+        ];
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        return json_decode($response, true);
+    }
+
+    // Función para enviar un mensaje dentro de un hilo de OpenAI
+    private function mensajeHilo($id_thread, $pregunta)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/' . $id_thread . '/messages';
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token,
+            "OpenAI-Beta: assistants=v2"
+        ];
+
+        $body = [
+            "role" => "user",
+            "content" => $pregunta
+        ];
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        return json_decode($response, true);
+    }
+
+    private function enviarRespuestaAChannex($mensaje, $bookingId)
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://app.channex.io/api/v1/bookings/{$bookingId}/messages",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode([
+                'message' => [
+                    'message' => $mensaje
+                ],
+            ]),
+            CURLOPT_HTTPHEADER => [
+                'user-api-key: ' . $this->apiToken,
+                'Content-Type: application/json'
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        Log::info('Respuesta enviada a Channex:', ['booking_id' => $bookingId, 'response' => $response]);
+
+        return $response;
+    }
+
+    // Función para ejecutar el hilo de OpenAI
+    private function ejecutarHilo($id_thread)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/threads/' . $id_thread . '/runs';
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token,
+            "OpenAI-Beta: assistants=v2"
+        ];
+
+        // Prepara el cuerpo de la solicitud
+        $body = [
+            "assistant_id" => 'asst_KfPsIM26MjS662Vlq6h9WnuH' // Tu ID de asistente de OpenAI
+        ];
+
+        // Inicializar cURL y configurar las opciones
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+
+        // Ejecutar la solicitud y obtener la respuesta
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // Verificar si hubo un error
+        if ($response === false) {
+            Log::error("Error al ejecutar el hilo de OpenAI: " . curl_error($curl));
+            return [
+                'status' => 'error',
+                'message' => 'Error al ejecutar el hilo de OpenAI',
+            ];
+        }
+
+        // Procesar la respuesta
+        $response_data = json_decode($response, true);
+
+        // Si hay un error en la respuesta, lo manejamos
+        if (isset($response_data['error'])) {
+            Log::error("Error en la respuesta de OpenAI: " . $response_data['error']['message']);
+            return [
+                'status' => 'error',
+                'message' => 'Error en la respuesta de OpenAI: ' . $response_data['error']['message'],
+            ];
+        }
+
+        return $response_data;
+    }
 
 
     public function bookingUnmappedRoom(Request $request, $id)

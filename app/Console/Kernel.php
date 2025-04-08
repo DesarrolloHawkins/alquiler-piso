@@ -51,10 +51,8 @@ class Kernel extends ConsoleKernel
         // Programa el comando para que se ejecute cada 5 minutos
         $schedule->command('emails:fetch')->everyFiveMinutes();
 
-
         // Tarea programada de Limpieza de numero de telefono del cliente.
         $schedule->command('clean:phonenumbers')->twiceDaily(1, 13);
-
 
         // Tarea programada de Nacionalidad del cliente ejecutada con éxito.
         $schedule->call(function (ClienteService $clienteService) {
@@ -72,7 +70,6 @@ class Kernel extends ConsoleKernel
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
-
 
         // Miramos si el cliente ha entregado el DNI el dia de entrada
         $schedule->call(function () {
@@ -126,10 +123,8 @@ class Kernel extends ConsoleKernel
             }
         })->everyMinute();
 
-
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
-
 
         // Tarea de Generacion de Factura
         $schedule->call(function () {
@@ -187,10 +182,6 @@ class Kernel extends ConsoleKernel
             }
 
         })->everyMinute();
-
-
-
-
 
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -294,21 +285,18 @@ class Kernel extends ConsoleKernel
                 $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 11:00:00');
                 $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
                 $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
-                // $horaObjetivoDespedida = new \DateTime($fechaHoyStr . '11:00:00');
 
                 // Diferencias horarias para las horas objetivos
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
                 $diferenciasHoraCodigos = $hoy->diff($horaObjetivoCodigo)->format('%R%H%I');
                 $diferenciasHoraConsulta = $hoy->diff($horaObjetivoConsulta)->format('%R%H%I');
                 $diferenciasHoraOcio = $hoy->diff($horaObjetivoOcio)->format('%R%H%I');
-                // $diferenciasHoraDespedida = $hoy->diff($horaObjetivoDespedida)->format('%R%H%I');
 
                 // Comprobacion de los mensajes enviados automaticamente
                 $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
                 $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
                 $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
                 $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
-                // $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
                 $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
 
                 // MENSAJE DE BIEVENIDA
@@ -354,7 +342,6 @@ class Kernel extends ConsoleKernel
                                 $url = $enlace,
                                 $url2 = $enlaceLimpio
                             );
-                            # code...
                         } else {
                             $data = $this->clavesMensaje(
                                 $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $reserva->apartamento->titulo,

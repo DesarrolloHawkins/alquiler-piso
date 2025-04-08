@@ -61,344 +61,120 @@
                 @endif
             });
         </script>
+        <style>
+            /* Aquí va el estilo que ya tienes... */
+            /* total width */
+            body::-webkit-scrollbar {
+                background-color: #fff;
+                width: 12px;
+            }
+
+            /* background of the scrollbar except button or resizer */
+            body::-webkit-scrollbar-track {
+                background-color: #fff;
+            }
+
+            /* scrollbar itself */
+            body::-webkit-scrollbar-thumb {
+                background-color: #babac0;
+                border-radius: 16px;
+                border: 3px solid #fff;
+            }
+
+            /* set button(top and bottom of the scrollbar) */
+            body::-webkit-scrollbar-button {
+                display:none;
+            }
+
+            /* ...fin de los estilos scroll */
+        </style>
 
     </head>
     <body>
         <div id="app">
-            <div class="container-fluid h-100">
-                <div class="row h-100">
+            <div class="container-fluid">
+                <div class="row">
                     <!-- Sidebar -->
-                    <div id="sidebar" class="col-auto bg-light sidebar p-3"
-                        style="height: 90vh; max-width: 300px; overflow: hidden; background-color: #0F1739 !important; margin: 20px 0 20px 20px; border-radius: 20px;">
-                        <div class="d-flex flex-column flex-shrink-0 text-white h-100" style="">
-                            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none w-100">
-                                <img src="{{asset('logo-hawkins-suite_white.png')}}" alt="" style="" class="img-fluid d-block m-auto mt-1">
-                            </a>
-                            <hr>
-                            <ul class="nav nav-pills flex-row mb-auto" style="overflow-x: none; overflow:auto;">
-                                {{-- Dashboard --}}
-                                <li class="nav-item w-100">
-                                <a href="{{route('dashboard.index')}}" class="nav-link fs-5 {{ request()->is('dashboard', 'dashboard/*') ? 'active' : '' }}" aria-current="page">
-                                    <i class="fa-solid fa-chart-area me-2 fs-4" style=" width:25px"></i>
-                                    Dashboard
-                                </a>
-                                </li>
+                    <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark bg-color-primero px-4">
+                        <a class="navbar-brand" href="/">
+                            <img src="{{ asset('logo-hawkins-suite_white.png') }}" alt="Logo" height="40">
+                        </a>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
 
-                                {{-- Clientes --}}
-                                <li class="nav-item w-100">
-                                    <a href="{{route('clientes.index')}}" class="nav-link fs-5 {{ request()->is('clientes', 'clientes/*') ? 'active' : '' }}" aria-current="page">
-                                        <i class="fa-solid fa-users me-2 fs-4" style=" width:25px"></i>
-                                        Clientes
-                                    </a>
-                                </li>
+                        <div class="collapse navbar-collapse" id="mainNavbar">
+                            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                                <li class="nav-item"><a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard.index') }}">Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link {{ request()->is('clientes*') ? 'active' : '' }}" href="{{ route('clientes.index') }}">Clientes</a></li>
 
-                                {{-- Channex --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-info="button" data-bs-target="#submenuChannex" href="#submenuChannex" class="nav-link fs-5 w-100 text-start {{ request()->is('channex', 'channex/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('channex', 'channex/*') ? 'true' : 'false' }}">
-                                        <img src="/icono-channex.png" alt="" style="width: 25px; margin-right:5px">
-                                        {{-- <i class="fa-solid fa-table me-2 fs-4" style="width:25px"></i> --}}
+                                <!-- Channex -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('channex*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Channex
-                                    </button>
-                                    <!-- Submenú para Channex, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('channex*') ? 'show' : '' }}" id="submenuChannex">
-                                        <li class="nav-item">
-                                            <a href="{{ route('channex.ratePlans.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.ratePlans.index') ? 'active' : '' }}">
-                                                Rate Plans
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('channex.roomTypes.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.roomTypes.index') ? 'active' : '' }}">
-                                                Room Types
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('channex.propiedad.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.propiedad.index') ? 'active' : '' }}">
-                                            Property
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('ari.index') }}" class="nav-link fs-6 {{ request()->routeIs('ari.index') ? 'active' : '' }}">
-                                            Update Rate & Availability
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('channex.channel.index') }}" class="nav-link fs-6 {{ request()->routeIs('channex.channel.index') ? 'active' : '' }}">
-                                            Channel
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <button id="fullSyncBtn" class="nav-link fs-6">
-                                                Full Sync
-                                            </button>
-                                        </li>
-
-                                        {{-- <li class="nav-item">
-                                            <a href="{{ route('ari.fullSync') }}" class="nav-link fs-6 {{ request()->routeIs('ari.fullSync') ? 'active' : '' }}">
-                                                Full Sync
-                                            </a>
-                                        </li> --}}
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('channex.ratePlans.index') }}">Rate Plans</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.roomTypes.index') }}">Room Types</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.propiedad.index') }}">Property</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('ari.index') }}">Update Rate & Availability</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.channel.index') }}">Channel</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="document.getElementById('fullSyncBtn')?.click()">Full Sync</a></li>
                                     </ul>
                                 </li>
 
-
-                                {{-- Reservas --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-info="button" data-bs-target="#submenuReservas" href="#submenuReservas" class="nav-link fs-5 w-100 text-start {{ request()->is('reservas', 'reservas/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('reservas', 'reservas/*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-table me-2 fs-4" style="width:25px"></i>
+                                <!-- Reservas -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('reservas*') || request()->is('tabla-reservas*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Reservas
-                                    </button>
-                                    <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('reservas*', 'reservas','tabla-reservas', 'tabla-reservas/*') ? 'show' : '' }}" id="submenuReservas">
-                                        <li class="nav-item">
-                                            <a href="{{ route('reservas.index') }}" class="nav-link fs-6 {{ request()->is('reservas', 'reservas/*') ? 'active' : '' }}">
-                                                Ver Reservas
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.tablaReservas.index') }}" class="nav-link fs-6 {{ request()->is('tabla-reservas', 'tabla-reservas/*') ? 'active' : '' }}">
-                                                Tabla de Reservas
-                                            </a>
-                                        </li>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('reservas.index') }}">Ver Reservas</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.tablaReservas.index') }}">Tabla de Reservas</a></li>
                                     </ul>
                                 </li>
 
-                                {{-- Gestion --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuGestion" href="#submenuGestion" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-list-check me-2 fs-4" style="width:25px"></i>
+                                <!-- Gestión -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('jornada*') || request()->is('apartamentos*') || request()->is('checklists*') || request()->is('holidays*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Gestión
-                                    </button>
-                                    <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('jornada', 'jornada/*', 'edificios', 'edificios/*', 'gestion', 'gestion/*', 'limpieza-apartamento', 'limpieza-apartamento/*','checklists', 'checklists/*','items_checklist', 'items_checklist/*','apartamentos', 'apartamentos/*','holidays','holidays/*') ? 'show' : '' }}" id="submenuGestion">
-
-                                        <li class="nav-item w-100">
-                                            <a href="{{route('apartamentos.admin.index')}}" class="nav-link fs-6 {{ request()->is('apartamentos', 'apartamentos/*') ? 'active' : '' }}">
-                                                Apartamentos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.jornada.index') }}" class="nav-link fs-6 {{ request()->is('jornada', 'jornada/*') ? 'active' : '' }}">
-                                                Jornada
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.edificios.index')}}" class="nav-link fs-6 {{ request()->is('edificios', 'edificios/*','edificio/*') ? 'active' : '' }}" >
-                                                Edificios
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a target="blank" href="{{route('gestion.index')}}" class="nav-link fs-6 {{ request()->is('gestion', 'gestion/*') ? 'active' : '' }}">
-                                                Limpieza
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a target="blank" href="{{route('holiday.admin.index')}}" class="nav-link fs-6 {{ request()->is('holidays', 'holidays/index') ? 'active' : '' }}">
-                                                Vacaciones
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a target="blank" href="{{route('holiday.admin.petitions')}}" class="nav-link fs-6 {{ request()->is('holidays', 'holidays/petitions') ? 'active' : '' }}">
-                                                Gestion Vacaciones
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.limpiezaFondo.index')}}" class="nav-link fs-6 {{ request()->is('limpieza-apartamento', 'limpieza-apartamento/*') ? 'active' : '' }}">
-                                                Limpieza Fondo
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.checklists.index')}}" class="nav-link fs-6 {{ request()->is('checklists', 'checklists/*','items_checklist', 'items_checklist/*') ? 'active' : '' }}">
-                                                Categorias de Limpieza
-                                            </a>
-                                        </li>
-
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('apartamentos.admin.index') }}">Apartamentos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.jornada.index') }}">Jornada</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.edificios.index') }}">Edificios</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">Limpieza</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.index') }}" target="_blank">Vacaciones</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.petitions') }}" target="_blank">Gestion Vacaciones</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.limpiezaFondo.index') }}">Limpieza Fondo</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.checklists.index') }}">Categorias de Limpieza</a></li>
                                     </ul>
                                 </li>
 
-                                {{-- Emails --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuEmails" href="#submenuEmails" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('emails', 'emails/*', 'status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('emails', 'emails/*', 'status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-envelope me-2 fs-4" style="width:25px"></i>
+                                <!-- Emails -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Emails
-                                    </button>
-                                    <!-- Submenú para Emails, mostrando los enlaces de Status y Categoría -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('status-mail', 'status-mail/*', 'category-email', 'category-email/*') ? 'show' : '' }}" id="submenuEmails">
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.statusMail.index') }}" class="nav-link fs-6 {{ request()->is('status-mail', 'status-mail/*') ? 'active' : '' }}">
-                                                Status de Emails
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.categoriaEmail.index') }}" class="nav-link fs-6 {{ request()->is('category-email', 'category-email/*') ? 'active' : '' }}">
-                                                Categorías de Emails
-                                            </a>
-                                        </li>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.statusMail.index') }}">Status de Emails</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaEmail.index') }}">Categorías de Emails</a></li>
                                     </ul>
                                 </li>
 
-
-
-                                {{-- Asistente --}}
-                                <li class="nav-item w-100">
-                                    <a target="_blank" href="{{route('whatsapp.mensajes')}}" class="nav-link fs-5" aria-current="page">
-                                        <i class="fa-solid fa-user-astronaut me-2 fs-4" style=" width:25px"></i>
-                                        Conversaciones
-                                    </a>
-                                </li>
-
-                                {{-- Tesoreria --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuTesoreria" href="#submenuTesoreria" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'active' : 'collapsed' }}" aria-expanded="{{ request()->is('diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-coins me-2 fs-4" style=" width:25px"></i>
-                                        Tesoreria
-                                    </button>
-                                    <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="collapse nav flex-column ms-1 fondo_dropdraw {{ request()->is('metalicos','metalicos/*','diario-caja', 'diario-caja/*', 'ingresos', 'ingresos/*', 'categoria-ingresos', 'categoria-ingresos/*', 'gastos', 'gastos/*','facturas', 'facturas/*','bancos', 'bancos/*','categoria-gastos', 'categoria-gastos/*', 'upload-files', 'upload-files/*', 'estados-diario', 'estados-diario/*','presupuestos','presupuestos/*') ? 'show' : '' }}" id="submenuTesoreria">
-                                        <li class="nav-item w-100">
-                                            <a href="{{route('admin.diarioCaja.index')}}" class="nav-link fs-6 {{ request()->is('diario-caja', 'diario-caja/*') ? 'active' : '' }}">
-                                                Diario de Caja
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.estadosDiario.index')}}" class="nav-link fs-6 {{ request()->is('estados-diario', 'estados-diario/*') ? 'active' : '' }}" >
-                                            Estados del Diario
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('presupuestos.index')}}" class="nav-link fs-6 {{ request()->is('presupuestos', 'presupuestos/*') ? 'active' : '' }}" >
-                                            Presupuestos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.facturas.index')}}" class="nav-link fs-6 {{ request()->is('facturas', 'facturas/*') ? 'active' : '' }}" >
-                                            Facturas
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.ingresos.index') }}" class="nav-link fs-6 {{ request()->is('ingresos', 'ingresos/*') ? 'active' : '' }}">
-                                                Ver Ingresos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.categoriaIngresos.index') }}" class="nav-link fs-6 {{ request()->is('categoria-ingresos', 'categoria-ingresos/*') ? 'active' : '' }}">
-                                                Categoría de Ingresos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.gastos.index') }}" class="nav-link fs-6 {{ request()->is('gastos', 'gastos/*') ? 'active' : '' }}">
-                                                Ver Gastos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.categoriaGastos.index') }}" class="nav-link fs-6 {{ request()->is('categoria-gastos', 'categoria-gastos/*') ? 'active' : '' }}">
-                                                Categoría de Gastos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.bancos.index')}}" class="nav-link fs-6 {{ request()->is('bancos', 'bancos/*') ? 'active' : '' }}" >
-                                            Bancos
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('admin.upload.files')}}" class="nav-link fs-6 {{ request()->is('upload-files', 'upload-files/*') ? 'active' : '' }}" >
-                                            Subida de Ficheros Banco
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{route('metalicos.index')}}" class="nav-link fs-6 {{ request()->is('metalicos', 'metalicos/*') ? 'active' : '' }}" >
-                                            Metalicos
-                                            </a>
-                                        </li>
-
-                                    </ul>
-                                </li>
-
-                                {{-- Contabilidad --}}
-                                <li class="nav-item w-100">
-                                    <!-- Modificado para mantener abierto cuando esté dentro de las rutas relacionadas -->
-                                    <button data-bs-target="#submenuContabilidad" href="#submenuContabilidad" data-info="button" class="nav-link fs-5 w-100 text-start {{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? '' : 'collapsed' }}" aria-expanded="{{ request()->is('cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'true' : 'false' }}">
-                                        <i class="fa-solid fa-calculator me-2 fs-4" style="width:25px"></i>
-                                        Contabilidad
-                                    </button>
-                                    <!-- Submenú para Contabilidad, modificado para mostrar/ocultar basado en la ruta -->
-                                    <ul class="fondo_dropdraw collapse nav flex-column ms-1 {{ request()->is('cuentas-contables*', 'plan-contable', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'show' : '' }}" id="submenuContabilidad">
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.planContable.index') }}" class="nav-link fs-6 {{ request()->is('plan-contable', 'plan-contable/*') ? 'active' : '' }}">
-                                                Plan General Contable
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.grupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('grupo-contable', 'grupo-contable/*') ? 'active' : '' }}">
-                                                Grupos Contables
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.subGrupoContabilidad.index') }}" class="nav-link fs-6 {{ request()->is('sub-grupo-contable', 'sub-grupo-contable/*') ? 'active' : '' }}">
-                                                Sub-Grupos Contables
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.cuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('cuentas-contables', 'cuentas-contables/*') ? 'active' : '' }}">
-                                                Cuentas Contables
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.subCuentasContables.index') }}" class="nav-link fs-6 {{ request()->is('sub-cuentas-contables', 'sub-cuentas-contables/*') ? 'active' : '' }}">
-                                                Sub-Cuentas Contables
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="{{ route('admin.subCuentasHijaContables.index') }}" class="nav-link fs-6 {{ request()->is('sub-cuentas-hijas-contables', 'sub-cuentas-hijas-contables/*') ? 'active' : '' }}">
-                                                Sub-Cuentas Hijas Contables
-                                            </a>
-                                        </li>
-
-
-                                    </ul>
-                                </li>
-
-                                {{-- Clientes --}}
-                                <li class="nav-item w-100">
-                                    <a href="{{route('admin.empleados.index')}}" class="nav-link fs-5 {{ request()->is('empleados', 'empleados/*') ? 'active' : '' }}" aria-current="page">
-                                        <i class="fa-solid fa-user-group me-2 fs-4" style=" width:25px"></i>
-                                        Empleados
-                                    </a>
-                                </li>
-                                {{-- Logs --}}
-                                <li class="nav-item w-100">
-                                    <a href="#" class="nav-link fs-5" aria-current="page">
-                                        <i class="fa-solid fa-file-lines me-2 fs-4" style=" width:25px"></i>
-                                    Logs
-                                    </a>
-                                </li>
-
-                                {{-- Configuracion --}}
-                                <li class="nav-item w-100">
-                                    <a href="{{route('configuracion.index')}}"  class="nav-link fs-5" aria-current="page">
-                                        <i class="fa-solid fa-gear me-2 fs-4" style=" width:25px"></i>
-                                    Configuracion
-                                    </a>
-                                </li>
+                                <!-- Otros -->
+                                <li class="nav-item"><a class="nav-link" target="_blank" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ route('admin.empleados.index') }}">Empleados</a></li>
+                                <li class="nav-item"><a class="nav-link" href="#">Logs</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ route('configuracion.index') }}">Configuración</a></li>
                             </ul>
-                            <hr>
-                            <div class="dropdown">
-                                <a class="nav-link my-1 mx-3 text-black text-white" href="{{ route('logout') }}"
-                                    onclick="
-                                    event.preventDefault();
-                                    document.getElementById('logout-form').submit();">
-                                    {{ __('Logout') }}
-                                </a>
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                    @csrf
-                                </form>
-                            </div>
+
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-flex">
+                                @csrf
+                                <button class="btn btn-outline-light" type="submit">Salir</button>
+                            </form>
                         </div>
-                    </div>
+                    </nav>
 
                     {{-- Fondo de Sidebar Active --}}
                     <div id="fondoActiveSidebar" class="fondo-active-sidebar hidden">
@@ -426,6 +202,8 @@
         </div> <!-- END APP -->
 
         <style>
+
+
             /* Sidebar animado */
            /* Sidebar por defecto (visible en pantallas grandes) */
             #sidebar {
@@ -488,42 +266,48 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-       <!-- DataTables CSS y JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- DataTables CSS y JS -->
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-       <script>
+        <script>
             document.addEventListener("DOMContentLoaded", function () {
-                document.getElementById("fullSyncBtn").addEventListener("click", function () {
-                    Swal.fire({
-                        title: "¿Estás seguro?",
-                        text: "Esto sincronizará todas las disponibilidades con Channex.",
-                        icon: "warning",
-                        showCancelButton: true,
-                        confirmButtonText: "Sí, sincronizar",
-                        cancelButtonText: "Cancelar"
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            fetch("{{ route('ari.fullSync') }}", {
-                                method: "POST",
-                                headers: {
-                                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({})
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    Swal.fire("¡Éxito!", data.message, "success");
-                                } else {
-                                    Swal.fire("Error", data.message, "error");
-                                }
-                            })
-                            .catch(error => {
-                                Swal.fire("Error", "Ocurrió un error inesperado.", "error");
-                            });
-                        }
+                const fullSyncBtn = document.getElementById("fullSyncBtn");
+                if (fullSyncBtn) {
+                    fullSyncBtn.addEventListener("click", function () {
+                        Swal.fire({
+                            title: "¿Estás seguro?",
+                            text: "Esto sincronizará todas las disponibilidades con Channex.",
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonText: "Sí, sincronizar",
+                            cancelButtonText: "Cancelar"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                fetch("{{ route('ari.fullSync') }}", {
+                                    method: "POST",
+                                    headers: {
+                                        "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content"),
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({})
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire("¡Éxito!", data.message, "success");
+                                    } else {
+                                        Swal.fire("Error", data.message, "error");
+                                    }
+                                })
+                                .catch(error => {
+                                    Swal.fire("Error", "Ocurrió un error inesperado.", "error");
+                                });
+                            }
+                        });
                     });
-                });
+                }
+
             });
         </script>
 
@@ -620,12 +404,34 @@
                     });
                 });
             });
-            </script>
+        </script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const navbar = document.getElementById('mainNavbar');
+                let lastScrollTop = 0;
+
+                window.addEventListener('scroll', function () {
+                    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+                    if (scrollTop > 10 && !navbar.classList.contains('fixed-top')) {
+                        navbar.classList.add('fixed-top', 'shadow-sm');
+                        // navbar.classList.remove('bg-color-primero');
+                        // navbar.classList.add('bg-dark');
+                    } else if (scrollTop <= 10 && navbar.classList.contains('fixed-top')) {
+                        navbar.classList.remove('fixed-top', 'shadow-sm');
+                        // navbar.classList.remove('bg-dark');
+                        // navbar.classList.add('bg-color-primero');
+                    }
+
+                    lastScrollTop = scrollTop;
+                });
+            });
+        </script>
 
 
-
-            @yield('scripts')
-            @include('sweetalert::alert')
+        @yield('scripts')
+        @include('sweetalert::alert')
 
     </body>
 </html>

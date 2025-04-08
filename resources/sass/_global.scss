@@ -40,19 +40,20 @@
 }
 .btn-guardar {
     --bs-btn-color: #fff;
-    --bs-btn-bg: #3B3F64;
-    --bs-btn-border-color: #3B3F64;
-    --bs-btn-hover-color: #3B3F64;
+    --bs-btn-bg: #0F1739;
+    --bs-btn-border-color: #0F1739;
+    --bs-btn-hover-color: #0F1739;
     --bs-btn-hover-bg: #BBB6D4;
     --bs-btn-hover-border-color: #BBB6D4;
     --bs-btn-focus-shadow-rgb: 49, 132, 253;
     --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #3B3F64;
-    --bs-btn-active-border-color: #3B3F64;
+    --bs-btn-active-bg: #0F1739;
+    --bs-btn-active-border-color: #0F1739;
     --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: #3B3F64;
+    --bs-btn-disabled-bg: #0F1739;
     --bs-btn-disabled-border-color: #3B3F64;
+    transition: all 0.5s ease-in-out;
 }
 .btn-terminar {
     --bs-btn-color: #fff;
@@ -193,8 +194,8 @@
 .contenedor-principal {
     //margin-left: 20%; /* Desplaza el contenedor principal para no solaparse con el sidebar */
     //width: 80%; /* Ajusta el ancho del contenedor principal */
-    overflow-y: auto; /* Permite scroll en el contenedor principal */
-    height: 100vh; /* Altura completa de la ventana */
+    // overflow-y: auto; /* Permite scroll en el contenedor principal */
+    // height: 100vh; /* Altura completa de la ventana */
 }
 
 .nav-pills li {

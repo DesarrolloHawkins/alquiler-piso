@@ -11,6 +11,18 @@
         background: linear-gradient(90deg, rgba(89,188,255,1) 0%, rgba(144,223,254,1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#59bcff",endColorstr="#90dffe",GradientType=1);
     }
+    .clickable-card:hover {
+        background-color: #f0f8ff; /* o el color que prefieras */
+        transition: background-color 0.3s;
+    }
+
+    .disabled-card {
+        opacity: 0.6;
+        pointer-events: none;
+        background-color: #f8f9fa; /* color gris claro por ejemplo */
+        cursor: not-allowed;
+    }
+
 </style>
 <div class="container-fluid">
     <!-- jQuery y DataTables (cargados ANTES de usarlos) -->
@@ -18,93 +30,91 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script> --}}
 
-    <h1 class="mb-4">DASHBOARD</h1>
-    <form action="{{route('dashboard.index')}}" class="row align-items-end" method="GET">
+    <div class="d-flex align-items-end">
+        <div class="col-md-6">
+            <h2 class="mb-0">DASHBOARD</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <form action="{{route('dashboard.index')}}" class="row align-items-end" method="GET" >
+                <h6 class="text-black-50" style="font-size: 12px"><i class="fa-solid fa-filter me-2"></i>Filtrado por fechas</h6>
+                <div class="col-md-12 d-flex align-items-end justify-content-end">
+                    <input type="text" id="fecha_inicio" name="fecha_inicio" class="form-control flatpickr"
+                        value="{{ request('fecha_inicio', '') }}" placeholder="Fecha Inicio" style="font-size: 10px; width: fit-content; margin-right: 11px;">
+                    <input type="text" id="fecha_fin" name="fecha_fin" class="form-control flatpickr"
+                        value="{{ request('fecha_fin', '') }}" placeholder="Fecha Fin" style="font-size: 10px; width: fit-content; margin-right: 11px;">
+                    <button type="submit" class="btn btn-guardar text-uppercase" style="font-size: 10px; width: fit-content; margin-right: 11px; max-width: 200px;">Buscar</button>
+                    <button id="verReservasBtn" class="btn bg-color-segundo text-uppercase" style="font-size: 10px; width: fit-content; max-width: 280px;">Ver Reservas</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        <h4>Filtrado por fechas</h4>
-        <div class="col-md-3">
-            <label for="fecha_inicio">Fecha Inicio</label>
-            <input type="text" id="fecha_inicio" name="fecha_inicio" class="form-control flatpickr"
-                value="{{ request('fecha_inicio', '') }}" placeholder="Selecciona Fecha Inicio">
-        </div>
-        <div class="col-md-3">
-            <label for="fecha_fin">Fecha Fin</label>
-            <input type="text" id="fecha_fin" name="fecha_fin" class="form-control flatpickr"
-                value="{{ request('fecha_fin', '') }}" placeholder="Selecciona Fecha Fin">
-        </div>
-        <div class="col-md-3 col-sm-12 mt-4">
-            <button type="submit" class="btn bg-color-primero w-sm-100 w-md-auto text-uppercase">Buscar</button>
-        </div>
-        <div class="col-md-3">
-            <button id="verReservasBtn" class="btn bg-color-segundo w-sm-100 w-md-auto text-uppercase">Ver Reservas</button>
-        </div>
-    </form>
     <br>
     <div class="row" style="padding: 1rem;">
         <div class="col-12 mb-5">
-            <div class="row justify-content-between align-items-stretch">
-                <h3 class="text-center mt-5">Información de Gestión</h3>
+            <div class="row justify-content-between align-items-stretch ">
+                <h5 class="text-left mt-1">Información de Gestión</h5>
                 <hr>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row pe-auto" data-bs-toggle="modal" data-bs-target="#modalLibresHoy" style="cursor: pointer">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row pe-auto align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalLibresHoy" style="cursor: pointer">
                         <div class="col-8">
-                            <h4 class="text-start
-                            mb-0 fs-5">Apartamentos Libres Hoy</h4>
+                            <h5 class="text-start
+                            mb-0 fs-6">Apts. Libres Hoy</h5>
                         </div>
                         <div class="col-4">
                             <h2 class="text-end mb-0 fs-4"><strong>{{$apartamentosLibresHoy->count()}}</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row pe-auto" data-bs-toggle="modal" data-bs-target="#modalReservasTotales" style="cursor: pointer">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row pe-auto align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalReservasTotales" style="cursor: pointer">
                         <div class="col-8">
-                            <h4 class="text-start mb-0 fs-5">Total de Reservas</h4>
+                            <h5 class="text-start mb-0 fs-6">Total de Reservas</h5>
                         </div>
                         <div class="col-4">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ $countReservas }}</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center disabled-card">
                         <div class="col-7">
-                            <h4 class="text-start mb-0 fs-5">Ocupacción %</h4>
+                            <h5 class="text-start mb-0 fs-6">Ocupacción %</h5>
                         </div>
                         <div class="col-5">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ $porcentajeOcupacion }} %</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center disabled-card">
                         <div class="col-8">
-                            <h4 class="text-start mb-0 fs-5">Ocupación</h4>
+                            <h5 class="text-start mb-0 fs-6">Ocupación</h5>
                         </div>
                         <div class="col-4">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ $nochesOcupadas }}</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row">
-                        <div class="col-7">
-                            <h4 class="text-start mb-0 fs-5">Ocupación Disponibles</h4>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center disabled-card">
+                        <div class="col-8">
+                            <h5 class="text-start mb-0 fs-6">Ocupación Disponibles</h5>
                         </div>
-                        <div class="col-5">
+                        <div class="col-4">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ $totalNochesPosibles }}</strong></h2>
                         </div>
                     </div>
                 </div>
             </div>
             <br>
-            <div class="row justify-content-between align-items-stretch">
-                <h3 class="text-center mt-4">Información de Economica</h3>
+            <div class="row justify-content-start align-items-stretch">
+                <h5 class="text-left mt-1">Información de Economica</h5>
                 <hr>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row" data-bs-toggle="modal" data-bs-target="#modalFacturacion" style="cursor:pointer;">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalFacturacion" style="cursor:pointer;">
                         <div class="col-5">
-                            <h4 class="text-start mb-0 fs-5">Facturación</h4>
+                            <h5 class="text-start mb-0 fs-6">Facturación</h5>
                         </div>
                         <div class="col-7">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio, 2) }} €</strong></h2>
@@ -112,50 +122,50 @@
                     </div>
                 </div>
 
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row" data-bs-toggle="modal" data-bs-target="#modalCobrado" style="cursor:pointer;">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalCobrado" style="cursor:pointer;">
                         <div class="col-5">
-                          <h4 class="text-start mb-0 fs-5">Cobrado</h4>
+                          <h4 class="text-start mb-0 fs-6">Cobrado</h4>
                         </div>
                         <div class="col-7">
                           <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center disabled-card">
                         <div class="col-6">
-                            <h4 class="text-start mb-0 fs-5">Cash Flow</h4>
+                            <h4 class="text-start mb-0 fs-6">Cash Flow</h4>
                         </div>
                         <div class="col-6">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row" data-bs-toggle="modal" data-bs-target="#modalIngresos" style="cursor:pointer;">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalIngresos" style="cursor:pointer;">
                         <div class="col-6">
-                          <h4 class="text-start mb-0 fs-5">Ingresos</h4>
+                          <h4 class="text-start mb-0 fs-6">Ingresos</h4>
                         </div>
                         <div class="col-6">
                           <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos, 2) }} €</strong></h2>
                         </div>
                       </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row" data-bs-toggle="modal" data-bs-target="#modalGastos" style="cursor:pointer;">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalGastos" style="cursor:pointer;">
                         <div class="col-6">
-                          <h4 class="text-start mb-0 fs-5">Gastos</h4>
+                          <h4 class="text-start mb-0 fs-6">Gastos</h4>
                         </div>
                         <div class="col-6">
                           <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastos, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
-                    <div class="row p-3 card m-3 flex-row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center disabled-card">
                         <div class="col-6">
-                            <h4 class="text-start mb-0 fs-5">Beneficio</h4>
+                            <h4 class="text-start mb-0 fs-6">Beneficio</h4>
                         </div>
                         <div class="col-6">
                             <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio - $gastos, 2) }} €</strong></h2>
@@ -201,7 +211,7 @@
             </div>
         </div>
     </div> --}}
-    <h3 class="text-center mt-4">Estadisticas</h3>
+    <h5 class="text-left mt-1">Estadisticas</h5>
     <hr>
     <div class="row justify-content-between align-items-stretch ">
         <div class="col-xl-12 col-md-12 rounded-4">
@@ -899,6 +909,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('DOMContentLoaded', function () {
         flatpickr('.flatpickr', {
             dateFormat: "Y-m-d",
+            locale: 'es' // 👈 AÑADE ESTO para español
+
         });
 
     });
