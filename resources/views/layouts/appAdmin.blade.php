@@ -151,6 +151,38 @@
                                     </ul>
                                 </li>
 
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        Tesorería
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.diarioCaja.index') }}">Diario de Caja</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.estadosDiario.index') }}">Estados del Diario</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('presupuestos.index') }}">Presupuestos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.facturas.index') }}">Facturas</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.ingresos.index') }}">Ingresos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaIngresos.index') }}">Categoría de Ingresos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.gastos.index') }}">Gastos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaGastos.index') }}">Categoría de Gastos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.bancos.index') }}">Bancos</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.upload.files') }}">Subida Ficheros</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('metalicos.index') }}">Metálicos</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('plan-contable*', 'cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        Contabilidad
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.planContable.index') }}">Plan General Contable</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.grupoContabilidad.index') }}">Grupos Contables</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.subGrupoContabilidad.index') }}">Sub-Grupos Contables</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cuentasContables.index') }}">Cuentas Contables</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.subCuentasContables.index') }}">Sub-Cuentas Contables</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.subCuentasHijaContables.index') }}">Sub-Cuentas Hijas</a></li>
+                                    </ul>
+                                </li>
+
                                 <!-- Emails -->
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
