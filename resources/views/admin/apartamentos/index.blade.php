@@ -12,6 +12,26 @@
         text-decoration: none;
     }
 </style>
+<style>
+    .inactive-sort {
+        color: #ffffff;
+        text-decoration: none;
+    }
+    .active-sort {
+        color: #ffa3fa;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .min-width-apto {
+        min-width: 250px; /* Esto hace que no se aplaste */
+    }
+    .input-group .form-select,
+    .input-group .form-control {
+        margin-right: 10px; /* Espacio entre selects */
+    }
+</style>
+
+
 <div class="container-fluid">
     <div class="d-flex flex-colum mb-3">
         <h2 class="mb-0 me-3 encabezado_top">{{ __('Nuestros Apartamentos') }}</h2>
@@ -32,22 +52,37 @@
             <h6 class="text-uppercase"><i class="fa-solid fa-filter me-1"></i> Filtros</h6>
             <!-- Formulario de búsqueda -->
             <form action="{{ route('apartamentos.admin.index') }}" method="GET" class="mb-3" id="search_form">
-                <div class="input-group">
-                    <input type="text" class="form-control" id="search" name="search" placeholder="Buscar apartamento" value="{{ request()->get('search') }}">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <div>
+                        <label class="form-label mb-0 me-2" for="apartamento_id">Apartamento</label>
+                        <select class="form-select min-width-apto" name="apartamento_id" id="apartamento_id">
+                            <option value="">Todos</option>
+                            @foreach($apartamentoslist as $apartamento)
+                                <option value="{{ $apartamento->id }}"
+                                    {{ request()->get('apartamento_id') == $apartamento->id ? 'selected' : '' }}>
+                                    {{ $apartamento->titulo }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                    <select name="edificio_id" id="edificio_id" class="form-select">
-                        <option value="">Seleccione un edificio</option>
-                        @foreach ($edificios as $edificio)
-                            <option value="{{ $edificio->id }}" {{ request()->get('edificio_id') == $edificio->id ? 'selected' : '' }}>
-                                {{ $edificio->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div>
+                        <label class="form-label mb-0 me-2" for="edificio_id">Edificio</label>
+                        <select name="edificio_id" id="edificio_id" class="form-select min-width-apto">
+                            <option value="">Seleccione un edificio</option>
+                            @foreach ($edificios as $edificio)
+                                <option value="{{ $edificio->id }}" {{ request()->get('edificio_id') == $edificio->id ? 'selected' : '' }}>
+                                    {{ $edificio->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <button type="button" onclick="limpiar()" class="btn bg-color-segundo">Eliminar filtros</button>
                     <button type="submit" class="btn bg-color-primero">Buscar</button>
                 </div>
             </form>
+
 
 
             <table class="table table-striped table-hover">
@@ -150,9 +185,10 @@
     });
 
     function limpiar() {
-        document.getElementById("search").value = "";
-        const form = document.getElementById("search_form");
-        form.submit();
+        document.getElementById("apartamento_id").value = "";
+        document.getElementById("edificio_id").value = "";
+        document.getElementById("search_form").submit();
     }
+
 </script>
 @endsection
