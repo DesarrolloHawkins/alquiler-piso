@@ -27,7 +27,8 @@ class ClientesController extends Controller
             $query->where('alias', 'like', '%'.$search.'%')
                   ->orWhere('apellido1', 'like', '%'.$search.'%')
                   ->orWhere('apellido2', 'like', '%'.$search.'%')
-                  ->orWhere('nombre', 'like', '%'.$search.'%');
+                  ->orWhere('nombre', 'like', '%'.$search.'%')
+                  ->orWhere('idioma', 'like', '%'.$search.'%');
         })
         ->orderBy($sort, $order)
         ->paginate(10);
@@ -267,6 +268,7 @@ class ClientesController extends Controller
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
+            'tipo_documento' => 'nullable|int'
         ];
 
         // Validar los datos del formulario
@@ -511,6 +513,7 @@ class ClientesController extends Controller
 
         // Definir las reglas de validación
         $rules = [
+            'alias' => 'required|string|max:255',
             'nombre' => 'required|string|max:255',
             'apellido1' => 'required|string|max:255',
             'apellido2' => 'nullable|string|max:255',
@@ -528,9 +531,7 @@ class ClientesController extends Controller
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
-
         ];
-
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
 

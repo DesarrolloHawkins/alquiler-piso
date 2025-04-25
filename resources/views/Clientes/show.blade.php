@@ -33,12 +33,10 @@
                     <tr>
                         <th style="width: 140px" scope="row">Tipo de Documento</th>
                         <td>
-                            @if ($cliente->tipo_documento == 1)
-                                DNI
-                            @elseif ($cliente->tipo_documento == 2)
-                                Pasaporte
-                            @else
+                            @if (!$cliente->tipo_documento)
                                 No especificado
+                            @else
+                                {{ $cliente->tipo_documento }}
                             @endif
                         </td>
                     </tr>
@@ -169,8 +167,7 @@
             <div class="card">
                 <h4 class="mt-4 text-center">Acciones</h4>
                 <div class="card-body">
-                    <a class="btn btn-secundario w-100 fs-4"><i class="fa-regular fa-pen-to-square"></i> Editar</a>
-                    <a class="btn btn-secundario w-100 fs-4 mt-2"><i class="fa-regular fa-pen-to-square"></i> Editar</a>
+                    <a href="{{route('clientes.edit', $cliente->id)}}" class="btn btn-secundario w-100 fs-4"><i class="fa-regular fa-pen-to-square"></i> Editar</a>
                 </div>
             </div>
         </div>

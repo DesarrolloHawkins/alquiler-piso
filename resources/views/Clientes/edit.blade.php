@@ -24,6 +24,13 @@
             <form action="{{ route('clientes.update', $cliente->id) }}" method="POST" class="row">
                 @csrf
                 <div class="col-md-6 col-12 mb-3">
+                    <label for="alias" class="form-label">Alias</label>
+                    <input type="text" class="form-control @error('alias') is-invalid @enderror" id="alias" name="alias" value="{{ old('alias', $cliente->alias) }}">
+                    @error('alias')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-md-6 col-12 mb-3">
                     <label for="nombre" class="form-label">Nombre</label>
                     <input type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre" value="{{ old('nombre', $cliente->nombre) }}">
                     @error('nombre')
