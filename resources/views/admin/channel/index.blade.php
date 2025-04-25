@@ -8,7 +8,7 @@
     <hr>
 
     <iframe
-    src="https://staging.channex.io/auth/exchange?oauth_session_key={{$token}}&app_mo
+    src="https://app.channex.io/auth/exchange?oauth_session_key={{$token}}&app_mo
     de=headless&redirect_to=/channels&property_id=d8c3391c-548e-41a9-ab5e-defca58825e8"
     style="    width: 100%;
     min-height: 558px;"
