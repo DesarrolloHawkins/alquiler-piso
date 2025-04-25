@@ -40,8 +40,10 @@
             locale: 'es',
             firstDay: 1, // Establece el lunes como el primer día de la semana
             events: function(fetchInfo, successCallback, failureCallback) {
-                fetch('/get-reservas')
-                    .then(response => response.json())
+                const start = fetchInfo.startStr;
+                const end = fetchInfo.endStr;
+                fetch(`/get-reservas?start=${start}&end=${end}`)
+                .then(response => response.json())
                     .then(data => {
                         var events = data.map(function(reserva) {
                             console.log(reserva)

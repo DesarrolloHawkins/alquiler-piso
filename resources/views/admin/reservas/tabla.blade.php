@@ -151,15 +151,13 @@
 <div class="container-fluid">
   <!-- Botonera mes -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{{ route('admin.tablaReservas.index',
-        $startOfMonth->copy()->subMonth()->format('Y-m')) }}" class="btn btn-primary">
-      Mes Anterior
-    </a>
+    <a href="{{ route('admin.tablaReservas.index') }}?date={{ $startOfMonth->copy()->subMonth()->format('Y-m') }}" class="btn btn-primary">
+        Mes Anterior
+      </a>
     <h3 class="text-uppercase">{{ $startOfMonth->translatedFormat('F') }} {{ $startOfMonth->year }}</h3>
-    <a href="{{ route('admin.tablaReservas.index',
-        $startOfMonth->copy()->addMonth()->format('Y-m')) }}" class="btn btn-primary">
-      Mes Siguiente
-    </a>
+    <a href="{{ route('admin.tablaReservas.index') }}?date={{ $startOfMonth->copy()->addMonth()->format('Y-m') }}" class="btn btn-primary">
+        Mes Siguiente
+      </a>
   </div>
 
   <div class="gantt-container">

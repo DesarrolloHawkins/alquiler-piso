@@ -119,16 +119,16 @@ class ReservasController extends Controller
     }
 
 
-    public function getReservas()
+    public function getReservas(Request $request)
     {
-        $reservas = Reserva::all();
-        foreach($reservas as $reserva){
-            $cliente = Cliente::find($reserva->cliente_id);
-            $reserva['cliente'] = $cliente;
-            $apartamento = Apartamento::find($reserva->apartamento_id);
-            $reserva['apartamento'] = $apartamento;
+        $start = $request->query('start');
+        $end = $request->query('end');
 
-        }
+        $reservas = Reserva::with(['cliente', 'apartamento'])
+            ->whereDate('fecha_entrada', '<=', $end)
+            ->whereDate('fecha_salida', '>=', $start)
+            ->get();
+
         return response()->json($reservas);
     }
 
