@@ -44,19 +44,35 @@ class ReservasController extends Controller
     // Obtener fechas del request, usando null como predeterminado si no se especifican
     $fechaEntrada = $request->get('fecha_entrada');
     $fechaSalida = $request->get('fecha_salida');
-
     $query = Reserva::with('cliente')->where('estado_id', '!=', 4);
 
+    $apartamentos = Apartamento::all();
+
    // Aplicar filtros de fechas solo si se proporcionan
-    if (!empty($fechaEntrada) && !empty($fechaSalida)) {
-        $query->where(function ($q) use ($fechaEntrada, $fechaSalida) {
-            $q->whereBetween('fecha_entrada', [$fechaEntrada, $fechaSalida])
-            ->orWhereBetween('fecha_salida', [$fechaEntrada, $fechaSalida])
-            ->orWhere(function ($q) use ($fechaEntrada, $fechaSalida) {
-                $q->where('fecha_entrada', '<=', $fechaEntrada)
-                    ->where('fecha_salida', '>=', $fechaSalida);
-            });
+   if (!empty($fechaEntrada) && !empty($fechaSalida)) {
+        $query->whereDate('fecha_entrada', '>=', $fechaEntrada)
+          ->whereDate('fecha_salida', '<=', $fechaSalida);
+    }
+    elseif (!empty($fechaEntrada)) {
+        // Si el usuario solo proporciona la fecha de entrada
+        $query->whereDate('fecha_entrada', '=', $fechaEntrada);
+    } elseif (!empty($fechaSalida)) {
+        // Si el usuario solo proporciona la fecha de salida
+        $query->whereDate('fecha_salida', '=', $fechaSalida);
+    }
+
+    if (!empty($searchTerm)) {
+        $query->where(function ($q) use ($searchTerm) {
+            $q->whereHas('cliente', function ($qCliente) use ($searchTerm) {
+                $qCliente->where('alias', 'like', '%' . $searchTerm . '%');
+            })->orWhere('codigo_reserva', 'like', '%' . $searchTerm . '%');
         });
+    }
+
+    $filtroApartamento = $request->get('filtro_apartamento');
+
+    if (!empty($filtroApartamento)) {
+        $query->where('apartamento_id', $filtroApartamento);
     }
 
 
@@ -68,6 +84,12 @@ class ReservasController extends Controller
     //     $query->whereDate('fecha_salida', '=', $fechaSalida);
     // }
 
+    if(!$direction) {
+        $direction = 'asc';
+    }
+    if(!$orderBy) {
+        $orderBy = 'id';
+    }
     $reservas = $query->orderBy($orderBy, $direction)->paginate($perPage)->appends([
         'order_by' => $orderBy,
         'direction' => $direction,
@@ -75,9 +97,10 @@ class ReservasController extends Controller
         'perPage' => $perPage,
         'fecha_entrada' => $fechaEntrada,
         'fecha_salida' => $fechaSalida,
+        'filtro_apartamento' => $filtroApartamento,
     ]);
 
-    return view('reservas.index', compact('reservas'));
+    return view('reservas.index', compact('reservas', 'apartamentos'));
 }
 
 
@@ -216,8 +239,38 @@ class ReservasController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $reserva = Reserva::where('id', $id)->first();
+        $apartamentos = Apartamento::all();
+        return view('reservas.edit', compact('reserva', 'apartamentos'));
     }
+
+    public function updateReserva(Request $request, $id)
+{
+    // Validación
+    $validated = $request->validate([
+        'apartamento_id' => 'required|exists:apartamentos,id',
+        'origen' => 'required|string|max:255',
+        'fecha_entrada' => 'required|date',
+        'fecha_salida' => 'required|date|after_or_equal:fecha_entrada',
+        'precio' => 'required|numeric|min:0',
+    ]);
+
+    // Buscar la reserva
+    $reserva = Reserva::findOrFail($id);
+
+    // Actualizar los campos
+    $reserva->update([
+        'apartamento_id' => $validated['apartamento_id'],
+        'origen' => $validated['origen'],
+        'fecha_entrada' => $validated['fecha_entrada'],
+        'fecha_salida' => $validated['fecha_salida'],
+        'precio' => $validated['precio'],
+    ]);
+
+    // Redirigir con mensaje
+    return redirect()->route('reservas.index')->with('success', 'Reserva actualizada correctamente.');
+}
+
 
     /**
      * Update the specified resource in storage.

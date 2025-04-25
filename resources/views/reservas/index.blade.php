@@ -136,6 +136,7 @@
                                     <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
                                     <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
                                     <input type="hidden" name="search" value="{{ request()->get('search') }}">
+
                                     <label for="perPage">Registros por página:</label>
                                     <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
                                         <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
@@ -157,7 +158,18 @@
 
                                 <div class="d-flex align-items-center">
                                     <input type="text" class="form-control me-2" id="search" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
-
+                                    <div class="input-group me-2">
+                                        <label class="input-group-text" for="filtro_apartamento">Apartamento</label>
+                                        <select class="form-select min-width-apto" name="filtro_apartamento" id="filtro_apartamento" >
+                                            <option value="">Todos</option>
+                                            @foreach($apartamentos as $apartamento)
+                                                <option value="{{ $apartamento->id }}"
+                                                    {{ request()->get('filtro_apartamento') == $apartamento->id ? 'selected' : '' }}>
+                                                    {{ $apartamento->titulo }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                     <!-- Fecha de Entrada -->
                                     <div class="input-group me-2">
                                         <label class="input-group-text" for="fecha_entrada" id="label_fecha_entrada">Fecha de Inicio</label>
@@ -171,7 +183,7 @@
                                     </div>
 
                                     <!-- Botones -->
-                                    <button type="button" class="btn bg-color-segundo me-2"><i class="fa-solid fa-trash"></i></button>
+                                    <button type="button" id="limpiarFiltros" class="btn bg-color-segundo me-2"><i class="fa-solid fa-trash"></i></button>
                                     <button type="submit" class="btn bg-color-primero">Buscar</button>
                                 </div>
                             </form>
@@ -350,5 +362,15 @@
         });
     });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('limpiarFiltros').addEventListener('click', function () {
+                document.getElementById('search').value = '';
+                document.getElementById('fecha_entrada').value = '';
+                document.getElementById('fecha_salida').value = '';
+                window.location.href = "{{ route('reservas.index') }}";
+            });
+        });
+        </script>
 
 @endsection

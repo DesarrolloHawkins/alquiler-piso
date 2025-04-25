@@ -22,14 +22,35 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="mb-3">
-                            <label for="apartamento" class="form-label">Apartamento</label>
-                            <input type="text" class="form-control" id="apartamento" name="apartamento" value="{{ $reserva->apartamento->titulo }}" required>
-                        </div>
+                        <label for="apartamento_id" class="form-label">Apartamento</label>
+                        <select class="form-control {{ $errors->has('apartamento_id') ? 'is-invalid' : '' }}" name="apartamento_id" id="apartamento_id">
+                            <option value="">Seleccione un apartamento</option>
+                            @foreach($apartamentos as $apartamento)
+                                <option value="{{ $apartamento->id }}"
+                                    {{ (old('apartamento_id', $reserva->apartamento_id) == $apartamento->id) ? 'selected' : '' }}>
+                                    {{ $apartamento->titulo }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @error('apartamento_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
 
                         <div class="mb-3">
-                            <label for="origen" class="form-label">Origen</label>
-                            <input type="text" class="form-control" id="origen" name="origen" value="{{ $reserva->origen }}" required>
+                                    <label for="origen" class="form-label">Origen</label>
+                                    <select class="form-control {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
+                                        <option value="">Seleccione el origen</option>
+                                        @foreach(['Airbnb', 'Booking', 'Web', 'Presencial'] as $origen)
+                                            <option value="{{ $origen }}"
+                                                {{ (old('origen', $reserva->origen) == $origen) ? 'selected' : '' }}>
+                                                {{ $origen }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                            @error('origen')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
