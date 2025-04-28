@@ -263,15 +263,18 @@ class DashboardController extends Controller
 
         // Obtener apartamentos ocupados hoy
         $apartamentosOcupadosHoy = Reserva::where('estado_id', '!=', 4)
-            ->where(function ($query) use ($hoy) {
-                $query->where('fecha_entrada', '<=', $hoy)
-                    ->where('fecha_salida', '>=', $hoy);
-            })
-            ->pluck('apartamento_id');
+        ->where(function ($query) use ($hoy) {
+            $query->where('fecha_entrada', '<=', $hoy)
+                  ->where('fecha_salida', '>', $hoy); // importante el '>'
+        })
+        ->pluck('apartamento_id');
 
+
+        // dd($apartamentosOcupadosHoy);
         // Obtener apartamentos libres hoy
         $apartamentosLibresHoy = Apartamento::whereNotIn('id', $apartamentosOcupadosHoy)
-            ->whereNotNull('edificio')
+            ->whereNotNull('edificio_id')
+            ->whereNotNull('id_channex')
             ->get();
 
 
