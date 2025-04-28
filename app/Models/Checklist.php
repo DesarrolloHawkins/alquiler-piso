@@ -20,4 +20,10 @@ class Checklist extends Model
     {
         return $this->belongsTo(Edificio::class, 'edificio_id');
     }
+
+    // Nueva relación para los requisitos de fotos
+    public function photoRequirements()
+    {
+        return $this->hasMany(ChecklistPhotoRequirement::class);
+    }
 }

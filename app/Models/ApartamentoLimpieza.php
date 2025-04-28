@@ -128,23 +128,53 @@ class ApartamentoLimpieza extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
+    // Relación con Apartamento
     public function apartamento()
     {
-        return $this->belongsTo(\App\Models\Apartamento::class,'apartamento_id');
-    }
-    public function origenReserva()
-    {
-        return $this->belongsTo(\App\Models\Reserva::class,'reserva_id');
+        return $this->belongsTo(Apartamento::class, 'apartamento_id');
     }
 
-    /**
-     * Obtener el usuario
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+    // Relación con Reserva
+    public function reserva()
+    {
+        return $this->belongsTo(Reserva::class, 'reserva_id');
+    }
+
+    // Relación con el estado de la limpieza
     public function estado()
     {
-        return $this->belongsTo(\App\Models\ApartamentoLimpiezaEstado::class,'status_id');
+        return $this->belongsTo(ApartamentoLimpiezaEstado::class, 'status_id');
+    }
+    public function itemsMarcados()
+    {
+        return $this->belongsToMany(ItemChecklist::class, 'apartamento_item_checklist', 'apartamento_limpieza_id', 'item_checklist_id');
+    }
+
+    public function controles()
+    {
+        return $this->belongsToMany(ItemChecklist::class, 'apartamento_item_checklist', 'apartamento_limpieza_id', 'item_checklist_id')
+                    ->withPivot('status'); // Asumiendo que también estás almacenando un 'status' o cualquier otro dato adicional.
+    }
+    
+
+
+    
+    // Relación con fotos
+    public function fotos()
+    {
+        return $this->hasMany(Photo::class, 'limpieza_id');
+    }
+
+    // Obtener el Checklist del edificio relacionado con el apartamento
+    public function checklist()
+    {
+        return $this->apartamento->edificio->checklist;
+    }
+
+    // Obtener los ítems del Checklist del edificio
+    public function itemChecklists()
+    {
+        return $this->checklist->items;
     }
     /**
      * Obtener apartamentos fechas salida para el dia de mañana

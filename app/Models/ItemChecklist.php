@@ -19,4 +19,11 @@ class ItemChecklist extends Model
     {
         return $this->hasMany(ControlLimpieza::class);
     }
+    public function apartamentos()
+    {
+        return $this->belongsToMany(ApartamentoLimpieza::class, 'apartamento_item_checklist')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
 }
