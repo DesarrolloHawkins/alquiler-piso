@@ -23,23 +23,33 @@ class ApartamentosController extends Controller
     public function indexAdmin(Request $request)
     {
         $search = $request->get('search');
-        $sort = $request->get('sort', 'id'); // Default sort column
-        $order = $request->get('order', 'asc'); // Default sort order
-        $edificioId = $request->get('edificio_id'); // Obtener el ID del edificio seleccionado
+        $sort = $request->get('sort', 'id');
+        $order = $request->get('order', 'asc');
+        $edificioId = $request->get('edificio_id');
+        $apartamentoId = $request->get('apartamento_id'); // <-- lo recogemos también
+        $apartamentoslist = Apartamento::all();
+        $apartamentos = Apartamento::when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nombre', 'like', '%' . $search . '%')
+                      ->orWhere('id', 'like', '%' . $search . '%');
+                });
+            })
+            ->when($edificioId, function ($query, $edificioId) {
+                $query->where('edificio_id', $edificioId);
+            })
+            ->when($apartamentoId, function ($query, $apartamentoId) {
+                $query->where('id', $apartamentoId); // <- aquí filtras por ID exacto
+            })
+            ->orderBy($sort, $order)
+            ->paginate(30);
 
-        $apartamentos = Apartamento::where(function ($query) use ($search) {
-            $query->where('nombre', 'like', '%' . $search . '%');
-        })
-        ->when($edificioId, function ($query, $edificioId) {
-            $query->where('edificio_id', $edificioId); // Filtrar por edificio si está seleccionado
-        })
-        ->orderBy($sort, $order)
-        ->paginate(30);
+        $edificios = Edificio::all();
 
-        $edificios = Edificio::all(); // Obtener todos los edificios para el dropdown
-
-        return view('admin.apartamentos.index', compact('apartamentos', 'edificios'));
+        return view('admin.apartamentos.index', compact('apartamentoslist', 'apartamentos', 'edificios'));
     }
+
+
+
 
     public function createAdmin()
     {
