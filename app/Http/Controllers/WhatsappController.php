@@ -332,7 +332,6 @@ class WhatsappController extends Controller
         return null;
     }
 
-
     public function descargarImage($imageId)
     {
         // URL base para obtener imágenes de WhatsApp
@@ -374,6 +373,12 @@ class WhatsappController extends Controller
 
         $mensajeExiste = ChatGpt::where('id_mensaje', $id)->get();
 
+        $prueba = $this->enviarMensajeOpenAiChatCompletions($id, $mensaje, $phone);
+        $respuestaWhatsapp = $this->contestarWhatsapp($phone, $prueba);
+
+        // dd($prueba);
+        return response()->json($prueba)->header('Content-Type', 'text/plain');
+
         if (count($mensajeExiste) > 0) {
             return response()->json('Mensaje ya recibido', 200);
         }else {
@@ -381,183 +386,10 @@ class WhatsappController extends Controller
             // $isAveria = $this->chatGpModelo($mensaje);
             // Storage::disk('local')->put( 'Contestacion del modelo-'.$fecha.'.txt', json_encode($isAveria) );
 
-            // if ($isAveria == 'NULL') {
-            //     $dataRegistrar = [
-            //         'id_mensaje' => $id,
-            //         'id_three' => null,
-            //         'remitente' => $phone,
-            //         'mensaje' => $mensaje,
-            //         'respuesta' => null,
-            //         'status' => 1,
-            //         'status_mensaje' => null,
-            //         'type' => 'text',
-            //         'date' => Carbon::now()
-            //     ];
-            //     $mensajeCreado = ChatGpt::create($dataRegistrar);
-
-            //     $cliente = Cliente::where('telefono', $phone)->first();
-            //     $reserva = Reserva::where('cliente_id', $cliente->id)->first();
-
-            //     if ($cliente == null) {
-            //         $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
-            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-            //         $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
-
-            //         return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            //     }
-            //     if ($reserva == null) {
-            //         $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
-            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-            //         $enviarMensajeLimpiadora = $this->mensajesPlantillaNull('Laura', $mensaje, $phone, '34622440984',  );
-
-            //         return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            //     }
-
-            //     foreach ($reserva->apartamento->titulo as $string) {
-            //         if (preg_match('/^(Edificio Hawkins(?: Costa)?)(.*)$/', $string, $matches)) {
-            //             //echo "Edificio: " . $matches[1] . "\n";
-            //             $edificio = trim($matches[1]);
-            //             $apartamento =trim($matches[2]);
-            //             //echo "Apartamento: " . trim($matches[2]) . "\n\n";
-            //         }
-            //     }
-            //     $mensajeAveria = 'Hemos procesado el mensaje a nuestra encargada de los apartamento, en el mayor tiempo posible se pondra en contacto con usted. Muchas gracias';
-            //     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-
-            //     $enviarMensajeLimpiadora = $this->mensajesPlantillaLimpiadora($apartamento, $edificio, $phone, '34633065237', $mensaje );
-            //     return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            // } elseif ($isAveria == "TRUE") {
-            //     $dataRegistrar = [
-            //         'id_mensaje' => $id,
-            //         'id_three' => null,
-            //         'remitente' => $phone,
-            //         'mensaje' => $mensaje,
-            //         'respuesta' => null,
-            //         'status' => 1,
-            //         'status_mensaje' => null,
-            //         'type' => 'text',
-            //         'date' => Carbon::now()
-            //     ];
-            //     $mensajeCreado = ChatGpt::create($dataRegistrar);
-
-            //     $cliente = Cliente::where('telefono', $phone)->first();
-            //     $reserva = Reserva::where('cliente_id', $cliente->id)->first();
-            //     $manitas = Reparaciones::all();
-
-            //     if ($cliente == null) {
-            //         $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
-            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-
-            //         $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono );
-
-            //         return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            //     }
-            //     if ($reserva == null) {
-            //         $mensajeAveria = 'Hola, lamento lo que nos indica, acabo de contactar con la persona responsable y le contactara en breve para darle una solucion. Muchas Gracias.';
-            //         $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-            //         $enviarMensajeAverias = $this->mensajesPlantillaNull( $manitas[0]->nombre, $mensaje , $phone, $manitas[0]->telefono );
-
-            //         return response($mensajeAveria)->header('Content-Type', 'text/plain');
-            //     }
-
-            //     foreach ($reserva->apartamento->titulo as $string) {
-            //         if (preg_match('/^(Edificio Hawkins(?: Costa)?)(.*)$/', $string, $matches)) {
-            //             //echo "Edificio: " . $matches[1] . "\n";
-            //             $edificio = trim($matches[1]);
-            //             $apartamento =trim($matches[2]);
-            //             //echo "Apartamento: " . trim($matches[2]) . "\n\n";
-            //         }
-            //     }
-            //     $mensajeAveria = 'Hemos procesado un parte para solucionar el problemas que nos has descrito, en el mayor tiempo posible nuestro tecnico se pondra en contacto con usted. Muchas gracias';
-            //     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $mensajeAveria);
-            //     // $manitas = Reparaciones::all();
-            //     //$nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas $manitas[0]->telefono
-            //     $enviarMensajeAverias = $this->mensajesPlantillaAverias( $manitas[0]->nombre, $apartamento, $edificio, $mensaje , $phone, $manitas[0]->telefono );
-
-            //     return response($mensajeAveria)->header('Content-Type', 'text/plain');
-
-            // } else {
-            //     $mensajesAnteriores = ChatGpt::where('remitente', $phone)
-            //     ->latest() // Asegura que el mensaje más reciente sea seleccionado
-            //     ->first();
-
-            //     if ($mensajesAnteriores == null) {
-            //         $dataRegistrar = [
-            //             'id_mensaje' => $id,
-            //             'id_three' => null,
-            //             'remitente' => $phone,
-            //             'mensaje' => $mensaje,
-            //             'respuesta' => null,
-            //             'status' => 1,
-            //             'status_mensaje' => null,
-            //             'type' => 'text',
-            //             'date' => Carbon::now()
-            //         ];
-            //     } else {
-            //         $dataRegistrar = [
-            //             'id_mensaje' => $id,
-            //             'id_three' => $mensajesAnteriores->id_three,
-            //             'remitente' => $phone,
-            //             'mensaje' => $mensaje,
-            //             'respuesta' => null,
-            //             'status' => 1,
-            //             'status_mensaje' => null,
-            //             'type' => 'text',
-            //             'date' => Carbon::now()
-            //         ];
-
-            //     }
-            //     $mensajeCreado = ChatGpt::create($dataRegistrar);
-
-            //     // Enviar la question al asistente
-
-            //     $reponseChatGPT = $this->chatGpt($mensaje, $id, $phone, $mensajeCreado->id);
-            //     //$reponseChatGPT = $this->enviarMensajeAlAsistente(null, $mensaje);
-            //     //dd($reponseChatGPT);
-            //     $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
-
-            //     if(isset($respuestaWhatsapp['error'])){
-            //         dd($respuestaWhatsapp);
-            //     };
-
-            //     $mensajeCreado->update([
-            //         'respuesta'=> $reponseChatGPT
-            //     ]);
-
-            //     return response($reponseChatGPT)->header('Content-Type', 'text/plain');
-            // }
 
             $mensajesAnteriores = ChatGpt::where('remitente', $phone)
                 ->latest() // Asegura que el mensaje más reciente sea seleccionado
                 ->first();
-
-            // if ($mensajesAnteriores == null) {
-
-            //     $dataRegistrar = [
-            //         'id_mensaje' => $id,
-            //         'id_three' => null,
-            //         'remitente' => $phone,
-            //         'mensaje' => $mensaje,
-            //         'respuesta' => null,
-            //         'status' => 1,
-            //         'status_mensaje' => null,
-            //         'type' => 'text',
-            //         'date' => Carbon::now()
-            //     ];
-            // } else {
-            //     $dataRegistrar = [
-            //         'id_mensaje' => $id,
-            //         'id_three' => $mensajesAnteriores->id_three,
-            //         'remitente' => $phone,
-            //         'mensaje' => $mensaje,
-            //         'respuesta' => null,
-            //         'status' => 1,
-            //         'status_mensaje' => null,
-            //         'type' => 'text',
-            //         'date' => Carbon::now()
-            //     ];
-
-            // }
 
             $dataRegistrar = [
                 'id_mensaje' => $id,
@@ -591,7 +423,163 @@ class WhatsappController extends Controller
         }
     }
 
-    public function envioAutoVoz(Request $request){
+
+function enviarMensajeOpenAiChatCompletions($remitente, $nuevoMensaje)
+{
+    $apiKey = env('OPENAI_API_KEY');
+    $modelo = 'gpt-4o';
+    $endpoint = 'https://api.openai.com/v1/chat/completions';
+
+    // Prompt largo como mensaje system
+    $promptSystem = [
+        "role" => "system",
+        "content" => <<<EOT
+        Soy María, la asistente virtual de los Apartamentos Hawkins. Estoy aquí para proporcionar información precisa y facilitar una experiencia satisfactoria durante tu estancia...
+        Identidad y Propósito del Asistente:
+
+        "Soy María, la asistente virtual de los Apartamentos Hawkins. Estoy aquí para proporcionar información precisa y facilitar una experiencia satisfactoria durante tu estancia. Mi misión es asegurar que recibas toda la información que necesites de manera clara y concisa. Si alguien necesita pagar o aumentar su reserva mandale a la web apartamentosalgeciras.com"
+        Manejo de la Insatisfacción del Cliente:
+
+        "Si en algún momento te sientes insatisfecho con la información proporcionada o necesitas asistencia adicional, por favor, no dudes en llamarme directamente al número 633065237 para una atención personalizada. El horario de atención es en periodo estival de 08:00h a 15:00h de lunes a viernes y nuestro horario de invierno es de lunes a jueves de 09:00h a 14:00h y de 16:00 h a 18:00h y viernes de 08:00h a 15:00h "
+        Directivas Específicas para Preguntas Comunes (incluyendo respuestas para consultas de una sola palabra):
+
+        Ubicación ("dirección", "ubicación"):
+
+        "Tenemos dos apartamentos: Hawkins Suites y Hawkins Costa.  ¿por favor, cual es el nombre de su reserva?
+        Hawkins suites : Estamos ubicados en la Calle Santísimo número 2, junto a la Iglesia de La Palma en el centro de Algeciras. Aquí tienes un enlace a un video para ayudarte a localizarnos: Ubicación https://goo.gl/maps/qb7AxP1JAxx5yg3N9"
+        Hawkins Costa: Estamos Hawkins : Estamos ubicados en la Calle Joaquín Costa, 5, , junto a la tienda la Alicantina en en el centro de Algeciras. Aquí tienes un enlace la ubicación: https://maps.app.goo.gl/k2b3WQoza66JqhZH8
+
+        Wi-Fi ("wifi", "internet"):
+
+        "Para conectarte al Wi-Fi, selecciona cualquiera de nuestros apartamentos.
+        En Hawkins Suites: tiene tres redes diferentes:  Edificio Hawkins, Edificio Hawkins 2, Edificio Hawkins 3, o Aticohawkins. La contraseña es 'H4wk1N52021'. La velocidad de internet es de 1gb, perfecta para trabajo y entretenimiento."
+        En Hawkins Costa: la red es la siguiente: HAWKINSCOSTA y la contraseña es clave: HAWKINS2025. La velocidad de internet es de 1gb, perfecta para trabajo y entretenimiento.
+
+
+        "Check-In y Check-Out ("check-in", "entrada", "salida"):
+
+        "El check-in se realiza a partir de las 15:00 horas el día de tu reserva. Por favor, envía tu documentación identificativa al enlace recibido por whatsapp antes de tu llegada para recibir los códigos de acceso a partir de las 13:00 horas del mismo día. Si no rellena los datos en la plataforma que se le envió no recibirá las claves, si ha rellenado las claves anticipadamente hasta la 13:00 horas del día de entrada no recibirá las claves, si ha rellenado los datos mas tarde de la 13:00 horas recibirás las claves en unos minutos. El check-out debe completarse antes de las 11:00 horas del día de salida."
+        Puede contratar checkin early por 10€ extras y podrá acceder al apartamento a las 12:00h. Consulte disponibilidad.
+        Puede también contratar Checkout tardio o Late checkout  por 25€ y quedarse en su estancia hasta las 15:00h. Consulte disponibilidad.
+
+        Equipamiento y Amenidades ("toallas", "gel", "sábanas")
+
+        "Los apartamentos están equipados con sábanas, toallas, papel higiénico y gel de ducha. Para recambios de emergencia de estos suministros, puedes encontrarlos debajo del canapé. "
+        Puede solicitar un juego limpio te toallas y sabanas para todo el apartamento por 10€. Contratelo aqui.
+        Uso de Electrodomésticos ("tv", "vitrocerámica"):
+
+        "Para usar la smart TV, enciéndela y abre la aplicación MovistarPLUS  con el mando proporcionado. O en Hawkins Costa dispondrás de canales por cable.
+        Para la vitrocerámica, presiona el botón de encendido y mantenlo presionado por 3 segundos para desbloquearla.
+        Estacionamiento ("Muy cerca de los apartamentos tenemos disponible dos aparcamientos, uno de ellos a 100 metros es gratuito te dejo el enlace: https://maps.app.goo.gl/9L4s7PMnTr2pdwHQ7  También hay otro de pago a 50 metros en esta ubicación https://maps.app.goo.gl/B8Mgi92NQRx4vbFu7 "):
+
+
+        Salud y Emergencias ("farmacia", "emergencia"):
+
+        "En caso de necesidad, la farmacia más cercana se encuentra aquí: https://maps.app.goo.gl/Ub6PeNjV4X3ENRzF9 . Para emergencias graves, llama al telefono 061."
+        Respuestas Generales para Cualquier Otra Pregunta Ambigua o de Una Palabra:
+
+        "Parece que necesitas más información sobre un tema específico. Por favor, especifica un poco más para que pueda darte la mejor respuesta posible. ¿Te interesa saber más sobre nuestros servicios, amenidades, o algún aspecto específico del apartamento?"
+
+        Se aceptan mascotas con un suplemento adicional de 30€ destinado a limpieza y no esta disponible en todos los apartamentos. consulte disponibilidad para saber si tenemos alguno libre con la opción pet friendly y se pide respetar las horas de descanso para garantizar una estancia tranquila y agradable para todos los huéspedes.
+
+        Si el usuario te dijera que no puede entrar en el edificio o que no le abre la puerta del edificio o apartamento, puede ser por problemas de luz o fallo de la cerradura de código, debes responderle lo siguiente:
+        - Veo que no abre la puerta exterior, tenemos una caja de emergencia debajo del cartel de seguridad amarillo con unas llaves para abrirla , para coger la llave levanta el cartel de seguridad amarillo y encontraras una caja con un código de seguridad.
+        La clave de la caja es "1734", dale a la pestaña y  coja la llave de emergencia.
+        Cuando termine de utilizarla, déjala otra vez en la caja.
+
+        Solicitudes y Asistencia Adicional:
+
+        Puede solicitar una Limpieza Extra del apartamento por  25€
+        incluye cambio de ropa de cama y toallas.
+
+        Para cualquier cosa extra explicado antes, debe redirigirlo a este enlace para contratar ese extra: https://apartamentosalgeciras.com/tienda/
+        Aunque no hay recepción física, estamos disponibles para asistirte en cualquier momento a través de teléfono, WhatsApp, o correo electrónico. No dudes en comunicarte para cualquier necesidad o consulta.
+        Cancelaciones y Cambios:
+
+        Revisa los términos específicos de tu reserva para proceder con cancelaciones o modificaciones. Esto es crucial para evitar malentendidos.
+        Comentarios y Valoraciones:
+
+        Anima a los huéspedes a dejar comentarios o valoraciones sobre su estancia. Esto ayuda al alojamiento a mejorar su servicio y ofrece información valiosa a futuros visitantes.
+        EOT
+    ];
+
+    // Guardar el mensaje del usuario
+    ChatGpt::create([
+        'remitente' => $remitente,
+        'mensaje' => $nuevoMensaje,
+        'respuesta' => null,
+        'status' => 0, // por 'respondido'
+        'date' => now()
+    ]);
+
+    // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
+    $historial = ChatGpt::where('remitente', $remitente)
+        ->orderBy('date', 'desc')
+        ->limit(20)
+        ->get()
+        ->reverse()
+        ->flatMap(function ($chat) {
+            $mensajes = [];
+
+            if (!empty($chat->mensaje)) {
+                $mensajes[] = [
+                    "role" => "user",
+                    "content" => $chat->mensaje,
+                ];
+            }
+
+            if (!empty($chat->respuesta)) {
+                $mensajes[] = [
+                    "role" => "assistant",
+                    "content" => $chat->respuesta,
+                ];
+            }
+
+            return $mensajes;
+        })
+        ->toArray();
+
+    // Añadir nuevo mensaje del usuario
+    $historial[] = [
+        "role" => "user",
+        "content" => $nuevoMensaje,
+    ];
+
+    // Unir con prompt
+    $mensajes = array_merge([$promptSystem], $historial);
+
+    // Llamar a OpenAI
+    $response = Http::withToken($apiKey)
+        ->post($endpoint, [
+            'model' => $modelo,
+            'messages' => $mensajes,
+            'temperature' => 0.7,
+        ]);
+
+    if ($response->failed()) {
+        \Log::error('Error al enviar a OpenAI: ' . $response->body());
+        return null;
+    }
+
+    $respuestaTexto = $response->json('choices.0.message.content');
+
+    // Guardar la respuesta generada
+    ChatGpt::where('remitente', $remitente)
+        ->whereNull('respuesta')
+        ->orderByDesc('created_at')
+        ->limit(1)
+        ->update([
+            'respuesta' => $respuestaTexto,
+            'status' => 1, // por 'respondido'
+        ]);
+
+    return $respuestaTexto;
+}
+
+
+
+    public function envioAutoVoz(Request $request)
+    {
 
         $tipo = $request->tipo;
 
@@ -626,9 +614,83 @@ class WhatsappController extends Controller
         }
     }
 
+    public function clasificarMensaje($mensaje)
+    {
+        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
+        $url = 'https://api.openai.com/v1/chat/completions';
+
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token
+        ];
+
+        $body = json_encode([
+            'model' => 'gpt-4',
+            'messages' => [
+                ['role' => 'system', 'content' => 'Eres un asistente que clasifica mensajes en: "averia", "limpieza", "reserva_apartamento", o "otro".'],
+                ['role' => 'user', 'content' => $mensaje]
+            ],
+            'max_tokens' => 10
+        ]);
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        $response_data = json_decode($response, true);
+
+        if (isset($response_data['choices'][0]['message']['content'])) {
+            return trim(strtolower($response_data['choices'][0]['message']['content']));
+        }
+
+        return 'otro';
+    }
+
+    public function gestionarAveria($phone, $mensaje)
+    {
+        // Aquí podrías registrar la avería en la base de datos
+        return "Hemos registrado tu avería. Nuestro equipo te contactará pronto.";
+    }
+
+    public function gestionarLimpieza($phone, $mensaje)
+    {
+        // Aquí podrías programar una limpieza en el sistema
+        return "Hemos programado el servicio de limpieza. Te avisaremos cuando esté confirmado.";
+    }
+
+    public function gestionarReserva($phone, $mensaje)
+    {
+        // Aquí podrías consultar la disponibilidad y responder al usuario
+        return "Por favor, indícanos la fecha y el apartamento que deseas reservar.";
+    }
+
+    public function procesarMensajeGeneral($mensaje, $id, $phone, $idMensaje)
+    {
+        return "Procesamiento del mensaje general";
+        // Aquí iría tu código original para procesar la conversación con el asistente
+    }
+
     public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
     {
         //dd($id, $idMensaje, $mensaje, $phone);
+
+        $categoria = $this->clasificarMensaje($mensaje);
+
+        switch ($categoria) {
+            case 'averia':
+                return $this->gestionarAveria($phone, $mensaje);
+            case 'limpieza':
+                return $this->gestionarLimpieza($phone, $mensaje);
+            case 'reserva_apartamento':
+                return $this->gestionarReserva($phone, $mensaje);
+            default:
+                return $this->procesarMensajeGeneral($mensaje, $id, $phone, $idMensaje);
+        }
 
         $existeHilo = ChatGpt::find($idMensaje);
 
@@ -710,56 +772,6 @@ class WhatsappController extends Controller
 
             }
         }
-            // if ($mensajeAnterior[1]->id_three == null) {
-			// 	//dd($existeHilo);
-            //     $three_id = $this->crearHilo();
-			// 	//dd($three_id);
-			// 	$existeHilo->id_three = $three_id['id'];
-            //     $existeHilo->save();
-            //     $mensajeAnterior[1]->id_three = $three_id['id'];
-            //     $mensajeAnterior[1]->save();
-			// 	//dd($existeHilo);
-            // } else {
-            //     $three_id['id'] = $mensajeAnterior[1]->id_three;
-            //     //dd($three_id['id']);
-			// 	$existeHilo->id_three = $mensajeAnterior[1]->id_three;
-            //     $existeHilo->save();
-            //     $three_id['id'] = $existeHilo->id_three;
-            // }
-
-
-            //dd($three_id['id']);
-            // $hilo = $this->mensajeHilo($three_id['id'], $mensaje);
-            // // Independientemente de si el hilo es nuevo o existente, inicia la ejecución
-            // $ejecuccion = $this->ejecutarHilo($three_id['id']);
-            // $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'], $ejecuccion['id']);
-            // // Inicia un bucle para esperar hasta que el hilo se complete
-            // while (true) {
-            //     //$ejecuccion = $this->ejecutarHilo($three_id['id']);
-
-            //     if ($ejecuccionStatus['status'] === 'in_progress') {
-            //         // Espera activa antes de verificar el estado nuevamente
-            //         sleep(2); // Ajusta este valor según sea necesario
-
-            //         // Verifica el estado del paso actual del hilo
-            //         $pasosHilo = $this->ejecutarHiloISteeps($three_id['id'], $ejecuccion['id']);
-            //         if ($pasosHilo['data'][0]['status'] === 'completed') {
-            //             // Si el paso se completó, verifica el estado general del hilo
-            //             $ejecuccionStatus = $this->ejecutarHiloStatus($three_id['id'],$ejecuccion['id']);
-            //         }
-            //     } elseif ($ejecuccionStatus['status'] === 'completed') {
-            //         // El hilo ha completado su ejecución, obtiene la respuesta final
-            //         $mensajes = $this->listarMensajes($three_id['id']);
-            //         //dd($mensajes);
-            //         if(count($mensajes['data']) > 0){
-            //             return $mensajes['data'][0]['content'][0]['text']['value'];
-            //         }
-            //     } else {
-            //         // Maneja otros estados, por ejemplo, errores
-            //         //dd($ejecuccionStatus);
-            //         //return; // Sale del bucle si se encuentra un estado inesperado
-            //     }
-			// }
     }
 
     public function enviarMensajeAlAsistente($assistant_id = 'asst_KfPsIM26MjS662Vlq6h9WnuH', $mensaje)
@@ -910,6 +922,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
+
     public function mensajeHilo($id_thread, $pregunta)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -955,6 +968,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
+
     public function ejecutarHiloStatus($id_thread, $id_runs){
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/threads/'. $id_thread .'/runs/'.$id_runs;
@@ -1021,6 +1035,7 @@ class WhatsappController extends Controller
             return $response_data;
         }
     }
+
     public function listarMensajes($id_thread)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -1118,108 +1133,6 @@ class WhatsappController extends Controller
             return ['error' => $e->getMessage()];
         }
     }
-
-
-
-    // public function chatGptPruebasConImagen($imagenFilename)
-    // {
-    //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-
-    //     // Cargar los JSON de paises y tipos desde la carpeta pública
-    //     $paisesFilePath = public_path('paises.json');
-    //     $tiposFilePath = public_path('tipos.json');
-
-    //     $paisesData = json_decode(file_get_contents($paisesFilePath), true);
-    //     $tiposData = json_decode(file_get_contents($tiposFilePath), true);
-
-    //     // Leer la imagen y convertirla a base64
-    //     $imagePath = public_path('imagenesWhatsapp/' . $imagenFilename);
-    //     if (file_exists($imagePath)) {
-    //         $imageData = file_get_contents($imagePath);
-    //         $imageBase64 = 'data:image/jpeg;base64,' . base64_encode($imageData); // Cambia 'image/jpeg' según el formato de la imagen
-    //     } else {
-    //         return response()->json(['error' => 'La imagen no se encuentra.']);
-    //     }
-
-    //     // Convertir los datos de países y tipos a texto JSON
-    //     $paisesJsonText = json_encode($paisesData);
-    //     $tiposJsonText = json_encode($tiposData);
-
-    //     // Configurar los parámetros de la solicitud
-    //     $url = 'https://api.openai.com/v1/chat/completions';
-    //     $headers = array(
-    //         'Authorization: Bearer ' . $token,
-    //         'Content-Type: application/json'
-    //     );
-
-    //     // Construir el contenido del mensaje que incluye la imagen en base64, paises y tipos de documento como texto
-    //     $data = array(
-    //         "model" => "gpt-4o",
-    //         "messages" => [
-    //             [
-    //                 "role" => "user",
-    //                 "content" => [
-    //                     [
-    //                         "type" => "text",
-    //                         "text" => "Analiza esta imagen y dime si es un DNI o pasaporte. Devuélveme solo un JSON con esta estructura: {isDni: true/false, isPasaporte: true/false, informacion: {nombre, apellido, fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte, value, isEuropean, mensaje}. En mensaje debes colocar tu respuesta para poder contestar al cliente, Aquí tienes información adicional sobre países y tipos de documentos:"
-    //                     ],
-    //                     [
-    //                         "type" => "text",
-    //                         "text" => "Paises: " . $paisesJsonText
-    //                     ],
-    //                     [
-    //                         "type" => "text",
-    //                         "text" => "Tipos: " . $tiposJsonText
-    //                     ],
-    //                     [
-    //                         "type" => "image_url",
-    //                         "image_url" => [
-    //                             "url" => $imageBase64
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     );
-
-    //     // Inicializar cURL y configurar las opciones
-    //     $curl = curl_init();
-    //     curl_setopt($curl, CURLOPT_URL, $url);
-    //     curl_setopt($curl, CURLOPT_POST, true);
-    //     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-    //     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-    //     // Ejecutar la solicitud y obtener la respuesta
-    //     $response = curl_exec($curl);
-    //     curl_close($curl);
-
-    //     // Guardar la respuesta en un archivo para depuración
-    //     //Storage::disk('local')->put('RespuestaImagenChat.txt', $response);
-
-    //     // Decodificar la respuesta JSON
-    //     $response_data = json_decode($response, true);
-
-    //     // Si ocurre un error, devolver una respuesta de error
-    //     if ($response === false) {
-    //         $error = [
-    //             'status' => 'error',
-    //             'message' => 'Error al realizar la solicitud'
-    //         ];
-    //         //Storage::disk('local')->put('errorChat.txt', $error['message']);
-    //         return response()->json($error);
-    //     } else {
-    //         // Guardar la respuesta para seguimiento
-    //         $responseReturn = [
-    //             'status' => 'ok',
-    //             'message' => $response_data
-    //         ];
-    //         //Storage::disk('local')->put('respuestaFuncionChat.txt', json_encode($responseReturn));
-
-    //         // Retornar la respuesta decodificada
-    //         return $response_data;
-    //     }
-    // }
 
     public function chatGptPruebasConImagen($imagenFilename)
     {
@@ -1372,81 +1285,8 @@ class WhatsappController extends Controller
         }
     }
 
-
-
-
-    // public function chatGptPruebasConImagen($imagenFilename) {
-    //     $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-
-    //     // Configurar los parámetros de la solicitud
-    //     $url = 'https://api.openai.com/v1/chat/completions';
-    //     $headers = array(
-    //         'Authorization: Bearer ' . $token,
-    //         'Content-Type: application/json'
-    //     );
-
-    //     // Construir la URL completa de la imagen
-    //     $imageUrl = 'https://crm.apartamentosalgeciras.com/imagenesWhatsapp/' . $imagenFilename;
-
-    //     $data = array(
-    //         "model" => "gpt-4o",
-    //         "messages" => [
-    //             [
-    //                 "role" => "user",
-    //                 "content" => [
-    //                     [
-    //                         "type" => "text",
-    //                         "text" => "Analiza esta imagen y dime si es un dni o pasaporte, hazme la contestacion devolviendome solo un JSON, donde tenga la sigueinte estructura: {isDni: true o false, isPasaporte: true o false (dependiendo si es un dni o pasaporte lo que te envie, si es un dni o pasaporte entonces agregamos otra propiedades), informacion: { nombre, apellido,fecha de nacimiento, fecha de expedicion, localidad, pais, numero de dni o pasaporte }, si no es dni o pasaporte esa dos propiedades de isDni o isPasaporte deben venir false."
-    //                     ],
-    //                     [
-    //                         "type" => "image_url",
-    //                         "image_url" => [
-    //                             "url" => $imageUrl
-    //                         ]
-    //                     ]
-    //                 ]
-    //             ]
-    //         ]
-    //     );
-
-    //     // Inicializar cURL y configurar las opciones
-    //     $curl = curl_init();
-    //     curl_setopt($curl, CURLOPT_URL, $url);
-    //     curl_setopt($curl, CURLOPT_POST, true);
-    //     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-    //     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-    //     // Ejecutar la solicitud y obtener la respuesta
-    //     $response = curl_exec($curl);
-    //     curl_close($curl);
-    //     Storage::disk('local')->put('REspuestaImagenChat.txt', json_encode($response));
-    //     $response_data = json_decode($response, true);
-    //     return response()->json($response_data);
-    //     // Procesar la respuesta
-    //     if ($response === false) {
-    //         $error = [
-    //             'status' => 'error',
-    //             'messages' => 'Error al realizar la solicitud'
-    //         ];
-    //         Storage::disk('local')->put('errorChapt.txt', $error['messages']);
-
-    //         return response()->json($error);
-    //     } else {
-    //         $response_data = json_decode($response, true);
-    //         $responseReturn = [
-    //             'status' => 'ok',
-    //             'messages' => $response_data['choices'][0]['text']
-    //         ];
-    //         Storage::disk('local')->put('respuestaFuncionChapt.txt', $responseReturn['messages']);
-
-    //         return response()->json($response_data);
-    //     }
-
-
-    // }
-
-    public function chatGpModelo( $texto ) {
+    public function chatGpModelo( $texto )
+    {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
         $url = 'https://api.openai.com/v1/chat/completions';
@@ -1528,7 +1368,8 @@ class WhatsappController extends Controller
         }
     }
 
-    public function chatGptPruebas( $texto ) {
+    public function chatGptPruebas( $texto )
+    {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         // Configurar los parámetros de la solicitud
         $url = 'https://api.openai.com/v1/completions';
@@ -1588,508 +1429,6 @@ class WhatsappController extends Controller
         }
     }
 
-    function limpiarNumeroTelefono( $numero ) {
-        // Eliminar el signo más y cualquier espacio
-        $numeroLimpio = preg_replace('/\+|\s+/', '', $numero);
-
-        return $numeroLimpio;
-    }
-
-    // Cron 1 minuto
-    public function cron(){
-        // Obtener la fecha de hoy
-        $hoy = Carbon::now();
-        // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-        $reservasEntrada = Reserva::where('dni_entregado', null)
-        ->where('estado_id', 1)
-        ->where('fecha_entrada', '>=', $hoy->toDateString())
-        ->get();
-
-        foreach($reservasEntrada as $reserva){
-            $resultado = $this->clienteService->getIdiomaClienteID($reserva->cliente_id);
-
-            // $cliente = Cliente::find($reserva->cliente_id);
-            // $reponseNacionalidad =  $this->getIdiomaClienteID($reserva->cliente_id);
-            // $reserva['return'] = $reponseNacionalidad;
-            // $reserva['cliente'] = $cliente;
-        }
-        dd($reservasEntrada);
-
-
-
-        // Obtener la fecha de dos días después
-        $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
-
-        // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
-        $reservasEntrada = Reserva::where('dni_entregado', null)
-        ->where('estado_id', 1)
-        ->where('cliente_id',133)
-        ->get();
-        // $reservasEntrada = Reserva::whereBetween('fecha_entrada', [date('Y-m-d'), $dosDiasDespues])
-        // ->where('estado_id', 1)
-        // ->get();
-
-        // Validamos si hay reservas pendiente del DNI
-        if(count($reservasEntrada) != 0){
-            // Recorremos las reservas
-            foreach($reservasEntrada as $reserva){
-
-                // Obtenemos el mensaje del DNI si existe
-                $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
-                // Validamos si existe mensaje de DNI enviado
-                if ($mensajeDNI == null) {
-                    $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
-                    $reserva->token = $token;
-                    $reserva->save();
-                    $mensaje = 'Desde hawkins le solicitamos que rellenes sus datos para poder continuar con la reserva, entre en el siguiente enlace para completarla: https://crm.apartamentosalgeciras.com/dni-user/'.$token;
-                    $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
-                    $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
-                    // return $enviarMensaje;
-
-                    // Data para guardar Mensaje enviado
-                    $dataMensaje = [
-                        'reserva_id' => $reserva->id,
-                        'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 1,
-                        'fecha_envio' => Carbon::now()
-                    ];
-
-                    MensajeAuto::create($dataMensaje);
-
-                }
-            }
-
-            return $reservasEntrada;
-        } else {
-            return 'No hay reservas';
-        }
-    }
-
-    public function cron2(){
-
-        // Obtener la fecha de hoy
-        $hoy = Carbon::now();
-        // Obtener la fecha de dos días después
-        $dosDiasDespues = Carbon::now()->addDays(2)->format('Y-m-d');
-
-        // Modificar la consulta para obtener reservas desde hoy hasta dentro de dos días
-        $reservasEntrada = Reserva::where('dni_entregado', true)
-        ->where('estado_id', 1)
-        ->get();
-        $reservasSalida = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->get();
-
-        $fechaHoy = $hoy->format('Y-m-d');
-
-        foreach($reservasEntrada as $reserva){
-            $mensajeFotos = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 2)->first();
-            $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
-            $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
-            $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
-            $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
-            $mensajeDespedida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 7)->first();
-
-            // Suponiendo que $fechaHoy es una fecha en formato 'Y-m-d' hay que pensar que es una hora menos
-            $fechaInicio = date_create($fechaHoy . ' 12:41:00'); // Establece los segundos a 00
-            $fechaActualSinSegundos = date_create(date('Y-m-d H:i:00')); // Hora actual sin segundos
-            $diferencia = date_diff($fechaActualSinSegundos, $fechaInicio);
-
-            $diferenciasHoraBienvenida = $diferencia->format('%R%H:%I');
-
-
-            // Comprobamos la diferencia en dias de la reserva Entrada y Salida
-            $dias = date_diff($hoy, date_create($reservasEntrada[0]['fecha_entrada']))->format('%R%a');
-            $diasSalida = date_diff($hoy, date_create($reservasEntrada[0]['fecha_salida']))->format('%R%a');
-
-            if ($diferenciasHoraBienvenida == '+00:00') {
-                return $reserva;
-                // Bienvenida a los apartamentos
-                //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
-                // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                // $actualizarReserva->send_bienvenido = $hoy;
-                // $actualizarReserva->save();
-            }
-
-            if($dias == 0 ){
-
-
-                // Suponiendo que $fechaHoy es una fecha en formato 'Y-m-d' hay que pensar que es una hora menos
-                $fechaInicio = date_create($fechaHoy . ' 11:22:00'); // Establece los segundos a 00
-                $fechaActualSinSegundos = date_create(date('Y-m-d H:i:00')); // Hora actual sin segundos
-                $diferencia = date_diff($fechaActualSinSegundos, $fechaInicio);
-
-                $diferenciasHoraBienvenida = $diferencia->format('%R%H:%I');
-
-
-                // $diferenciasHoraBienvenida = date_diff($hoy, date_create($fechaHoy .' 12:12:30'))->format('%R%H%I');
-                if ($diferenciasHoraBienvenida == '+00:00') {
-                    return $reserva;
-                    // Bienvenida a los apartamentos
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_bienvenido = $hoy;
-                    // $actualizarReserva->save();
-                }
-                if ($diferenciasHoraBienvenida  == 0 && $reserva->send_bienvenido == null) {
-                    return $reserva;
-                    // Bienvenida a los apartamentos
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    //$data = $this->mensajesAutomaticos('bienvenido', $reserva->nombre, $reserva->telefono, $idioma );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_bienvenido = $hoy;
-                    // $actualizarReserva->save();
-                }
-
-                $diferenciasHoraCodigos = date_diff($hoy, date_create($fechaHoy .' 12:09:00'))->format('%R%H%I');
-                if ($diferenciasHoraCodigos  == 0 && $reserva->send_codigos == null) {
-                    return $reserva;
-
-                    // Bienvenida a los apartamentos
-                    //$code = $this->codigoApartamento(strtoupper($reserva->habitacion));
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    // //$data = $this->mensajesAutomaticos('codigos', $reserva->nombre, $reserva->telefono, $reserva->telefono, $idioma, strtoupper($reserva->habitacion), '2191#', $code );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_codigos = $hoy;
-                    // $actualizarReserva->save();
-                }
-                $diferenciasHoraConsulta = date_diff($hoy, date_create($fechaHoy .' 16:01:00'))->format('%R%H%I');
-                if ($diferenciasHoraConsulta  == 0 && $reserva->send_consulta == null) {
-                    return $reserva;
-
-                    // Bienvenida a los apartamentos
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    // $data = $this->mensajesAutomaticos('consulta', $reserva->nombre, $reserva->telefono, $idioma );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_consulta = $hoy;
-                    // $actualizarReserva->save();
-                }
-
-                $diferenciasHoraOcio = date_diff($hoy, date_create($fechaHoy .' 18:01:00'))->format('%R%H%I');
-                if ($diferenciasHoraOcio  == 0 && $reserva->send_ocio == null) {
-                    return $reserva;
-
-                    // Bienvenida a los apartamentos
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    // $data = $this->mensajesAutomaticos('ocio', $reserva->nombre, $reserva->telefono, $idioma );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_ocio = $hoy;
-                    // $actualizarReserva->save();
-                }
-
-                // $data = [
-                //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
-                // ];
-
-            }
-            if ($diasSalida == 0 && $reserva->send_despedida == null) {
-
-                $diferenciasHoraDespedida = date_diff($hoy, date_create($fechaHoy .' 12:01:00'))->format('%R%H%I');
-                if ($diferenciasHoraDespedida  == 0 && $reserva->send_despedida == null) {
-                    return $reserva;
-
-                    // Bienvenida a los apartamentos
-                    //$idioma = $this->idiomaUser($reserva->nacionalidad);
-                    // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-                    // $data = $this->mensajesAutomaticos('despedida', $reserva->nombre, $reserva->telefono, $idioma );
-                    // $actualizarReserva = Reserva::where('id', $reserva->id)->first();
-                    // $actualizarReserva->send_despedida = $hoy;
-                    // $actualizarReserva->save();
-                }
-
-            }
-        }
-
-        /*  MENSAJES TEMPLATE:
-                - bienvenido
-                - consulta
-                - ocio
-                - despedida
-
-            IDIOMAS:
-                - es
-                - en
-                - de
-                - fr
-                - it
-                - ar
-                - pt_PT
-
-            MENSAJES:
-
-                - BIENVENIDO (Dia de entrada a las 10:00 h.):
-                Hola {{1}}!
-                Recuerda que puedes entrar al alojamiento a partir de las 14:00h,
-                pero antes debes de enviarnos  una foto de tu Documento nacional
-                de identidad o pasaporte y del de todos los ocupantes mayores de edad.
-                Si ya nos lo has enviado olvida este mensaje.
-                Gracias y Felíz Estancia!
-
-                - CONSULTA (Dia de entrada a las 18:00 h.):
-                Hola {{1}}!
-                Espero que todo sea de tu agrado.
-                En Hawkins trabajamos mucho para ofrecerte el mejor servicio,
-                pero ¡Somos humanos! Si ves algo que no está a tu gusto,
-                no dudes en decírmelo.
-                Lo que queremos es que pases una estancia genial.
-
-                - OCIO (Dia de entrada a las 16:00 h.):
-                Hola {{1}}!
-                Estás en el lugar mas céntrico de Algeciras!
-                Te dejo algunos enlaces de interés:
-
-                *SALUD*
-                Farmacia más cercana  - https://goo.gl/maps/UnNd9ZUPXG9bH7cHA
-                Farmacia 24h - https://goo.gl/maps/64WTSYmoVi2YVYx26
-                Centro de salud cercano - https://goo.gl/maps/TDyoPx2qZzb5bknm9
-                Hospital - https://goo.gl/maps/YZ9C66LyNrUjTbzc8
-                Telefono de asistencia - 061
-
-                *OCIO y CULTURA*
-                Bar Restaurante cercano-https://goo.gl/maps/kSjqXLHXfUWX6rgc6
-                Zona de bares - https://goo.gl/maps/bQ1WGSgXERYkLYve9
-                Murallas Merinies https://goo.gl/maps/j5qHXZ2Q9HgANSFNA
-                Teatro florida https://goo.gl/maps/43rrcsiT4kpNarxX9
-                Playa del rinconcillo https://goo.gl/maps/3sHCqFZHRUHDnTiY7
-
-                *COMPRAS*
-                Supermercado más cercano https://goo.gl/maps/d7hrnxxfYUpBhHSVA
-                Centro comercial https://goo.gl/maps/FtRsqgt6bShv4pTLA
-                Taller de automovil https://goo.gl/maps/psnE5D3PdYX2P76C9
-
-                - DESPEDIDA (Dia de salida a las 12:00 h.):
-                Te vamos a echar de menos {{1}}!
-                Para nosotros ha sido un placer que nos hayas elegido para alojarte y esperamos que vuelvas a venir.
-                Para poder seguir mejorando y que nuestro alojamiento sea cada día mejor,
-                es muy importante que nos dejes una valoración positiva.
-                Como agradecimiento, te damos un bono de descuento por si vuelves a alojarte con nosotros.
-                Reserva en www.apartamentoshawkins.com y usa el cupón #SpecialClient
-        */
-        // $dias = 'no';
-
-        // foreach($reservas as $reserva){
-        //     $dias = date_diff($hoy, date_create($reservas[0]['fecha_entrada']))->format('%R%a');
-        //     if($dias == 0){
-        //         $diferenciasHora = date_diff($hoy, date_create($fechaHoy .' 16:00:00'))->format('%R%H%I');
-        //             if ($diferenciasHora  == 0) {
-
-        //                 // Bienvenida a los apartamentos
-        //                 $idioma = $this->idiomaUser($reserva->nacionalidad);
-        //                 // $data = $this->mensajesAutomaticos('despedida', 'Ivan', '+34605621704', 'es' );
-        //                 $data = $this->mensajesAutomaticos('despedida', $reserva->nombre, $reserva->telefono, $idioma );
-        //             }
-
-        //         // $data = [
-        //         //     'prueba' => $diferenciasHora  == 0 ? $diferenciasHora : 'false'
-        //         // ];
-        //     }
-        // }
-
-        // return view('site.cron', compact('reservas','hoy', 'dias','data','hora'));
-    }
-
-    public function idiomaUser($idioma){
-        switch ($idioma) {
-            case 'español':
-                return 'es';
-                break;
-            case 'aleman':
-                return 'de';
-                break;
-            case 'otros':
-                return 'en';
-                break;
-            case 'paisesdeleste':
-                return 'en';
-                break;
-            case 'marroqui':
-                return 'ar';
-                break;
-            case 'frances':
-                return 'fr';
-                break;
-            case 'ingles':
-                return 'en';
-                break;
-            case 'italiano':
-                return 'it';
-                break;
-            case 'hispanos':
-                return 'es';
-                break;
-            case 'nordicos':
-                return 'en';
-                break;
-            case 'portugues':
-                return 'pt_PT';
-                break;
-            default:
-                return 'es';
-                break;
-        }
-    }
-
-    public function mensajesAutomaticos($template, $nombre, $telefono, $idioma = 'es'){
-        $token = 'EAAKn6tggu1UBAMqGlFOg5DarUwE9isj74UU0C6XnsftooIUAdgiIjJZAdqnnntw0Kg7gaYmfCxFqVrDl5gtNGXENKHACfsrC59z723xNbtxyoZAhTtDYpDAFN4eE598iZCmMfdXRNmA7rlat7JfWR6YOavmiDPH2WX2wquJ0YWzzxzYo96TLC4Sb7rfpwVF78UlZBmYMPQZDZD';
-
-
-        $mensajePersonalizado = [
-            "messaging_product" => "whatsapp",
-            "recipient_type" => "individual",
-            "to" => $telefono,
-            "type" => "template",
-            "template" => [
-                "name" => $template,
-                "language" => ["code" => $idioma],
-                "components" => [
-                    [
-                        "type" => "body",
-                        "parameters" => [
-                            ["type" => "text", "text" => $nombre],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $urlMensajes,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json',
-                'Authorization: Bearer '.$token
-            ),
-
-        ));
-
-        $response = curl_exec($curl);
-        curl_close($curl);
-        // $responseJson = json_decode($response);
-        return $response;
-
-    }
-    public function mensajesPlantillaLimpiadora($apartamento, $edificio, $mensaje, $telefono, $telefonoLimpiadora, $idioma = 'es'){
-        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-
-        $mensajePersonalizado = [
-            "messaging_product" => "whatsapp",
-            "recipient_type" => "individual",
-            "to" => $telefonoLimpiadora,
-            "type" => "template",
-            "template" => [
-                "name" => '',
-                "language" => ["code" => $idioma],
-                "components" => [
-                    [
-                        "type" => "body",
-                        "parameters" => [
-                            ["type" => "text", "text" => $apartamento],
-                            ["type" => "text", "text" => $edificio],
-                            ["type" => "text", "text" => $mensaje],
-                            ["type" => "text", "text" => $telefono],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $urlMensajes,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json',
-                'Authorization: Bearer '.$token
-            ),
-
-        ));
-
-        $response = curl_exec($curl);
-        curl_close($curl);
-        // $responseJson = json_decode($response);
-        return $response;
-
-    }
-    public function mensajesPlantillaAverias($nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
-        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-
-        $mensajePersonalizado = [
-            "messaging_product" => "whatsapp",
-            "recipient_type" => "individual",
-            "to" => $telefonoManitas,
-            "type" => "template",
-            "template" => [
-                "name" => 'reparaciones',
-                "language" => ["code" => $idioma],
-                "components" => [
-                    [
-                        "type" => "body",
-                        "parameters" => [
-                            ["type" => "text", "text" => $nombreManita],
-                            ["type" => "text", "text" => $apartamento],
-                            ["type" => "text", "text" => $edificio],
-                            ["type" => "text", "text" => $mensaje],
-                            ["type" => "text", "text" => $telefono],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $urlMensajes,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($mensajePersonalizado),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json',
-                'Authorization: Bearer '.$token
-            ),
-
-        ));
-
-        $response = curl_exec($curl);
-        curl_close($curl);
-        // $responseJson = json_decode($response);
-        return $response;
-
-    }
     public function mensajesPlantillaNull($nombre, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -2141,6 +1480,7 @@ class WhatsappController extends Controller
         return $response;
 
     }
+
     public function mensajesPlantillaAlerta($telefonoManitas, $origen, $idioma = 'en'){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -2189,158 +1529,6 @@ class WhatsappController extends Controller
         // $responseJson = json_decode($response);
         return $response;
 
-    }
-    // Añadir idioma del cliente por coleccion
-    public function getIdiomaCliente(){
-        // Obtener la fecha de hoy
-        $hoy = Carbon::now();
-
-        // Obtenemos la reservas que sean igual o superior a la fecha de entrada de hoy y no tengan el DNI Enrtegado.
-        $reservasEntrada = Reserva::where('dni_entregado', null)
-        ->where('estado_id', 1)
-        ->where('fecha_entrada', '>=', $hoy->toDateString())
-        ->get();
-
-        // Recorremos el array obtenido
-        foreach($reservasEntrada as $reserva){
-            // Obtenemos los datos de cliente de su modelo
-            $cliente = Cliente::find($reserva->cliente_id);
-
-            // Validamos si la nacionalidad de cliente es NULL
-            if ($cliente->nacionalidad == null) {
-                // Generamos la instancia del Package de Phone
-                $phoneUtil = PhoneNumberUtil::getInstance();
-                // Hacemos la conversion con el codigo del telefono a codigo ISO del Pais
-                try {
-
-                    $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
-                    $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
-
-                } catch (\libphonenumber\NumberParseException $e) {
-                // Devolvemos la operacion con un status 500 con el mensaje de error.
-                    return [
-                        'status' => '500',
-                        'mensaje' => $e
-                    ];
-                }
-
-                // Luego, realizas una solicitud a una API para obtener el idioma
-                // Por ejemplo, usando REST Countries API
-                $url = "https://restcountries.com/v3.1/alpha/".$codigoPaisISO;
-                $datosPais = file_get_contents($url);
-                $infoPais = json_decode($datosPais, true);
-
-                // Obtienes del array de idioma el codigo del pais y se lo enviamos a ChatGPT para que nos devuelva el idioma.
-                $reponseNacionalidad =  $this->addIdiomaCliente($infoPais[0]['cioc']);
-                // Establecemos la nacionalidad y guardamos el cliente
-                $cliente->nacionalidad = $reponseNacionalidad;
-                $cliente->save();
-                // Devolvemos la operacion con un status 200 todo fue correctamente.
-                return [
-                    'status' => '200',
-                ];
-            }
-        }
-    }
-
-    // Añadir idioma del cliente por ID
-    public function getIdiomaClienteID($id){
-        // Obtener la fecha de hoy
-        $hoy = Carbon::now();
-
-        // Obtenemos el cliente por el ID
-        $cliente = Cliente::find($id);
-
-        // Validamos si la nacionalidad del cliente es NULL
-        if ($cliente->nacionalidad == null) {
-            // Generamos la instancia del Package de Phone
-            $phoneUtil = PhoneNumberUtil::getInstance();
-            // Hacemos la conversion con el codigo del telefono a codigo ISO del Pais
-            try {
-                $phoneNumber = $phoneUtil->parse($cliente->telefono, "ZZ");
-                $codigoPaisISO = $phoneUtil->getRegionCodeForNumber($phoneNumber);
-            } catch (\libphonenumber\NumberParseException $e) {
-                // Devolvemos la operacion con un status 500 con el mensaje de error.
-                return [
-                    'status' => '500',
-                    'mensaje' => $e
-                ];
-            }
-
-            // Luego, realizas una solicitud a una API para obtener el idioma
-            // Por ejemplo, usando REST Countries API
-            $url = "https://restcountries.com/v3.1/alpha/".$codigoPaisISO;
-            $datosPais = file_get_contents($url);
-            $infoPais = json_decode($datosPais, true);
-
-            // Obtienes del array de idioma el codigo del pais y se lo enviamos a ChatGPT para que nos devuelva el idioma.
-            $reponseNacionalidad =  $this->addIdiomaCliente($infoPais[0]['cioc']);
-            // Establecemos la nacionalidad y guardamos el cliente
-            $cliente->nacionalidad = $reponseNacionalidad;
-            $cliente->save();
-
-            // Devolvemos la operacion con un status 200 todo fue correctamente.
-            return [
-                'status' => '200',
-            ];
-        }
-    }
-
-    function addIdiomaCliente($codigo){
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        // Configurar los parámetros de la solicitud
-        $url = 'https://api.openai.com/v1/chat/completions';
-        $headers = array(
-            'Content-Type: application/json',
-            'Authorization: Bearer '. $token
-        );
-
-        // $cliente = Cliente::find($id);
-        $data = array(
-        "messages" => [
-            ["role" => "user", "content" => 'podrias decirme en una palabra el idioma de este codigo de pais, no me digas nada mas que el idioma y no pongas punto final: '. $codigo,]
-        ],
-        // "model" => "davinci:ft-personal:apartamentos-hawkins-2023-04-27-09-45-29",
-        // "model" => "davinci:ft-personal:modeloapartamentos-2023-05-24-16-36-49",
-        // "model" => "davinci:ft-personal:apartamentosjunionew-2023-06-14-21-19-15",
-        // "model" => "davinci:ft-personal:apartamento-junio-2023-07-26-23-23-07",
-        // "model" => "davinci:ft-personal:apartamentosoctubre-2023-10-03-16-01-24",
-        "model" => "gpt-4",
-        "temperature" => 0,
-        "max_tokens"=> 200,
-        "top_p"=> 1,
-        "frequency_penalty"=> 0,
-        "presence_penalty"=> 0,
-        "stop"=> ["_END"]
-        );
-
-        // Inicializar cURL y configurar las opciones
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        // Ejecutar la solicitud y obtener la respuesta
-        $response = curl_exec($curl);
-
-        if ($response === false) {
-            $error = curl_error($curl);
-            curl_close($curl);
-            throw new Exception("Error en la solicitud cURL: " . $error);
-        }
-
-        curl_close($curl);
-
-        // Procesar la respuesta
-        if ($response === false) {
-            return $response;
-        } else {
-            $response_data = json_decode($response, true);
-            return $response_data['choices'][0]['message']['content'];
-        }
     }
 
     // Vista de los mensajes
