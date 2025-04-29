@@ -266,7 +266,7 @@ class Kernel extends ConsoleKernel
             // Reservas
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
             ->where('estado_id', '!=', 4)
-            // ->where('dni_entregado', '!=', null)
+            ->where('dni_entregado', '!=', null)
             ->get();
 
             foreach($reservas as $reserva){
