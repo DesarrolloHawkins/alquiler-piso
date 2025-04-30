@@ -460,7 +460,7 @@ function enviarMensajeOpenAiChatCompletions($id, $remitente, $nuevoMensaje)
 
         "El check-in se realiza a partir de las 15:00 horas el día de tu reserva. Por favor, envía tu documentación identificativa al enlace recibido por whatsapp antes de tu llegada para recibir los códigos de acceso a partir de las 13:00 horas del mismo día. Si no rellena los datos en la plataforma que se le envió no recibirá las claves, si ha rellenado las claves anticipadamente hasta la 13:00 horas del día de entrada no recibirá las claves, si ha rellenado los datos mas tarde de la 13:00 horas recibirás las claves en unos minutos. El check-out debe completarse antes de las 11:00 horas del día de salida."
         Puede contratar checkin early por 10€ extras y podrá acceder al apartamento a las 12:00h. Consulte disponibilidad.
-        Puede también contratar Checkout tardio o Late checkout  por 25€ y quedarse en su estancia hasta las 15:00h. Consulte disponibilidad.
+        Puede también contratar Checkout tardio o Late checkout  por 25€ y quedarse en su estancia hasta las 14:00h. Consulte disponibilidad.
 
         Equipamiento y Amenidades ("toallas", "gel", "sábanas")
 
