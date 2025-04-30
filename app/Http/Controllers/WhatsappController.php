@@ -424,7 +424,7 @@ class WhatsappController extends Controller
     }
 
 
-function enviarMensajeOpenAiChatCompletions($remitente, $nuevoMensaje)
+function enviarMensajeOpenAiChatCompletions($id, $remitente, $nuevoMensaje)
 {
     $apiKey = env('OPENAI_API_KEY');
     $modelo = 'gpt-4o';
@@ -505,6 +505,7 @@ function enviarMensajeOpenAiChatCompletions($remitente, $nuevoMensaje)
 
     // Guardar el mensaje del usuario
     ChatGpt::create([
+        'id_mensaje' => $id,
         'remitente' => $remitente,
         'mensaje' => $nuevoMensaje,
         'respuesta' => null,
