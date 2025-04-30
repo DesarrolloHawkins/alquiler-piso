@@ -55,7 +55,7 @@
                     <label class="form-label">Contraseña Airbnb</label>
                     <input class="form-control w-100" name="password_airbnb" value="{{$configuraciones[0]->password_airbnb}}"/>
                 </div>
-                <button type="submit" class="btn btn-primary">Actualizar</button>    
+                <button type="submit" class="btn btn-primary">Actualizar</button>
             </form>
         </div>
         <div class="tab-pane fade" id="pills-contabilidad" role="tabpanel" aria-labelledby="pills-contabilidad-tab" tabindex="0">
@@ -66,9 +66,9 @@
                     <h5 class="form-label">Saldo Inicial</h5>
                     {{-- {{$anio}} --}}
                     <input type="text" name="saldo_inicial" id="saldo_inicial" class="form-control w-auto" value="{{$saldo->saldo_inicial}}"/>
-                        
+
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Actualizar Saldo Inicial</button>    
+                <button type="submit" class="btn btn-primary mt-3">Actualizar Saldo Inicial</button>
             </form>
             <hr class="mb-4">
             <form action="{{route('configuracion.updateAnio')}}" method="POST">
@@ -84,7 +84,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Actualizar Año</button>    
+                <button type="submit" class="btn btn-primary mt-3">Actualizar Año</button>
             </form>
             <hr class="mt-4">
             <h5 class="form-label">Formas de Pago</h5>
@@ -108,7 +108,7 @@
                 <h5>No hay metodos de Pagos introducidos</h5>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createForma">Crear Metodo</button>
                 <!-- Modal -->
-                
+
             @endif
             <div class="modal fade" id="createForma" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -145,7 +145,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Cierre del año</button>    
+                <button type="submit" class="btn btn-primary mt-3">Cierre del año</button>
             </form>
         </div>
         <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab" tabindex="0">
@@ -224,13 +224,13 @@
                                 </div>
                             </div>
                             <div class="col-lg-2 col-sm-12 mt-sm-3">
-                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>    
-                                <button  data-id="{{$reparacion->id}}" id="eliminarTecnico" type="button" class="btn btn-danger w-100">Eliminar</button>    
+                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>
+                                <button  data-id="{{$reparacion->id}}" id="eliminarTecnico" type="button" class="btn btn-danger w-100">Eliminar</button>
                             </div>
                         </form>
-                    </div>             
+                    </div>
                 @endforeach
-                    
+
             @else
                 <h6>No se añadieron tecnicos</h6>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTecnico">Añadir tecnico</button>
@@ -320,7 +320,7 @@
                         </div>
                     </div>
                 </div>
-            </div>            
+            </div>
         </div>
         <div class="tab-pane fade show active" id="pills-limpiadoras" role="tabpanel" aria-labelledby="pills-limpiadoras-tab" tabindex="0">
             <h4>Limpiadoras de Guardia</h4>
@@ -398,13 +398,13 @@
                                 </div>
                             </div>
                             <div class="col-lg-2 col-sm-12 mt-sm-3">
-                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>    
-                                <button  data-id="{{$limpiadora->id}}" id="eliminarLimpiadora" type="button" class="btn btn-danger w-100">Eliminar</button>    
+                                <button type="submit" class="btn btn-secundario mb-2 w-100">Actualizar</button>
+                                <button  data-id="{{$limpiadora->id}}" id="eliminarLimpiadora" type="button" class="btn btn-danger w-100">Eliminar</button>
                             </div>
                         </form>
-                    </div>             
+                    </div>
                 @endforeach
-                    
+
             @else
                 <h6>No se añadieron limpiadoras</h6>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLimpiadora">Añadir limpiadora</button>
@@ -501,14 +501,14 @@
                         </div>
                     </div>
                 </div>
-            </div>            
+            </div>
         </div>
         <div class="tab-pane fade " id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab" tabindex="0">
             <h4>Notificaciones</h4>
             @if (count($emailsNotificaciones) > 0)
                 <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addEmailModal">Añadir persona</button>
                 <ul style="margin-left: 0; padding-left: 0">
-                    @foreach ($emailsNotificaciones as $person)                    
+                    @foreach ($emailsNotificaciones as $person)
                         <li class="row align-items-end mb-3">
                             <div class="col-md-3 col-sm-12">
                                 <label class="form-label" for="nombre">Nombre</label>
@@ -563,13 +563,28 @@
             </div>
         </div>
         <div class="tab-pane fade" id="pills-prompt" role="tabpanel" aria-labelledby="pills-prompt-tab" tabindex="0">
+            {{-- <form action="{{route('configuracion.actualizarPrompt')}}" method="POST">
+                @csrf
+                <label class="form-label" for="prompt">Prompt - Asistente de la Inteligencia Artificial</label>
+
+                <textarea rows="25" type="text" name="prompt" id="prompt" class="form-control">@if (count($prompt) > 0) {{ $prompt[0]->prompt }} @else {{ '' }} @endif</textarea>
+                <button class="btn btn-guardar mt-3 text-uppercase">Actualizar</button>
+            </form> --}}
             <form action="{{route('configuracion.actualizarPrompt')}}" method="POST">
                 @csrf
                 <label class="form-label" for="prompt">Prompt - Asistente de la Inteligencia Artificial</label>
-              
-                <textarea rows="25" type="text" name="prompt" id="prompt" class="form-control">@if (count($prompt) > 0) {{ $prompt[0]->prompt }} @else {{ '' }} @endif</textarea>
+
+                <textarea rows="15" name="prompt" id="prompt" class="form-control">@if (count($prompt) > 0){{ $prompt[0]->prompt }}@endif</textarea>
+
                 <button class="btn btn-guardar mt-3 text-uppercase">Actualizar</button>
+
+                <hr class="my-4">
+                <h5>Vista previa del Prompt (formato Markdown):</h5>
+                <div class="border p-3 bg-white rounded" style="min-height: 200px">
+                    {!! \Illuminate\Support\Str::markdown(count($prompt) > 0 ? $prompt[0]->prompt : '') !!}
+                </div>
             </form>
+
         </div>
     </div>
 </div>
@@ -599,7 +614,7 @@
                     var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                     var formData = new FormData();
-                    
+
                     formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
                     formData.append('nombre', nuevoValor); // Añade el token CSRF aquí
 
@@ -638,7 +653,7 @@
                     });
                 })
             })
-            
+
             const deleteFormasPago = document.querySelectorAll('#delete_btn')
 
             deleteFormasPago.forEach(function(nodo){
@@ -648,7 +663,7 @@
                     var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                     var formData = new FormData();
-                    
+
                     formData.append('_token', '{{ csrf_token() }}');
 
 
@@ -757,7 +772,7 @@
                             var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                             var formData = new FormData();
-                    
+
                             formData.append('_token', '{{ csrf_token() }}');
 
                             $.ajax({
@@ -794,7 +809,7 @@
                                 }
                             });                    }
                     });
-                    
+
                 })
             })
 
@@ -817,7 +832,7 @@
                             var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                             var formData = new FormData();
-                    
+
                             formData.append('_token', '{{ csrf_token() }}');
 
                             $.ajax({
@@ -854,7 +869,7 @@
                                 }
                             });                    }
                     });
-                    
+
                 })
             })
 
@@ -877,7 +892,7 @@
                             var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                             var formData = new FormData();
-                    
+
                             formData.append('_token', '{{ csrf_token() }}');
 
                             $.ajax({
@@ -914,7 +929,7 @@
                                 }
                             });                    }
                     });
-                    
+
                 })
             })
 
@@ -931,7 +946,7 @@
                     var url = baseUrl.replace(':id', id); // Reemplaza el placeholder por el id real
 
                     var formData = new FormData();
-                    
+
                     formData.append('_token', '{{ csrf_token() }}'); // Añade el token CSRF aquí
                     formData.append(propiedad, nuevoValor); // Añade el token CSRF aquí
 
