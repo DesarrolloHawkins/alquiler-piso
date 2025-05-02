@@ -268,7 +268,7 @@ class ClientesController extends Controller
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
-            'tipo_documento' => 'nullable|int'
+            'tipo_documento' => 'nullable'
         ];
 
         // Validar los datos del formulario
