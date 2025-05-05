@@ -388,13 +388,24 @@ class Kernel extends ConsoleKernel
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
 
                         }
-                        $enviarEmail = $this->enviarEmail(
-                            $reserva->cliente->email_secundario,
-                            'emails.envioClavesEmail',
-                            $mensaje,
-                            'Hawkins Suite - Claves',
-                            $token = null
-                        );
+
+                        if (
+                            strpos($reserva->cliente->email_secundario, 'booking') !== false ||
+                            strpos($reserva->cliente->email, 'booking') !== false
+                        ) {
+                            // El email contiene 'booking'
+                            // enviarEmail( $correo, $vista, $data, $asunto, $token, )
+                            $enviarEmail = $this->enviarEmail(
+                                $reserva->cliente->email_secundario,
+                                'emails.envioClavesEmail',
+                                $mensaje,
+                                'Hawkins Suite - Claves',
+                                $token = null
+                            );
+                        }
+                        
+
+
                     }
                 }
 
@@ -1308,7 +1319,10 @@ class Kernel extends ConsoleKernel
                     Le dejamos un enlace para que rellene sus datos y nos lo facilite la copia del DNI o Pasaporte:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Rellenar datos</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                </p>
+                <p>
+                    https://crm.apartamentosalgeciras.com/dni-user/'.$token.'
                 </p>
                 <p style="margin: 0 !important">
                     Las claves de acceso al apartamento se las enviamos el dia de su llegada por whatsapp y correo electronico, asegurese de tener la informacion de contacto correctamente.
