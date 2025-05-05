@@ -63,3 +63,5 @@ Route::prefix('/webhooks')->group(function () {
     Route::post('{id}/reservation-request', [App\Http\Controllers\WebhookController::class, 'reservationRequest'])->name('webhook.channex.bookingAny');
     Route::post('{id}/sync-error', [App\Http\Controllers\WebhookController::class, 'syncError'])->name('webhook.channex.syncWarning');
 });
+
+Route::post('/fotos-cocina-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina-store');

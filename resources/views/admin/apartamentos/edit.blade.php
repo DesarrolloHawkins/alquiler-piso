@@ -25,7 +25,7 @@
         {{-- Título --}}
         <div class="col-sm-12 col-md-6 mb-3">
             <label for="title" class="form-label">Título</label>
-            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" name="title" value="{{ old('title', $apartamento->title) }}" placeholder="Título principal de la propiedad">
+            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" name="title" value="{{ old('title', $apartamento->titulo) }}" placeholder="Título principal de la propiedad">
             @error('title')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror

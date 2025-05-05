@@ -434,24 +434,32 @@ Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoCon
 Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
 
 // Fotos
-Route::get('/fotos-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'indexDormitorio'])->name('fotos.dormitorio');
-Route::post('/actualizar-fotos-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarDormitorio'])->name('actualizar.fotos.dormitorio');
+Route::get('/fotos-dormitorio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.dormitorio');
+Route::post('/dormitorio-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.dormitorio-store');
+Route::post('/actualizar-fotos-dormitorio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.dormitorio');
+
 // Route::post('/fotos-dormitorio-store/{id}', [App\Http\Controllers\PhotoController::class, 'dormitorioStore'])->name('fotos.dormitorioStore');
-Route::get('/fotos-salon/{id}', [App\Http\Controllers\PhotoController::class, 'indexSalon'])->name('fotos.salon');
-Route::post('/fotos-salon-store/{id}', [App\Http\Controllers\PhotoController::class, 'salonStore'])->name('fotos.salonStore');
-Route::post('/actualizar-fotos-salin/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarSalon'])->name('actualizar.fotos.salon');
+Route::get('/fotos-salon/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.salon');
+Route::post('/fotos-salon-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.salon-store');
+Route::post('/actualizar-fotos-salin/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.salon');
 
 
-Route::get('/fotos-cocina/{id}', [App\Http\Controllers\PhotoController::class, 'indexCocina'])->name('fotos.cocina');
-Route::post('/fotos-cocina-store/{id}', [App\Http\Controllers\PhotoController::class, 'cocinaStore'])->name('fotos.cocinaStore');
-Route::post('/actualizar-fotos-cocina/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarCocina'])->name('actualizar.fotos.cocina');
+Route::get('/fotos-cocina/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.cocina');
+Route::post('/fotos-cocina-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina-store');
+Route::post('/actualizar-fotos-cocina/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.cocina');
 
+Route::get('/fotos-cocina-comun/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.cocina_comun');
+Route::post('/fotos-cocina-comun-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina_comun-store');
+Route::post('/actualizar-fotos-cocina-comun/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.cocinaComun');
 
-Route::get('/fotos-banio/{id}', [App\Http\Controllers\PhotoController::class, 'indexBanio'])->name('fotos.banio');
-Route::post('/fotos-banio-store/{id}', [App\Http\Controllers\PhotoController::class, 'banioStore'])->name('fotos.banioStore');
-Route::post('/actualizar-fotos-banio/{id}', [App\Http\Controllers\PhotoController::class, 'actualizarBanio'])->name('actualizar.fotos.banio');
+Route::get('/fotos-cajon_de_cama/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.cajon_de_cama');
+Route::post('/fotos-cajon_de_cama/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cajon_de_cama-store');
+Route::post('/actualizar-fotos-cajon_de_cama/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.cajonDeCama');
 
-Route::post('/upload-dormitorio/{id}', [App\Http\Controllers\PhotoController::class, 'dormitorioStore'])->name('fotos.dormitorioStore');
+Route::get('/fotos-banio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.bano');
+Route::post('/fotos-banio-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.bano-store');
+Route::post('/actualizar-fotos-banio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.bano');
+
 
 // Obtener DNI
 Route::get('/dni-user/{token}', [App\Http\Controllers\DNIController::class, 'index'])->name('dni.index');

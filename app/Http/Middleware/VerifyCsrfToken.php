@@ -40,6 +40,7 @@ class VerifyCsrfToken extends Middleware
         '/avisar-limpieza',
         '/channex',
         '/channex/property',
-        '/webhook-handler'
+        '/webhook-handler',
+        '/dormitorio-store/*'
     ];
 }

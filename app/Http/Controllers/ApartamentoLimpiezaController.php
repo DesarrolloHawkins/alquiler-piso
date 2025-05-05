@@ -7,6 +7,9 @@ use App\Models\ApartamentoLimpieza;
 use App\Models\Checklist;
 use App\Models\Photo;
 use Illuminate\Http\Request;
+use App\Models\ApartamentoLimpiezaItem;
+use App\Models\Reserva;
+
 
 class ApartamentoLimpiezaController extends Controller
 {
@@ -59,13 +62,27 @@ class ApartamentoLimpiezaController extends Controller
     // }
     public function show($id)
     {
-        $apartamento = ApartamentoLimpieza::find($id);
+        $apartamento = ApartamentoLimpieza::findOrFail($id);
 
-        $photos = Photo::where('limpieza_id', $apartamento->id)->get();
-        $fotos = $photos;
+        // Trae los ítems de limpieza con su checklist relacionado
+        $apartamentoLimpiezaItem = ApartamentoLimpiezaItem::with('checklist')
+            ->where('id_limpieza', $apartamento->id)
+            ->get()
+            ->map(function ($item) {
+                $item->grupo = $item->checklist->nombre ?? 'Sin grupo';
+                return $item;
+            });
 
-        return view('admin.apartamentos.limpieza-show', compact('apartamento', 'fotos'));
+        $fotos = Photo::where('limpieza_id', $apartamento->id)->with('categoria')->get();
+        $apartamentoId = Reserva::find($id)->apartamento_id;
+        $edificioId = Apartamento::find($apartamentoId)->edificio_id;
+
+        $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();
+        return view('admin.apartamentos.limpieza-show', compact('apartamento', 'apartamentoLimpiezaItem', 'fotos', 'checklists'));
     }
+
+
+
 
 
 

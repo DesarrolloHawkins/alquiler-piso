@@ -6,16 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class PhotoCategoria extends Model
+class ApartamentoLimpiezaItem extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     /**
      * El nombre de la tabla asociada con el modelo.
      *
      * @var string
      */
-    protected $table = 'photo_categoria';
+    protected $table = 'apartamento_limpieza_items';
 
      /**
      * The attributes that are mass assignable.
@@ -23,8 +23,13 @@ class PhotoCategoria extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'nombre',
-        'id_cat'
+        'id_limpieza',
+        'id_reserva',
+        'item_id',
+        'estado',
+        'checklist_id',
+        'photo_url',
+        'photo_cat' // Categoría de la foto
     ];
 
     /**
