@@ -247,9 +247,11 @@ class Kernel extends ConsoleKernel
                         ];
 
                         MensajeAuto::create($dataMensaje);
+                        $emailDestino = $reserva->cliente->email_secundario ?? $reserva->cliente->email;
 
                         $mensajeEmail = $this->dniEmail($idiomaCliente, $token);
-                        $enviarEmail = $this->enviarEmail($reserva->cliente->email_secundario, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
+                        $enviarEmail = $this->enviarEmail($emailDestino, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
+
                     }
                 }
 
