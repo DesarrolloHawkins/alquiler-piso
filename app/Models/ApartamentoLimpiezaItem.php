@@ -40,12 +40,4 @@ class ApartamentoLimpiezaItem extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
     ];
-
-    /**
-     * Get the checklist that owns the item.
-     */
-    public function checklist()
-    {
-        return $this->belongsTo(Checklist::class, 'checklist_id');
-    }
 }
