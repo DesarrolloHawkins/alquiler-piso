@@ -425,43 +425,8 @@ class ReservasController extends Controller
 
                     if ($bestMatch) {
                         $apartamento = $bestMatch;
-                        // dd($apartamento);
-                        // return response()->json([
-                        //     'success' => true,
-                        //     'message' => 'Apartamento encontrado',
-                        //     'data' => $bestMatch
-                        // ]);
                     }
-                    // $apartamentoEncontrado = Apartamento::where('nombre', $data['apartamento'])->first();
-                    // dd($apartamentoEncontrado);
-                    // switch ($data['apartamento']) {
-                    //     case 'Atico nueva contruccion en el centro de Algeciras':
-                    //         $apartamento = (object) ['id'=> 1];
-                    //         break;
-                    //     case 'Apartamento interior en el centro de Algeciras 2A':
-                    //         $apartamento = (object) ['id'=> 2];
-                    //         break;
-                    //     case 'Apartamento en el absoluto centro 2B':
-                    //         $apartamento = (object) ['id'=> 3];
-                    //         break;
-                    //     case 'Apartamento interior centro en Algeciras 1º A':
-                    //         $apartamento = (object) ['id'=> 4];
-                    //         break;
-                    //     case 'Apartamento de 2020 a estrenar en pleno centro1B':
-                    //         $apartamento = (object) ['id'=> 5];
-                    //         break;
-                    //     case 'Apartamento interior en el absoluto centro BA':
-                    //         $apartamento = (object) ['id'=> 6];
-                    //         break;
-                    //     case 'Apartamento BB Centro Algeciras':
-                    //         $apartamento = (object) ['id'=> 7];
-                    //         break;
 
-
-                    //     default:
-                    //         $apartamento = (object) ['id'=> null];
-                    //         break;
-                    // }
                 } else {
                     $apartamento = Apartamento::where('id_web', $data['apartamento'])->first();
 
@@ -470,10 +435,11 @@ class ReservasController extends Controller
                 $precioOriginal = $data['precio'];
                 $precioSinSimbolo = preg_replace('/[€\s]/', '', $precioOriginal);
                 $precio = floatval($precioSinSimbolo);
-
+                $roomType = RoomType::where('property_id', $apartamento->id)->first();
                 // Creamos la Reserva
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
+                    'room_type_id' => $roomType->id,
                     'origen' => $data['origen'],
                     'fecha_entrada' =>  $fecha_entrada,
                     'fecha_salida' => $fecha_salida,
@@ -485,6 +451,8 @@ class ReservasController extends Controller
                     // 'numero_personas' => $data['numero_personas']
                 ]);
                 $reserva = $crearReserva;
+
+
                 return response('Registrado', 200);
 
             } else {
