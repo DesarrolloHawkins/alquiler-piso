@@ -48,4 +48,12 @@ class ApartamentoLimpiezaItem extends Model
     {
         return $this->belongsTo(Checklist::class, 'checklist_id');
     }
+
+    /**
+     * Get the item that owns the limpieza item.
+     */
+    public function item()
+    {
+        return $this->belongsTo(ItemChecklist::class, 'item_id');
+    }
 }

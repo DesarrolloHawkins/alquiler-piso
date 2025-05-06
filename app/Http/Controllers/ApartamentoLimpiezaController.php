@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use App\Models\ApartamentoLimpiezaItem;
 use App\Models\Reserva;
 
-
 class ApartamentoLimpiezaController extends Controller
 {
     /**
@@ -40,52 +39,32 @@ class ApartamentoLimpiezaController extends Controller
     /**
      * Display the specified resource.
      */
-    // public function show($id)
-    // {
-    //     // Buscar la limpieza del apartamento con sus fotos y otras relaciones necesarias
-    //     $apartamentoLimpieza = ApartamentoLimpieza::with(['apartamento.edificioRelacion.checklists.items', 'fotos'])
-    //                         ->findOrFail($id);
-
-    //     // Agrupar items por sección del checklist
-    //     $itemChecklists = [];
-    //     foreach ($apartamentoLimpieza->apartamento->edificioRelacion->checklists as $checklist) {
-    //         foreach ($checklist->items as $item) {
-    //             $itemChecklists[$checklist->nombre][] = $item; // Asume que cada checklist tiene un 'nombre'
-    //         }
-    //     }
-
-    //     // Pasar los datos a la vista
-    //     return view('admin.apartamentos.limpieza-show', [
-    //         'apartamentoLimpieza' => $apartamentoLimpieza,
-    //         'itemChecklists' => $itemChecklists
-    //     ]);
-    // }
     public function show($id)
     {
-        $apartamento = ApartamentoLimpieza::findOrFail($id);
+        $apartamentoLimpieza = ApartamentoLimpieza::where('id', $id)->first();
+        $reserva_id = $apartamentoLimpieza->reserva_id;
 
-        // Trae los ítems de limpieza con su checklist relacionado
-        $apartamentoLimpiezaItem = ApartamentoLimpiezaItem::with('checklist')
-            ->where('id_limpieza', $apartamento->id)
-            ->get()
-            ->map(function ($item) {
-                $item->grupo = $item->checklist->nombre ?? 'Sin grupo';
-                return $item;
-            });
+        $reserva = Reserva::findOrFail($reserva_id);
 
-        $fotos = Photo::where('limpieza_id', $apartamento->id)->with('categoria')->get();
-        $apartamentoId = Reserva::find($id)->apartamento_id;
-        $edificioId = Apartamento::find($apartamentoId)->edificio_id;
+        // Obtener items existentes de la limpieza
+        $apartamentoLimpiezaItems = ApartamentoLimpiezaItem::with(['checklist', 'item'])
+            ->where('id_limpieza', $apartamentoLimpieza->id)
+            ->get();
 
+        $itemsExistentes = $apartamentoLimpiezaItems->pluck('estado', 'item_id')->toArray();
+
+        // Obtener fotos con categoría
+        $fotos = Photo::where('limpieza_id', $apartamentoLimpieza->id)->with('categoria')->get();
+
+        // Obtener el edificio_id correctamente
+        $apartamento = Apartamento::findOrFail($apartamentoLimpieza->apartamento_id);
+        $edificioId = $apartamento->edificio_id;
+
+        // Obtener checklists del edificio con items
         $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();
-        return view('admin.apartamentos.limpieza-show', compact('apartamento', 'apartamentoLimpiezaItem', 'fotos', 'checklists'));
+
+        return view('admin.apartamentos.limpieza-show', compact('apartamentoLimpieza', 'id', 'checklists', 'itemsExistentes', 'fotos'));
     }
-
-
-
-
-
-
 
     /**
      * Show the form for editing the specified resource.

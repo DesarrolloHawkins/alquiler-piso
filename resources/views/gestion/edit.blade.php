@@ -39,7 +39,6 @@
                         $excluirCamara = in_array($nombreHabitacion, ['canape', 'armario', 'perchero', 'amenities', 'ascensor', 'escalera']);
                     @endphp
 
-
                             <div class="fila">
                                 <div class="header_sub mb-3">
                                     <div class="row bg-color-quinto m-1 text-white align-items-center">
@@ -58,6 +57,8 @@
                                                 name="checklist[{{ $checklist->id }}]"
                                                 type="checkbox"
                                                 data-habitacion="{{ $checklist->id }}"
+                                                data-type="checklist"
+                                                data-id="{{ $checklist->id }}"
                                                 >
                                             <label class="form-check-label"></label>
                                                 @if (!$excluirCamara)
@@ -83,10 +84,12 @@
                                             @php
                                                 $isChecked = isset($itemsExistentes[$item->id]) && $itemsExistentes[$item->id] == 1;
                                             @endphp
-                                            <input class="form-check-input" type="checkbox"
+                                            <input class="form-check-input item-checkbox" type="checkbox"
                                                 id="item_{{ $item->id }}"
                                                 name="items[{{ $item->id }}]"
                                                 value="1"
+                                                data-type="item"
+                                                data-id="{{ $item->id }}"
                                                 {{ $isChecked ? 'checked' : '' }}>
 
                                             <label class="form-check-label" for="item_{{ $item->id }}">{{ $item->nombre }}</label>
@@ -125,28 +128,71 @@
     }
 
     $(document).ready(function () {
-    console.log('Limpieza de Apartamento by Hawkins.')
+        console.log('Limpieza de Apartamento by Hawkins.')
 
-    $('.checklist-toggle').each(function () {
-        const habitacion = $(this).data('habitacion');
-        const selectorCamara = '#camara' + habitacion;
+        // Función para manejar los cambios de checkbox
+        function handleCheckboxChange(checkbox) {
+            const type = checkbox.data('type');
+            const id = checkbox.data('id');
+            const isChecked = checkbox.is(':checked');
+            const limpiezaId = {{ $apartamentoLimpieza->id }};
 
-        if ($(this).is(':checked')) {
-            $(selectorCamara).show();
+            $.ajax({
+                url: '{{ route("gestion.updateCheckbox") }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    type: type,
+                    id: id,
+                    checked: isChecked ? 1 : 0,
+                    limpieza_id: limpiezaId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Mostrar notificación de éxito
+                        toastr.success('Estado actualizado correctamente');
+                    } else {
+                        // Si hay error, revertir el checkbox
+                        checkbox.prop('checked', !isChecked);
+                        toastr.error('Error al actualizar el estado');
+                    }
+                },
+                error: function() {
+                    // Si hay error, revertir el checkbox
+                    checkbox.prop('checked', !isChecked);
+                    toastr.error('Error al actualizar el estado');
+                }
+            });
         }
+
+        // Manejar cambios en checkboxes de checklist
+        $('.checklist-toggle').on('change', function() {
+            const habitacion = $(this).data('habitacion');
+            const selectorCamara = '#camara' + habitacion;
+
+            if ($(this).is(':checked')) {
+                $(selectorCamara).show();
+            } else {
+                $(selectorCamara).hide();
+            }
+
+            handleCheckboxChange($(this));
+        });
+
+        // Manejar cambios en checkboxes de items
+        $('.item-checkbox').on('change', function() {
+            handleCheckboxChange($(this));
+        });
+
+        // Mostrar cámaras inicialmente si los checklists están marcados
+        $('.checklist-toggle').each(function () {
+            const habitacion = $(this).data('habitacion');
+            const selectorCamara = '#camara' + habitacion;
+
+            if ($(this).is(':checked')) {
+                $(selectorCamara).show();
+            }
+        });
     });
-
-    $('.checklist-toggle').on('change', function () {
-        const habitacion = $(this).data('habitacion');
-        const selectorCamara = '#camara' + habitacion;
-
-        if ($(this).is(':checked')) {
-            $(selectorCamara).show();
-        } else {
-            $(selectorCamara).hide();
-        }
-    });
-});
-
 </script>
 @endsection

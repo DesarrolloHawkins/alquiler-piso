@@ -15,7 +15,7 @@ class Checklist extends Model
     {
         return $this->hasMany(ItemChecklist::class);
     }
-    
+
     public function edificio()
     {
         return $this->belongsTo(Edificio::class, 'edificio_id');
