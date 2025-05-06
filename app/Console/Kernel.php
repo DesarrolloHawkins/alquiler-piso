@@ -259,6 +259,8 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Primer envio de DNI ejecutada con éxito.");
         })->everyMinute();
 
+        // Ejecutar el comando cada minuto
+        $schedule->command('ari:fullsync')->everyMinute();
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -319,6 +321,7 @@ class Kernel extends ConsoleKernel
                     ];
                     // Creamos el mensaje
                     MensajeAuto::create($dataMensaje);
+
                 }
 
                 // MENSAJE CLAVES DEL APARTAMENTO
@@ -405,7 +408,7 @@ class Kernel extends ConsoleKernel
                                 $token = null
                             );
                         }
-                        
+
 
 
                     }
@@ -1899,51 +1902,51 @@ class Kernel extends ConsoleKernel
        }
    }
 
-    public function generateBudgetReference(Invoices $invoices) {
+   public function generateBudgetReference(Invoices $invoices)
+   {
+       // Obtener la fecha de salida de la reserva para usarla en la generación de la referencia
+       $budgetCreationDate = $invoices->reserva->fecha_salida ?? now(); // Usar la fecha de salida de la reserva
+       $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
 
-        // Obtener la fecha actual del presupuesto
-        $budgetCreationDate = $invoices->created_at ?? now();
-        $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+       // Formatear la fecha para obtener los componentes necesarios
+       $year = $datetimeBudgetCreationDate->format('Y');
+       $monthNum = $datetimeBudgetCreationDate->format('m');
 
-        // Formatear la fecha para obtener los componentes necesarios
-        $year = $datetimeBudgetCreationDate->format('Y');
-        $monthNum = $datetimeBudgetCreationDate->format('m');
+       // Buscar la última referencia autoincremental para el año y mes correspondiente a la fecha de salida de la reserva
+       $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
+                               ->where('month_num', $monthNum)
+                               ->orderBy('id', 'desc')
+                               ->first();
 
-        //dd($year, $monthNum, $budgetCreationDate, $datetimeBudgetCreationDate);
-        // Buscar la última referencia autoincremental para el año y mes actual
-        $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
-                            ->where('month_num', $monthNum)
-                            ->orderBy('id', 'desc')
-                            ->first();
-         //dd($latestReference->reference_autoincrement);
-        // Si no existe, empezamos desde 1, de lo contrario, incrementamos
-        $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
+       // Si no existe, empezamos desde 1, de lo contrario, incrementamos
+       $newReferenceAutoincrement = $latestReference ? $latestReference->reference_autoincrement + 1 : 1;
 
-        // Formatear el número autoincremental a 6 dígitos
-        $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
+       // Formatear el número autoincremental a 6 dígitos
+       $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
 
-        // Crear la referencia
-        $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
+       // Crear la referencia
+       $reference = $year . '/' . $monthNum . '/' . $formattedAutoIncrement;
 
-        // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
-        $referenceToSave = new InvoicesReferenceAutoincrement([
-            'reference_autoincrement' => $newReferenceAutoincrement,
-            'year' => $year,
-            'month_num' => $monthNum,
-            // Otros campos pueden ser asignados si son necesarios
-        ]);
-        $referenceToSave->save();
+       // Guardar o actualizar la referencia autoincremental en BudgetReferenceAutoincrement
+       $referenceToSave = new InvoicesReferenceAutoincrement([
+           'reference_autoincrement' => $newReferenceAutoincrement,
+           'year' => $year,
+           'month_num' => $monthNum,
+           // Otros campos pueden ser asignados si son necesarios
+       ]);
+       $referenceToSave->save();
 
-        // Devolver el resultado
-        return [
-            'id' => $referenceToSave->id,
-            'reference' => $reference,
-            'reference_autoincrement' => $newReferenceAutoincrement,
-            'budget_reference_autoincrements' => [
-                'year' => $year,
-                'month_num' => $monthNum,
-                // Añade aquí más si es necesario
-            ],
-        ];
+       // Devolver el resultado
+       return [
+           'id' => $referenceToSave->id,
+           'reference' => $reference,
+           'reference_autoincrement' => $newReferenceAutoincrement,
+           'budget_reference_autoincrements' => [
+               'year' => $year,
+               'month_num' => $monthNum,
+               // Añade aquí más si es necesario
+           ],
+       ];
    }
+
 }
