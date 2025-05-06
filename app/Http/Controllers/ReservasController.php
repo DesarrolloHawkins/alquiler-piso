@@ -452,7 +452,9 @@ class ReservasController extends Controller
                 ]);
                 $reserva = $crearReserva;
 
-
+                // Llamada al controlador ARIController para ejecutar fullSync
+                $ariController = new \App\Http\Controllers\ARIController();  // Instanciar el ARIController
+                $ariController->fullSync();  // Llamar a la función fullSync()
                 return response('Registrado', 200);
 
             } else {
@@ -467,6 +469,7 @@ class ReservasController extends Controller
         }
 
     }
+
     function levenshteinDistance($str1, $str2) {
         $len1 = strlen($str1);
         $len2 = strlen($str2);
