@@ -325,7 +325,13 @@ class ReservasController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $reserva = Reserva::find($id);
+        if ($reserva) {
+            $reserva->delete();
+            return redirect()->route('reservas.index')->with('success', 'Reserva eliminada correctamente.');
+        } else {
+            return redirect()->route('reservas.index')->with('error', 'Reserva no encontrada.');
+        }
     }
     /**
      * Remove the specified resource from storage.

@@ -105,6 +105,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
+    Route::get('/reservas/{id}/destroy', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
 
 
 

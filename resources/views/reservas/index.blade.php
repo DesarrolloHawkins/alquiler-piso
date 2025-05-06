@@ -316,6 +316,7 @@
                                 <td>
                                     <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>
                                     <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
+                                    <a href="{{route('reservas.destroy', $reserva->id)}}" class="btn bg-danger text-white">Eliminar</a>
                                 </td>
                             </tr>
                         @endforeach
