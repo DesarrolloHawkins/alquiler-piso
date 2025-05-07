@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Apartamento;
+use App\Models\Cliente;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use App\Services\ClienteService;
@@ -55,6 +57,99 @@ class HomeController extends Controller
         //     return $e->getMessage();
         // }
     }
+    public function mostrarFormulario()
+    {
+        return view('importar_reservas'); // Vista con el formulario de carga
+    }
+
+
+    public function importarReservasDesdeCsv(Request $request)
+    {
+        // Validar que el archivo sea CSV
+        $request->validate([
+            'archivo' => 'required|mimes:csv,txt',
+        ]);
+
+        // Procesar el archivo CSV usando el separador correcto
+        $csv = array_map(function ($row) {
+            // Eliminar caracteres no deseados (saltos de línea, comillas, etc.)
+            return str_getcsv(trim($row), ';'); // Usar ';' como separador de columnas
+        }, file($request->file('archivo')->getRealPath()));
+
+        $headers = array_map('trim', $csv[0]);
+        unset($csv[0]); // Eliminar la cabecera
+
+        // Depurar el contenido del archivo CSV
+        \Log::info('Contenido CSV procesado:', ['data' => $csv]);
+
+        foreach ($csv as $row) {
+            // Verificar que el número de columnas en la fila coincida con los encabezados
+            if (count($row) !== count($headers)) {
+                // Si no coinciden, puede ser una fila mal formada, la ignoramos
+                continue;
+            }
+
+            $fila = array_combine($headers, $row);
+
+            // Depuración para ver qué datos estamos recibiendo
+            \Log::info('Procesando reserva:', $fila);
+
+            // Solo procesar las reservas con estado "ok"
+            if (strtolower(trim($fila['Status'])) !== 'ok') {
+                continue;
+            }
+
+            // Verificar si las claves existen antes de usarlas
+            if (!isset($fila['Price']) || !isset($fila['Booker country'])) {
+                \Log::error('Falta alguna clave en la fila', ['fila' => $fila]);
+                continue; // Si falta alguna clave, continuar con la siguiente fila
+            }
+
+            // Eliminar " EUR" del precio y convertir a número
+            $precio = floatval(str_replace(' EUR', '', $fila['Price']));
+
+            // Buscar o crear el cliente
+            $cliente = Cliente::firstOrCreate(
+                ['email' => strtolower(str_replace(' ', '', $fila['Guest name(s)'])) . 'guest.booking.com'], // email ficticio
+                [
+                    'alias' => $fila['Guest name(s)'],
+                    'nombre' => explode(' ', $fila['Guest name(s)'])[0],
+                    'apellido1' => explode(' ', $fila['Guest name(s)'])[1] ?? '',
+                    'telefono' => $fila['Phone number'],
+                    'direccion' => $fila['Address'],
+                    'nacionalidad' => trim($fila['Booker country']) ?? 'ES', // Limpiar posibles espacios
+                ]
+            );
+
+            // Relacionar con apartamento
+            $apartamento = \App\Models\Apartamento::first(); // Ajusta esta lógica según tus necesidades
+
+            if (!$apartamento) {
+                continue; // Si no se encuentra apartamento, continuar
+            }
+
+            // Crear la reserva
+            Reserva::create([
+                'cliente_id' => $cliente->id,
+                'apartamento_id' => $apartamento->id,
+                'room_type_id' => 1, // Ajusta según la lógica de tipo habitación
+                'origen' => 'Importación CSV',
+                'fecha_entrada' => $fila['Check-in'],
+                'fecha_salida' => $fila['Check-out'],
+                'codigo_reserva' => $fila['Book number'],
+                'precio' => $precio, // Usar el precio limpio
+                'numero_personas' => $fila['Persons'],
+                'neto' => $precio, // Usar el precio limpio
+                'comision' => floatval(str_replace(' EUR', '', $fila['Commission amount'])),
+                'estado_id' => 1,
+            ]);
+        }
+
+        return redirect()->route('mostrarFormulario')->with('success', 'Reservas importadas correctamente.');
+    }
+
+
+
 
     /**
      * Show the application dashboard.

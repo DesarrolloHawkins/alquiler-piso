@@ -162,7 +162,7 @@ class MovimientosController extends Controller
             $descripcion = $row[5];
             $debe = $row[7];  // Gastos
             $haber = $row[8]; // Ingresos
-            $saldo = $row[10]; // Ingresos
+            $saldo = $row[10]; // Saldo
 
             // Generar un hash único basado en la combinación de fecha, descripción, debe y haber
             $hash = md5($fecha_contable->format('Y-m-d') . $descripcion . (float)$debe . (float)$haber . (float)$saldo);

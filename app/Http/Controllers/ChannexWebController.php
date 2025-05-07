@@ -404,7 +404,7 @@ class ChannexWebController extends Controller
         $hotelCode = '12152494'; // Cambia esto por tu código de hotel real
 
         // URL de la API
-        $url = 'https://staging.channex.io/api/v1/channel_webhooks/open_channel/request_full_sync';
+        $url = 'https://app.channex.io/api/v1/channel_webhooks/open_channel/request_full_sync';
 
         try {
             // Realizar la solicitud POST

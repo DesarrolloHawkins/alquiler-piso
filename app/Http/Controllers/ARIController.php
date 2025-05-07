@@ -29,211 +29,6 @@ class ARIController extends Controller
         return view('admin.ari.index', compact('properties', 'roomTypes', 'ratePlans'));
     }
 
-
-
-    // public function update(Request $request)
-    // {
-    //     $validatedData = $request->validate([
-    //         'updates' => 'required|array',
-    //         'updates.*.property_id' => 'required|string',
-    //         'updates.*.room_type_id' => 'required|string',
-    //         'updates.*.rate_plan_id' => 'required|string',
-    //         'updates.*.date_from' => 'required|date',
-    //         'updates.*.date_to' => 'nullable|date',
-    //         'updates.*.update_type' => 'nullable|string',
-    //         'updates.*.value' => 'nullable|string',
-    //         'updates.*.min_stay' => 'nullable|integer',
-    //         'updates.*.max_stay' => 'nullable|integer',
-    //     ]);
-
-    //     //dd( $validatedData);
-    //     $urlVariable = 'restrictions';
-    //     $updates = [];
-    //     foreach ($validatedData['updates'] as $update) {
-    //         // $details = [
-    //         //     'property_id' => $update['property_id'],
-    //         //     'rate_plan_id' => $update['rate_plan_id'],
-    //         //     'room_type_id' => $update['room_type_id'],
-    //         //     'date' => $update['date_from'],
-    //         //     'date_to' => $update['date_to'] ?? $update['date_from'],
-    //         //     'rate' => $update['rate'],
-    //         // ];
-    //         $details = [
-    //             'property_id' => $update['property_id'],
-    //             'rate_plan_id' => $update['rate_plan_id'],
-    //             'room_type_id' => $update['room_type_id'],
-    //             // 'rate' => $update['rate'],
-    //         ];
-
-    //         // Manejo dinámico de la clave 'date' o 'date_from' según el valor de 'date_to'
-    //         if (empty($update['date_to'])) {
-    //             $details['date'] = $update['date_from'];
-    //         } else {
-    //             $details['date_from'] = $update['date_from'];
-    //             $details['date_to'] = $update['date_to'];
-    //         }
-
-    //         // Manejo de tipos específicos
-    //         switch ($update['update_type']) {
-    //             case 'rate':
-    //                 $details['rate'] = (float) $update['value']; // Convertir a número flotante para Channex
-    //                 break;
-
-    //             case 'availability':
-    //                 $details['availability'] = 1; // Convertir a entero para Channex
-    //                 $urlVariable = 'availability';
-    //                 break;
-
-    //             case 'min_stay':
-    //                 $details['min_stay_through'] = (int) $update['min_stay'];
-    //                 break;
-
-    //             case 'stop_sell':
-    //                 $details['stop_sell'] = filter_var($update['value'], FILTER_VALIDATE_BOOLEAN);
-    //                 break;
-
-    //             case 'restrictions':
-    //                 $details['closed_to_arrival'] = isset($update['closed_to_arrival']) ? true : false;
-    //                 $details['closed_to_departure'] = isset($update['closed_to_departure']) ? true : false;
-    //                 $details['min_stay_through'] = $update['min_stay'] ?? 0;
-    //                 $details['max_stay'] = $update['max_stay'] ?? 0;
-    //                 break;
-    //         }
-
-    //         $updates[] = $details;
-    //     }
-    //     // dd($update['update_type']);
-    //     // Petición a la API
-    //     $response = Http::withHeaders([
-    //         'user-api-key' => $this->apiToken,
-    //     ])->post("{$this->apiUrl}/".$urlVariable , ['values' => $updates]);
-    //     //dd($response->json());
-    //     if ($response->successful()) {
-    //         return $response->json();
-    //         // return redirect()->route('ari.index')->with('success', 'Actualización realizada con éxito.'. $response->json());
-    //     }
-
-    //     return redirect()->back()->withErrors(['error' => 'Error: ' . $response->body()])->withInput();
-    // }
-
-//     public function update(Request $request)
-// {
-//     $validatedData = $request->validate([
-//         'updates' => 'required|array',
-//         'updates.*.property_id' => 'required|string',
-//         'updates.*.room_type_id' => 'required|string',
-//         'updates.*.rate_plan_id' => 'required|string',
-//         'updates.*.date_from' => 'required|date',
-//         'updates.*.date_to' => 'nullable|date',
-//         'updates.*.update_type' => 'nullable|string',
-//         'updates.*.value' => 'nullable|string',
-//         'updates.*.min_stay' => 'nullable|integer',
-//         'updates.*.max_stay' => 'nullable|integer',
-//         'updates.*.exclude_weekends' => 'required|boolean',
-//     ]);
-
-//     $urlVariable = 'restrictions';
-//     $updates = [];
-
-//     foreach ($validatedData['updates'] as $update) {
-//         $startDate = Carbon::parse($update['date_from']);
-//         $endDate = empty($update['date_to']) ? $startDate : Carbon::parse($update['date_to']);
-//         $excludeWeekends = isset($update['exclude_weekends']) && $update['exclude_weekends'];
-
-//         if ($excludeWeekends) {
-//             // Generar rangos semanales excluyendo fines de semana
-//             $currentStart = $startDate->copy()->startOfWeek(Carbon::MONDAY); // Inicia el rango en lunes
-//             while ($currentStart->lte($endDate)) {
-//                 $currentEnd = $currentStart->copy()->endOfWeek(Carbon::FRIDAY); // Termina el rango en viernes
-//                 if ($currentEnd->gt($endDate)) {
-//                     $currentEnd = $endDate; // Ajustar el rango final si excede la fecha final
-//                 }
-
-//                 // Crear un ítem para este rango
-//                 $details = [
-//                     'property_id' => $update['property_id'],
-//                     'rate_plan_id' => $update['rate_plan_id'],
-//                     'room_type_id' => $update['room_type_id'],
-//                     'date_from' => $currentStart->toDateString(),
-//                     'date_to' => $currentEnd->toDateString(),
-//                 ];
-
-//                 switch ($update['update_type']) {
-//                     case 'rate':
-//                         $details['rate'] = (float)$update['value'];
-//                         break;
-//                     case 'availability':
-//                         $details['availability'] = 1;
-//                         $urlVariable = 'availability';
-//                         break;
-//                     case 'min_stay':
-//                         $details['min_stay_through'] = (int)$update['min_stay'];
-//                         break;
-//                     case 'stop_sell':
-//                         $details['stop_sell'] = filter_var($update['value'], FILTER_VALIDATE_BOOLEAN);
-//                         break;
-//                     case 'restrictions':
-//                         $details['closed_to_arrival'] = isset($update['closed_to_arrival']) ? true : false;
-//                         $details['closed_to_departure'] = isset($update['closed_to_departure']) ? true : false;
-//                         $details['min_stay_through'] = $update['min_stay'] ?? 0;
-//                         $details['max_stay'] = $update['max_stay'] ?? 0;
-//                         break;
-//                 }
-
-//                 $updates[] = $details;
-
-//                 // Mover al siguiente lunes
-//                 $currentStart->addWeek();
-//             }
-//         } else {
-//             // Si no excluye fines de semana, procesar todo el rango
-//             $details = [
-//                 'property_id' => $update['property_id'],
-//                 'rate_plan_id' => $update['rate_plan_id'],
-//                 'room_type_id' => $update['room_type_id'],
-//                 'date_from' => $startDate->toDateString(),
-//                 'date_to' => $endDate->toDateString(),
-//             ];
-
-//             // Manejar los tipos específicos
-//             switch ($update['update_type']) {
-//                 case 'rate':
-//                     $details['rate'] = (float)$update['value'];
-//                     break;
-//                 case 'availability':
-//                     $details['availability'] = 1;
-//                     $urlVariable = 'availability';
-//                     break;
-//                 case 'min_stay':
-//                     $details['min_stay_through'] = (int)$update['min_stay'];
-//                     break;
-//                 case 'stop_sell':
-//                     $details['stop_sell'] = filter_var($update['value'], FILTER_VALIDATE_BOOLEAN);
-//                     break;
-//                 case 'restrictions':
-//                     $details['closed_to_arrival'] = isset($update['closed_to_arrival']) ? true : false;
-//                     $details['closed_to_departure'] = isset($update['closed_to_departure']) ? true : false;
-//                     $details['min_stay_through'] = $update['min_stay'] ?? 0;
-//                     $details['max_stay'] = $update['max_stay'] ?? 0;
-//                     break;
-//             }
-
-//             $updates[] = $details;
-//         }
-//     }
-//     // Petición a la API
-//     $response = Http::withHeaders([
-//         'user-api-key' => $this->apiToken,
-//         ])->post("{$this->apiUrl}/" . $urlVariable, ['values' => $updates]);
-
-//         if ($response->successful()) {
-//         return redirect()->route('ari.index')->with('success', 'Actualización realizada con éxito.');
-//     }
-
-//     return redirect()->back()->withErrors(['error' => 'Error: ' . $response->body()])->withInput();
-// }
-
-
     public function update(Request $request)
     {
         $validatedData = $request->validate([
@@ -394,24 +189,21 @@ class ARIController extends Controller
         return $details;
     }
 
-public function fullSync()
-{
-    // Obtener la fecha actual
-    $startDate = Carbon::now();
-    // Calcular la fecha hasta 500 días en el futuro
-    $endDate = $startDate->copy()->addDays(500);
 
-    // Inicializar el array para almacenar todas las actualizaciones
-    $updates = [];
+    public function fullSync()
+{
+    $startDate = Carbon::now();
+    $endDate = $startDate->copy()->addDays(500);
+    $allResponses = [];
 
     // Obtener todos los apartamentos con un id_channex no nulo
     $apartamentos = Apartamento::whereNotNull('id_channex')->with('roomTypes')->get();
 
-    // Iterar sobre cada apartamento
     foreach ($apartamentos as $apartamento) {
-        // Iterar sobre cada tipo de habitación del apartamento
+        $updates = []; // Array de updates solo para este apartamento
+
         foreach ($apartamento->roomTypes as $roomType) {
-            // Obtener todas las reservas de este roomType en el rango de fechas
+
             $reservas = Reserva::where('apartamento_id', $apartamento->id)
                 ->where('room_type_id', $roomType->id)
                 ->where(function ($query) use ($startDate, $endDate) {
@@ -419,225 +211,47 @@ public function fullSync()
                           ->orWhereBetween('fecha_salida', [$startDate, $endDate]);
                 })
                 ->get();
-                // dd($roomType->id);
 
-            // Iterar sobre cada día en el rango de fechas
             for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                // Verificar si hay una reserva activa en esa fecha
                 $hasReservation = $reservas->contains(function ($reserva) use ($date) {
                     return $date->gte(Carbon::parse($reserva->fecha_entrada)) &&
                            $date->lte(Carbon::parse($reserva->fecha_salida));
                 });
 
-                //dd($hasReservation);
-
-                // Establecer disponibilidad (0 si hay reserva, 1 si no)
                 $availability = $hasReservation ? 0 : 1;
 
-                // Agregar la actualización al array
                 $updates[] = [
                     'property_id' => $apartamento->id_channex,
                     'room_type_id' => $roomType->id_channex,
                     'date' => $date->toDateString(),
                     'availability' => $availability,
                 ];
-                // if ($roomType->id == 3 ) {
-                //     dd(end($updates), $hasReservation);
-
-                // }
             }
         }
-    }
-    // dd($updates);
-    // Enviar la petición completa en una sola solicitud
-    $response = Http::withHeaders([
-        'user-api-key' => $this->apiToken,
-    ])->post("{$this->apiUrl}/availability", [
-        'values' => $updates,
-    ]);
 
-    if ($response->successful()) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Sincronización completada con éxito.',
+        // Hacer petición por cada apartamento
+        $response = Http::withHeaders([
+            'user-api-key' => $this->apiToken,
+        ])->post("{$this->apiUrl}/availability", [
+            'values' => $updates,
         ]);
+
+        $allResponses[] = [
+            'apartamento_id' => $apartamento->id,
+            'apartamento_nombre' => $apartamento->titulo ?? 'Sin título',
+            'status' => $response->status(),
+            'success' => $response->successful(),
+            'response' => $response->json(),
+        ];
     }
 
     return response()->json([
-        'success' => false,
-        'message' => 'Error al sincronizar disponibilidad.',
-    ], 500);
-    // if ($response->successful()) {
-    //     session()->flash('swal_success', 'Sincronización completada con éxito.');
-    // } else {
-    //     session()->flash('swal_error', 'Error al sincronizar disponibilidad.');
-    // }
-
-    // // Manejar la respuesta de la API
-    // if ($response->successful()) {
-    //     return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
-
-    //     // return response()->json([
-    //     //     'success' => true,
-    //     //     'message' => 'Sincronización completa realizada con éxito.',
-    //     //     'response' => $response->json(),
-    //     //     'envio' => $updates,
-    //     // ]);
-    // }
-
-    // return response()->json([
-    //     'success' => false,
-    //     'message' => 'Error al sincronizar disponibilidad.',
-    //     'error' => $response->body(),
-    // ]);
+        'success' => true,
+        'message' => 'Sincronización por apartamento completada.',
+        'results' => $allResponses
+    ]);
 }
 
-
-//     public function fullSync()
-// {
-    //     $updates = [];
-//     // 1. Obtener apartamentos con id_channex no nulo
-//     $apartamentos = Apartamento::whereNotNull('id_channex')->get();
-
-//     // 2. Definir el rango de fechas (500 días desde hoy)
-//     $startDate = Carbon::now();
-//     $endDate = $startDate->copy()->addDays(500);
-
-//     foreach ($apartamentos as $apartamento) {
-//         $roomTypes = $apartamento->roomTypes()->whereNotNull('id_channex')->get();
-
-//         // Verificar que el apartamento tenga roomTypes asociados
-//         foreach ($roomTypes as $roomType) {
-//             $currentDate = $startDate->copy();
-
-//             while ($currentDate->lte($endDate)) {
-//                 // 3. Verificar si hay una reserva para el apartamento y el room type en esa fecha
-//                 $hasReservation = Reserva::where('apartamento_id', $apartamento->id)
-//                     ->where('room_type_id', $roomType->id)
-//                     ->whereDate('fecha_entrada', '<=', $currentDate->toDateString())
-//                     ->whereDate('fecha_salida', '>=', $currentDate->toDateString())
-//                     ->exists();
-
-//                 // 4. Establecer la disponibilidad
-//                 $availability = $hasReservation ? 0 : 1;
-
-//                 // 5. Agregar la actualización
-//                 $updates[] = [
-//                     'property_id' => $apartamento->id_channex,
-//                     'room_type_id' => $roomType->id_channex, // ID correcto del roomType
-//                     'date' => $currentDate->toDateString(),
-//                     'availability' => $availability,
-//                 ];
-
-//                 $currentDate->addDay();
-//             }
-//         }
-//     }
-
-//     // 6. Enviar las actualizaciones en lotes de 1000
-//     $chunks = array_chunk($updates, 1000);
-//     $results = [];
-
-//     foreach ($chunks as $chunk) {
-//         $response = Http::withHeaders([
-//             'user-api-key' => $this->apiToken,
-//         ])->post("{$this->apiUrl}/availability", ['values' => $chunk]);
-
-//         if ($response->successful()) {
-//             $results[] = $response->json();
-//         } else {
-//             return redirect()->back()->withErrors(['error' => 'Error: ' . $response->body()])->withInput();
-//         }
-//     }
-
-//     return response()->json([
-//         'message' => 'Sincronización completa realizada con éxito.',
-//         'results' => $results,
-//     ]);
-// }
-
-
-    /**
-     * Crear un ítem para el rango de fechas especificado.
-     */
-    // private function createItem($update, $startDate, $endDate)
-    // {
-    //     if ($update['update_type'] == 'availability') {
-    //         $details = [
-    //             'property_id' => $update['property_id'],
-    //             'room_type_id' => $update['room_type_id'],
-    //         ];
-    //     } else {
-    //         $details = [
-    //             'property_id' => $update['property_id'],
-    //         ];
-    //     }
-
-
-    //     if (isset( $update['rate_plan_id'])) {
-    //         $details['rate_plan_id'] = $update['rate_plan_id'];
-
-    //     }
-
-    //     // Si el rango es de un solo día, usar `date`
-    //     if ($startDate->equalTo($endDate)) {
-    //         $details['date'] = $startDate->toDateString();
-    //     } else {
-    //         $details['date_from'] = $startDate->toDateString();
-    //         $details['date_to'] = $endDate->toDateString();
-    //     }
-
-    //     // Manejar los tipos específicos
-    //     switch ($update['update_type']) {
-    //         case 'rate':
-    //             $details['rate'] = (float)$update['value'];
-    //             break;
-    //         case 'availability':
-    //             $details['availability'] = (int)$update['value'];
-    //             break;
-    //         case 'min_stay':
-    //             $details['min_stay'] = (int)$update['value'];
-    //             break;
-    //         case 'stop_sell':
-
-    //             if ($update['value'] == 1) {
-    //                 $details['stop_sell'] = true;
-
-    //             }else {
-    //                 $details['stop_sell'] = false;
-
-    //             }
-
-    //             //$details['stop_sell'] = filter_var($update['value'], FILTER_VALIDATE_BOOLEAN);
-    //             break;
-    //         case 'restrictions':
-    //             //dd($update);
-    //             if ($update['closed_to_arrival'] !== null) {
-    //                 $details['closed_to_arrival'] = (bool) $update['closed_to_arrival'];
-    //             }
-
-    //             if ($update['closed_to_departure'] !== null) {
-    //                 $details['closed_to_departure'] = (bool) $update['closed_to_departure'];
-    //             }
-
-    //             if (isset($update['min_stay_through']) && $update['min_stay_through'] > 0) {
-    //                 $details['min_stay_through'] = + (int)$update['min_stay_through'];
-    //             }
-
-    //             // if (isset($update['min_stay_arrival']) && $update['min_stay_arrival'] > 0) {
-    //             //     $details['min_stay_arrival'] = + (int)$update['min_stay_arrival'];
-    //             // }
-    //             if (isset($update['min_stay_arrival']) && $update['min_stay_arrival'] > 0) {
-    //                 $details['min_stay'] = + (int)$update['min_stay_arrival'];
-    //             }
-    //             if (isset($update['max_stay']) && $update['max_stay'] > 0) {
-    //                 $details['max_stay'] = + (int)$update['max_stay'];
-    //             }
-    //             break;
-    //     }
-
-    //     return $details;
-    // }
 
     public function getByProperty($propertyId)
     {

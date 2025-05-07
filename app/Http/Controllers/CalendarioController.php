@@ -10,7 +10,7 @@ class CalendarioController extends Controller
     public function ics($id)
     {
         $reservas = Reserva::where('apartamento_id', $id)->get();
-
+        // dd($reservas);
         $calendario = "BEGIN:VCALENDAR\r\n";
         $calendario .= "VERSION:2.0\r\n";
         $calendario .= "PRODID:-//TuEmpresa//ReservasApartamentos//ES\r\n";
