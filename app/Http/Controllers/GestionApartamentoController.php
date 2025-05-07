@@ -332,4 +332,59 @@ class GestionApartamentoController extends Controller
 
         return redirect()->route('admin.limpiezaFondo.index');
     }
+
+    /**
+     * Update checkbox state via AJAX
+     */
+    public function updateCheckbox(Request $request)
+    {
+        try {
+            $type = $request->input('type');
+            $id = $request->input('id');
+            $checked = $request->input('checked');
+            $limpiezaId = $request->input('limpieza_id');
+
+            if ($type === 'checklist') {
+                // Actualizar estado del checklist
+                $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
+                    ->where('checklist_id', $id)
+                    ->first();
+
+                if (!$limpiezaItem) {
+                    // Si no existe, crear nuevo registro
+                    $limpiezaItem = new ApartamentoLimpiezaItem([
+                        'id_limpieza' => $limpiezaId,
+                        'checklist_id' => $id,
+                        'estado' => $checked
+                    ]);
+                } else {
+                    $limpiezaItem->estado = $checked;
+                }
+
+                $limpiezaItem->save();
+            } else if ($type === 'item') {
+                // Actualizar estado del item
+                $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
+                    ->where('item_id', $id)
+                    ->first();
+
+                if (!$limpiezaItem) {
+                    // Si no existe, crear nuevo registro
+                    $limpiezaItem = new ApartamentoLimpiezaItem([
+                        'id_limpieza' => $limpiezaId,
+                        'item_id' => $id,
+                        'estado' => $checked
+                    ]);
+                } else {
+                    $limpiezaItem->estado = $checked;
+                }
+
+                $limpiezaItem->save();
+            }
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }
