@@ -121,8 +121,8 @@ class GestionApartamentoController extends Controller
             return redirect()->route('gestion.index');
         }
 
-        // Eliminar registros anteriores para este apartamento y limpieza
-        ApartamentoLimpiezaItem::where('id_limpieza', $apartamento->id)->delete();
+        // // Eliminar registros anteriores para este apartamento y limpieza
+        // ApartamentoLimpiezaItem::where('id_limpieza', $apartamento->id)->delete();
 
         // Guardar los nuevos ítems marcados en el formulario
         if ($request->has('items')) {
@@ -214,7 +214,7 @@ class GestionApartamentoController extends Controller
     public function update(Request $request, ApartamentoLimpieza $apartamentoLimpieza)
 {
     // Eliminar ítems anteriores para este registro
-    ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->delete();
+    // ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->delete();
 
     // Guardar nuevos ítems desde los checkboxes de ítems
     if ($request->has('items')) {
