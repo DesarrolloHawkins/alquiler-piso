@@ -61,7 +61,7 @@ class ChecklistController extends Controller
     public function edit( Request $request, $id){
         $checklist = Checklist::findOrFail($id);
         $checklist->update($request->all());
-
+        $edificios = Edificio::all();
         // Actualizar requisitos de fotos
         ChecklistPhotoRequirement::where('checklist_id', $checklist->id)->delete();
 
@@ -76,7 +76,7 @@ class ChecklistController extends Controller
             }
         }
 
-        return redirect()->route('admin.checklists.index')->with('success', 'Categoria actualizada con éxito.');
+        return view('admin.checklists.edit', compact('checklist','edificios'));
 
     }
 
@@ -98,19 +98,19 @@ class ChecklistController extends Controller
         $checklist = Checklist::findOrFail($id);
         $checklist->update($request->all());
 
-        // Actualizar requisitos de fotos
-        ChecklistPhotoRequirement::where('checklist_id', $checklist->id)->delete();
+        // // Actualizar requisitos de fotos
+        // ChecklistPhotoRequirement::where('checklist_id', $checklist->id)->delete();
 
-        if ($request->has('photo_names')) {
-            foreach ($request->photo_names as $index => $name) {
-                ChecklistPhotoRequirement::create([
-                    'checklist_id' => $checklist->id,
-                    'nombre' => $name,
-                    'descripcion' => $request->photo_descriptions[$index] ?? null,
-                    'cantidad' => $request->photo_quantities[$index] ?? 1,
-                ]);
-            }
-        }
+        // if ($request->has('photo_names')) {
+        //     foreach ($request->photo_names as $index => $name) {
+        //         ChecklistPhotoRequirement::create([
+        //             'checklist_id' => $checklist->id,
+        //             'nombre' => $name,
+        //             'descripcion' => $request->photo_descriptions[$index] ?? null,
+        //             'cantidad' => $request->photo_quantities[$index] ?? 1,
+        //         ]);
+        //     }
+        // }
 
         return redirect()->route('admin.checklists.index')->with('success', 'Categoria actualizada con éxito.');
     }
