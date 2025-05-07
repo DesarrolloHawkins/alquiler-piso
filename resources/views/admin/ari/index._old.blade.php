@@ -90,6 +90,10 @@
                     <td style="max-width: 300px">
                         <div class="row">
                             <div class="col-12 mb-3">
+                                <label>Precio</label>
+                                <input type="text" name="updates[0][rate]" class="form-control">
+                            </div>
+                            <div class="col-12 mb-3">
                                 <label>Cerrado a Llegadas</label>
                                 <div class="form-check">
                                     <input type="radio" name="updates[0][closed_to_arrival]" value="1" class="form-check-input">
@@ -120,7 +124,26 @@
                                     <label class="form-check-label">No Cambiar</label>
                                 </div>
                             </div>
+                            <div class="col-12 mb-3">
+                                <label>Cerrado a la Venta</label>
+                                <div class="form-check">
+                                    <input type="radio" name="updates[0][stop_sell]" value="1" class="form-check-input">
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="radio" name="updates[0][stop_sell]" value="0" class="form-check-input">
+                                    <label class="form-check-label">No</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="radio" name="updates[0][stop_sell]" value="" class="form-check-input" checked>
+                                    <label class="form-check-label">No Cambiar</label>
+                                </div>
+                            </div>
 
+                            <div class="col-12 mb-3">
+                                <Label>Min Estancia</Label>
+                                <input type="number" name="updates[0][min_stay]" class="form-control" placeholder="Min Estancia">
+                            </div>
                             <div class="col-12 mb-3">
                                 <Label>Min Estancia Llegada</Label>
                                 <input type="number" name="updates[0][min_stay_arrival]" class="form-control" placeholder="Min Estancia Llegada">
