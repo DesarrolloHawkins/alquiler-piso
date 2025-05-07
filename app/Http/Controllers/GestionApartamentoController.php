@@ -343,7 +343,7 @@ class GestionApartamentoController extends Controller
             $id = $request->input('id');
             $checked = $request->input('checked');
             $limpiezaId = $request->input('limpieza_id');
-
+            $idReserva = ApartamentoLimpieza::find($limpiezaId)->reserva_id;
             if ($type === 'checklist') {
                 // Actualizar estado del checklist
                 $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
@@ -355,6 +355,7 @@ class GestionApartamentoController extends Controller
                     $limpiezaItem = new ApartamentoLimpiezaItem([
                         'id_limpieza' => $limpiezaId,
                         'checklist_id' => $id,
+                        'id_reserva' => $idReserva,
                         'estado' => $checked
                     ]);
                 } else {
@@ -373,6 +374,7 @@ class GestionApartamentoController extends Controller
                     $limpiezaItem = new ApartamentoLimpiezaItem([
                         'id_limpieza' => $limpiezaId,
                         'item_id' => $id,
+                        'id_reserva' => $idReserva,
                         'estado' => $checked
                     ]);
                 } else {
