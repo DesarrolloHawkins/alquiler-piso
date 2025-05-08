@@ -18,6 +18,7 @@ use App\Http\Controllers\PresupuestoController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\MetalicoController;
 use App\Http\Controllers\CalendarioController;
+use App\Http\Controllers\WhatsappTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -589,3 +590,12 @@ Route::post('/rate-error', [App\Http\Controllers\ChannexController::class, 'rate
 Route::post('/accepted-reservation', [App\Http\Controllers\ChannexController::class, 'acceptedReservation'])->name('channex.acceptedReservation');
 Route::post('/decline-reservation', [App\Http\Controllers\ChannexController::class, 'declineReservation'])->name('channex.declineReservation');
 
+
+Route::get('/templates', [WhatsappTemplateController::class, 'index'])->name('templates.index');
+Route::get('/templates/create', [WhatsappTemplateController::class, 'create'])->name('templates.create');
+Route::post('/templates', [WhatsappTemplateController::class, 'store'])->name('templates.store');
+Route::get('/templates/sync', [WhatsappTemplateController::class, 'sync'])->name('templates.sync');
+Route::get('/templates/{template}/status', [WhatsappTemplateController::class, 'checkStatus'])->name('templates.checkStatus');
+Route::get('/templates/{template}', [WhatsappTemplateController::class, 'show'])->name('templates.show');
+Route::get('/templates/{template}/edit', [WhatsappTemplateController::class, 'edit'])->name('templates.edit');
+Route::put('/templates/{template}', [WhatsappTemplateController::class, 'update'])->name('templates.update');
