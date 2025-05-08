@@ -1326,9 +1326,7 @@ class Kernel extends ConsoleKernel
                 <p>
                     <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
-                <p>
-                    https://crm.apartamentosalgeciras.com/dni-user/'.$token.'
-                </p>
+
                 <p style="margin: 0 !important">
                     Las claves de acceso al apartamento se las enviamos el dia de su llegada por whatsapp y correo electronico, asegurese de tener la informacion de contacto correctamente.
                 </p>
@@ -1351,7 +1349,7 @@ class Kernel extends ConsoleKernel
                     Nous vous laissons un lien pour nous le fournir via le bouton ci-dessous:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Remplir les données</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Les codes d'."'".'accès à l'."'".'appartement vous seront envoyés le jour de votre arrivée par WhatsApp et par e-mail, assurez-vous d'."'".'avoir les informations de contact correctes.
@@ -1375,7 +1373,7 @@ class Kernel extends ConsoleKernel
                     :نترك لكم رابطاً لتقديمه لنا عبر الزر أدناه.
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">ملء البيانات</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                 سنرسل لك رموز الوصول إلى الشقة في يوم وصولك عبر تطبيق WhatsApp والبريد الإلكتروني، وتأكد من حصولك على معلومات الاتصال بشكل صحيح.
@@ -1399,7 +1397,7 @@ class Kernel extends ConsoleKernel
                 Wir hinterlassen Ihnen einen Link, um uns dies über den unteren Button zu übermitteln.:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Daten füllen</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Wir senden Ihnen die Zugangscodes zum Apartment am Tag Ihrer Ankunft per WhatsApp und E-Mail zu. Stellen Sie sicher, dass Sie die Kontaktinformationen korrekt haben.                </p>
@@ -1424,7 +1422,7 @@ class Kernel extends ConsoleKernel
                     Deixamos um link para nos fornecer isso através do botão abaixo:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Preencha os dados</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Enviaremos os códigos de acesso ao apartamento no dia da sua chegada por WhatsApp e email, certifique-se de ter os dados de contato corretos.
@@ -1450,7 +1448,7 @@ class Kernel extends ConsoleKernel
                     Vi lasciamo un link per fornircelo tramite il pulsante in basso:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Compila i dati</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                 Ti invieremo i codici di accesso all'."'".'appartamento il giorno del tuo arrivo tramite WhatsApp ed e-mail, assicurati di avere le informazioni di contatto corrette.
@@ -1477,7 +1475,7 @@ class Kernel extends ConsoleKernel
                     We leave you a link to fill out your information and provide us with a copy of your DNI or Passport:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'">Fill data</a>
+                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Thank you for using our application!We will send you the access codes to the apartment on the day of your arrival by WhatsApp and email, make sure you have the contact information correctly.
