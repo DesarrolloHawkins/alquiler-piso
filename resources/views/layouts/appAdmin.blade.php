@@ -202,7 +202,7 @@
                                     </a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{{ route('templates.index') }}">Plantilla de Mesanjes</a></li>
-                                        <li class="nav-item"><a class="nav-link" target="_blank" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
+                                        <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
                                     </ul>
                                 </li>
 
