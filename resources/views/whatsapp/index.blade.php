@@ -506,7 +506,8 @@
                     </div>`
                 }
 
-
+                console.log(value.whatsapp_mensaje?.estado)
+                console.log(value)
                 dataMensaje.push(templateChat)
                 $('#contenedorChat').append(templateChat)
                 $('#contenedorChat').append(templateChatRespuesta)
