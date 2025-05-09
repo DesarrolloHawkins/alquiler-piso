@@ -493,16 +493,19 @@
                     <div class="row no-gutters" style="justify-content: end;">
                         <div class="col-md-6">
                             <div class="chat-bubble2 chat-bubble2--right" >
-                                    ${unicodeToChar(value.respuesta)}
+                                ${unicodeToChar(value.respuesta)}
                                 <p class="fecha_mensaje">
                                     <small>
                                     ${formatDate(value.created_at)}
                                     </small>
+                                    <br>
+                                    <span class="estado_mensaje">${renderEstado(value.whatsapp_mensaje?.estado)}</span>
                                 </p>
                             </div>
                         </div>
                     </div>`
                 }
+
 
                 dataMensaje.push(templateChat)
                 $('#contenedorChat').append(templateChat)
@@ -655,6 +658,16 @@
             $('.col-md-4.border-right').css('transform', 'translateX(0)');
             $('.col-md-8').css('transform', 'translateX(100%)');
         }
+        function renderEstado(estado) {
+            switch (estado) {
+                case 'read': return '✅ Leído';
+                case 'delivered': return '📬 Entregado';
+                case 'sent': return '📤 Enviado';
+                case 'failed': return '❌ Fallido';
+                default: return '⏳ Pendiente';
+            }
+        }
+
 
     </script>
 </body>

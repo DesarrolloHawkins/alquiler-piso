@@ -141,6 +141,7 @@
                                     </a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{{ route('apartamentos.admin.index') }}">Apartamentos</a></li>
+                                        <li class="nav-item"><a class="nav-link" href="{{ route('admin.empleados.index') }}">Empleados</a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.jornada.index') }}">Jornada</a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.edificios.index') }}">Edificios</a></li>
                                         <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">Limpieza</a></li>
@@ -194,10 +195,19 @@
                                     </ul>
                                 </li>
 
+                                <!-- Emails -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('whatsapp*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        Plataforma de Mensajes
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('templates.index') }}">Plantilla de Mesanjes</a></li>
+                                        <li class="nav-item"><a class="nav-link" target="_blank" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
+                                    </ul>
+                                </li>
+
                                 <!-- Otros -->
-                                <li class="nav-item"><a class="nav-link" target="_blank" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ route('admin.empleados.index') }}">Empleados</a></li>
-                                <li class="nav-item"><a class="nav-link" href="#">Logs</a></li>
+                                {{-- <li class="nav-item"><a class="nav-link" href="#">Logs</a></li> --}}
                                 <li class="nav-item"><a class="nav-link" href="{{ route('configuracion.index') }}">Configuración</a></li>
                             </ul>
 
