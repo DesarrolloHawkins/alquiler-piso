@@ -59,30 +59,6 @@ class WhatsappController extends Controller
 
     }
 
-
-    public function processHookWhatsapp3(Request $request)
-    {
-        $data = json_decode($request->getContent(), true);
-
-        WhatsappLog::create(['contenido' => $data]);
-
-        $entry = $data['entry'][0]['changes'][0]['value'] ?? [];
-
-        if (isset($entry['messages'])) {
-            foreach ($entry['messages'] as $mensaje) {
-                $this->procesarMensaje($mensaje, $entry);
-            }
-        }
-
-        if (isset($entry['statuses'])) {
-            foreach ($entry['statuses'] as $status) {
-                $this->procesarStatus($status);
-            }
-        }
-
-        return response(200);
-    }
-
     public function processHookWhatsapp(Request $request)
     {
         $data = json_decode($request->getContent(), true);
@@ -116,24 +92,6 @@ class WhatsappController extends Controller
         }
 
         return response(200)->header('Content-Type', 'text/plain');
-    }
-
-    public function procesarMensaje(array $mensaje, array $entry)
-    {
-        $waId = $mensaje['from'];
-        $tipo = $mensaje['type'];
-        $id = $mensaje['id'];
-        $contenido = $mensaje[$tipo]['body'] ?? ($mensaje['text']['body'] ?? null);
-        $timestamp = $mensaje['timestamp'] ?? null;
-
-        WhatsappMensaje::create([
-            'mensaje_id' => $id,
-            'tipo' => $tipo,
-            'contenido' => $contenido,
-            'remitente' => $waId,
-            'fecha_mensaje' => $timestamp ? Carbon::createFromTimestamp($timestamp) : now(),
-            'metadata' => $mensaje
-        ]);
     }
 
     public function procesarStatus(array $status)
@@ -230,66 +188,6 @@ class WhatsappController extends Controller
         }
 
     }
-
-
-    function enviarMensajeOpenAiChatCompletions2($nuevoMensaje, $remitente)
-    {
-        $apiKey = env('OPENAI_API_KEY');
-        $modelo = 'gpt-4o';
-        $endpoint = 'https://api.openai.com/v1/chat/completions';
-        $promptAsistente = PromptAsistente::first();
-
-        $promptSystem = [
-            "role" => "system",
-            "content" => $promptAsistente ? $promptAsistente->prompt : "No hay prompt configurado aún."
-        ];
-
-        $historial = ChatGpt::where('remitente', $remitente)
-            ->orderBy('date', 'desc')
-            ->limit(20)
-            ->get()
-            ->reverse()
-            ->flatMap(function ($chat) {
-                $mensajes = [];
-
-                if (!empty($chat->mensaje)) {
-                    $mensajes[] = [
-                        "role" => "user",
-                        "content" => $chat->mensaje,
-                    ];
-                }
-
-                if (!empty($chat->respuesta)) {
-                    $mensajes[] = [
-                        "role" => "assistant",
-                        "content" => $chat->respuesta,
-                    ];
-                }
-
-                return $mensajes;
-            })
-            ->toArray();
-
-        $historial[] = [
-            "role" => "user",
-            "content" => $nuevoMensaje,
-        ];
-
-        $response = Http::withToken($apiKey)
-            ->post($endpoint, [
-                'model' => $modelo,
-                'messages' => array_merge([$promptSystem], $historial),
-                'temperature' => 0.7,
-            ]);
-
-        if ($response->failed()) {
-            Log::error("❌ Error llamando a ChatGPT: " . $response->body());
-            return null;
-        }
-
-        return $response->json('choices.0.message.content');
-    }
-
 
     function enviarMensajeOpenAiChatCompletions($nuevoMensaje, $remitente)
     {
@@ -415,111 +313,6 @@ class WhatsappController extends Controller
         return $data['choices'][0]['message']['content'] ?? null;
     }
 
-
-
-    function enviarMensajeOpenAiChatCompletions3($nuevoMensaje, $remitente)
-    {
-        $apiKey = env('OPENAI_API_KEY');
-        $modelo = 'gpt-4o';
-        $endpoint = 'https://api.openai.com/v1/chat/completions';
-        $promptAsistente = PromptAsistente::first();
-
-        $tools = [
-            [
-                "type" => "function",
-                "function" => [
-                    "name" => "obtener_claves",
-                    "description" => "Devuelve la clave de acceso al apartamento según el código de reserva, siempre que la fecha de entrada se el dia de hoy y se ajuste a los horarios de entrada que tienes en el prompt",
-                    "parameters" => [
-                        "type" => "object",
-                        "properties" => [
-                            "codigo_reserva" => [
-                                "type" => "string",
-                                "description" => "Código de la reserva del cliente"
-                            ]
-                        ],
-                        "required" => ["codigo_reserva"]
-                    ]
-                ]
-            ]
-        ];
-
-        $promptSystem = [
-            "role" => "system",
-            "content" => $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos."
-        ];
-
-        $historial = ChatGpt::where('remitente', $remitente)
-            ->orderBy('date', 'desc')
-            ->limit(20)
-            ->get()
-            ->reverse()
-            ->flatMap(function ($chat) {
-                $mensajes = [];
-                if (!empty($chat->mensaje)) {
-                    $mensajes[] = ["role" => "user", "content" => $chat->mensaje];
-                }
-                if (!empty($chat->respuesta)) {
-                    $mensajes[] = ["role" => "assistant", "content" => $chat->respuesta];
-                }
-                return $mensajes;
-            })
-            ->toArray();
-
-        $historial[] = ["role" => "user", "content" => $nuevoMensaje];
-
-        $response = Http::withToken($apiKey)->post($endpoint, [
-            'model' => $modelo,
-            'messages' => array_merge([$promptSystem], $historial),
-            'tools' => $tools,
-            'tool_choice' => "auto",
-        ]);
-
-        if ($response->failed()) {
-            Log::error("❌ Error llamando a ChatGPT: " . $response->body());
-            return null;
-        }
-
-        $data = $response->json();
-
-        if (isset($data['choices'][0]['message']['tool_calls'])) {
-            $toolCall = $data['choices'][0]['message']['tool_calls'][0];
-            if ($toolCall['function']['name'] === 'obtener_claves') {
-                $args = json_decode($toolCall['function']['arguments'], true);
-                $codigoReserva = $args['codigo_reserva'] ?? null;
-
-                $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
-                $clave = $reserva?->apartamento?->claves ?? 'No asignada aún';
-                $clave2 = $reserva?->apartamento?->edificioRelacion->clave ?? 'No asignada aún';
-
-                $respuestaFinal = "La clave de acceso para la reserva #{$codigoReserva} es: *{$clave}* y la clave de acceso de la puerta de abajo es*{$clave2}*. Le fecha de entrada es *{$reserva->fecha_entrada}* y la fecha de salida es *{$reserva->fecha_salida}*.";
-
-                // Enviar una segunda llamada a OpenAI para que construya la respuesta completa
-                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                    'model' => $modelo,
-                    'messages' => [
-                        $promptSystem,
-                        ...$historial,
-                        [
-                            "role" => "assistant",
-                            "tool_calls" => [$toolCall]
-                        ],
-                        [
-                            "role" => "tool",
-                            "tool_call_id" => $toolCall['id'],
-                            "content" => $respuestaFinal
-                        ]
-                    ]
-                ]);
-
-                return $responseFinal->json('choices.0.message.content');
-            }
-        }
-        return $data['choices'][0]['message']['content'] ?? null;
-    }
-
-
-
     public function clasificarMensaje($mensaje)
     {
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
@@ -598,7 +391,7 @@ class WhatsappController extends Controller
 
     }
 
-    public function contestarWhatsapp($phone, $texto) {
+    public function contestarWhatsapp2($phone, $texto) {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
         // Construir la carga útil como un array en lugar de un string JSON
@@ -649,6 +442,57 @@ class WhatsappController extends Controller
             Log::error("Error al guardar la respuesta de WhatsApp: " . $e->getMessage());
             return ['error' => $e->getMessage()];
         }
+    }
+    public function contestarWhatsapp($phone, $texto, $chatGptId = null)
+    {
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phone,
+            "type" => "text",
+            "text" => [
+                "body" => $texto
+            ]
+        ];
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $token
+        ])->post($urlMensajes, $mensajePersonalizado);
+
+        if ($response->failed()) {
+            Log::error("❌ Error en cURL al enviar mensaje de WhatsApp: " . $response->body());
+            return ['error' => 'Error enviando mensaje'];
+        }
+
+        $responseJson = $response->json();
+        Storage::disk('local')->put("Respuesta_Envio_Whatsapp-{$phone}.txt", json_encode($responseJson, JSON_PRETTY_PRINT));
+
+        // ⏺️ Guardar ID del mensaje enviado
+        if (isset($responseJson['messages'][0]['id'])) {
+            $whatsappMessageId = $responseJson['messages'][0]['id'];
+
+            WhatsappMensaje::create([
+                'mensaje_id' => $whatsappMessageId,
+                'tipo' => 'text',
+                'contenido' => $texto,
+                'remitente' => null, // este es un mensaje saliente, puedes usar un valor especial
+                'fecha_mensaje' => now(),
+                'metadata' => $mensajePersonalizado,
+            ]);
+
+            if ($chatGptId) {
+                ChatGpt::where('id', $chatGptId)->update([
+                    'respuesta_id' => $whatsappMessageId
+                ]);
+            }
+        }
+
+        return $responseJson;
     }
 
     // Vista de los mensajes
