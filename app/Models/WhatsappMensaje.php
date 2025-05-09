@@ -41,4 +41,14 @@ class WhatsappMensaje extends Model
         return $this->hasMany(WhatsappEstadoMensaje::class);
     }
 
+    public function respuestaA()
+{
+    return $this->belongsTo(WhatsappMensaje::class, 'reply_to_id');
+}
+
+public function respuestas()
+{
+    return $this->hasMany(WhatsappMensaje::class, 'reply_to_id');
+}
+
 }

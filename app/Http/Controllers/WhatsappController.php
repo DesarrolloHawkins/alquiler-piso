@@ -95,34 +95,34 @@ class WhatsappController extends Controller
     }
 
     public function procesarStatus(array $status)
-{
-    $mensaje = WhatsappMensaje::where('recipient_id', $status['id'])->first(); // CAMBIO AQUÍ
+    {
+        $mensaje = WhatsappMensaje::where('mensaje_id', $status['id'])->first(); // CAMBIO AQUÍ
 
-    if ($mensaje) {
-        // Guardar último estado
-        $mensaje->estado = $status['status'];
-        $mensaje->conversacion_id = $status['conversation']['id'] ?? null;
-        $mensaje->origen_conversacion = $status['conversation']['origin']['type'] ?? null;
-        $mensaje->expiracion_conversacion = isset($status['conversation']['expiration_timestamp'])
-            ? Carbon::createFromTimestamp($status['conversation']['expiration_timestamp'])
-            : null;
-        $mensaje->billable = $status['pricing']['billable'] ?? null;
-        $mensaje->categoria_precio = $status['pricing']['category'] ?? null;
-        $mensaje->modelo_precio = $status['pricing']['pricing_model'] ?? null;
-        $mensaje->errores = $status['errors'] ?? null;
-        $mensaje->save();
+        if ($mensaje) {
+            // Guardar último estado
+            $mensaje->estado = $status['status'];
+            $mensaje->conversacion_id = $status['conversation']['id'] ?? null;
+            $mensaje->origen_conversacion = $status['conversation']['origin']['type'] ?? null;
+            $mensaje->expiracion_conversacion = isset($status['conversation']['expiration_timestamp'])
+                ? Carbon::createFromTimestamp($status['conversation']['expiration_timestamp'])
+                : null;
+            $mensaje->billable = $status['pricing']['billable'] ?? null;
+            $mensaje->categoria_precio = $status['pricing']['category'] ?? null;
+            $mensaje->modelo_precio = $status['pricing']['pricing_model'] ?? null;
+            $mensaje->errores = $status['errors'] ?? null;
+            $mensaje->save();
 
-        // Guardar en histórico
-        WhatsappEstadoMensaje::create([
-            'whatsapp_mensaje_id' => $mensaje->id,
-            'estado' => $status['status'],
-            'recipient_id' => $status['recipient_id'] ?? null,
-            'fecha_estado' => isset($status['timestamp']) ? Carbon::createFromTimestamp($status['timestamp']) : now(),
-        ]);
-    } else {
-        Log::warning("⚠️ No se encontró mensaje con recipient_id = {$status['id']} para guardar estado.");
+            // Guardar en histórico
+            WhatsappEstadoMensaje::create([
+                'whatsapp_mensaje_id' => $mensaje->id,
+                'estado' => $status['status'],
+                'recipient_id' => $status['recipient_id'] ?? null,
+                'fecha_estado' => isset($status['timestamp']) ? Carbon::createFromTimestamp($status['timestamp']) : now(),
+            ]);
+        } else {
+            Log::warning("⚠️ No se encontró mensaje con recipient_id = {$status['id']} para guardar estado.");
+        }
     }
-}
 
 
 
@@ -501,7 +501,7 @@ class WhatsappController extends Controller
     }
 
     public function contestarWhatsapp($phone, $texto, $mensajeOriginal = null)
-    {
+{
     $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
     $mensajePersonalizado = [
@@ -528,16 +528,25 @@ class WhatsappController extends Controller
 
     $responseJson = $response->json();
 
-    if (isset($responseJson['messages'][0]['id']) && $mensajeOriginal) {
-        $mensajeOriginal->recipient_id = $responseJson['messages'][0]['id'];
-        $mensajeOriginal->save();
+    if (isset($responseJson['messages'][0]['id'])) {
+        $messageId = $responseJson['messages'][0]['id'];
 
-        Log::info("✅ Guardado recipient_id en mensaje original: " . $mensajeOriginal->id);
+        $mensajeRespuesta = WhatsappMensaje::create([
+            'mensaje_id' => $messageId,
+            'tipo' => 'text',
+            'contenido' => $texto,
+            'remitente' => null, // saliente
+            'fecha_mensaje' => now(),
+            'metadata' => $mensajePersonalizado,
+            'reply_to_id' => $mensajeOriginal?->id, // relacionar con mensaje original recibido
+        ]);
+
+        Log::info("✅ Mensaje enviado y registrado: {$messageId}");
     }
-
 
     return $responseJson;
 }
+
 
 
     // Vista de los mensajes
