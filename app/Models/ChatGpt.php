@@ -44,7 +44,7 @@ class ChatGpt extends Model
 
     public function whatsappMensaje()
     {
-        return $this->belongsTo(WhatsappMensaje::class);
+        return $this->belongsTo(WhatsappMensaje::class, 'id_mensaje', 'mensaje_id');
     }
 
 }

@@ -547,7 +547,7 @@ class WhatsappController extends Controller
     // Vista de los mensajes
     public function whatsapp()
     {
-        // $mensajes = ChatGpt::orderBy('created_at', 'desc')->limit(5)->get();
+        // $mensajes = ChatGpt::orderBy('created_at', 'desc')->limit(10)->get();
         $mensajes = ChatGpt::orderBy('created_at', 'desc')->get();
         $resultado = [];
         foreach ($mensajes as $elemento) {
