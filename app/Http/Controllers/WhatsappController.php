@@ -177,7 +177,7 @@ class WhatsappController extends Controller
                     'status' => 1,
                 ]);
 
-                $response = $this->contestarWhatsapp($waId, $respuestaTexto, $whatsappMensaje->id,);
+                $response = $this->contestarWhatsapp($waId, $respuestaTexto, $whatsappMensaje);
                 // dd($response);
                 return response()->json(['status' => 'ok', 'respuesta' => $respuestaTexto]);
             } else {
@@ -501,51 +501,43 @@ class WhatsappController extends Controller
     }
 
     public function contestarWhatsapp($phone, $texto, $mensajeOriginal = null)
-{
-    $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+    {
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
-    $mensajePersonalizado = [
-        "messaging_product" => "whatsapp",
-        "recipient_type" => "individual",
-        "to" => $phone,
-        "type" => "text",
-        "text" => [
-            "body" => $texto
-        ]
-    ];
+        $mensajePersonalizado = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phone,
+            "type" => "text",
+            "text" => [
+                "body" => $texto
+            ]
+        ];
 
-    $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
-    $response = Http::withHeaders([
-        'Content-Type' => 'application/json',
-        'Authorization' => 'Bearer ' . $token
-    ])->post($urlMensajes, $mensajePersonalizado);
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $token
+        ])->post($urlMensajes, $mensajePersonalizado);
 
-    if ($response->failed()) {
-        Log::error("❌ Error al enviar mensaje: " . $response->body());
-        return ['error' => 'Error enviando mensaje'];
+        if ($response->failed()) {
+            Log::error("❌ Error al enviar mensaje: " . $response->body());
+            return ['error' => 'Error enviando mensaje'];
+        }
+
+        $responseJson = $response->json();
+
+        if (isset($responseJson['messages'][0]['id']) && $mensajeOriginal instanceof WhatsappMensaje) {
+            $mensajeOriginal->recipient_id = $responseJson['messages'][0]['id'];
+            $mensajeOriginal->save();
+
+            Log::info("✅ Guardado recipient_id en mensaje original: " . $mensajeOriginal->id);
+        }
+
+        return $responseJson;
     }
 
-    $responseJson = $response->json();
-
-    if (isset($responseJson['messages'][0]['id'])) {
-        $messageId = $responseJson['messages'][0]['id'];
-
-        $mensajeRespuesta = WhatsappMensaje::create([
-            'mensaje_id' => $messageId,
-            'tipo' => 'text',
-            'contenido' => $texto,
-            'remitente' => null, // saliente
-            'fecha_mensaje' => now(),
-            'metadata' => $mensajePersonalizado,
-            'reply_to_id' => $mensajeOriginal?->id, // relacionar con mensaje original recibido
-        ]);
-
-        Log::info("✅ Mensaje enviado y registrado: {$messageId}");
-    }
-
-    return $responseJson;
-}
 
 
 
