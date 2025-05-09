@@ -443,7 +443,9 @@ class WhatsappController extends Controller
             return ['error' => $e->getMessage()];
         }
     }
-    public function contestarWhatsapp($phone, $texto, $chatGptId = null)
+
+
+    public function contestarWhatsapp3($phone, $texto, $chatGptId = null)
     {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
 
@@ -494,6 +496,61 @@ class WhatsappController extends Controller
 
         return $responseJson;
     }
+
+    public function contestarWhatsapp($phone, $texto, $chatGptId = null)
+{
+    $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+    $mensajePersonalizado = [
+        "messaging_product" => "whatsapp",
+        "recipient_type" => "individual",
+        "to" => $phone,
+        "type" => "text",
+        "text" => [
+            "body" => $texto
+        ]
+    ];
+
+    $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+    $response = Http::withHeaders([
+        'Content-Type' => 'application/json',
+        'Authorization' => 'Bearer ' . $token
+    ])->post($urlMensajes, $mensajePersonalizado);
+
+    if ($response->failed()) {
+        Log::error("❌ Error al enviar mensaje: " . $response->body());
+        return ['error' => 'Error enviando mensaje'];
+    }
+
+    $responseJson = $response->json();
+
+    // 🧠 Guardamos el mensaje enviado si WhatsApp devuelve el ID
+    if (isset($responseJson['messages'][0]['id'])) {
+        $whatsappMessageId = $responseJson['messages'][0]['id'];
+
+        $mensaje = WhatsappMensaje::create([
+            'mensaje_id' => $whatsappMessageId,
+            'tipo' => 'text',
+            'contenido' => $texto,
+            'remitente' => null, // mensaje saliente
+            'fecha_mensaje' => now(),
+            'metadata' => $mensajePersonalizado,
+        ]);
+
+        // Si está relacionado con un ChatGpt, lo enlazamos
+        if ($chatGptId) {
+            ChatGpt::where('id', $chatGptId)->update([
+                'respuesta_id' => $whatsappMessageId
+            ]);
+        }
+
+        return $whatsappMessageId; // opcional, puedes devolver la ID
+    }
+
+    return $responseJson;
+}
+
 
     // Vista de los mensajes
     public function whatsapp()
