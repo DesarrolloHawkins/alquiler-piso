@@ -291,7 +291,131 @@ class WhatsappController extends Controller
     }
 
 
-    function enviarMensajeOpenAiChatCompletions($nuevoMensaje, $remitente)
+function enviarMensajeOpenAiChatCompletions($nuevoMensaje, $remitente)
+{
+    $apiKey = env('OPENAI_API_KEY');
+    $modelo = 'gpt-4o';
+    $endpoint = 'https://api.openai.com/v1/chat/completions';
+    $promptAsistente = PromptAsistente::first();
+
+    $tools = [
+        [
+            "type" => "function",
+            "function" => [
+                "name" => "obtener_claves",
+                "description" => "Devuelve la clave de acceso al apartamento según el código de reserva, solo si es la fecha de entrada, ha pasado la hora de entrada y el cliente ha entregado el DNI.",
+                "parameters" => [
+                    "type" => "object",
+                    "properties" => [
+                        "codigo_reserva" => [
+                            "type" => "string",
+                            "description" => "Código de la reserva del cliente"
+                        ]
+                    ],
+                    "required" => ["codigo_reserva"]
+                ]
+            ]
+        ]
+    ];
+
+    $promptSystem = [
+        "role" => "system",
+        "content" => $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos."
+    ];
+
+    $historial = ChatGpt::where('remitente', $remitente)
+        ->orderBy('date', 'desc')
+        ->limit(20)
+        ->get()
+        ->reverse()
+        ->flatMap(function ($chat) {
+            $mensajes = [];
+            if (!empty($chat->mensaje)) {
+                $mensajes[] = ["role" => "user", "content" => $chat->mensaje];
+            }
+            if (!empty($chat->respuesta)) {
+                $mensajes[] = ["role" => "assistant", "content" => $chat->respuesta];
+            }
+            return $mensajes;
+        })
+        ->toArray();
+
+    $historial[] = ["role" => "user", "content" => $nuevoMensaje];
+
+    $response = Http::withToken($apiKey)->post($endpoint, [
+        'model' => $modelo,
+        'messages' => array_merge([$promptSystem], $historial),
+        'tools' => $tools,
+        'tool_choice' => "auto",
+    ]);
+
+    if ($response->failed()) {
+        Log::error("❌ Error llamando a ChatGPT: " . $response->body());
+        return null;
+    }
+
+    $data = $response->json();
+
+    if (isset($data['choices'][0]['message']['tool_calls'])) {
+        $toolCall = $data['choices'][0]['message']['tool_calls'][0];
+        if ($toolCall['function']['name'] === 'obtener_claves') {
+            $args = json_decode($toolCall['function']['arguments'], true);
+            $codigoReserva = $args['codigo_reserva'] ?? null;
+
+            $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
+
+            if (!$reserva) {
+                return "❌ No se encontró ninguna reserva con ese código.";
+            }
+
+            // Verificaciones
+            $hoy = now();
+            $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+            $horaActual = now()->format('H:i');
+
+            if ($fechaEntrada->isToday()) {
+                if ($horaActual < '13:00') {
+                    return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
+                }
+
+                if (empty($reserva->dni_entregado)) {
+                    $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
+                    return "🪪 Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url";
+                }
+
+                $clave = $reserva->apartamento->claves ?? 'No asignada aún';
+                $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
+
+                $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅 Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*";
+
+                // Segunda llamada a OpenAI para integrar en la conversación
+                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                    'model' => $modelo,
+                    'messages' => [
+                        $promptSystem,
+                        ...$historial,
+                        ["role" => "assistant", "tool_calls" => [$toolCall]],
+                        [
+                            "role" => "tool",
+                            "tool_call_id" => $toolCall['id'],
+                            "content" => $respuestaFinal
+                        ]
+                    ]
+                ]);
+
+                return $responseFinal->json('choices.0.message.content');
+            } else {
+                return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
+            }
+        }
+    }
+
+    return $data['choices'][0]['message']['content'] ?? null;
+}
+
+
+
+    function enviarMensajeOpenAiChatCompletions3($nuevoMensaje, $remitente)
     {
         $apiKey = env('OPENAI_API_KEY');
         $modelo = 'gpt-4o';
@@ -389,7 +513,6 @@ class WhatsappController extends Controller
                 return $responseFinal->json('choices.0.message.content');
             }
         }
-        //dd($data['choices'][0]['message']['content']);
         return $data['choices'][0]['message']['content'] ?? null;
     }
 
