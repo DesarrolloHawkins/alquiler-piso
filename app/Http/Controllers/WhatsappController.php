@@ -303,7 +303,7 @@ class WhatsappController extends Controller
                 "type" => "function",
                 "function" => [
                     "name" => "obtener_claves",
-                    "description" => "Devuelve la clave de acceso al apartamento según el código de reserva",
+                    "description" => "Devuelve la clave de acceso al apartamento según el código de reserva, siempre que la fecha de entrada se el dia de hoy y se ajuste a los horarios de entrada que tienes en el prompt",
                     "parameters" => [
                         "type" => "object",
                         "properties" => [
@@ -366,7 +366,7 @@ class WhatsappController extends Controller
                 $clave = $reserva?->apartamento?->claves ?? 'No asignada aún';
                 $clave2 = $reserva?->apartamento?->edificioRelacion->clave ?? 'No asignada aún';
 
-                $respuestaFinal = "La clave de acceso para la reserva #{$codigoReserva} es: *{$clave}* y la clave de acceso de la puerta de abajo es*{$clave2}*";
+                $respuestaFinal = "La clave de acceso para la reserva #{$codigoReserva} es: *{$clave}* y la clave de acceso de la puerta de abajo es*{$clave2}*. Le fecha de entrada es *{$reserva->fecha_entrada}* y la fecha de salida es *{$reserva->fecha_salida}*.";
 
                 // Enviar una segunda llamada a OpenAI para que construya la respuesta completa
                 $responseFinal = Http::withToken($apiKey)->post($endpoint, [
