@@ -96,7 +96,7 @@ class WhatsappController extends Controller
 
     public function procesarStatus(array $status)
     {
-        $mensaje = WhatsappMensaje::where('mensaje_id', $status['id'])->first(); // CAMBIO AQUÍ
+        $mensaje = WhatsappMensaje::where('recipient_id', $status['id'])->first(); // CAMBIO AQUÍ
 
         if ($mensaje) {
             // Guardar último estado
@@ -119,9 +119,12 @@ class WhatsappController extends Controller
                 'recipient_id' => $status['recipient_id'] ?? null,
                 'fecha_estado' => isset($status['timestamp']) ? Carbon::createFromTimestamp($status['timestamp']) : now(),
             ]);
+            return response()->json(['status' => 'ok', 'mensaje' => $mensaje]);
         } else {
             Log::warning("⚠️ No se encontró mensaje con recipient_id = {$status['id']} para guardar estado.");
         }
+        return response()->json(['status' => 'faile']);
+
     }
 
 
