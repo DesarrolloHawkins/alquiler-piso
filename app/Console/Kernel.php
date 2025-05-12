@@ -394,18 +394,40 @@ class Kernel extends ConsoleKernel
 
                         }
 
-                        if (
-                            strpos($reserva->cliente->email_secundario, 'booking') !== false ||
-                            strpos($reserva->cliente->email, 'booking') !== false
-                        ) {
-                            // El email contiene 'booking'
-                            // enviarEmail( $correo, $vista, $data, $asunto, $token, )
-                            $enviarEmail = $this->enviarEmail(
+                        // if (
+                        //     strpos($reserva->cliente->email_secundario, 'booking') !== false ||
+                        //     strpos($reserva->cliente->email, 'booking') !== false
+                        // ) {
+                        //     // El email contiene 'booking'
+                        //     // enviarEmail( $correo, $vista, $data, $asunto, $token, )
+                        //     $enviarEmail = $this->enviarEmail(
+                        //         $reserva->cliente->email_secundario,
+                        //         'emails.envioClavesEmail',
+                        //         $mensaje,
+                        //         'Hawkins Suite - Claves',
+                        //         $token = null
+                        //     );
+                        // }
+
+                         // Verificamos y enviamos al email secundario si no es null ni vacío
+                        if (!empty($reserva->cliente->email_secundario)) {
+                            $this->enviarEmail(
                                 $reserva->cliente->email_secundario,
                                 'emails.envioClavesEmail',
                                 $mensaje,
                                 'Hawkins Suite - Claves',
-                                $token = null
+                                null
+                            );
+                        }
+
+                        // Verificamos y enviamos al email principal si no es null ni vacío
+                        if (!empty($reserva->cliente->email)) {
+                            $this->enviarEmail(
+                                $reserva->cliente->email,
+                                'emails.envioClavesEmail',
+                                $mensaje,
+                                'Hawkins Suite - Claves',
+                                null
                             );
                         }
 
