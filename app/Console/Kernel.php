@@ -510,6 +510,33 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada Mensaje de despedida ejecutada con éxito.");
         })->everyMinute();
 
+        // // Tarea para revisar los mensajes de whatsapp
+        // $schedule->call(function () {
+        //     // Obtener los mensajes de WhatsApp
+        //     $mensajes = $this->obtenerMensajesWhatsapp();
+
+        //     foreach ($mensajes as $mensaje) {
+        //         $contenido = $mensaje['contenido'];
+
+        //         // Preparar el prompt para el modelo GPT-3
+        //         $prompt = "Analiza el siguiente mensaje y determina si es una queja o una avería: \"$contenido\"";
+
+        //         // Llamar al modelo GPT-3 para analizar el mensaje
+        //         $resultado = $this->analizarMensajeConGPT3($prompt);
+
+        //         if ($resultado === 'queja') {
+        //             Log::info("Mensaje identificado como queja: " . $contenido);
+        //             // Aquí puedes agregar lógica adicional para manejar quejas
+        //         } elseif ($resultado === 'avería') {
+        //             Log::info("Mensaje identificado como avería: " . $contenido);
+        //             // Aquí puedes agregar lógica adicional para manejar averías
+        //         } else {
+        //             Log::info("Mensaje no identificado claramente: " . $contenido);
+        //         }
+        //     }
+
+        // })->everyMinute();
+
     }
 
     /**
@@ -1659,7 +1686,7 @@ class Kernel extends ConsoleKernel
                 Hola '.$cliente.'!!
                 </p>
                 <p>
-                Te indico que la entrada debes realizarla después de las 14 horas
+                Te indico que la entrada debes realizarla después de las 15 horas
                 </p>
                 <p>
                     La ubicación de los apartamentos es: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9" >Ir a google map</a></p>
@@ -1742,7 +1769,7 @@ class Kernel extends ConsoleKernel
                     Hallo '.$cliente.'!!
                     </p>
                     <p>
-                    Bitte beachten Sie, dass der Check-in nach 14 Uhr möglich ist.
+                    Bitte beachten Sie, dass der Check-in nach 15 Uhr möglich ist.
                     </p>
                     <p>
                         Die Lage der Apartments ist: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Gehen Sie zu Google Map</a></p>
@@ -1773,7 +1800,7 @@ class Kernel extends ConsoleKernel
                         Olá '.$cliente.'!!
                         </p>
                         <p>
-                        Por favor, note que o check-in é após as 14 horas.
+                        Por favor, note que o check-in é após as 15:00 horas.
                         </p>
                         <p>
                             A localização dos apartamentos é: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Vá para o mapa do Google</a></p>
@@ -1804,7 +1831,7 @@ class Kernel extends ConsoleKernel
                             Ciao '.$cliente.'!!
                             </p>
                             <p>
-                            Ti ricordo che il check-in è possibile dopo le 14:00.
+                            Ti ricordo che il check-in è possibile dopo le 15:00.
                             </p>
                             <p>
                                 La posizione degli appartamenti è: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Vai su Google Map</a></p>
@@ -1836,7 +1863,7 @@ class Kernel extends ConsoleKernel
                     Hello '.$cliente.'!!
                     </p>
                     <p>
-                    Please note that check-in is after 2 PM.
+                    Please note that check-in is after 3 PM.
                     </p>
                     <p>
                         The location of the apartments is: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Go to google map</a></p>
