@@ -72,7 +72,7 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         // Miramos si el cliente ha entregado el DNI el dia de entrada
-        $schedule->call(function () {
+        $schedule->call(function (ClienteService $clienteService) {
             // Hoy
             $hoy = Carbon::now();
 
@@ -91,6 +91,9 @@ class Kernel extends ConsoleKernel
                                         ->first(); // Asegúrate de que 'first' esté escrito correctamente
                     if (!$mensaje) {
                         // Cliente
+                        $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
+                        $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
+
                         $cliente = $reserva->cliente;
                         // URL de DNI
                         $url = 'https://crm.apartamentosalgeciras.com/dni-user/'.$reserva->token;
@@ -116,6 +119,50 @@ class Kernel extends ConsoleKernel
                         ];
                         // Crear el mensaje
                         MensajeAuto::create($dataMensaje);
+
+
+                        if ($reserva->apartamento_id === 1) {
+                            $mensaje = $this->clavesEmailAtico(
+                                $idiomaCliente,
+                                $reserva->cliente->nombre,
+                                $reserva->apartamento->titulo,
+                                $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves
+                            );
+                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+
+                        }else {
+                            $mensaje = $this->clavesEmail(
+                                $idiomaCliente,
+                                $reserva->cliente->nombre,
+                                $reserva->apartamento->titulo,
+                                $reserva->apartamento->edificioName->clave,
+                                $reserva->apartamento->claves,
+                                $apartamentoReservado->edificio
+                            );
+                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+
+                        }
+                        if (!empty($reserva->cliente->email_secundario)) {
+                            $this->enviarEmail(
+                                $reserva->cliente->email_secundario,
+                                'emails.envioClavesEmail',
+                                $mensaje,
+                                'Hawkins Suite - Claves',
+                                null
+                            );
+                        }
+
+                        // Verificamos y enviamos al email principal si no es null ni vacío
+                        if (!empty($reserva->cliente->email)) {
+                            $this->enviarEmail(
+                                $reserva->cliente->email,
+                                'emails.envioClavesEmail',
+                                $mensaje,
+                                'Hawkins Suite - Claves',
+                                null
+                            );
+                        }
                     }
                 }
 
