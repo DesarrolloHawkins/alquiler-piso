@@ -283,6 +283,7 @@ class Kernel extends ConsoleKernel
 
                         // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
+
                         Storage::disk('local')->put('enviaMensaje'.$reserva->cliente_id.'.txt', $enviarMensaje );
 
                         // Data para guardar Mensaje enviado
