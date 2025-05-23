@@ -111,8 +111,8 @@ class ARIController extends Controller
         ])->post("{$this->apiUrl}/" . $urlVariable, ['values' => $updates]);
 
         if ($response->successful()) {
-            return [$response->json(), $updates];
-            //return redirect()->route('ari.index')->with('success', 'Actualización realizada con éxito.');
+            // return [$response->json(), $updates];
+            return redirect()->route('ari.index')->with('success', 'Actualización realizada con éxito.');
         }
 
         return redirect()->back()->withErrors(['error' => 'Error: ' . $response->body()])->withInput();
