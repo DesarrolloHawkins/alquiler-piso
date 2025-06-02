@@ -138,6 +138,29 @@ class WebhookController extends Controller
                 $reserva->estado_id = 4; // ID 4 es "Cancelado"
                 $reserva->save();
 
+                // === NUEVO BLOQUE: RESTABLECER DISPONIBILIDAD COMPLETA ===
+                $roomType = RoomType::find($reserva->room_type_id);
+                if ($roomType && $roomType->id_channex) {
+                    $start = Carbon::parse($reserva->fecha_entrada);
+                    $end = Carbon::parse($reserva->fecha_salida)->subDay(); // No incluir el checkout
+
+                    $values = [];
+                    for ($date = $start; $date->lte($end); $date->addDay()) {
+                        $values[] = [
+                            'property_id'   => $apartamento->id_channex,
+                            'room_type_id'  => $roomType->id_channex,
+                            'date'          => $date->toDateString(),
+                            'availability'  => 1,
+                        ];
+                    }
+
+                    Http::withHeaders([
+                        'user-api-key' => $this->apiToken,
+                    ])->post("{$this->apiUrl}/availability", [
+                        'values' => $values
+                    ]);
+                }
+                // Llamar a la función fullSync
                 return response()->json(['status' => true, 'message' => 'Reserva cancelada actualizada en el sistema']);
             } else {
                 return response()->json(['status' => false, 'message' => 'Reserva cancelada no encontrada en la base de datos']);
@@ -210,12 +233,12 @@ class WebhookController extends Controller
         $modelo = 'gpt-4o';
         $endpoint = 'https://api.openai.com/v1/chat/completions';
         $promptAsistente = PromptAsistente::first(); // o all()->first() si usas all()
-    
+
         $promptSystem = [
             "role" => "system",
             "content" => $promptAsistente ? $promptAsistente->prompt : "No hay prompt configurado aún."
         ];
-    
+
         // Guardar el mensaje del usuario
         ChatGpt::create([
             'id_mensaje' => $id,
@@ -225,7 +248,7 @@ class WebhookController extends Controller
             'status' => 0, // por 'respondido'
             'date' => now()
         ]);
-    
+
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
         $historial = ChatGpt::where('remitente', $remitente)
             ->orderBy('date', 'desc')
@@ -234,31 +257,31 @@ class WebhookController extends Controller
             ->reverse()
             ->flatMap(function ($chat) {
                 $mensajes = [];
-    
+
                 if (!empty($chat->mensaje)) {
                     $mensajes[] = [
                         "role" => "user",
                         "content" => $chat->mensaje,
                     ];
                 }
-    
+
                 if (!empty($chat->respuesta)) {
                     $mensajes[] = [
                         "role" => "assistant",
                         "content" => $chat->respuesta,
                     ];
                 }
-    
+
                 return $mensajes;
             })
             ->toArray();
-    
+
         // Añadir nuevo mensaje del usuario
         $historial[] = [
             "role" => "user",
             "content" => $nuevoMensaje,
         ];
-    
+
         // Unir con prompt
         $mensajes = array_merge([$promptSystem], $historial);
         // dd($nuevoMensaje);
@@ -269,14 +292,14 @@ class WebhookController extends Controller
                 'messages' => $mensajes,
                 'temperature' => 0.7,
             ]);
-    
+
         if ($response->failed()) {
             \Log::error('Error al enviar a OpenAI: ' . $response->body());
             return null;
         }
-    
+
         $respuestaTexto = $response->json('choices.0.message.content');
-    
+
         // Guardar la respuesta generada
         ChatGpt::where('remitente', $remitente)
             ->whereNull('respuesta')
@@ -286,7 +309,7 @@ class WebhookController extends Controller
                 'respuesta' => $respuestaTexto,
                 'status' => 1, // por 'respondido'
             ]);
-    
+
         return $respuestaTexto;
     }
     private function enviarRespuestaAChannex($mensaje, $bookingId)

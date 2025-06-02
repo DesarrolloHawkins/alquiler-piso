@@ -205,6 +205,7 @@ class ARIController extends Controller
         foreach ($apartamento->roomTypes as $roomType) {
 
             $reservas = Reserva::where('apartamento_id', $apartamento->id)
+                ->where('estado_id', '!=', 4)
                 ->where('room_type_id', $roomType->id)
                 ->where(function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('fecha_entrada', [$startDate, $endDate])
