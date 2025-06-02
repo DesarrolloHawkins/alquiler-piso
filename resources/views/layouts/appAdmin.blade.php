@@ -95,7 +95,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <!-- Sidebar -->
-                    <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark bg-color-primero px-4">
+                    <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark bg-color-primero px-4" style="z-index: 8000;">
                         <a class="navbar-brand" href="/">
                             <img src="{{ asset('logo-hawkins-suite_white.png') }}" alt="Logo" height="40">
                         </a>
