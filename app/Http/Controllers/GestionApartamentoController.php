@@ -65,31 +65,37 @@ class GestionApartamentoController extends Controller
      */
     public function create($id)
     {
-        $reserva = Reserva::find($id);
-        if (!$reserva) {
-            Alert::error('Error', 'Reserva no encontrada');
-            return redirect()->route('gestion.index');
-        }
 
         $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)
-            ->where('apartamento_id', $reserva->apartamento_id)
+            ->where('apartamento_id', explode(' - ', $id)[1])
             ->first();
+        $reserva = Reserva::find($id);
+            if ($reserva == null) {
+                $apartamentoId = explode(' - ', $id)[1];
+                $id = null;
+            } else {
+                $apartamentoId = $reserva->apartamento_id;
+            }
+            if ($apartamentoLimpio == null) {
+                $apartamentoLimpieza = ApartamentoLimpieza::create([
+                    'apartamento_id' => $apartamentoId,
+                    'fecha_comienzo' => Carbon::now(),
+                    'status_id' => 2,
+                    'reserva_id' => $id,
+                    'user_id' => Auth::user()->id
+                ]);
+                $apartamentoLimpieza->save();
+                if ($reserva != null) {
+                    $reserva->fecha_limpieza = Carbon::now();
+                    $reserva->save();
+                }
+            } else {
+                $apartamentoLimpieza = $apartamentoLimpio;
+            }
 
-        if ($apartamentoLimpio == null) {
-            $apartamentoLimpieza = ApartamentoLimpieza::create([
-                'apartamento_id' => $reserva->apartamento_id,
-                'fecha_comienzo' => Carbon::now(),
-                'status_id' => 2,
-                'reserva_id' => $id,
-                'user_id' => Auth::user()->id
-            ]);
-            $reserva->fecha_limpieza = Carbon::now();
-            $reserva->save();
-        } else {
-            $apartamentoLimpieza = $apartamentoLimpio;
-        }
 
-        $apartamentoId = $reserva->apartamento_id;
+
+
         $edificioId = Apartamento::find($apartamentoId)->edificio_id;
 
         $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();

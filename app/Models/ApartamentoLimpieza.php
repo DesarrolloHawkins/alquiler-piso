@@ -115,6 +115,27 @@ class ApartamentoLimpieza extends Model
     ];
 
     /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'fecha_comienzo' => 'datetime',
+        'fecha_fin' => 'datetime',
+    ];
+
+    /**
+     * The attributes that can be null.
+     *
+     * @var array
+     */
+    protected $nullable = [
+        'reserva_id',
+        'fecha_fin',
+        'observacion'
+    ];
+
+    /**
      * Mutaciones de fecha.
      *
      * @var array
@@ -134,11 +155,11 @@ class ApartamentoLimpieza extends Model
         return $this->belongsTo(Apartamento::class, 'apartamento_id');
     }
 
-    // Relación con Reserva
-    public function reserva()
-    {
-        return $this->belongsTo(Reserva::class, 'reserva_id');
-    }
+    // // Relación con Reserva
+    // public function reserva()
+    // {
+    //     return $this->belongsTo(Reserva::class, 'reserva_id');
+    // }
 
     // Relación con el estado de la limpieza
     public function estado()
@@ -155,10 +176,10 @@ class ApartamentoLimpieza extends Model
         return $this->belongsToMany(ItemChecklist::class, 'apartamento_item_checklist', 'apartamento_limpieza_id', 'item_checklist_id')
                     ->withPivot('status'); // Asumiendo que también estás almacenando un 'status' o cualquier otro dato adicional.
     }
-    
 
 
-    
+
+
     // Relación con fotos
     public function fotos()
     {
