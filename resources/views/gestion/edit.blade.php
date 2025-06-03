@@ -136,17 +136,16 @@
             const id = checkbox.data('id');
             const isChecked = checkbox.is(':checked');
             const limpiezaId = {{ $apartamentoLimpieza->id }};
-            {{ $reserva_id = $id }};
+
             $.ajax({
-                url: '{{ route("gestion.updateCheckbox", $reserva_id) }}',
+                url: '{{ route("gestion.updateCheckbox") }}',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
                     type: type,
                     id: id,
                     checked: isChecked ? 1 : 0,
-                    limpieza_id: limpiezaId,
-                    id_reserva: {{ $reserva_id }}
+                    limpieza_id: limpiezaId
                 },
                 success: function(response) {
                     if (response.success) {

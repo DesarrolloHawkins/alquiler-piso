@@ -434,7 +434,7 @@ Route::post('/gestion-update/{apartamentoLimpieza}', [App\Http\Controllers\Gesti
 Route::post('/gestion-finalizar/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizar'])->name('gestion.finalizar');
 Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
 Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
-Route::post('/gestion/update-checkbox/{id_reserva}', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
+Route::post('/gestion/update-checkbox', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
 
 // Fotos
 Route::get('/fotos-dormitorio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.dormitorio');

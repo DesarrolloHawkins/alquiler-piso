@@ -65,38 +65,50 @@ class GestionApartamentoController extends Controller
      */
     public function create($id)
     {
-        $reserva = Reserva::find($id);
-        if (!$reserva) {
-            Alert::error('Error', 'Reserva no encontrada');
-            return redirect()->route('gestion.index');
-        }
+        if (strpos($id, 'null') !== false) {
+            preg_match('/-?\d+/', $id, $matches);
+            $nuevoID = $matches[0];
+            $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $nuevoID)->first();
 
-        $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)
-            ->where('apartamento_id', $reserva->apartamento_id)
-            ->first();
+            if ($apartamentoLimpio == null) {
+                $apartamentoLimpieza = ApartamentoLimpieza::create([
+                    'apartamento_id' => $nuevoID,
+                    'fecha_comienzo' => Carbon::now(),
+                    'status_id' => 2,
+                    'reserva_id' => null,
+                    'user_id' => Auth::user()->id
+                ]);
 
-        if ($apartamentoLimpio == null) {
-            $apartamentoLimpieza = ApartamentoLimpieza::create([
-                'apartamento_id' => $reserva->apartamento_id,
-                'fecha_comienzo' => Carbon::now(),
-                'status_id' => 2,
-                'reserva_id' => $id,
-                'user_id' => Auth::user()->id
-            ]);
-            $reserva->fecha_limpieza = Carbon::now();
-            $reserva->save();
+            } else {
+                $apartamentoLimpieza = $apartamentoLimpio;
+            }
         } else {
-            $apartamentoLimpieza = $apartamentoLimpio;
-        }
+            $reserva = Reserva::find($id);
+            $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)->where('apartamento_id', $reserva->apartamento_id)->first();
 
-        $apartamentoId = $reserva->apartamento_id;
+                if ($apartamentoLimpio == null) {
+                    $apartamentoLimpieza = ApartamentoLimpieza::create([
+                        'apartamento_id' => $reserva->apartamento_id,
+                        'fecha_comienzo' => Carbon::now(),
+                        'status_id' => 2,
+                        'reserva_id' => $id,
+                        'user_id' => Auth::user()->id
+                    ]);
+                    $reserva->fecha_limpieza = Carbon::now();
+                    $reserva->save();
+                } else {
+                    $apartamentoLimpieza = $apartamentoLimpio;
+                }
+        }
+        $apartamentoId = Reserva::find($id)->apartamento_id;
         $edificioId = Apartamento::find($apartamentoId)->edificio_id;
 
         $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();
         $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
         $itemsExistentes = $item_check->pluck('estado', 'item_id')->toArray();
 
-        return view('gestion.edit', compact('apartamentoLimpieza', 'id', 'checklists', 'itemsExistentes'));
+        // $apartamento = Apartamento::find($id);
+        return view('gestion.edit', compact('apartamentoLimpieza','id', 'checklists', 'itemsExistentes'));
     }
 
     public function store(Request $request)
@@ -331,15 +343,7 @@ class GestionApartamentoController extends Controller
             $id = $request->input('id');
             $checked = $request->input('checked');
             $limpiezaId = $request->input('limpieza_id');
-
-            $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
-            if (!$apartamentoLimpieza) {
-                return response()->json(['success' => false, 'message' => 'Limpieza no encontrada'], 404);
-            }
-
-            // Siempre usar el reserva_id del registro padre
-            $idReserva = $apartamentoLimpieza->reserva_id;
-
+            $idReserva = ApartamentoLimpieza::find($limpiezaId)->reserva_id;
             if ($type === 'checklist') {
                 // Actualizar estado del checklist
                 $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
