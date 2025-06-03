@@ -90,7 +90,7 @@ class Reserva extends Model
         $hoy = Carbon::now()->toDateString(); // Asegurarse de obtener la fecha en formato adecuado
 
         // Obtener las reservas cuya fecha de salida es hoy y no tienen asignada fecha de limpieza
-        $reservasPendientes = self::whereNull('fecha_limpieza')->whereDate('fecha_salida', $hoy)->get();
+        $reservasPendientes = self::whereNull('fecha_limpieza')->where('estado_id', '!=', 4)->whereDate('fecha_salida', $hoy)->get();
 
         // Obtener las limpiezas de fondo programadas para hoy
         $limpiezasDeFondo = LimpiezaFondo::whereDate('fecha', $hoy)->get();
@@ -133,8 +133,11 @@ class Reserva extends Model
     public static function apartamentosOcupados()
     {
         $hoy = Carbon::now();
-        return self::whereDate('fecha_entrada','<=', $hoy)->get();
+        return self::whereDate('fecha_entrada','<=', $hoy)
+                ->where('estado_id', '!=', 4)
+                ->get();
     }
+
 
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
@@ -144,7 +147,9 @@ class Reserva extends Model
     public static function apartamentosSalida()
     {
         $manana = Carbon::now()->addDay();
-        return self::whereDate('fecha_salida', $manana)->get();
+        return self::whereDate('fecha_salida', $manana)
+                   ->where('estado_id', '!=', 4)
+                   ->get();
     }
 
     /**
@@ -155,15 +160,25 @@ class Reserva extends Model
     public static function apartamentosLimpiados()
     {
         $hoy = Carbon::now();
-        return self::whereDate('fecha_limpieza', $hoy)->get();
+        return self::whereDate('fecha_limpieza', $hoy)
+                ->where('estado_id', '!=', 4)
+                ->get();
     }
+
      // Aquí agregamos la función para obtener la siguiente reserva
      public function siguienteReserva()
      {
          return self::where('apartamento_id', $this->apartamento_id)
                     ->where('fecha_entrada', '>', $this->fecha_salida)
+                    ->where('estado_id', '!=', 4)
                     ->orderBy('fecha_entrada', 'asc')
                     ->first();
      }
+
+    public function scopeActivas($query)
+    {
+        return $query->where('estado_id', '!=', 4);
+    }
+
 }
 
