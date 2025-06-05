@@ -63,7 +63,7 @@ class GestionApartamentoController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create($id)
+    public function create_fondo($id)
     {
 
         $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)
@@ -104,6 +104,48 @@ class GestionApartamentoController extends Controller
 
         return view('gestion.edit', compact('apartamentoLimpieza', 'id', 'checklists', 'itemsExistentes'));
     }
+
+    public function create($id)
+    {
+        if (isset(explode(' - ', $id)[1])) {
+            return redirect()->route('gestion.create_fondo', $id);
+        } else {
+
+        $reserva = Reserva::find($id);
+        if (!$reserva) {
+            Alert::error('Error', 'Reserva no encontrada');
+            return redirect()->route('gestion.index');
+        }
+
+        $apartamentoLimpio = ApartamentoLimpieza::where('fecha_fin', null)
+            ->where('apartamento_id', $reserva->apartamento_id)
+            ->first();
+
+        if ($apartamentoLimpio == null) {
+            $apartamentoLimpieza = ApartamentoLimpieza::create([
+                'apartamento_id' => $reserva->apartamento_id,
+                'fecha_comienzo' => Carbon::now(),
+                'status_id' => 2,
+                'reserva_id' => $id,
+                'user_id' => Auth::user()->id
+            ]);
+            $reserva->fecha_limpieza = Carbon::now();
+            $reserva->save();
+        } else {
+            $apartamentoLimpieza = $apartamentoLimpio;
+        }
+        $apartamentoId = $reserva->apartamento_id;
+
+        $edificioId = Apartamento::find($apartamentoId)->edificio_id;
+
+        $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();
+        $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
+        $itemsExistentes = $item_check->pluck('estado', 'item_id')->toArray();
+
+        return view('gestion.edit', compact('apartamentoLimpieza', 'id', 'checklists', 'itemsExistentes'));
+    }
+    }
+
 
     public function store(Request $request)
     {

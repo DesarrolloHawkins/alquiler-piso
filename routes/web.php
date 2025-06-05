@@ -435,6 +435,7 @@ Route::post('/gestion-finalizar/{apartamentoLimpieza}', [App\Http\Controllers\Ge
 Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
 Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
 Route::post('/gestion/update-checkbox/', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
+Route::get('/gestion-create-fondo/{id}', [GestionApartamentoController::class, 'create_fondo'])->name('gestion.create_fondo');
 
 // Fotos
 Route::get('/fotos-dormitorio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.dormitorio');
