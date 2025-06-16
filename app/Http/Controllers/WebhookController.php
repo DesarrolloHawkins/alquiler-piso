@@ -168,17 +168,51 @@ class WebhookController extends Controller
         }
 
         // Si la reserva es nueva o confirmada, continuar con el flujo normal
-        $cliente = Cliente::firstOrCreate(
-            ['email' => $bookingData['customer']['mail']],
-            [
-                'alias' => $bookingData['customer']['name'] . ' ' . $bookingData['customer']['surname'],
-                'nombre' => $bookingData['customer']['name'],
-                'apellido1' => $bookingData['customer']['surname'],
-                'telefono' => $bookingData['customer']['phone'],
-                'direccion' => $bookingData['customer']['address'],
-                'nacionalidad' => $bookingData['customer']['country'],
-            ]
-        );
+        // $cliente = Cliente::firstOrCreate(
+        //     ['email' => $bookingData['customer']['mail']],
+        //     [
+        //         'alias' => $bookingData['customer']['name'] . ' ' . $bookingData['customer']['surname'],
+        //         'nombre' => $bookingData['customer']['name'],
+        //         'apellido1' => $bookingData['customer']['surname'],
+        //         'telefono' => $bookingData['customer']['phone'],
+        //         'direccion' => $bookingData['customer']['address'],
+        //         'nacionalidad' => $bookingData['customer']['country'],
+        //     ]
+        // );
+
+        $customer = $bookingData['customer'];
+
+        // Normaliza el teléfono eliminando espacios, guiones, etc.
+        $telefono = preg_replace('/\D/', '', $customer['phone']);
+
+        if (!empty($customer['mail'])) {
+            $cliente = Cliente::firstOrCreate(
+                ['email' => $customer['mail']],
+                [
+                    'alias' => $customer['name'] . ' ' . $customer['surname'],
+                    'nombre' => $customer['name'],
+                    'apellido1' => $customer['surname'],
+                    'telefono' => $telefono,
+                    'direccion' => $customer['address'],
+                    'nacionalidad' => $customer['country'],
+                ]
+            );
+        } else {
+            $cliente = Cliente::where('telefono', $telefono)->first();
+
+            if (!$cliente) {
+                $cliente = Cliente::create([
+                    'alias' => $customer['name'] . ' ' . $customer['surname'],
+                    'nombre' => $customer['name'],
+                    'apellido1' => $customer['surname'],
+                    'telefono' => $telefono,
+                    'direccion' => $customer['address'],
+                    'nacionalidad' => $customer['country'],
+                    'email' => null,
+                ]);
+            }
+        }
+
 
         foreach ($bookingData['rooms'] as $room) {
             $ratePlanId = $room['rate_plan_id'] ?? null;
@@ -199,7 +233,7 @@ class WebhookController extends Controller
                 'cliente_id' => $cliente->id,
                 'apartamento_id' => $apartamento->id,
                 'room_type_id' => $roomTypeId,
-                'origen' => 'Booking',
+                'origen' => $bookingData['ota_name'],
                 'fecha_entrada' => $room['checkin_date'],
                 'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                 'codigo_reserva' => $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'],
