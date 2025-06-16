@@ -310,6 +310,49 @@ class InvoicesController extends Controller
     }
 
     public function generateInvoicePDF($invoiceId)
+{
+    $invoice = Invoices::findOrFail($invoiceId);
+
+    $data = [
+        'title' => 'Factura ' . $invoice->reference,
+        'invoice' => $invoice,
+    ];
+
+    $conceptos = [];
+
+    if ($invoice->reserva_id) {
+        $reserva = Reserva::with(['apartamento', 'apartamento.edificioRelacion'])->find($invoice->reserva_id);
+
+        if ($reserva) {
+            $reserva->apartamento = $reserva->apartamento;
+            $reserva->edificio = $reserva->apartamento->edificio;
+            $conceptos[] = $reserva;
+        }
+
+    } elseif ($invoice->budget_id) {
+        $presupuesto = \App\Models\Presupuesto::with('conceptos')->find($invoice->budget_id);
+
+        foreach ($presupuesto->conceptos as $c) {
+            // Usamos el campo `concepto`, ya contiene: "Aparatas (Del ... al ... - X días)"
+            $conceptos[] = (object)[
+                'descripcion' => $c->concepto,
+                'precio' => $c->subtotal,
+            ];
+        }
+    }
+
+    $invoice['conceptos'] = $conceptos;
+
+    $fileName = 'factura_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $invoice->reference) . '.pdf';
+
+    $pdf = PDF::loadView('admin.invoices.previewPDF', compact('data', 'invoice', 'conceptos'));
+    $pdf->setPaper('A4', 'portrait');
+
+    return $pdf->download($fileName);
+}
+
+
+    public function generateInvoicePDF_OLD($invoiceId)
     {
         // Obtener la factura desde la base de datos
         $invoice = Invoices::findOrFail($invoiceId);

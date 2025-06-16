@@ -21,7 +21,7 @@ class Apartamento extends Model
         'id_web',
         'titulo',
         'claves',
-        'edificio',
+        // 'edificio',
         'edificio_id',
         'id_channex',
         'currency',
@@ -73,6 +73,10 @@ class Apartamento extends Model
     public function roomTypes()
     {
         return $this->hasMany(RoomType::class, 'property_id', 'id');
+    }
+    public function edificio()
+    {
+        return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
     }
 
 }

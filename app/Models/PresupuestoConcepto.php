@@ -10,14 +10,23 @@ class PresupuestoConcepto extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // protected $fillable = [
+    //     'presupuesto_id',
+    //     'concepto',
+    //     'fecha_entrada',
+    //     'fecha_salida',
+    //     'precio_por_dia',
+    //     'dias_totales',
+    //     'precio_total',
+    // ];
+
+
     protected $fillable = [
         'presupuesto_id',
         'concepto',
-        'fecha_entrada',
-        'fecha_salida',
-        'precio_por_dia',
-        'dias_totales',
-        'precio_total',
+        'precio',
+        'iva',
+        'subtotal',
     ];
 
     public function presupuesto()
@@ -34,6 +43,13 @@ class PresupuestoConcepto extends Model
         $this->precio_total = $this->dias_totales * $this->precio_por_dia;
     }
 
+    public function calcularTotal()
+    {
+        $this->total = $this->conceptos->sum('precio_total');
+        $this->save();
+    }
+
+
     /**
      * Calcula la cantidad de días entre la fecha de entrada y salida.
      */
@@ -42,6 +58,6 @@ class PresupuestoConcepto extends Model
         $fechaEntrada = \Carbon\Carbon::parse($this->fecha_entrada);
         $fechaSalida = \Carbon\Carbon::parse($this->fecha_salida);
 
-        return $fechaEntrada->diffInDays($fechaSalida);
+        return $fechaEntrada->diffInDays($fechaSalida) + 1;
     }
 }

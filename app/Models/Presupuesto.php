@@ -14,6 +14,8 @@ class Presupuesto extends Model
         'cliente_id',
         'descripcion',
         'total',
+        'fecha'
+
     ];
 
     public function conceptos()

@@ -114,9 +114,44 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if ($invoice->budget_id)
+                        @foreach($conceptos as $concept)
+                        <tr>
+                            <td>{{ $concept->descripcion }}</td>
+                            <td style="text-align: right;">—</td>
+                            <td style="text-align: right;">—</td>
+                            <td style="text-align: right;">1</td>
+                            <td style="text-align: right;">{{ number_format($concept->precio, 2) }} €</td>
+                            <td style="text-align: right;">—</td>
+                            <td style="text-align: right;">{{ number_format($concept->precio, 2) }} €</td>
+                        </tr>
+                        @endforeach
+                    @elseif ($invoice->reserva_id)
+                        @foreach($conceptos as $concept)
+                        <tr>
+                            <td>
+                                <strong>
+                                    {{ $concept->apartamento->titulo }}
+                                </strong>
+                            </td>
+                            <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
+                            <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
+                            <td style="text-align: right;">1</td>
+                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} €</td>
+                            <td style="text-align: right;">{{ $invoice->discount }}%</td>
+                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} €</td>
+                        </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="7" class="text-center">No hay conceptos disponibles.</td>
+                        </tr>
+                    @endif
+                    </tbody>
+
+                {{-- <tbody>
                     @if(!is_null($conceptos) && is_array(json_decode($conceptos)) || is_object(json_decode($conceptos)))
                         @foreach(json_decode($conceptos) as $concept)
-                        {{-- {{dd($concept)}} --}}
                         <tr>
                             <td><strong>{{ $concept->edificio->nombre .': '.$concept->apartamento->titulo }}</strong></td>
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
@@ -132,7 +167,7 @@
                             <td colspan="5" style="text-align: center;">No hay conceptos disponibles para esta factura.</td>
                         </tr>
                     @endif
-                </tbody>
+                </tbody> --}}
             </table>
         </div>
 

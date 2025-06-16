@@ -238,6 +238,11 @@
                     </tr>
                 </tbody>
             </table>
+            <div class="mb-3">
+                <label for="fecha" class="form-label">Fecha del presupuesto</label>
+                <input type="date" name="fecha" id="fecha" class="form-control" value="{{ old('fecha', \Carbon\Carbon::now()->toDateString()) }}">
+            </div>
+
             <button type="button" id="addConcepto" class="btn btn-primary btn-sm">Añadir Concepto</button>
             <div class="mt-3">
                 <button type="button" class="btn btn-secondary prev-step">Atrás</button>
@@ -250,6 +255,8 @@
             <h4>Paso 3: Revisión</h4>
             <p id="clienteSeleccionado"></p>
             <div id="conceptosResumen"></div>
+            <p id="resumenTotal" class="fw-bold fs-5"></p>
+
             <div class="mt-3">
                 <button type="button" class="btn btn-secondary prev-step">Atrás</button>
                 <button type="submit" class="btn btn-success">Finalizar</button>
@@ -288,6 +295,31 @@
         const steps = document.querySelectorAll('.step');
         let currentStep = 0;
 
+        function bindConceptoListeners(row) {
+            const entrada = row.querySelector('.fecha-entrada');
+            const salida = row.querySelector('.fecha-salida');
+            const precio = row.querySelector('.precio-por-dia');
+
+            [entrada, salida, precio].forEach(input => {
+                input.addEventListener('change', () => {
+                    const entradaVal = entrada.value;
+                    const salidaVal = salida.value;
+                    const precioVal = parseFloat(precio.value) || 0;
+
+                    if (entradaVal && salidaVal) {
+                        const start = new Date(entradaVal);
+                        const end = new Date(salidaVal);
+                        const dias = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                        const diasTotales = dias > 0 ? dias : 0;
+                        row.querySelector('.dias-totales').value = diasTotales;
+                        row.querySelector('.precio-total').value = (diasTotales * precioVal).toFixed(2);
+                    }
+
+                    actualizarTotalGeneral();
+                });
+            });
+        }
+
         function showStep(stepIndex) {
             steps.forEach((step, index) => {
                 step.classList.toggle('active', index === stepIndex);
@@ -310,6 +342,10 @@
 
         showStep(currentStep);
 
+        // Inicializa listeners en inputs iniciales
+        document.querySelectorAll('#conceptosTable tbody tr').forEach(tr => bindConceptoListeners(tr));
+
+
         document.getElementById('addConcepto').addEventListener('click', function () {
             const tbody = document.querySelector('#conceptosTable tbody');
             const index = tbody.children.length;
@@ -324,6 +360,8 @@
                 <td><button type="button" class="btn btn-danger btn-sm removeConcepto">Eliminar</button></td>
             `;
             tbody.appendChild(tr);
+            // Agregar eventos dinámicos
+            bindConceptoListeners(tr);
 
             tr.querySelector('.removeConcepto').addEventListener('click', function () {
                 tr.remove();
@@ -331,12 +369,76 @@
         });
 
         // Actualiza la información en el paso 3
-        document.querySelector('button[type="submit"]').addEventListener('click', function () {
+        document.querySelector('.next-step:last-of-type').addEventListener('click', function () {
             const cliente = document.querySelector('#cliente_id option:checked').textContent;
             document.getElementById('clienteSeleccionado').textContent = `Cliente: ${cliente}`;
-            const conceptosTable = document.querySelector('#conceptosTable').outerHTML;
-            document.getElementById('conceptosResumen').innerHTML = conceptosTable;
+
+            const conceptos = [];
+            document.querySelectorAll('#conceptosTable tbody tr').forEach(tr => {
+                const descripcion = tr.querySelector('[name*="[descripcion]"]').value;
+                const entrada = tr.querySelector('[name*="[fecha_entrada]"]').value;
+                const salida = tr.querySelector('[name*="[fecha_salida]"]').value;
+                const dias = tr.querySelector('.dias-totales').value;
+                const total = tr.querySelector('.precio-total').value;
+                conceptos.push({ descripcion, entrada, salida, dias, total });
+            });
+
+            let html = '<table class="table"><thead><tr><th>Descripción</th><th>Entrada</th><th>Salida</th><th>Días</th><th>Total</th></tr></thead><tbody>';
+            conceptos.forEach(c => {
+                html += `<tr>
+                    <td>${c.descripcion}</td>
+                    <td>${c.entrada}</td>
+                    <td>${c.salida}</td>
+                    <td>${c.dias}</td>
+                    <td>${c.total} €</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+
+            document.getElementById('conceptosResumen').innerHTML = html;
         });
+
+        function actualizarTotalGeneral() {
+            let total = 0;
+            document.querySelectorAll('.precio-total').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            const resumenTotal = document.getElementById('resumenTotal');
+            if (resumenTotal) resumenTotal.textContent = `Total: ${total.toFixed(2)} €`;
+        }
+        document.querySelectorAll('.next-step').forEach((btn, i, all) => {
+            if (i === all.length - 1) {
+                btn.addEventListener('click', function () {
+                    const cliente = document.querySelector('#cliente_id option:checked').textContent;
+                    document.getElementById('clienteSeleccionado').textContent = `Cliente: ${cliente}`;
+
+                    const conceptos = [];
+                    document.querySelectorAll('#conceptosTable tbody tr').forEach(tr => {
+                        const descripcion = tr.querySelector('[name*="[descripcion]"]').value;
+                        const entrada = tr.querySelector('[name*="[fecha_entrada]"]').value;
+                        const salida = tr.querySelector('[name*="[fecha_salida]"]').value;
+                        const dias = tr.querySelector('.dias-totales').value;
+                        const total = tr.querySelector('.precio-total').value;
+                        conceptos.push({ descripcion, entrada, salida, dias, total });
+                    });
+
+                    let html = '<table class="table"><thead><tr><th>Descripción</th><th>Entrada</th><th>Salida</th><th>Días</th><th>Total</th></tr></thead><tbody>';
+                    conceptos.forEach(c => {
+                        html += `<tr>
+                            <td>${c.descripcion}</td>
+                            <td>${c.entrada}</td>
+                            <td>${c.salida}</td>
+                            <td>${c.dias}</td>
+                            <td>${c.total} €</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+
+                    document.getElementById('conceptosResumen').innerHTML = html;
+                });
+            }
+        });
+
     });
 </script>
 

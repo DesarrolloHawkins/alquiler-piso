@@ -370,6 +370,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         Route::put('/{id}', [PresupuestoController::class, 'update'])->name('presupuestos.update');
         Route::delete('/{id}', [PresupuestoController::class, 'destroy'])->name('presupuestos.destroy');
     });
+    Route::post('presupuestos/{presupuesto}/facturar', [PresupuestoController::class, 'facturar'])
+    ->name('presupuestos.facturar');
 
     // admin.facturas.export
 });
