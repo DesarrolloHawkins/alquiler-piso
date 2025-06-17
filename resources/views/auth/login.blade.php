@@ -22,7 +22,7 @@
     <body class="bg-color-primero h-100">
         <div class="d-flex justify-content-start flex-column align-items-center h-100 pt-5">
             <div class="container">
-                <h4 class="text-center mb-2">Acceder al CRM de los apartamentos</h4>
+                <h4 class="text-center mb-2">Acceder a la gestión hotelera</h4>
                 <img src="{{asset('logo_hawkins_white_center.png')}}" alt="" class="img-fluid d-block m-auto" style="max-width: 250px;">
             </div>
             <div class="container px-4 mt-5">
