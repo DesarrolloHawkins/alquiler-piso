@@ -73,6 +73,18 @@ class DashboardController extends Controller
 
         // **Otros cálculos (ingresos, gráficos, etc.)**
         $countReservas = $reservas->count();
+        foreach ($reservas as $reserva) {
+            if (!is_numeric($reserva->precio)) {
+                dd([
+                    'id' => $reserva->id ?? 'Sin ID',
+                    'precio' => $reserva->precio,
+                    'tipo' => gettype($reserva->precio),
+                    'fecha_entrada' => $reserva->fecha_entrada,
+                    'fecha_salida' => $reserva->fecha_salida,
+                ]);
+            }
+        }
+
         $sumPrecio = $reservas->sum('precio');
 
         // **Ingresos y gastos**
