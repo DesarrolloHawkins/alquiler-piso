@@ -173,8 +173,11 @@ class ReservasController extends Controller
             'fecha_limpieza' => 'nullable|date'
         ]);
 
-        $reserva = new Reserva($request->all());
+        $input = $request->all();
+        $input['precio'] = floatval(str_replace(',', '.', preg_replace('/[^\d,\.]/', '', $input['precio'])));
+        $reserva = new Reserva($input);
         $reserva->save();
+
 
         // Llamar a la función para actualizar la disponibilidad en Channex
         $response = $this->updateChannexAvailability($reserva);
@@ -257,6 +260,7 @@ class ReservasController extends Controller
 
     // Buscar la reserva
     $reserva = Reserva::findOrFail($id);
+    $validated['precio'] = floatval(str_replace(',', '.', $validated['precio']));
 
     // Actualizar los campos
     $reserva->update([
