@@ -207,7 +207,7 @@
             <tr>
                 <td align="left" style="width: 50%;">
                     @if(\Carbon\Carbon::parse($invoice->created_at) >= \Carbon\Carbon::parse("2021/02/01"))
-                        BANKINTER: ES84 0128 0733 2001 0007 1396
+                        BANKINTER: ES10 0128 0733 2401 0007 9516
                     @else
                         Santander: ES81 0049 1672 4225 1004 9483
                     @endif
