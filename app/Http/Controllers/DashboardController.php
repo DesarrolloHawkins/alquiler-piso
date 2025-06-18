@@ -73,20 +73,10 @@ class DashboardController extends Controller
 
         // **Otros cálculos (ingresos, gráficos, etc.)**
         $countReservas = $reservas->count();
-        foreach ($reservas as $reserva) {
-            if (!is_numeric($reserva->precio)) {
-                dd([
-                    'id' => $reserva->id ?? 'Sin ID',
-                    'precio' => $reserva->precio,
-                    'tipo' => gettype($reserva->precio),
-                    'fecha_entrada' => $reserva->fecha_entrada,
-                    'fecha_salida' => $reserva->fecha_salida,
-                ]);
-            }
-        }
-
-        $sumPrecio = $reservas->sum('precio');
-
+        $sumPrecio = $reservas->sum(function ($reserva) {
+            $precio = str_replace(',', '.', $reserva->precio); // <- convierte coma a punto
+            return is_numeric($precio) ? floatval($precio) : 0;
+        });
         // **Ingresos y gastos**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
         $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
