@@ -237,10 +237,10 @@ class WebhookController extends Controller
                 'fecha_entrada' => $room['checkin_date'],
                 'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                 'codigo_reserva' => $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'],
-                'precio' => $room['amount'],
+                'precio' => floatval(str_replace(',', '.', $room['amount'])),
                 'numero_personas' => $room['occupancy']['adults'],
-                'neto' => $bookingData['amount'],
-                'comision' => $bookingData['ota_commission'],
+                'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
+                'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
                 'estado_id' => 1, // Nueva reserva
             ]);
         }
