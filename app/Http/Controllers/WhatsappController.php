@@ -547,13 +547,16 @@ class WhatsappController extends Controller
     // Vista de los mensajes
 public function whatsapp()
 {
-    // Obtener el ID del último mensaje por remitente
-    $ids = ChatGpt::selectRaw('MAX(id) as id')
+    // Obtener los IDs del último mensaje por cada remitente (excepto "guest")
+    $ids = ChatGpt::where('remitente', '!=', 'guest')
+        ->selectRaw('MAX(id) as id')
         ->groupBy('remitente')
         ->pluck('id');
 
     // Cargar solo esos mensajes
-    $mensajes = ChatGpt::whereIn('id', $ids)->orderBy('created_at', 'desc')->get();
+    $mensajes = ChatGpt::whereIn('id', $ids)
+        ->orderBy('created_at', 'desc')
+        ->get();
 
     $resultado = [];
     foreach ($mensajes as $mensaje) {
@@ -569,6 +572,7 @@ public function whatsapp()
 
     return view('whatsapp.index', compact('resultado'));
 }
+
 
 
 

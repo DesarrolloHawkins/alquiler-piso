@@ -412,141 +412,141 @@
         //     $('.col-md-8').css('transform', 'translateX(100%)');
         // });
 
-        // $( '.friend-drawer--onhover' ).on( 'click',  function() {
-        //     if ($(window).width() <= 768) {
-        //             $('.col-md-4.border-right').css('transform', 'translateX(-100%)');
-        //             $('.col-md-8').css('transform', 'translateX(0)');
-        //     }
-        //     var remitenteId = $(this).attr('data-id'); // Obtén el ID del remitente del atributo data-id.
-        //     var nombreRemitente = data[remitenteId][0]['nombre_remitente'];
-        //     // data.forEach(function(item){
-        //     //     item.remitente == remitenteId ? nombreRemitente = item.nombre_remitente : ''
-        //     // })
+        $( '.friend-drawer--onhover' ).on( 'click',  function() {
+            if ($(window).width() <= 768) {
+                    $('.col-md-4.border-right').css('transform', 'translateX(-100%)');
+                    $('.col-md-8').css('transform', 'translateX(0)');
+            }
+            var remitenteId = $(this).attr('data-id'); // Obtén el ID del remitente del atributo data-id.
+            var nombreRemitente = data[remitenteId][0]['nombre_remitente'];
+            // data.forEach(function(item){
+            //     item.remitente == remitenteId ? nombreRemitente = item.nombre_remitente : ''
+            // })
 
-        //     var template = `
-        //     <div class="settings-tray">
-        //         <div class="friend-drawer no-gutters friend-drawer--grey">
-        //             <button  onclick="volver()" class="back-to-sidebar">
-        //                 <i class="material-icons volver">arrow_back</i>
-        //             </button >
-        //             <img class="profile-image" src="https://media.istockphoto.com/id/1337144146/es/vector/vector-de-icono-de-perfil-de-avatar-predeterminado.jpg?s=612x612&w=0&k=20&c=YiNB64vwYQnKqp-bWd5mB_9QARD3tSpIosg-3kuQ_CI=" alt="">
-        //             <div class="text">
-        //                 <h6>${nombreRemitente}</h6>
-        //                 <small>${remitenteId}</small>
-        //                 <p style="display:none"class="text-muted">Layin' down the law since like before Christ...</p>
-        //             </div>
-        //         </div>
-        //     </div>
-        //     <div class="chat-panel" id="contenedorChat">`
-        //         // <span class="settings-tray--right">
-        //         //   <i class="material-icons">cached</i>
-        //         //   <i class="material-icons">message</i>
-        //         //   <i class="material-icons">menu</i>
-        //         // </span>
+            var template = `
+            <div class="settings-tray">
+                <div class="friend-drawer no-gutters friend-drawer--grey">
+                    <button  onclick="volver()" class="back-to-sidebar">
+                        <i class="material-icons volver">arrow_back</i>
+                    </button >
+                    <img class="profile-image" src="https://media.istockphoto.com/id/1337144146/es/vector/vector-de-icono-de-perfil-de-avatar-predeterminado.jpg?s=612x612&w=0&k=20&c=YiNB64vwYQnKqp-bWd5mB_9QARD3tSpIosg-3kuQ_CI=" alt="">
+                    <div class="text">
+                        <h6>${nombreRemitente}</h6>
+                        <small>${remitenteId}</small>
+                        <p style="display:none"class="text-muted">Layin' down the law since like before Christ...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-panel" id="contenedorChat">`
+                // <span class="settings-tray--right">
+                //   <i class="material-icons">cached</i>
+                //   <i class="material-icons">message</i>
+                //   <i class="material-icons">menu</i>
+                // </span>
 
-        //     var recorrer = data[$(this).attr('data-id')]
-        //     function unicodeToChar(text) {
-        //         return text.replace(/\\u[\dA-F]{4}/gi,
-        //                 function (match) {
-        //                     return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
-        //                 });
-        //     }
+            var recorrer = data[$(this).attr('data-id')]
+            function unicodeToChar(text) {
+                return text.replace(/\\u[\dA-F]{4}/gi,
+                        function (match) {
+                            return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                        });
+            }
 
-        //     var dataMensaje = [];
-
-
-        //     $('#chat-mensajes').empty()
-        //     $('#chat-mensajes').append(template).show()
-        //     // var dataMensaje = [];
-        //     // recorrer.sort(function(a, b){return b['created_at'] - a['created_at']})
-
-        //     const sortedActivities = recorrer.sort((a, b) => {
-        //       const date1 = new Date(a.created_at)
-        //       const date2 = new Date(b.created_at)
-
-        //       return date1 - date2;
-        //     })
-
-        //     // console.log(sortedActivities)
+            var dataMensaje = [];
 
 
-        //     Object.entries(sortedActivities).forEach(([key, value]) => {
-        //         console.log(value)
-        //         if(value.type == 'image'){
-        //             var templateChat = `
-        //                 <div class="row no-gutters">
-        //                     <div class="col-md-6">
-        //                         <div class="chat-bubble chat-bubble--left">
-        //                             <img src="{{ asset('/imagenesWhatsapp/${value.mensaje}.jpeg') }}" style="width: -webkit-fill-available;">
-        //                         </div>
-        //                     </div>
-        //                 </div>`
-        //         }else {
-        //             if (value.mensaje != null) {
-        //                 var templateChat = `
-        //                 <div class="row no-gutters">
-        //                     <div class="col-md-6">
-        //                         <div class="chat-bubble chat-bubble--left">
-        //                             ${value.mensaje}
-        //                             <p class="fecha_mensaje">
-        //                                 <small>
-        //                                 ${formatDate(value.created_at)}
-        //                             </small>
-        //                             </p>
-        //                         </div>
-        //                     </div>
-        //                 </div>`
-        //             }
+            $('#chat-mensajes').empty()
+            $('#chat-mensajes').append(template).show()
+            // var dataMensaje = [];
+            // recorrer.sort(function(a, b){return b['created_at'] - a['created_at']})
 
-        //         }
-        //         if (value.respuesta != null) {
-        //             var templateChatRespuesta = `
-        //             <div class="row no-gutters" style="justify-content: end;">
-        //                 <div class="col-md-6">
-        //                     <div class="chat-bubble2 chat-bubble2--right" >
-        //                         ${unicodeToChar(value.respuesta)}
-        //                         <p class="fecha_mensaje">
-        //                             <small>
-        //                             ${formatDate(value.created_at)}
-        //                             </small>
-        //                             <br>
-        //                             <span class="estado_mensaje">${renderEstado(value.whatsapp_mensaje?.estado)}</span>
-        //                         </p>
-        //                     </div>
-        //                 </div>
-        //             </div>`
-        //         }
+            const sortedActivities = recorrer.sort((a, b) => {
+              const date1 = new Date(a.created_at)
+              const date2 = new Date(b.created_at)
 
-        //         console.log(value.whatsapp_mensaje?.estado)
-        //         console.log(value)
-        //         dataMensaje.push(templateChat)
-        //         $('#contenedorChat').append(templateChat)
-        //         $('#contenedorChat').append(templateChatRespuesta)
-        //     })
+              return date1 - date2;
+            })
 
-        //     var templateFinal = `
-        //     </div>
-        //     </div>
-        //     <div class="chat-box-tray">
-        //         <textarea id="message-input" placeholder="Escribe un mensaje aquí..." class="form-control" rows="1" style="overflow:hidden;"></textarea>
-        //         <button  id="send-icon" class="border-0 bg-transparent"><i class="material-icons send-icon" style="cursor: pointer;">send</i></button>
-        //         <input type="file" id="image-upload" style="display: none;" accept="image/*">
-        //         <img id="image-preview" src="#" alt="Vista previa de la imagen" style="display: none;">
-        //     </div>`
+            // console.log(sortedActivities)
 
-        //     $('#contenedorChat').append(templateFinal)
 
-        //     // console.log(dataMensaje)
-        //     // console.log($(this).attr('data-id'))
-        //     // console.log(data['34622440984'])
+            Object.entries(sortedActivities).forEach(([key, value]) => {
+                console.log(value)
+                if(value.type == 'image'){
+                    var templateChat = `
+                        <div class="row no-gutters">
+                            <div class="col-md-6">
+                                <div class="chat-bubble chat-bubble--left">
+                                    <img src="{{ asset('/imagenesWhatsapp/${value.mensaje}.jpeg') }}" style="width: -webkit-fill-available;">
+                                </div>
+                            </div>
+                        </div>`
+                }else {
+                    if (value.mensaje != null) {
+                        var templateChat = `
+                        <div class="row no-gutters">
+                            <div class="col-md-6">
+                                <div class="chat-bubble chat-bubble--left">
+                                    ${value.mensaje}
+                                    <p class="fecha_mensaje">
+                                        <small>
+                                        ${formatDate(value.created_at)}
+                                    </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>`
+                    }
 
-        //     // $( '.chat-bubble' ).hide('slow').show('slow');
-        //     // Una vez que se han agregado los mensajes al contenedor del chat, haz scroll hasta el final.
-        //     var chatPanel = $('#contenedorChat'); // Selecciona el contenedor del chat.
-        //     var scrollHeight = chatPanel.prop('scrollHeight'); // Obtiene la altura total del contenedor, incluyendo el contenido no visible.
-        //     chatPanel.scrollTop(scrollHeight); // Establece la posición del scroll al final.
-        //     initializeDynamicTextarea();
-        // });
+                }
+                if (value.respuesta != null) {
+                    var templateChatRespuesta = `
+                    <div class="row no-gutters" style="justify-content: end;">
+                        <div class="col-md-6">
+                            <div class="chat-bubble2 chat-bubble2--right" >
+                                ${unicodeToChar(value.respuesta)}
+                                <p class="fecha_mensaje">
+                                    <small>
+                                    ${formatDate(value.created_at)}
+                                    </small>
+                                    <br>
+                                    <span class="estado_mensaje">${renderEstado(value.whatsapp_mensaje?.estado)}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>`
+                }
+
+                console.log(value.whatsapp_mensaje?.estado)
+                console.log(value)
+                dataMensaje.push(templateChat)
+                $('#contenedorChat').append(templateChat)
+                $('#contenedorChat').append(templateChatRespuesta)
+            })
+
+            var templateFinal = `
+            </div>
+            </div>
+            <div class="chat-box-tray">
+                <textarea id="message-input" placeholder="Escribe un mensaje aquí..." class="form-control" rows="1" style="overflow:hidden;"></textarea>
+                <button  id="send-icon" class="border-0 bg-transparent"><i class="material-icons send-icon" style="cursor: pointer;">send</i></button>
+                <input type="file" id="image-upload" style="display: none;" accept="image/*">
+                <img id="image-preview" src="#" alt="Vista previa de la imagen" style="display: none;">
+            </div>`
+
+            $('#contenedorChat').append(templateFinal)
+
+            // console.log(dataMensaje)
+            // console.log($(this).attr('data-id'))
+            // console.log(data['34622440984'])
+
+            // $( '.chat-bubble' ).hide('slow').show('slow');
+            // Una vez que se han agregado los mensajes al contenedor del chat, haz scroll hasta el final.
+            var chatPanel = $('#contenedorChat'); // Selecciona el contenedor del chat.
+            var scrollHeight = chatPanel.prop('scrollHeight'); // Obtiene la altura total del contenedor, incluyendo el contenido no visible.
+            chatPanel.scrollTop(scrollHeight); // Establece la posición del scroll al final.
+            initializeDynamicTextarea();
+        });
 
         $(document).ready(function() {
             // Manejar entrada en el campo de búsqueda
