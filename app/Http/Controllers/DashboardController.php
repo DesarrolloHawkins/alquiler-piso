@@ -39,8 +39,8 @@ class DashboardController extends Controller
         $fechaFin2 = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
 
         // **Calcular ocupación diaria**
-        $apartamentosDisponibles = Apartamento::whereNotNull('edificio')->count(); // Total apartamentos disponibles
-        $apartamentos = Apartamento::whereNotNull('edificio')->get(); // Total apartamentos disponibles
+        $apartamentosDisponibles = Apartamento::whereNotNull('id_channex')->count(); // Total apartamentos disponibles
+        $apartamentos = Apartamento::whereNotNull('id_channex')->get(); // Total apartamentos disponibles
         //$totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin) + 1); // Capacidad máxima
         // $totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin2) + 1);
         $nochesOcupadas = 0;
@@ -63,7 +63,7 @@ class DashboardController extends Controller
                 }
             });
         }
-
+        // dd($apartamentos);
         // **Calcular noches totales posibles basado en días y apartamentos disponibles**
         $totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin) + 1);
         // **Calcular porcentaje de ocupación**
