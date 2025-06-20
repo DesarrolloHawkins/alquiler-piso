@@ -545,7 +545,7 @@ class WhatsappController extends Controller
 
 
     // Vista de los mensajes
-   public function whatsapp()
+public function whatsapp()
 {
     // Obtener el ID del último mensaje por remitente
     $ids = ChatGpt::selectRaw('MAX(id) as id')
@@ -569,6 +569,7 @@ class WhatsappController extends Controller
 
     return view('whatsapp.index', compact('resultado'));
 }
+
 
 
     // En el mismo controlador
