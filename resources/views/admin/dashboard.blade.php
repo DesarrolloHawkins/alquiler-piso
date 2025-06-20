@@ -364,16 +364,31 @@
                     </thead>
                     <tbody>
                         @foreach($reservas as $reserva)
-                            <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
-                                <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
-                                <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
-                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
-                                <td>{{ number_format((float) str_replace(',', '.', $reserva->precio), 2) }} €</td>
-                                <td>{{ $reserva->numero_personas }}</td>
-                                <td>{{ $reserva->origen ?? 'No definido' }}</td>
-                            </tr>
-                        @endforeach
+    @php
+        $precioRaw = $reserva->precio;
+        $precioLimpio = str_replace(',', '.', $precioRaw);
+    @endphp
+
+    @if(!is_numeric($precioLimpio))
+        <tr style="background: #ffdddd;">
+            <td colspan="7">
+                ⚠️ <strong>Reserva con ID {{ $reserva->id }}</strong> tiene un valor no numérico en <code>precio</code>: 
+                <code>{{ var_export($precioRaw, true) }}</code>
+            </td>
+        </tr>
+    @endif
+
+    <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
+        <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
+        <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
+        <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
+        <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
+        <td>{{ is_numeric($precioLimpio) ? number_format((float)$precioLimpio, 2) . ' €' : '❌' }}</td>
+        <td>{{ $reserva->numero_personas }}</td>
+        <td>{{ $reserva->origen ?? 'No definido' }}</td>
+    </tr>
+@endforeach
+
                     </tbody>
                 </table>
             </div>
