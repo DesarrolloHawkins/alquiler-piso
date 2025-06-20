@@ -363,6 +363,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php
+    dd($reservas->pluck('precio'));
+@endphp
+
                         @foreach($reservas as $reserva)
     @php
         $precioRaw = $reserva->precio;
