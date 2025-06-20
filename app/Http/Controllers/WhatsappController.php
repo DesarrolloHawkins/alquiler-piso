@@ -545,28 +545,31 @@ class WhatsappController extends Controller
 
 
     // Vista de los mensajes
-    public function whatsapp()
-    {
-        // $mensajes = ChatGpt::orderBy('created_at', 'desc')->limit(10)->get();
-        $mensajes = ChatGpt::orderBy('created_at', 'desc')->get();
-        $resultado = [];
-        foreach ($mensajes as $elemento) {
-            $mensaje = $elemento;
-            $mensaje['whatsapp_mensaje'] = $mensaje->whatsappMensaje;
+   public function whatsapp()
+{
+    // Obtener el ID del último mensaje por remitente
+    $ids = ChatGpt::selectRaw('MAX(id) as id')
+        ->groupBy('remitente')
+        ->pluck('id');
 
-            // El resto igual:
-            $remitenteSinPrefijo = $elemento['remitente'];
-            $cliente = Cliente::where('telefono', '+'.$remitenteSinPrefijo)->first();
-            if ($cliente) {
-                $mensaje['nombre_remitente'] = $cliente->nombre != '' ? $cliente->nombre . ' ' . $cliente->apellido1 : $cliente->alias;
-            } else {
-                $mensaje['nombre_remitente'] = 'Desconocido';
-            }
+    // Cargar solo esos mensajes
+    $mensajes = ChatGpt::whereIn('id', $ids)->orderBy('created_at', 'desc')->get();
 
-            $resultado[$elemento['remitente']][] = $mensaje;
-        }
-        return view('whatsapp.index', compact('resultado'));
+    $resultado = [];
+    foreach ($mensajes as $mensaje) {
+        $mensaje['whatsapp_mensaje'] = $mensaje->whatsappMensaje;
+
+        $cliente = Cliente::where('telefono', '+'.$mensaje->remitente)->first();
+        $mensaje['nombre_remitente'] = $cliente
+            ? ($cliente->nombre !== '' ? $cliente->nombre . ' ' . $cliente->apellido1 : $cliente->alias)
+            : 'Desconocido';
+
+        $resultado[$mensaje->remitente][] = $mensaje;
     }
+
+    return view('whatsapp.index', compact('resultado'));
+}
+
 
     // En el mismo controlador
     public function mensajes($remitente)
