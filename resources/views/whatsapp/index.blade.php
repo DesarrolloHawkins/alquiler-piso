@@ -690,7 +690,19 @@
             let cargando = false;
 
             // Mostrar cabecera y contenedor
-            const header = `<div class="settings-tray">...</div>`;
+            const header = `<div class="settings-tray">
+                <div class="friend-drawer no-gutters friend-drawer--grey">
+                    <button  onclick="volver()" class="back-to-sidebar">
+                        <i class="material-icons volver">arrow_back</i>
+                    </button >
+                    <img class="profile-image" src="https://media.istockphoto.com/id/1337144146/es/vector/vector-de-icono-de-perfil-de-avatar-predeterminado.jpg?s=612x612&w=0&k=20&c=YiNB64vwYQnKqp-bWd5mB_9QARD3tSpIosg-3kuQ_CI=" alt="">
+                    <div class="text">
+                        <h6>${nombreRemitente}</h6>
+                        <small>${remitenteId}</small>
+                        <p style="display:none"class="text-muted">Layin' down the law since like before Christ...</p>
+                    </div>
+                </div>
+            </div>`;
             $('#chat-mensajes').html(header + `<div class="chat-panel" id="contenedorChat"></div>`).show();
 
             cargarMensajes(remitenteId);
