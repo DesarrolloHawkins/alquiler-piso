@@ -568,4 +568,23 @@ class WhatsappController extends Controller
         return view('whatsapp.index', compact('resultado'));
     }
 
+    // En el mismo controlador
+    public function mensajes($remitente)
+    {
+        $limit = request()->get('limit', 20); // Cantidad a cargar
+        $offset = request()->get('offset', 0); // Desde dónde empezar
+
+        $mensajes = ChatGpt::where('remitente', $remitente)
+            ->orderBy('created_at', 'asc')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        foreach ($mensajes as $mensaje) {
+            $mensaje['whatsapp_mensaje'] = $mensaje->whatsappMensaje;
+        }
+
+        return response()->json($mensajes);
+    }
+
 }

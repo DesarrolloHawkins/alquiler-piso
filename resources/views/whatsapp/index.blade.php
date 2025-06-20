@@ -669,6 +669,79 @@
             }
         }
 
+$('.friend-drawer--onhover').on('click', function () {
+    const remitenteId = $(this).data('id');
+    const nombreRemitente = data[remitenteId][0]['nombre_remitente'];
+
+    let offset = 0;
+    const limit = 20;
+    let cargando = false;
+
+    // Mostrar cabecera y contenedor
+    const header = `<div class="settings-tray">...</div>`;
+    $('#chat-mensajes').html(header + `<div class="chat-panel" id="contenedorChat"></div>`).show();
+
+    cargarMensajes(remitenteId);
+
+    function cargarMensajes(remitenteId) {
+        if (cargando) return;
+        cargando = true;
+
+        fetch(`/whatsapp/mensajes/${remitenteId}?limit=${limit}&offset=${offset}`)
+            .then(response => response.json())
+            .then(mensajes => {
+                mensajes.forEach(value => {
+                    // Renderizar mensaje y respuesta igual que hacías antes
+                    const mensajeHtml = renderMensaje(value);
+                    $('#contenedorChat').append(mensajeHtml);
+                });
+
+                offset += mensajes.length;
+                cargando = false;
+
+                if (mensajes.length === limit) {
+                    $('#contenedorChat').append(`<button id="loadMore" class="btn btn-sm btn-secondary btn-block mt-2">Cargar más</button>`);
+                }
+            });
+    }
+
+    $(document).on('click', '#loadMore', function () {
+        $(this).remove(); // Quita el botón antes de recargar
+        cargarMensajes(remitenteId);
+    });
+});
+function renderMensaje(value) {
+    const msgDate = formatDate(value.created_at);
+    const estado = renderEstado(value.whatsapp_mensaje?.estado || '');
+
+    let html = '';
+
+    if (value.mensaje) {
+        html += `
+            <div class="row no-gutters">
+                <div class="col-md-6">
+                    <div class="chat-bubble chat-bubble--left">
+                        ${value.mensaje}
+                        <p class="fecha_mensaje"><small>${msgDate}</small></p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    if (value.respuesta) {
+        html += `
+            <div class="row no-gutters" style="justify-content: end;">
+                <div class="col-md-6">
+                    <div class="chat-bubble2 chat-bubble2--right">
+                        ${value.respuesta}
+                        <p class="fecha_mensaje"><small>${msgDate}<br><span class="estado_mensaje">${estado}</span></small></p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    return html;
+}
 
     </script>
 </body>

@@ -18,6 +18,7 @@ use App\Http\Controllers\PresupuestoController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\MetalicoController;
 use App\Http\Controllers\CalendarioController;
+use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\WhatsappTemplateController;
 
 /*
@@ -38,6 +39,8 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('inicio.welcome');
+// routes/web.php
+Route::get('/whatsapp/mensajes/{remitente}', [WhatsappController::class, 'mensajes']);
 
 Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ics'])->name('calendario.ics');
 
