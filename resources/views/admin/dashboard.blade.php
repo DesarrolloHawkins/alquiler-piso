@@ -369,7 +369,7 @@
                                 <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
                                 <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
-                                <td>{{ number_format($reserva->precio, 2) }} €</td>
+                                <td>{{ number_format((float) str_replace(',', '.', $reserva->precio), 2) }} €</td>
                                 <td>{{ $reserva->numero_personas }}</td>
                                 <td>{{ $reserva->origen ?? 'No definido' }}</td>
                             </tr>
