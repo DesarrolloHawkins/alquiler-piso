@@ -242,7 +242,7 @@ class DNIController extends Controller
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
             if($reserva->dni_entregado == true){
-                return redirect(route('gracias.index', $cliente->idioma));
+                return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
             }
         }
 
