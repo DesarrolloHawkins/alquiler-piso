@@ -17,6 +17,15 @@
     </div>
     <form id="form" action="{{ route('apartamentos.admin.update', $apartamento->id) }}" method="POST" enctype="multipart/form-data" class="row">
         @csrf
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <h4 class="mb-0"><strong>Información General</strong></h4>
         <hr class="my-4">

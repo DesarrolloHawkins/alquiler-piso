@@ -16,7 +16,7 @@
         <button id="formGuardar" class="btn btn-guardar fs-5" type="submit"><i class="fa-regular fa-circle-check me-2"></i> Guardar</button>
     </div>
     <form id="form" action="{{ route('channex.storeProperty') }}" method="POST" enctype="multipart/form-data" class="row">
-        {{-- @if ($errors->any())
+        @if ($errors->any())
             <div class="alert alert-danger">
                 <ul>
                     @foreach ($errors->all() as $error)
@@ -24,7 +24,7 @@
                     @endforeach
                 </ul>
             </div>
-        @endif --}}
+        @endif
 
         @csrf
 
