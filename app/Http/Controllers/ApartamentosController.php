@@ -95,10 +95,10 @@ class ApartamentosController extends Controller
     public function storeAdmin(Request $request)
     {
         $rules = [
-                'nombre' => 'required|string|max:255',
-                'id_booking' => 'required|string|max:255',
-                'id_web' => 'required|string|max:255',
-                'titulo' => 'required|string|max:255',
+                // 'nombre' => 'required|string|max:255',
+                // 'id_booking' => 'required|string|max:255',
+                // 'id_web' => 'required|string|max:255',
+                // 'titulo' => 'required|string|max:255',
                 'claves' => 'required|string|max:255',
                 'edificio_id' => 'required'
         ];
