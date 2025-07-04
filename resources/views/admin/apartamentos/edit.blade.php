@@ -17,7 +17,6 @@
     </div>
     <form id="form" action="{{ route('apartamentos.admin.update', $apartamento->id) }}" method="POST" enctype="multipart/form-data" class="row">
         @csrf
-        @method('PUT')
 
         <h4 class="mb-0"><strong>Información General</strong></h4>
         <hr class="my-4">

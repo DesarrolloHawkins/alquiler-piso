@@ -171,7 +171,7 @@ class MovimientosController extends Controller
             $existingHash = DB::table('hash_movimientos')
                 ->where('hash', $hash)
                 ->first();
-
+            // dd($existingHash, $hash);
             if ($existingHash) {
                 continue; // Si ya existe el hash, saltar esta fila para evitar duplicados
             }

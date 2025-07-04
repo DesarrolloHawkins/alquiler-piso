@@ -168,6 +168,13 @@ class ApiController extends Controller
 
         return response()->json('Equipo de limpieza enviada', 200);
     }
+    /**
+     * Agregar compra reserva
+     */
+    public function agregarCompraReserva(Request $request)
+    {
+        
+    }
 
     public function mensajesPlantillaAverias($nombreManita, $apartamento, $edificio, $mensaje, $telefono, $telefonoManitas, $idioma = 'es'){
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
