@@ -64,34 +64,49 @@ class ApartamentosController extends Controller
         $edificios = Edificio::all();
         return view('admin.apartamentos.edit', compact('apartamento','edificios'));
     }
-
     public function updateAdmin(Request $request, $id)
     {
         $apartamento = Apartamento::findOrFail($id);
+
+        // Reglas de validación, puedes agregar más según sea necesario
         $rules = [
-                // 'nombre' => 'required|string|max:255',
-                // 'id_booking' => 'required|string|max:255',
-                // 'id_web' => 'required|string|max:255',
-                // 'titulo' => 'required|string|max:255',
-                'edificio_id' => 'required'
+            'edificio_id' => 'required|exists:edificios,id' // ejemplo de validación
         ];
 
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        //    dd($apartamento->titulo);
-        $apartamento->titulo = $request->input('titulo');
-        $apartamento->id_booking = $request->input('id_booking');
-        $apartamento->id_web = $request->input('id_web');
-        $apartamento->nombre = $request->input('nombre');
-        $apartamento->claves = $request['claves'];
-        $apartamento->edificio_id = $validatedData['edificio_id'];
-        $apartamento->save();
-       // Actualizar el cliente con los datos validados
-        //    $apartamento->update($validatedData);
 
-       // Redireccionar a una ruta de éxito o devolver una respuesta
-       return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
+        // Asignar solo si no vienen como null
+        if ($request->has('titulo')) {
+            $apartamento->titulo = $request->input('titulo');
+        }
+
+        if ($request->has('id_booking')) {
+            $apartamento->id_booking = $request->input('id_booking');
+        }
+
+        if ($request->has('id_web')) {
+            $apartamento->id_web = $request->input('id_web');
+        }
+
+        if ($request->has('nombre')) {
+            $apartamento->nombre = $request->input('nombre');
+        }
+
+        if ($request->has('claves')) {
+            $apartamento->claves = $request->input('claves');
+        }
+
+        // Actualizar solo si el edificio_id está presente
+        $apartamento->edificio_id = $validatedData['edificio_id'];
+
+        // Guardar los cambios
+        $apartamento->save();
+
+        // Redireccionar con mensaje de éxito
+        return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
     }
+
     public function storeAdmin(Request $request)
     {
         $rules = [
