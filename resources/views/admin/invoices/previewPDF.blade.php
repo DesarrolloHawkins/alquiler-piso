@@ -177,7 +177,9 @@
                     {{-- <th style="text-align:center">Bruto</th> --}}
                     <th style="text-align:center">Base</th>
                     <th style="text-align:center">Dto.</th>
-                    <th style="text-align:center">IVA - 10%</th>
+                    <th style="text-align:center">
+                        IVA - {{ $invoice->reserva_id === null ? '21%' : '10%' }}
+                    </th>
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
