@@ -63,7 +63,7 @@
                         <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
                     </td>
                     <td align="right" style="width: 50%;padding-right: 20px;">
-                        <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 .' '. $invoice->cliente->apellido1 }}</h3>
+                        <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 .' '. $invoice->cliente->apellido2 }}</h3>
                         {{-- @if ($invoice->cliente->nombre != null || $invoice->cliente->nombre != '')
                             {{$invoice->cliente->apellido1}}
                         @endif --}}
