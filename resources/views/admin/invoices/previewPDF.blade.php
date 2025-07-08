@@ -64,9 +64,9 @@
                     </td>
                     <td align="right" style="width: 50%;padding-right: 20px;">
                         <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 }}</h3>
-                        @if ($invoice->cliente->nombre != null || $invoice->cliente->nombre != '')
+                        {{-- @if ($invoice->cliente->nombre != null || $invoice->cliente->nombre != '')
                             {{$invoice->cliente->apellido1}}
-                        @endif
+                        @endif --}}
                         {{-- <p>{{ $invoice->cliente_direccion }}</p> --}}
                         {{-- <p>{{ $invoice->cliente_ciudad }} - {{ $invoice->cliente_cp }} ({{ $invoice->cliente_provincia }})</p> --}}
                         <p class="margin-bottom:10px">
