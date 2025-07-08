@@ -78,11 +78,11 @@
                         </p>
                         <p class="margin-bottom:10px">
                             <strong>DIRECCIÓN:</strong>
-                            <p class="margin-bottom:5px">{{ $invoice->cliente->direccion }}</p>
-                            <p class="margin-bottom:5px">{{ $invoice->cliente->localidad }}</p>
-                            <p class="margin-bottom:5px">{{ $invoice->cliente->codigo_postal }}</p>
-                            <p class="margin-bottom:5px">{{ $invoice->cliente->provincia }}</p>
-                            <p class="margin-bottom:5px">{{ $invoice->cliente->estado }}</p>
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->direccion }} - {{ $invoice->cliente->localidad }}</p>
+                            {{-- <p class="margin-bottom:5px">{{ $invoice->cliente->localidad }}</p> --}}
+                            <p class="margin-bottom:5px">{{ $invoice->cliente->codigo_postal }}- {{ $invoice->cliente->provincia }} - {{ $invoice->cliente->estado }}</p>
+                            {{-- <p class="margin-bottom:5px">{{ $invoice->cliente->provincia }}</p> --}}
+                            {{-- <p class="margin-bottom:5px">{{ $invoice->cliente->estado }}</p> --}}
                         </p>
                         <p class="margin-bottom:10px">
                             <strong>TELEFONO:</strong> {{ $invoice->cliente->telefono }}
