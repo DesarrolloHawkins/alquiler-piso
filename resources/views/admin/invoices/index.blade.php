@@ -254,7 +254,19 @@
                   @foreach ($facturas as $factura)
                       <tr>
                             <th scope="row">{{ $factura->reference }}</th>
-                            <td>{{ $factura->cliente->nombre == '' ? $factura->cliente->alias : $factura->cliente->nombre}}</td>
+                            <td>
+                                @php
+                                    $nombre = trim($factura->cliente->nombre ?? '');
+                                    $apellido1 = trim($factura->cliente->apellido1 ?? '');
+                                    $apellido2 = trim($factura->cliente->apellido2 ?? '');
+
+                                    if (!empty($nombre) || !empty($apellido1)) {
+                                        echo trim($nombre . ' ' . $apellido1 . ' ' . $apellido2);
+                                    } else {
+                                        echo $factura->cliente->alias ?? 'Sin información';
+                                    }
+                                @endphp
+                            </td>
                             <td>{{ $factura->cliente->num_identificacion ?? 'N/A' }}</td> <!-- Mostrar Número de Identificación -->
                             <td>{{ $factura->concepto }}</td>
                             <td>{{ $factura->reserva->fecha_entrada ?? 'N/A' }}</td> <!-- Mostrar Fecha de Entrada -->
