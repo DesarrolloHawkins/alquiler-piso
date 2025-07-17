@@ -1,1 +1,1 @@
-{"last_found_secrets": [{"match": "b3fe517955f38944379e3c8cbd392cddf3e620c201546cc0855b14b2e92ed0a9", "name": "Google API Key - c:\\Users\\desar\\Documents\\GitHub\\alquiler-piso\\resources\\views\\admin\\apartamentos\\create.blade.php"}]}
+{"last_found_secrets": [{"match": "a14a45f78b682147d5ac38f215e41bf088a0fad6ba26ef3dec9c5b92266970df", "name": "Generic High Entropy Secret - c:\\Users\\desar\\Documents\\GitHub\\alquiler-piso\\app\\Http\\Controllers\\ApartamentosController.php"}]}
