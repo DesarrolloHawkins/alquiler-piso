@@ -12,7 +12,7 @@
             <img src="https://apartamentosalgeciras.com/wp-content/uploads/2022/09/Logo-Hawkins-Suites.svg" alt="" class="img-fluid mb-3 w-50 m-auto">
         </div>
         <div class="col-sm-12">
-            
+
             <div class="card">
                 <div class="card-header bg-color-primero">
                     Rellene los datos con su DNI o Pasaporte
@@ -112,7 +112,7 @@
                 <img src="https://apartamentosalgeciras.com/wp-content/uploads/2022/09/Logo-Hawkins-Suites.svg" alt="" class="img-fluid mb-3 w-50 m-auto">
             </div>
             <div class="col-sm-12">
-                
+
                 <div class="card">
                     <div class="card-header bg-color-primero">
                         Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
@@ -136,7 +136,7 @@
                     </div>
                 </div>
             </div>
-        </div> 
+        </div>
     @endif
 
 
@@ -147,7 +147,7 @@
                 <img src="https://apartamentosalgeciras.com/wp-content/uploads/2022/09/Logo-Hawkins-Suites.svg" alt="" class="img-fluid mb-3 w-50 m-auto">
             </div>
             <div class="col-sm-12">
-                
+
                 <div class="card">
                     <div class="card-header bg-color-primero">
                         {{-- {{dd($textos)}} --}}
@@ -176,13 +176,13 @@
                                         @endif
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                name="nombre_{{$i}}" 
-                                                type="text" 
-                                                class="form-control" 
-                                                id="nombre_{{$i}}" 
-                                                placeholder="{{$textos['Nombre']}}" 
-                                                value="{{ $i == 0 || isset($data[$i]) ? $data[$i]->nombre : '' }}" 
+                                                <input
+                                                name="nombre_{{$i}}"
+                                                type="text"
+                                                class="form-control"
+                                                id="nombre_{{$i}}"
+                                                placeholder="{{$textos['Nombre']}}"
+                                                value="{{ $i == 0 || isset($data[$i]) ? $data[$i]->nombre : '' }}"
                                                 required>
                                                 <label for="nombre_{{$i}}">{{$textos['Nombre']}}</label>
                                                 <div class="valid-feedback">
@@ -194,16 +194,16 @@
                                                 @error('nombre_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                name="apellido1_{{$i}}" 
-                                                type="text" 
-                                                class="form-control" 
-                                                id="apellido1_{{$i}}"  
-                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->primer_apellido : (isset($data[$i]->apellido1) ? $data[$i]->apellido1 : '') }}" 
+                                                <input
+                                                name="apellido1_{{$i}}"
+                                                type="text"
+                                                class="form-control"
+                                                id="apellido1_{{$i}}"
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->primer_apellido : (isset($data[$i]->apellido1) ? $data[$i]->apellido1 : '') }}"
                                                 placeholder="{{$textos['Primer.Apellido']}}" required>
                                                 <label for="apellido1_{{$i}}">{{$textos['Primer.Apellido']}}</label>
                                                 <div class="valid-feedback">
@@ -215,17 +215,17 @@
                                                 @error('apellido1_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
-                                        
+
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                name="apellido2_{{$i}}" 
-                                                type="text" 
-                                                class="form-control" 
+                                                <input
+                                                name="apellido2_{{$i}}"
+                                                type="text"
+                                                class="form-control"
                                                 id="apellido2_{{$i}}"
-                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->segundo_apellido : (isset($data[$i]->apellido2) ? $data[$i]->apellido2 : '') }}"                                                 
+                                                value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->segundo_apellido : (isset($data[$i]->apellido2) ? $data[$i]->apellido2 : '') }}"
                                                 placeholder="{{$textos['Segundo.Apellido']}}">
                                                 <label for="apellido2_{{$i}}">{{$textos['Segundo.Apellido']}}</label>
                                                 <div class="valid-feedback">
@@ -237,19 +237,19 @@
                                                 @error('apellido2_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                name="fecha_nacimiento_{{$i}}" 
-                                                type="date" 
-                                                class="form-control" 
-                                                id="fecha_nacimiento_{{$i}}" 
+                                                <input
+                                                name="fecha_nacimiento_{{$i}}"
+                                                type="date"
+                                                class="form-control"
+                                                id="fecha_nacimiento_{{$i}}"
                                                 value="{{ isset($data[$i]) ? $data[$i]->fecha_nacimiento : '' }}"
-                                                placeholder="{{$textos['Fecha.Nacimiento']}}" 
-                                                aria-label="Fecha de Nacimiento" 
+                                                placeholder="{{$textos['Fecha.Nacimiento']}}"
+                                                aria-label="Fecha de Nacimiento"
                                                 required>
                                                 <label for="fecha_nacimiento_{{$i}}">{{$textos['Fecha.Nacimiento']}}</label>
                                                 <div class="valid-feedback">
@@ -261,17 +261,17 @@
                                                 @error('fecha_nacimiento_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3 ">
                                                 {{-- {{dd($nacionalidadComun)}} --}}
-                                                <select 
-                                                name="nacionalidad_{{$i}}" 
-                                                id="nacionalidad_{{$i}}" 
-                                                class="form-select js-example-basic-single{{$i}} nacionalidad" 
-                                                aria-label="Pais" 
+                                                <select
+                                                name="nacionalidad_{{$i}}"
+                                                id="nacionalidad_{{$i}}"
+                                                class="form-select js-example-basic-single{{$i}} nacionalidad"
+                                                aria-label="Pais"
                                                 placeholder="{{$textos['Pais']}}">
                                                     @foreach ($paises as $pais)
                                                         <option value="{{$pais}}"
@@ -299,18 +299,18 @@
                                                 @error('nacionalidad_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select required data-info="{{$i}}" name="tipo_documento_{{$i}}" id="tipo_documento_{{$i}}" class="form-select tiposDocumentos" aria-label="DNI o Pasaporte" placeholder="{{$textos['Tipo.Documento']}}">
                                                     <option value="{{null}}" selected>Seleccion el tipo</option>
-                                                    {{-- <option 
+                                                    {{-- <option
                                                     value="1"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '1') || old('tipo_documento_'.$i) == '1' ? 'selected' : '' }}
                                                      >{{$textos['Dni']}}</option>
-                                                    <option 
+                                                    <option
                                                     value="2"
                                                     {{ (isset($data[$i]) && $data[$i]->tipo_documento == '2') || old('tipo_documento_'.$i) == '2' ? 'selected' : '' }}
                                                      >{{$textos['Pasaporte']}}</option> --}}
@@ -328,18 +328,18 @@
                                                 @error('tipo_documento_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                    name="num_identificacion_{{$i}}" 
-                                                    type="text" 
-                                                    class="form-control" 
+                                                <input
+                                                    name="num_identificacion_{{$i}}"
+                                                    type="text"
+                                                    class="form-control"
                                                     id="num_identificacion_{{$i}}"
                                                     value="{{ isset($data[$i]) ? ($i == 0 ? $data[$i]->num_identificacion : $data[$i]->numero_identificacion) : '' }}"
-                                                    placeholder="{{$textos['Numero.Identificacion']}}" 
-                                                    aria-label="Numero Identificación" 
+                                                    placeholder="{{$textos['Numero.Identificacion']}}"
+                                                    aria-label="Numero Identificación"
                                                     required
                                                 >
                                                 <label for="num_identificacion_{{$i}}">
@@ -354,19 +354,19 @@
                                                 @error('num_identificacion_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                name="fecha_expedicion_doc_{{$i}}" 
-                                                type="date" 
-                                                class="form-control" 
-                                                id="fecha_expedicion_doc_{{$i}}" 
+                                                <input
+                                                name="fecha_expedicion_doc_{{$i}}"
+                                                type="date"
+                                                class="form-control"
+                                                id="fecha_expedicion_doc_{{$i}}"
                                                 value="{{ $i != 0 && isset($data[$i]) ? $data[$i]->fecha_expedicion : (isset($data[$i]->fecha_expedicion_doc) ? $data[$i]->fecha_expedicion_doc : '') }}"
-                                                placeholder="{{$textos['Fecha.Expedicion']}}" 
-                                                aria-label="Fecha de Expedición" 
+                                                placeholder="{{$textos['Fecha.Expedicion']}}"
+                                                aria-label="Fecha de Expedición"
                                                 required>
                                                 <label for="fecha_expedicion_doc_{{$i}}">{{$textos['Fecha.Expedicion']}}</label>
                                                 <div class="valid-feedback">
@@ -378,19 +378,19 @@
                                                 @error('fecha_expedicion_doc_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
                                                 <select name="sexo_{{$i}}" id="sexo_{{$i}}" class="form-select" aria-label="Sexo" placeholder="{{$textos['Sexo']}}" required>
-                                                    <option 
-                                                    value="Masculino" 
+                                                    <option
+                                                    value="Masculino"
                                                     {{ (isset($data[$i]) && $data[$i]->sexo == 'Masculino') || old('sexo_'.$i) == 'Masculino' ? 'selected' : '' }}
                                                     >{{$textos['Masculino']}}
                                                     </option>
-                                                    <option 
-                                                    value="Femenino" 
+                                                    <option
+                                                    value="Femenino"
                                                     {{ (isset($data[$i]) && $data[$i]->sexo == 'Femenino') || old('sexo_'.$i) == 'Femenino' ? 'selected' : '' }}
                                                     >
                                                     {{$textos['Femenino']}}
@@ -403,24 +403,24 @@
                                                 </div>
                                                 <div class="invalid-feedback">
                                                     {{$textos['sexo_obli']}}
-                                                    
+
                                                 </div>
                                                 @error('sexo_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
 
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
-                                                <input 
-                                                    name="email_{{$i}}" 
-                                                    type="text" 
-                                                    class="form-control" 
+                                                <input
+                                                    name="email_{{$i}}"
+                                                    type="text"
+                                                    class="form-control"
                                                     id="email_{{$i}}"
                                                     value="{{ isset($data[$i]) ? $data[$i]->email : '' }}"
-                                                    placeholder="{{$textos['Correo.Electronico']}}" 
-                                                    aria-label="Correo Electronico" 
+                                                    placeholder="{{$textos['Correo.Electronico']}}"
+                                                    aria-label="Correo Electronico"
                                                     required
                                                 >
                                                 <label for="email_{{$i}}">{{$textos['Correo.Electronico']}}</label>
@@ -433,7 +433,7 @@
                                                 @error('email_{{$i}}')
                                                     <div class="alert alert-danger">{{ $message }}</div>
                                                 @enderror
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="form-floating mb-3">
@@ -487,15 +487,15 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-                                            </div> 
+                                            </div>
                                         </div>
                                     </div>
-                                @endfor  
+                                @endfor
                                 <div class="mb-3">
                                     <button class="btn btn-terminar w-100">{{$textos['Enviar']}}</button>
-                                </div>  
-                            </form>    
-                        </div>    
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -614,7 +614,7 @@
         event.preventDefault()
         event.stopPropagation()
         }
-        var tipoDocumento = 
+        var tipoDocumento =
 
         form.classList.add('was-validated')
     }, false)
@@ -644,7 +644,7 @@
         };
         reader.readAsDataURL(event.target.files[0]);
     }
-   
+
     window.onload = function() {
         var reserva = @json($reserva);
         var data = @json($data);
@@ -693,28 +693,28 @@
     $(document).ready(function() {
         // $('.nacionalidad').select2(); // Asegura que Select2 esté inicializado
 
-        // Función para normalizar texto
-        function normalizeText(text) {
-            const texto = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return texto.trim().toUpperCase();
+        // Función para normalizar texto (quita tildes y pone en mayúsculas)
+        function normalizarTexto(texto) {
+            return texto
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toUpperCase();
         }
+
+        // Crear objeto de países normalizados
+        var paisesDni = @json($paisesDni);
+        var paisesDniNormalizado = {};
+        Object.keys(paisesDni).forEach(function(key) {
+            paisesDniNormalizado[normalizarTexto(key)] = paisesDni[key];
+        });
 
         // Función para manejar la lógica de selección y actualización de tipos de documento
         function handleNationalityChange(index) {
             var selectedValue = $('.nacionalidad').eq(index).val();
-            var normalizedValue = (selectedValue === "España") ? selectedValue.toUpperCase() : normalizeText(selectedValue);
-
-            //console.log("Valor seleccionado:", normalizedValue);
+            var normalizedValue = normalizarTexto(selectedValue);
 
             var opciones = @json($optionesTipo);
-            //console.log("Opciones del país:", opciones);
-
-            var paisesDni = @json($paisesDni);
-            //console.log("Paises del país:", paisesDni);
-
-            var countryInfo = paisesDni[normalizedValue];
-
-            //console.log("Información del país:", countryInfo);
+            var countryInfo = paisesDniNormalizado[normalizedValue];
 
             if (countryInfo) {
                 let indices;
@@ -727,7 +727,6 @@
                 } else {
                     indices = [0, 1, 2];
                 }
-                //console.log(nuevasOpciones)
                 indices.forEach(i => {
                     nuevasOpciones.push(opciones[i]);
                 });
@@ -757,7 +756,7 @@
 
     });
 
-    // 
+    //
 
     function handleFileUpload(event, index) {
         const file = event.target.files[0];
@@ -771,7 +770,7 @@
             // Crear un FormData y añadir la imagen redimensionada
             let formData = new FormData();
             formData.append('image', resizedBlob, file.name);
-            
+
             // Mostrar vista previa de la imagen redimensionada
             let url = URL.createObjectURL(resizedBlob);
             $('#image-preview_' + index).attr('src', url);
@@ -791,7 +790,7 @@
             img.onload = function () {
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');
-                
+
                 let width = img.width;
                 let height = img.height;
 
@@ -809,7 +808,7 @@
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-                
+
                 canvas.toBlob(callback, 'image/jpeg', 0.7); // Ajusta la calidad de la imagen según necesites
             };
             img.src = e.target.result;
