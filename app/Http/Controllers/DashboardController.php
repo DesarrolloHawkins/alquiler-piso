@@ -299,59 +299,48 @@ class DashboardController extends Controller
         $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
         $categoriasGastos = CategoriaGastos::all();
 
-        // **Estadísticas por meses - Últimos 12 meses**
-        $meses = [];
-        $reservasPorMes = [];
-        $beneficiosPorMes = [];
+        // **Estadísticas por meses - Comparativa año actual vs año anterior**
+        $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $reservasAnioActual = [];
+        $reservasAnioAnterior = [];
+        $beneficiosAnioActual = [];
+        $beneficiosAnioAnterior = [];
 
-        // Debug temporal para ver qué tipo de datos tiene precio
-        $debugReserva = Reserva::where('estado_id', '!=', 4)->first();
-        if ($debugReserva) {
-            Log::info('Tipo de precio: ' . gettype($debugReserva->precio));
-            Log::info('Valor de precio: ' . var_export($debugReserva->precio, true));
-        }
+        $anioActual = Carbon::now()->year;
+        $anioAnterior = $anioActual - 1;
 
-        for ($i = 11; $i >= 0; $i--) {
-            $fecha = Carbon::now()->subMonths($i);
-            $mesNombre = $fecha->format('M Y');
-            $meses[] = $mesNombre;
-
-            // Reservas por mes
-            $reservasMes = Reserva::where('estado_id', '!=', 4)
-                ->whereYear('fecha_entrada', $fecha->year)
-                ->whereMonth('fecha_entrada', $fecha->month)
+        for ($mes = 1; $mes <= 12; $mes++) {
+            // Reservas año actual
+            $reservasMesActual = Reserva::where('estado_id', '!=', 4)
+                ->whereYear('fecha_entrada', $anioActual)
+                ->whereMonth('fecha_entrada', $mes)
                 ->count();
-            $reservasPorMes[] = $reservasMes;
+            $reservasAnioActual[] = $reservasMesActual;
 
-            // Beneficio por mes (facturación - gastos)
-            $facturacionMes = Reserva::where('estado_id', '!=', 4)
-                ->whereYear('fecha_entrada', $fecha->year)
-                ->whereMonth('fecha_entrada', $fecha->month)
-                ->get()
-                ->sum(function ($reserva) {
-                    // Verificar que precio sea un string o número válido
-                    $precio = $reserva->precio;
+            // Reservas año anterior
+            $reservasMesAnterior = Reserva::where('estado_id', '!=', 4)
+                ->whereYear('fecha_entrada', $anioAnterior)
+                ->whereMonth('fecha_entrada', $mes)
+                ->count();
+            $reservasAnioAnterior[] = $reservasMesAnterior;
 
-                    // Si es un closure, retornar 0
-                    if ($precio instanceof \Closure) {
-                        return 0;
-                    }
-
-                    if (is_string($precio)) {
-                        $precio = str_replace(',', '.', $precio);
-                        return is_numeric($precio) ? floatval($precio) : 0;
-                    } elseif (is_numeric($precio)) {
-                        return floatval($precio);
-                    } else {
-                        return 0;
-                    }
-                });
-
-            $gastosMes = abs(Gastos::whereYear('date', $fecha->year)
-                ->whereMonth('date', $fecha->month)
+            // Beneficio año actual
+            $ingresosMesActual = Ingresos::whereYear('date', $anioActual)
+                ->whereMonth('date', $mes)
+                ->sum('quantity');
+            $gastosMesActual = abs(Gastos::whereYear('date', $anioActual)
+                ->whereMonth('date', $mes)
                 ->sum('quantity'));
+            $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
-            $beneficiosPorMes[] = $facturacionMes - $gastosMes;
+            // Beneficio año anterior
+            $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)
+                ->whereMonth('date', $mes)
+                ->sum('quantity');
+            $gastosMesAnterior = abs(Gastos::whereYear('date', $anioAnterior)
+                ->whereMonth('date', $mes)
+                ->sum('quantity'));
+            $beneficiosAnioAnterior[] = $ingresosMesAnterior - $gastosMesAnterior;
         }
 
         return view('admin.dashboard', compact(

@@ -168,7 +168,7 @@
                             <h4 class="text-start mb-0 fs-6">Beneficio</h4>
                         </div>
                         <div class="col-6">
-                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecio - $gastos, 2) }} €</strong></h2>
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
@@ -294,7 +294,7 @@
         <div class="col-md-6 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <h2 class="text-center">Beneficio por Mes</h2>
+                    <h2 class="text-center">Beneficio por Mes (Ingresos - Gastos)</h2>
                     <div id="chartBeneficioPorMes"></div>
                 </div>
             </div>
@@ -1475,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
             title: {
-                text: 'Evolución del Beneficio por Mes',
+                text: 'Evolución del Beneficio por Mes (Ingresos - Gastos)',
                 align: 'center',
                 style: {
                     fontSize: '16px',
