@@ -69,7 +69,7 @@
                                                     <div class="fw-bold " data-id="{{$reservaPendiente->id}}">{{$reservaPendiente->apartamento->titulo}}</div>
                                                     {{-- <div class="fw-bold">{{$reservaPendiente->id}} - {{$reservaPendiente->apartamento->nombre}} - {{$reservaPendiente->origen}}</div> --}}
                                                     {{-- Fecha Salida: {{$reservaPendiente->fecha_salida}} --}}
-                                                    @if ($reservaPendiente->siguienteReserv != null)
+                                                    @if ($reservaPendiente->siguienteReserva != null)
                                                         @if ($reservaPendiente->siguienteReserva->numero_personas != null)
                                                             @if (isset($reservaPendiente->limpieza_fondo))
                                                                 Limpieza a fondo
@@ -79,20 +79,20 @@
                                                         @else
                                                             @if (isset($reservaPendiente->limpieza_fondo))
                                                                 Limpieza a fondo
-                                                            @else 
+                                                            @else
                                                                 No tenemos información de la siguiente reserva
                                                             @endif
                                                         @endif
                                                     @else
                                                         @if (isset($reservaPendiente->limpieza_fondo))
                                                             Limpieza a fondo
-                                                        @else 
+                                                        @else
                                                             No tenemos información de la siguiente reserva
                                                         @endif
                                                     @endif
                                                 </div>
                                             </a>
-    
+
                                             {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                         @endforeach
                                     </ol>
@@ -123,7 +123,7 @@
                                                     Fecha Comienzo: {{$reservaEnLimpieza->fecha_comienzo}}
                                                 </div>
                                             </a>
-    
+
                                             {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                         @endforeach
                                     </ol>
@@ -155,7 +155,7 @@
                                                     Fecha Salida: @if(isset($reservaLimpieza->origenReserva->fecha_salida)) {{$reservaLimpieza->origenReserva->fecha_salida}} @endif
                                                 </div>
                                             </a>
-    
+
                                             {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                         @endforeach
                                     </ol>
@@ -185,7 +185,7 @@
                                             <div class="fw-bold">{{$reservaSalida->id }} - {{ $reservaSalida->apartamento->nombre}}</div>
                                             Fecha Salida: {{$reservaSalida->fecha_salida}}
                                         </div>
-    
+
                                             {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
                                         @endforeach
                                     </ol>
@@ -197,7 +197,7 @@
                         </div>
                     </div>
                 </div>
-    
+
             </div>
         </div>
     </div>

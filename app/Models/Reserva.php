@@ -168,11 +168,10 @@ class Reserva extends Model
      // Aquí agregamos la función para obtener la siguiente reserva
      public function siguienteReserva()
      {
-         return self::where('apartamento_id', $this->apartamento_id)
+         return $this->hasOne(Reserva::class, 'apartamento_id', 'apartamento_id')
                     ->where('fecha_entrada', '>', $this->fecha_salida)
                     ->where('estado_id', '!=', 4)
-                    ->orderBy('fecha_entrada', 'asc')
-                    ->first();
+                    ->orderBy('fecha_entrada', 'asc');
      }
 
     public function scopeActivas($query)
