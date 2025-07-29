@@ -283,6 +283,22 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="text-center">Número de Reservas por Mes</h2>
+                    <div id="chartReservasPorMes"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="text-center">Beneficio por Mes</h2>
+                    <div id="chartBeneficioPorMes"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -363,7 +379,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        
+
                         @foreach($reservas as $reserva)
                             <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
                                 <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
@@ -1318,6 +1334,157 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         var chart = new ApexCharts(document.querySelector("#chartGastos"), options);
+        chart.render();
+    });
+
+    // Gráfico de Reservas por Mes
+    document.addEventListener('DOMContentLoaded', function () {
+        var options = {
+            series: [{
+                name: 'Reservas',
+                data: @json($reservasPorMes)
+            }],
+            chart: {
+                type: 'line',
+                height: 350,
+                zoom: {
+                    enabled: false
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return val;
+                },
+                style: {
+                    fontSize: '12px',
+                    colors: ['#304758']
+                }
+            },
+            stroke: {
+                curve: 'straight',
+                width: 3
+            },
+            colors: ['#008FFB'],
+            xaxis: {
+                categories: @json($meses),
+                labels: {
+                    style: {
+                        fontSize: '12px'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Número de Reservas'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return Math.round(val);
+                    }
+                }
+            },
+            grid: {
+                row: {
+                    colors: ['#f3f3f3', 'transparent'],
+                    opacity: 0.5
+                }
+            },
+            title: {
+                text: 'Evolución de Reservas por Mes',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartReservasPorMes"), options);
+        chart.render();
+    });
+
+    // Gráfico de Beneficio por Mes
+    document.addEventListener('DOMContentLoaded', function () {
+        var options = {
+            series: [{
+                name: 'Beneficio',
+                data: @json($beneficiosPorMes)
+            }],
+            chart: {
+                type: 'area',
+                height: 350,
+                zoom: {
+                    enabled: false
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return val.toLocaleString('es-ES', {
+                        style: 'currency',
+                        currency: 'EUR',
+                        minimumFractionDigits: 0
+                    });
+                },
+                style: {
+                    fontSize: '11px',
+                    colors: ['#304758']
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.9,
+                    stops: [0, 90, 100]
+                }
+            },
+            colors: ['#00E396'],
+            xaxis: {
+                categories: @json($meses),
+                labels: {
+                    style: {
+                        fontSize: '12px'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Beneficio (€)'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return val.toLocaleString('es-ES', {
+                            style: 'currency',
+                            currency: 'EUR',
+                            minimumFractionDigits: 0
+                        });
+                    }
+                }
+            },
+            grid: {
+                row: {
+                    colors: ['#f3f3f3', 'transparent'],
+                    opacity: 0.5
+                }
+            },
+            title: {
+                text: 'Evolución del Beneficio por Mes',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartBeneficioPorMes"), options);
         chart.render();
     });
 </script>

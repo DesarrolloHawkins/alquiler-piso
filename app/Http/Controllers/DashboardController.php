@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -74,8 +75,22 @@ class DashboardController extends Controller
         // **Otros cálculos (ingresos, gráficos, etc.)**
         $countReservas = $reservas->count();
         $sumPrecio = $reservas->sum(function ($reserva) {
-            $precio = str_replace(',', '.', $reserva->precio); // <- convierte coma a punto
-            return is_numeric($precio) ? floatval($precio) : 0;
+            // Verificar que precio sea un string o número válido
+            $precio = $reserva->precio;
+
+            // Si es un closure, retornar 0
+            if ($precio instanceof \Closure) {
+                return 0;
+            }
+
+            if (is_string($precio)) {
+                $precio = str_replace(',', '.', $precio);
+                return is_numeric($precio) ? floatval($precio) : 0;
+            } elseif (is_numeric($precio)) {
+                return floatval($precio);
+            } else {
+                return 0;
+            }
         });
         // **Ingresos y gastos**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
@@ -284,6 +299,61 @@ class DashboardController extends Controller
         $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
         $categoriasGastos = CategoriaGastos::all();
 
+        // **Estadísticas por meses - Últimos 12 meses**
+        $meses = [];
+        $reservasPorMes = [];
+        $beneficiosPorMes = [];
+
+        // Debug temporal para ver qué tipo de datos tiene precio
+        $debugReserva = Reserva::where('estado_id', '!=', 4)->first();
+        if ($debugReserva) {
+            Log::info('Tipo de precio: ' . gettype($debugReserva->precio));
+            Log::info('Valor de precio: ' . var_export($debugReserva->precio, true));
+        }
+
+        for ($i = 11; $i >= 0; $i--) {
+            $fecha = Carbon::now()->subMonths($i);
+            $mesNombre = $fecha->format('M Y');
+            $meses[] = $mesNombre;
+
+            // Reservas por mes
+            $reservasMes = Reserva::where('estado_id', '!=', 4)
+                ->whereYear('fecha_entrada', $fecha->year)
+                ->whereMonth('fecha_entrada', $fecha->month)
+                ->count();
+            $reservasPorMes[] = $reservasMes;
+
+            // Beneficio por mes (facturación - gastos)
+            $facturacionMes = Reserva::where('estado_id', '!=', 4)
+                ->whereYear('fecha_entrada', $fecha->year)
+                ->whereMonth('fecha_entrada', $fecha->month)
+                ->get()
+                ->sum(function ($reserva) {
+                    // Verificar que precio sea un string o número válido
+                    $precio = $reserva->precio;
+
+                    // Si es un closure, retornar 0
+                    if ($precio instanceof \Closure) {
+                        return 0;
+                    }
+
+                    if (is_string($precio)) {
+                        $precio = str_replace(',', '.', $precio);
+                        return is_numeric($precio) ? floatval($precio) : 0;
+                    } elseif (is_numeric($precio)) {
+                        return floatval($precio);
+                    } else {
+                        return 0;
+                    }
+                });
+
+            $gastosMes = abs(Gastos::whereYear('date', $fecha->year)
+                ->whereMonth('date', $fecha->month)
+                ->sum('quantity'));
+
+            $beneficiosPorMes[] = $facturacionMes - $gastosMes;
+        }
+
         return view('admin.dashboard', compact(
             'countReservas',
             'sumPrecio',
@@ -312,10 +382,10 @@ class DashboardController extends Controller
             'ingresosLista',
             'gastosLista',
             'categoriasGastos',
-            'reservas' // ← ¡Añádelo aquí!
-
-            // 'diasDelMes',
-            // 'apartamentosDisponibles'
+            'reservas',
+            'meses',
+            'reservasPorMes',
+            'beneficiosPorMes'
         ));
     }
 
