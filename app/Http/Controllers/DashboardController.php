@@ -373,8 +373,12 @@ class DashboardController extends Controller
             'categoriasGastos',
             'reservas',
             'meses',
-            'reservasPorMes',
-            'beneficiosPorMes'
+            'reservasAnioActual',
+            'reservasAnioAnterior',
+            'beneficiosAnioActual',
+            'beneficiosAnioAnterior',
+            'anioActual',
+            'anioAnterior'
         ));
     }
 

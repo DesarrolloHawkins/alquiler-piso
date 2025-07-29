@@ -286,7 +286,7 @@
         <div class="col-md-6 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <h2 class="text-center">Número de Reservas por Mes</h2>
+                    <h2 class="text-center">Número de Reservas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
                     <div id="chartReservasPorMes"></div>
                 </div>
             </div>
@@ -294,7 +294,7 @@
         <div class="col-md-6 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <h2 class="text-center">Beneficio por Mes (Ingresos - Gastos)</h2>
+                    <h2 class="text-center">Beneficio por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
                     <div id="chartBeneficioPorMes"></div>
                 </div>
             </div>
@@ -1341,8 +1341,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('DOMContentLoaded', function () {
         var options = {
             series: [{
-                name: 'Reservas',
-                data: @json($reservasPorMes)
+                name: '{{ $anioActual }}',
+                data: @json($reservasAnioActual)
+            }, {
+                name: '{{ $anioAnterior }}',
+                data: @json($reservasAnioAnterior)
             }],
             chart: {
                 type: 'line',
@@ -1365,7 +1368,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 curve: 'straight',
                 width: 3
             },
-            colors: ['#008FFB'],
+            colors: ['#008FFB', '#FF4560'],
             xaxis: {
                 categories: @json($meses),
                 labels: {
@@ -1390,8 +1393,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     opacity: 0.5
                 }
             },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center'
+            },
             title: {
-                text: 'Evolución de Reservas por Mes',
+                text: 'Comparativa de Reservas por Mes',
                 align: 'center',
                 style: {
                     fontSize: '16px',
@@ -1408,11 +1415,14 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('DOMContentLoaded', function () {
         var options = {
             series: [{
-                name: 'Beneficio',
-                data: @json($beneficiosPorMes)
+                name: '{{ $anioActual }}',
+                data: @json($beneficiosAnioActual)
+            }, {
+                name: '{{ $anioAnterior }}',
+                data: @json($beneficiosAnioAnterior)
             }],
             chart: {
-                type: 'area',
+                type: 'line',
                 height: 350,
                 zoom: {
                     enabled: false
@@ -1436,16 +1446,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 curve: 'smooth',
                 width: 3
             },
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.7,
-                    opacityTo: 0.9,
-                    stops: [0, 90, 100]
-                }
-            },
-            colors: ['#00E396'],
+            colors: ['#00E396', '#775DD0'],
             xaxis: {
                 categories: @json($meses),
                 labels: {
@@ -1474,8 +1475,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     opacity: 0.5
                 }
             },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center'
+            },
             title: {
-                text: 'Evolución del Beneficio por Mes (Ingresos - Gastos)',
+                text: 'Comparativa del Beneficio por Mes',
                 align: 'center',
                 style: {
                     fontSize: '16px',
