@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -36,6 +35,8 @@ class DashboardController extends Controller
                 });
 
         })->get();
+
+
 
         $fechaFin2 = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
 
@@ -309,12 +310,12 @@ class DashboardController extends Controller
         $anioActual = Carbon::now()->year;
         $anioAnterior = $anioActual - 1;
 
-        for ($mes = 1; $mes <= 12; $mes++) {
+                for ($mes = 1; $mes <= 12; $mes++) {
             // Calcular fechas de inicio y fin del mes
             $fechaInicioMes = Carbon::create($anioActual, $mes, 1)->startOfMonth();
             $fechaFinMes = Carbon::create($anioActual, $mes, 1)->endOfMonth();
 
-            // Reservas año actual - usando la misma lógica que el filtro principal
+                                    // Reservas año actual - usando exactamente la misma lógica que el filtro principal
             $reservasMesActual = Reserva::where('estado_id', '!=', 4)
                 ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
                     $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
@@ -325,6 +326,20 @@ class DashboardController extends Controller
                         });
                 })
                 ->count();
+
+            // Reservas año actual - usando exactamente la misma lógica que el filtro principal
+            if (!isset($reservasMesActual)) {
+                $reservasMesActual = Reserva::where('estado_id', '!=', 4)
+                    ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
+                        $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
+                            ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
+                            ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
+                                $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
+                                        ->where('fecha_salida', '>=', $fechaFinMes);
+                            });
+                    })
+                    ->count();
+            }
             $reservasAnioActual[] = $reservasMesActual;
 
             // Calcular fechas de inicio y fin del mes para año anterior
