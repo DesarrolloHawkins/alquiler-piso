@@ -286,7 +286,7 @@
         <div class="col-md-6 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <h2 class="text-center">Número de Reservas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
+                    <h2 class="text-center">Reservas Activas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
                     <div id="chartReservasPorMes"></div>
                 </div>
             </div>
@@ -1379,7 +1379,7 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             yaxis: {
                 title: {
-                    text: 'Número de Reservas'
+                    text: 'Número de Reservas Activas'
                 },
                 labels: {
                     formatter: function (val) {
@@ -1398,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 horizontalAlign: 'center'
             },
             title: {
-                text: 'Comparativa de Reservas por Mes',
+                text: 'Comparativa de Reservas Activas por Mes',
                 align: 'center',
                 style: {
                     fontSize: '16px',

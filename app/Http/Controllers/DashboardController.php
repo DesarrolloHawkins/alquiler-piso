@@ -310,17 +310,37 @@ class DashboardController extends Controller
         $anioAnterior = $anioActual - 1;
 
         for ($mes = 1; $mes <= 12; $mes++) {
-            // Reservas año actual
+            // Calcular fechas de inicio y fin del mes
+            $fechaInicioMes = Carbon::create($anioActual, $mes, 1)->startOfMonth();
+            $fechaFinMes = Carbon::create($anioActual, $mes, 1)->endOfMonth();
+
+            // Reservas año actual - usando la misma lógica que el filtro principal
             $reservasMesActual = Reserva::where('estado_id', '!=', 4)
-                ->whereYear('fecha_entrada', $anioActual)
-                ->whereMonth('fecha_entrada', $mes)
+                ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
+                    $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
+                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
+                                    ->where('fecha_salida', '>=', $fechaFinMes);
+                        });
+                })
                 ->count();
             $reservasAnioActual[] = $reservasMesActual;
 
-            // Reservas año anterior
+            // Calcular fechas de inicio y fin del mes para año anterior
+            $fechaInicioMesAnterior = Carbon::create($anioAnterior, $mes, 1)->startOfMonth();
+            $fechaFinMesAnterior = Carbon::create($anioAnterior, $mes, 1)->endOfMonth();
+
+            // Reservas año anterior - usando la misma lógica que el filtro principal
             $reservasMesAnterior = Reserva::where('estado_id', '!=', 4)
-                ->whereYear('fecha_entrada', $anioAnterior)
-                ->whereMonth('fecha_entrada', $mes)
+                ->where(function ($query) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
+                    $query->whereBetween('fecha_entrada', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
+                        ->orWhereBetween('fecha_salida', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
+                        ->orWhere(function ($subQuery) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
+                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMesAnterior)
+                                    ->where('fecha_salida', '>=', $fechaFinMesAnterior);
+                        });
+                })
                 ->count();
             $reservasAnioAnterior[] = $reservasMesAnterior;
 
