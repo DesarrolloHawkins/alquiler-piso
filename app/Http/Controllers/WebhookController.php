@@ -378,6 +378,176 @@ class WebhookController extends Controller
         return $response;
     }
 
+        /**
+     * Envía un mensaje automático a Channex usando el bookingId
+     * @param string $mensaje El mensaje a enviar
+     * @param string $bookingId El ID de la reserva en Channex
+     * @return mixed La respuesta de la API
+     */
+    public static function enviarMensajeAutomaticoAChannex($mensaje, $bookingId)
+    {
+        $apiToken = env('CHANNEX_TOKEN');
+
+        if (!$apiToken || !$bookingId) {
+            Log::error('Faltan credenciales o bookingId para enviar mensaje a Channex', [
+                'apiToken' => $apiToken ? 'presente' : 'ausente',
+                'bookingId' => $bookingId
+            ]);
+            return false;
+        }
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://app.channex.io/api/v1/bookings/{$bookingId}/messages",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode([
+                'message' => [
+                    'message' => $mensaje
+                ],
+            ]),
+            CURLOPT_HTTPHEADER => [
+                'user-api-key: ' . $apiToken,
+                'Content-Type: application/json'
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode === 200 || $httpCode === 201) {
+            Log::info('Mensaje automático enviado exitosamente a Channex', [
+                'booking_id' => $bookingId,
+                'http_code' => $httpCode
+            ]);
+            return true;
+        } else {
+            Log::error('Error al enviar mensaje automático a Channex', [
+                'booking_id' => $bookingId,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Crea un mensaje de texto plano para el chat basado en el tipo de mensaje
+     * @param string $tipo Tipo de mensaje: 'dni', 'claves', 'bienvenida', 'consulta', 'ocio', 'despedida'
+     * @param array $datos Datos necesarios para el mensaje
+     * @param string $idioma Idioma del mensaje
+     * @return string Mensaje formateado para el chat
+     */
+    public static function crearMensajeChat($tipo, $datos, $idioma = 'en')
+    {
+        switch ($tipo) {
+            case 'dni':
+                $token = $datos['token'];
+                $url = "https://crm.apartamentosalgeciras.com/dni-user/{$token}";
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Gracias por reservar en los apartamentos Hawkins!\n\nLa legislación española nos obliga a solicitar su Documento Nacional de Identidad o pasaporte. Es obligatorio que nos lo facilite o no podrá alojarse en el apartamento.\n\nPuede rellenar sus datos aquí: {$url}\n\nLas claves de acceso se le enviarán el día de su llegada por WhatsApp y correo electrónico.";
+                    case 'fr':
+                        return "Merci de réserver chez les appartements Hawkins!\n\nLa législation espagnole nous oblige à vous demander votre carte d'identité nationale ou votre passeport. Il est obligatoire que vous nous le fournissiez, sinon vous ne pourrez pas séjourner dans l'appartement.\n\nVous pouvez remplir vos informations ici: {$url}\n\nLes codes d'accès vous seront envoyés le jour de votre arrivée par WhatsApp et e-mail.";
+                    case 'de':
+                        return "Danke, dass Sie sich für die Hawkins Apartments entschieden haben!\n\nDie spanische Gesetzgebung verpflichtet uns, Ihren Personalausweis oder Ihren Reisepass anzufordern. Es ist obligatorisch, dass Sie uns diesen zur Verfügung stellen, ansonsten können Sie nicht in der Wohnung übernachten.\n\nSie können Ihre Informationen hier ausfüllen: {$url}\n\nDie Zugangscodes werden Ihnen am Tag Ihrer Ankunft per WhatsApp und E-Mail zugesendet.";
+                    default: // en
+                        return "Thank you for booking at Hawkins Apartments!\n\nThe Spanish legislation requires us to request your National Identity Document or your passport. It is mandatory that you provide it to us or you will not be able to stay in the apartment.\n\nYou can fill out your information here: {$url}\n\nThe access codes will be sent to you on the day of your arrival by WhatsApp and email.";
+                }
+                break;
+
+            case 'claves':
+                $nombre = $datos['nombre'];
+                $apartamento = $datos['apartamento'];
+                $claveEntrada = $datos['claveEntrada'];
+                $clavePiso = $datos['clavePiso'];
+                $url = $datos['url'] ?? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9';
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Hola {$nombre}!\n\nLa ubicación de los apartamentos es: {$url}\n\nTu apartamento es el {$apartamento}. Los códigos para entrar son:\n• Puerta principal: {$claveEntrada}\n• Puerta de tu apartamento: {$clavePiso}\n\n¡Espero que pases una estancia maravillosa!";
+                    case 'fr':
+                        return "Bonjour {$nombre}!\n\nL'emplacement des appartements est: {$url}\n\nVotre appartement est le {$apartamento}. Les codes pour entrer sont:\n• Porte principale: {$claveEntrada}\n• Porte de votre appartement: {$clavePiso}\n\nJ'espère que vous passerez un séjour merveilleux!";
+                    case 'de':
+                        return "Hallo {$nombre}!\n\nDie Lage der Apartments ist: {$url}\n\nIhr Apartment ist das {$apartamento}. Die Codes zum Betreten sind:\n• Haupteingangstür: {$claveEntrada}\n• Tür Ihrer Wohnung: {$clavePiso}\n\nIch hoffe, Sie haben einen wunderbaren Aufenthalt!";
+                    default: // en
+                        return "Hello {$nombre}!\n\nThe location of the apartments is: {$url}\n\nYour apartment is {$apartamento}. The codes to enter are:\n• Main door: {$claveEntrada}\n• Your apartment door: {$clavePiso}\n\nI hope you have a wonderful stay!";
+                }
+                break;
+
+            case 'bienvenida':
+                $nombre = $datos['nombre'];
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Hola {$nombre}! ¡Bienvenido a los apartamentos Hawkins! Esperamos que disfrutes de tu estancia.";
+                    case 'fr':
+                        return "Bonjour {$nombre}! Bienvenue aux appartements Hawkins! Nous espérons que vous apprécierez votre séjour.";
+                    case 'de':
+                        return "Hallo {$nombre}! Willkommen in den Hawkins Apartments! Wir hoffen, Sie genießen Ihren Aufenthalt.";
+                    default: // en
+                        return "Hello {$nombre}! Welcome to Hawkins Apartments! We hope you enjoy your stay.";
+                }
+                break;
+
+            case 'consulta':
+                $nombre = $datos['nombre'];
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Hola {$nombre}! ¿Tienes alguna consulta o necesitas ayuda con algo durante tu estancia? Estamos aquí para ayudarte.";
+                    case 'fr':
+                        return "Bonjour {$nombre}! Avez-vous des questions ou avez-vous besoin d'aide pour quelque chose pendant votre séjour? Nous sommes là pour vous aider.";
+                    case 'de':
+                        return "Hallo {$nombre}! Haben Sie Fragen oder brauchen Sie Hilfe bei etwas während Ihres Aufenthalts? Wir sind hier, um Ihnen zu helfen.";
+                    default: // en
+                        return "Hello {$nombre}! Do you have any questions or need help with anything during your stay? We are here to help you.";
+                }
+                break;
+
+            case 'ocio':
+                $nombre = $datos['nombre'];
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Hola {$nombre}! ¿Te gustaría conocer algunos lugares interesantes para visitar o actividades para hacer en la zona? ¡Estamos encantados de recomendarte!";
+                    case 'fr':
+                        return "Bonjour {$nombre}! Souhaitez-vous connaître quelques endroits intéressants à visiter ou des activités à faire dans la région? Nous serions ravis de vous recommander!";
+                    case 'de':
+                        return "Hallo {$nombre}! Möchten Sie einige interessante Orte zum Besuchen oder Aktivitäten in der Gegend kennenlernen? Wir würden uns freuen, Ihnen zu empfehlen!";
+                    default: // en
+                        return "Hello {$nombre}! Would you like to know some interesting places to visit or activities to do in the area? We'd be happy to recommend!";
+                }
+                break;
+
+            case 'despedida':
+                $nombre = $datos['nombre'];
+
+                switch ($idioma) {
+                    case 'es':
+                        return "¡Hola {$nombre}! Esperamos que hayas disfrutado de tu estancia en los apartamentos Hawkins. ¡Que tengas un buen viaje de regreso!";
+                    case 'fr':
+                        return "Bonjour {$nombre}! Nous espérons que vous avez apprécié votre séjour aux appartements Hawkins. Bon voyage de retour!";
+                    case 'de':
+                        return "Hallo {$nombre}! Wir hoffen, Sie haben Ihren Aufenthalt in den Hawkins Apartments genossen. Gute Heimreise!";
+                    default: // en
+                        return "Hello {$nombre}! We hope you enjoyed your stay at Hawkins Apartments. Have a good trip back!";
+                }
+                break;
+
+            default:
+                return "Mensaje no reconocido";
+        }
+    }
+
     public function bookingUnmappedRoom(Request $request, $id)
     {
         $apartamento = Apartamento::find($id);
