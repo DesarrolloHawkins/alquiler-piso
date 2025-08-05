@@ -119,50 +119,6 @@ class Kernel extends ConsoleKernel
                         ];
                         // Crear el mensaje
                         MensajeAuto::create($dataMensaje);
-
-
-                        if ($reserva->apartamento_id === 1) {
-                            $mensaje = $this->clavesEmailAtico(
-                                $idiomaCliente,
-                                $reserva->cliente->nombre,
-                                $reserva->apartamento->titulo,
-                                $reserva->apartamento->edificioName->clave,
-                                $reserva->apartamento->claves
-                            );
-                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
-
-                        }else {
-                            $mensaje = $this->clavesEmail(
-                                $idiomaCliente,
-                                $reserva->cliente->nombre,
-                                $reserva->apartamento->titulo,
-                                $reserva->apartamento->edificioName->clave,
-                                $reserva->apartamento->claves,
-                                $apartamentoReservado->edificio
-                            );
-                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
-
-                        }
-                        if (!empty($reserva->cliente->email_secundario)) {
-                            $this->enviarEmail(
-                                $reserva->cliente->email_secundario,
-                                'emails.envioClavesEmail',
-                                $mensaje,
-                                'Hawkins Suite - Claves',
-                                null
-                            );
-                        }
-
-                        // Verificamos y enviamos al email principal si no es null ni vacío
-                        if (!empty($reserva->cliente->email)) {
-                            $this->enviarEmail(
-                                $reserva->cliente->email,
-                                'emails.envioClavesEmail',
-                                $mensaje,
-                                'Hawkins Suite - Claves',
-                                null
-                            );
-                        }
                     }
                 }
 
@@ -300,6 +256,22 @@ class Kernel extends ConsoleKernel
                         $mensajeEmail = $this->dniEmail($idiomaCliente, $token);
                         $enviarEmail = $this->enviarEmail($emailDestino, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
 
+                                                // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            // Crear mensaje específico para el chat
+                            $datosDNI = [
+                                'token' => $token
+                            ];
+
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('dni', $datosDNI, $idiomaCliente);
+
+                            // Enviar al chat de Channex usando el bookingId
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
+
                     }
                 }
 
@@ -361,15 +333,29 @@ class Kernel extends ConsoleKernel
                     $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
                     Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
 
-                    // Creamos la data para guardar el mensaje
-                    $dataMensaje = [
-                        'reserva_id' => $reserva->id,
-                        'cliente_id' => $reserva->cliente_id,
-                        'categoria_id' => 4,
-                        'fecha_envio' => Carbon::now()
-                    ];
-                    // Creamos el mensaje
-                    MensajeAuto::create($dataMensaje);
+                                            // Creamos la data para guardar el mensaje
+                        $dataMensaje = [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'categoria_id' => 4,
+                            'fecha_envio' => Carbon::now()
+                        ];
+                        // Creamos el mensaje
+                        MensajeAuto::create($dataMensaje);
+
+                        // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            $datosBienvenida = [
+                                'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
+                            ];
+
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('bienvenida', $datosBienvenida, $idiomaCliente);
+
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
 
                 }
 
@@ -480,7 +466,25 @@ class Kernel extends ConsoleKernel
                             );
                         }
 
+                                                // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            // Crear mensaje específico para el chat
+                            $datosClaves = [
+                                'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
+                                'apartamento' => $reserva->apartamento->titulo,
+                                'claveEntrada' => $reserva->apartamento->edificioName->clave,
+                                'clavePiso' => $reserva->apartamento->claves,
+                                'url' => $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
+                            ];
 
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+
+                            // Enviar al chat de Channex usando el bookingId
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
 
                     }
                 }
@@ -504,6 +508,20 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+
+                        // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            $datosConsulta = [
+                                'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
+                            ];
+
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('consulta', $datosConsulta, $idiomaCliente);
+
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
                     }
                 }
 
@@ -526,6 +544,20 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+
+                        // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            $datosOcio = [
+                                'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
+                            ];
+
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('ocio', $datosOcio, $idiomaCliente);
+
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
                     }
                 }
             }
@@ -574,6 +606,20 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+
+                        // Si la reserva NO es de la web, enviar también al chat de Channex
+                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                            $datosDespedida = [
+                                'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
+                            ];
+
+                            $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('despedida', $datosDespedida, $idiomaCliente);
+
+                            \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+                                $mensajeChat,
+                                $reserva->codigo_reserva
+                            );
+                        }
 
                 }
             }
