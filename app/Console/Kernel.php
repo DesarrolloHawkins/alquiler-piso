@@ -307,7 +307,8 @@ class Kernel extends ConsoleKernel
                 $fechaHoyStr = $FechaHoy->format('Y-m-d');
 
                 // Horas objetivo para lanzar mensajes
-                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 08:46:00');
+                // $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
                 $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
                 $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
                 $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
@@ -355,7 +356,7 @@ class Kernel extends ConsoleKernel
 
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
                                 Log::info('Mensaje de bienvenida enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
@@ -498,7 +499,7 @@ class Kernel extends ConsoleKernel
                                 // Enviar al chat de Channex usando el bookingId
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
                                 Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
@@ -591,7 +592,7 @@ class Kernel extends ConsoleKernel
 
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
                                 Log::info('Mensaje de ocio enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
