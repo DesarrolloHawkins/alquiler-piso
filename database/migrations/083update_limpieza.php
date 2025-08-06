@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('apartamento_limpieza', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable();
-            
-            $table->foreign('user_id')->references('id')->on('users');
+        // La columna user_id ya fue agregada en la migración 065update_limpieza.php
+        // Esta migración es duplicada y no debe agregar la misma columna nuevamente.
 
-        });
+        // Si necesitas hacer algún cambio adicional, deberías crear una nueva migración específica.
     }
 
     /**
@@ -24,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        // No hay nada que revertir ya que no se agregaron columnas
     }
 };
