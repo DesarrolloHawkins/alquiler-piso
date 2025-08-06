@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('apartamento_limpieza_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_reserva')->nullable()->change();
-        });
+        // Verificar si la tabla existe antes de modificarla
+        if (Schema::hasTable('apartamento_limpieza_items')) {
+            Schema::table('apartamento_limpieza_items', function (Blueprint $table) {
+                $table->unsignedBigInteger('id_reserva')->nullable()->change();
+            });
+        }
     }
 
     /**
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('apartamento_limpieza_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_reserva')->nullable(false)->change();
-        });
+        // Verificar si la tabla existe antes de modificarla
+        if (Schema::hasTable('apartamento_limpieza_items')) {
+            Schema::table('apartamento_limpieza_items', function (Blueprint $table) {
+                $table->unsignedBigInteger('id_reserva')->nullable(false)->change();
+            });
+        }
     }
 };

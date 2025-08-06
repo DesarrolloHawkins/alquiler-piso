@@ -11,15 +11,34 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
-            $table->unsignedBigInteger('estado_id')->nullable();
-            $table->unsignedBigInteger('reserva_id')->nullable();
-            $table->unsignedBigInteger('cliente_id')->nullable();
+        // Verificar si la tabla existe antes de modificarla
+        if (Schema::hasTable('whatsapp_mensaje_chatgpt')) {
+            Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
+                // Verificar si las columnas ya existen antes de agregarlas
+                if (!Schema::hasColumn('whatsapp_mensaje_chatgpt', 'estado_id')) {
+                    $table->unsignedBigInteger('estado_id')->nullable();
+                }
+                if (!Schema::hasColumn('whatsapp_mensaje_chatgpt', 'reserva_id')) {
+                    $table->unsignedBigInteger('reserva_id')->nullable();
+                }
+                if (!Schema::hasColumn('whatsapp_mensaje_chatgpt', 'cliente_id')) {
+                    $table->unsignedBigInteger('cliente_id')->nullable();
+                }
+            });
 
-            $table->foreign('estado_id')->references('id')->on('estado_mensajes');
-            $table->foreign('reserva_id')->references('id')->on('reservas');
-            $table->foreign('cliente_id')->references('id')->on('clientes');
-        });
+            // Agregar foreign keys solo si las columnas existen
+            Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
+                if (Schema::hasColumn('whatsapp_mensaje_chatgpt', 'estado_id')) {
+                    $table->foreign('estado_id')->references('id')->on('estado_mensajes');
+                }
+                if (Schema::hasColumn('whatsapp_mensaje_chatgpt', 'reserva_id')) {
+                    $table->foreign('reserva_id')->references('id')->on('reservas');
+                }
+                if (Schema::hasColumn('whatsapp_mensaje_chatgpt', 'cliente_id')) {
+                    $table->foreign('cliente_id')->references('id')->on('clientes');
+                }
+            });
+        }
     }
 
     /**
@@ -27,9 +46,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
-            $table->dropForeign(['estado_id', 'reserva_id', 'cliente_id']);
-            $table->dropColumn(['estado_id', 'reserva_id', 'cliente_id']);
-        });
+        if (Schema::hasTable('whatsapp_mensaje_chatgpt')) {
+            Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
+                $table->dropForeign(['estado_id', 'reserva_id', 'cliente_id']);
+                $table->dropColumn(['estado_id', 'reserva_id', 'cliente_id']);
+            });
+        }
     }
 };
