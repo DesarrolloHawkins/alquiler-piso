@@ -12,7 +12,7 @@ return new class extends Migration
             $table->string('role')->nullable();
         });
     }
-    
+
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {

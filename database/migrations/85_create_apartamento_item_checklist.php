@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('status')->default(false); // Esto almacenará si el ítem fue marcado o no
             $table->timestamps();
         });
-        
+
     }
 
     /**

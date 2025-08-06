@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::table('photos', function (Blueprint $table) {
             $table->unsignedBigInteger('reserva_id')->nullable();
-            
+
             $table->foreign('reserva_id')->references('id')->on('reservas');
         });
     }
-    
+
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
