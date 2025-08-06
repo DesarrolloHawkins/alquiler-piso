@@ -8,19 +8,16 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('apartamento_limpieza', function (Blueprint $table) {
-            $table->tinyInteger('dormitorio_photo')->nullable();
-            $table->tinyInteger('bano_photo')->nullable();
-            $table->tinyInteger('armario_photo')->nullable();
-            $table->tinyInteger('canape_photo')->nullable();
-            $table->tinyInteger('salon_photo')->nullable();
-            $table->tinyInteger('cocina_photo')->nullable();
-        });
+        // Las columnas dormitorio_photo, bano_photo, armario_photo, canape_photo, salon_photo, cocina_photo
+        // ya existen en la tabla apartamento_limpieza desde la migración 012create_realizar_apartamento.php
+        // Por lo tanto, no necesitamos agregarlas nuevamente.
+
+        // Si necesitas cambiar el tipo de dato de timestamp a tinyInteger,
+        // deberías crear una nueva migración específica para eso.
     }
-    
+
     public function down()
     {
-        Schema::table('apartamento_limpieza', function (Blueprint $table) {
-        });
+        // No hay nada que revertir ya que no se agregaron columnas
     }
 };
