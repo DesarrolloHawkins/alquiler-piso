@@ -43,6 +43,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
 
 
         // Ejecuta el comando cada hora
