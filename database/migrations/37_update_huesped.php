@@ -25,6 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clientes');
+        Schema::table('huespedes', function (Blueprint $table) {
+            $table->dropColumn(['nacionalidadStr', 'nacionalidadCode', 'sexo_str', 'tipo_documento_str', 'nacionalidad']);
+        });
     }
 };

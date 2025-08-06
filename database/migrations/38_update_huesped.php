@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('estado_mensajes', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
+        Schema::table('huespedes', function (Blueprint $table) {
+            $table->tinyInteger('webpol')->nullable();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comprobacion');
+        Schema::table('huespedes', function (Blueprint $table) {
+            $table->dropColumn('webpol');
+        });
     }
 };

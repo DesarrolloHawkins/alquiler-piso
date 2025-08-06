@@ -9,16 +9,17 @@ return new class extends Migration
     public function up()
     {
         Schema::table('photos', function (Blueprint $table) {
-            $table->unsignedBigInteger('cliente_id')->nullable();
+            $table->unsignedBigInteger('reserva_id')->nullable();
             
-            $table->foreign('cliente_id')->references('id')->on('clientes');
-
+            $table->foreign('reserva_id')->references('id')->on('reservas');
         });
     }
     
     public function down()
     {
-        Schema::table('reservas', function (Blueprint $table) {
+        Schema::table('photos', function (Blueprint $table) {
+            $table->dropForeign(['reserva_id']);
+            $table->dropColumn('reserva_id');
         });
     }
 };

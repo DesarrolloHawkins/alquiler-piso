@@ -12,14 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
-            // $table->unsignedInteger('estado_id')->nullable();
-            // $table->unsignedBigInteger('reserva_id')->nullable();
-            // $table->unsignedBigInteger('cliente_id')->nullable();
+            $table->unsignedBigInteger('estado_id')->nullable();
+            $table->unsignedBigInteger('reserva_id')->nullable();
+            $table->unsignedBigInteger('cliente_id')->nullable();
 
             $table->foreign('estado_id')->references('id')->on('estados_mensajes');
             $table->foreign('reserva_id')->references('id')->on('reservas');
             $table->foreign('cliente_id')->references('id')->on('clientes');
-
         });
     }
 
@@ -28,6 +27,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
+            $table->dropForeign(['estado_id', 'reserva_id', 'cliente_id']);
+            $table->dropColumn(['estado_id', 'reserva_id', 'cliente_id']);
+        });
     }
 };

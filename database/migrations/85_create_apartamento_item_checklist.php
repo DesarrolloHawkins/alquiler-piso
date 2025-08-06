@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('apartamento_item_checklist', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('apartamento_limpieza_id')->constrained('apartamentos_limpiezas')->onDelete('cascade');
+            $table->foreignId('apartamento_limpieza_id')->constrained('apartamento_limpieza')->onDelete('cascade');
             $table->foreignId('item_checklist_id')->constrained('items_checklists')->onDelete('cascade');
             $table->boolean('status')->default(false); // Esto almacenará si el ítem fue marcado o no
             $table->timestamps();

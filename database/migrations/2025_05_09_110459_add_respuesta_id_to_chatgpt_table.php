@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
             $table->string('respuesta_id')->nullable()->after('respuesta');
         });
-
     }
 
     /**
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('chatgpt', function (Blueprint $table) {
-            //
+        Schema::table('whatsapp_mensaje_chatgpt', function (Blueprint $table) {
+            $table->dropColumn('respuesta_id');
         });
     }
 };
