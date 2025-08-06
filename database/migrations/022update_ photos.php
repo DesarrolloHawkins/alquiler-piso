@@ -8,18 +8,14 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('photos', function (Blueprint $table) {
-            $table->unsignedBigInteger('cliente_id')->nullable();
+        // La columna cliente_id ya existe en la tabla photos
+        // Esta migración no debe agregar la misma columna nuevamente.
 
-            $table->foreign('cliente_id')->references('id')->on('clientes');
-        });
+        // Si necesitas hacer algún cambio adicional, deberías crear una nueva migración específica.
     }
 
     public function down()
     {
-        Schema::table('photos', function (Blueprint $table) {
-            $table->dropForeign(['cliente_id']);
-            $table->dropColumn('cliente_id');
-        });
+        // No hay nada que revertir ya que no se agregaron columnas
     }
 };
