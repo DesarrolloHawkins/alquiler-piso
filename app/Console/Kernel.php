@@ -307,7 +307,7 @@ class Kernel extends ConsoleKernel
                 $fechaHoyStr = $FechaHoy->format('Y-m-d');
 
                 // Horas objetivo para lanzar mensajes
-                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 08:46:00');
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 08:48:00');
                 // $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
                 $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
                 $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
