@@ -269,7 +269,7 @@ class Kernel extends ConsoleKernel
                             // Enviar al chat de Channex usando el bookingId
                             \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                 $mensajeChat,
-                                $reserva->codigo_reserva
+                                $reserva->id_channex
                             );
                         }
 
