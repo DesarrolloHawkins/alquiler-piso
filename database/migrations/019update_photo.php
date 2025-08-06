@@ -8,19 +8,14 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('photos', function (Blueprint $table) {
-            $table->unsignedBigInteger('reserva_id')->nullable();
-            $table->unsignedBigInteger('cliente_id')->nullable();
-
-            $table->foreign('reserva_id')->references('id')->on('reservas');
-            $table->foreign('cliente_id')->references('id')->on('clientes');
-
-        });
+        // Las columnas reserva_id y cliente_id ya existen en la tabla photos
+        // Esta migración no debe agregar las mismas columnas nuevamente.
+        
+        // Si necesitas hacer algún cambio adicional, deberías crear una nueva migración específica.
     }
     
     public function down()
     {
-        Schema::table('photos', function (Blueprint $table) {
-        });
+        // No hay nada que revertir ya que no se agregaron columnas
     }
 };
