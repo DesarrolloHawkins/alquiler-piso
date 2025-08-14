@@ -26,6 +26,7 @@ Route::post('/averias-tecnico', [App\Http\Controllers\Api\ApiController::class, 
 Route::post('/equipo-limpieza', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
 Route::post('/apartamentos-disponibles', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
 Route::post('/agregar-compra-reserva', [App\Http\Controllers\Api\ApiController::class, 'agregarCompraReserva'])->name('agregarCompraReserva');
+Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('api.reserva.agregar');
 
 Route::get('/room-types/{propertyId}', [RatePlanController::class, 'getRoomTypes']);
 

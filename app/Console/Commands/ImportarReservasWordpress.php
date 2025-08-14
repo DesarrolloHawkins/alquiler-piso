@@ -33,7 +33,7 @@ class ImportarReservasWordpress extends Command
         foreach ($data['reservas'] as $reserva) {
             try {
                 // ENVÍA LA RESERVA A TU BACKEND PARA GUARDARLA
-                $envio = Http::post(url('/agregar-reserva'), $reserva);
+                $envio = Http::post(url('/api/agregar-reserva'), $reserva);
 
                 if ($envio->successful()) {
                     Log::info("✅ Reserva añadida correctamente: " . $reserva['codigo_reserva']);
