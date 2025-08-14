@@ -413,6 +413,7 @@ Route::post('/comprobacion-server', [App\Http\Controllers\EstadoController::clas
 
 // Añadir Reserva
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reservas.agregarReserva');
+Route::post('/reserva/agregar', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('reserva.agregar');
 
 // Verificar Reserva de Booking
 Route::get('/verificar-reserva/{reserva}', [App\Http\Controllers\ComprobarReserva::class, 'verificarReserva'])->name('reservas.verificarReserva');
