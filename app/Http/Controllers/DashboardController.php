@@ -257,14 +257,33 @@ class DashboardController extends Controller
             'Externo' => 0,
         ];
 
+        // Función para normalizar el origen
+        $normalizarOrigen = function($origen) {
+            $origenLower = strtolower(trim($origen));
+
+            // Normalizar Booking
+            if (str_contains($origenLower, 'booking') || str_contains($origenLower, 'bookingcom')) {
+                return 'Booking';
+            }
+
+            // Normalizar Airbnb
+            if (str_contains($origenLower, 'airbnb') || str_contains($origenLower, 'airbn')) {
+                return 'Airbnb';
+            }
+
+            // Si no coincide con ninguno, es externo
+            return 'Externo';
+        };
+
         $prescriptores = Reserva::select('origen', DB::raw('COUNT(*) as total'))
             ->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
             ->groupBy('origen')
             ->pluck('total', 'origen');
 
         foreach ($prescriptores as $origen => $total) {
-            if (array_key_exists($origen, $prescriptoresDefinidos)) {
-                $prescriptoresDefinidos[$origen] = $total;
+            $origenNormalizado = $normalizarOrigen($origen);
+            if (array_key_exists($origenNormalizado, $prescriptoresDefinidos)) {
+                $prescriptoresDefinidos[$origenNormalizado] += $total;
             }
         }
 
