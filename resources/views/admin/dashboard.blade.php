@@ -219,6 +219,8 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-12">
+                    <h2 class="text-center">Reservas por Nacionalidad</h2>
+
                             <div id="chartNacionalidad"></div>
                         </div>
                     </div>
@@ -288,6 +290,14 @@
                 <div class="card-body">
                     <h2 class="text-center">Reservas Activas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
                     <div id="chartReservasPorMes"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="text-center">Noches Reservadas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
+                    <div id="chartNochesPorMes"></div>
                 </div>
             </div>
         </div>
@@ -1450,6 +1460,80 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         var chart = new ApexCharts(document.querySelector("#chartBeneficioPorMes"), options);
+        chart.render();
+    });
+
+    // Gráfico de Noches Reservadas por Mes
+    document.addEventListener('DOMContentLoaded', function () {
+        var options = {
+            series: [{
+                name: '{{ $anioActual }}',
+                data: @json($nochesReservadasAnioActual)
+            }, {
+                name: '{{ $anioAnterior }}',
+                data: @json($nochesReservadasAnioAnterior)
+            }],
+            chart: {
+                type: 'line',
+                height: 350,
+                zoom: {
+                    enabled: false
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return Math.round(val);
+                },
+                style: {
+                    fontSize: '11px',
+                    colors: ['#304758']
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            colors: ['#FF6B6B', '#4ECDC4'],
+            xaxis: {
+                categories: @json($meses),
+                labels: {
+                    style: {
+                        fontSize: '12px'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Número de Noches Reservadas'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return Math.round(val);
+                    }
+                }
+            },
+            grid: {
+                row: {
+                    colors: ['#f3f3f3', 'transparent'],
+                    opacity: 0.5
+                }
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center'
+            },
+            title: {
+                text: 'Comparativa de Noches Reservadas por Mes',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartNochesPorMes"), options);
         chart.render();
     });
 </script>

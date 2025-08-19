@@ -347,6 +347,10 @@ class DashboardController extends Controller
         $anioActual = Carbon::now()->year;
         $anioAnterior = $anioActual - 1;
 
+        // Arrays para noches reservadas por mes
+        $nochesReservadasAnioActual = [];
+        $nochesReservadasAnioAnterior = [];
+
         for ($mes = 1; $mes <= 12; $mes++) {
             // Calcular fechas de inicio y fin del mes
             $fechaInicioMes = Carbon::create($anioActual, $mes, 1)->startOfMonth();
@@ -436,6 +440,66 @@ class DashboardController extends Controller
                 ->count();
             $reservasAnioAnterior[] = $reservasMesAnterior;
 
+            // Calcular noches reservadas año actual
+            $nochesMesActual = 0;
+            $reservasMesActualDetalladas = Reserva::where('estado_id', '!=', 4)
+                ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
+                    $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
+                        ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
+                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
+                                    ->where('fecha_salida', '>=', $fechaFinMes);
+                        });
+                })
+                ->get();
+
+            foreach ($reservasMesActualDetalladas as $reserva) {
+                $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+                $fechaSalida = Carbon::parse($reserva->fecha_salida);
+
+                // Calcular noches que caen dentro del mes
+                $inicioMes = $fechaInicioMes->copy();
+                $finMes = $fechaFinMes->copy();
+
+                $inicioReserva = $fechaEntrada->gt($inicioMes) ? $fechaEntrada : $inicioMes;
+                $finReserva = $fechaSalida->lt($finMes) ? $fechaSalida : $finMes;
+
+                if ($inicioReserva->lte($finReserva)) {
+                    $nochesMesActual += $inicioReserva->diffInDays($finReserva);
+                }
+            }
+            $nochesReservadasAnioActual[] = $nochesMesActual;
+
+            // Calcular noches reservadas año anterior
+            $nochesMesAnterior = 0;
+            $reservasMesAnteriorDetalladas = Reserva::where('estado_id', '!=', 4)
+                ->where(function ($query) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
+                    $query->whereBetween('fecha_entrada', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
+                        ->orWhereBetween('fecha_salida', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
+                        ->orWhere(function ($subQuery) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
+                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMesAnterior)
+                                    ->where('fecha_salida', '>=', $fechaFinMesAnterior);
+                        });
+                })
+                ->get();
+
+            foreach ($reservasMesAnteriorDetalladas as $reserva) {
+                $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+                $fechaSalida = Carbon::parse($reserva->fecha_salida);
+
+                // Calcular noches que caen dentro del mes
+                $inicioMes = $fechaInicioMesAnterior->copy();
+                $finMes = $fechaFinMesAnterior->copy();
+
+                $inicioReserva = $fechaEntrada->gt($inicioMes) ? $fechaEntrada : $inicioMes;
+                $finReserva = $fechaSalida->lt($finMes) ? $fechaSalida : $finMes;
+
+                if ($inicioReserva->lte($finReserva)) {
+                    $nochesMesAnterior += $inicioReserva->diffInDays($finReserva);
+                }
+            }
+            $nochesReservadasAnioAnterior[] = $nochesMesAnterior;
+
             // Beneficio año actual
             $ingresosMesActual = Ingresos::whereYear('date', $anioActual)
                 ->whereMonth('date', $mes)
@@ -493,6 +557,8 @@ class DashboardController extends Controller
             'meses',
             'reservasAnioActual',
             'reservasAnioAnterior',
+            'nochesReservadasAnioActual',
+            'nochesReservadasAnioAnterior',
             'beneficiosAnioActual',
             'beneficiosAnioAnterior',
             'anioActual',
