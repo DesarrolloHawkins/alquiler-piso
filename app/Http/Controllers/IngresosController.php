@@ -64,8 +64,8 @@ class IngresosController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'estado_id' => 'required|exists:estados_gastos,id',
-            'categoria_id' => 'required|exists:categoria_gastos,id',
+            'estado_id' => 'required|exists:estados_ingresos,id',
+            'categoria_id' => 'required|exists:categoria_ingresos,id',
             'bank_id' => 'required|exists:bank_accounts,id',
             'title' => 'required|string|max:255',
             'date' => 'required',
@@ -140,8 +140,8 @@ class IngresosController extends Controller
         $ingreso = Ingresos::findOrFail($id); // Obtener el ingreso existente
 
         $rules = [
-            'estado_id' => 'required|exists:estados_gastos,id',
-            'categoria_id' => 'required|exists:categoria_gastos,id',
+            'estado_id' => 'required|exists:estados_ingresos,id',
+            'categoria_id' => 'required|exists:categoria_ingresos,id',
             'bank_id' => 'required|exists:bank_accounts,id',
             'title' => 'required|string|max:255',
             'date' => 'required|date',
