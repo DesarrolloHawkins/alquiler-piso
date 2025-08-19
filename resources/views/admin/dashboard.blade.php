@@ -214,7 +214,7 @@
     <h5 class="text-left mt-1">Estadisticas</h5>
     <hr>
     <div class="row justify-content-between align-items-stretch ">
-        <div class="col-xl-12 col-md-12 rounded-4">
+        <div class="col-xl-4 col-md-4 rounded-4">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="row">
