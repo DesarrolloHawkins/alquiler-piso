@@ -168,7 +168,7 @@
                             <h4 class="text-start mb-0 fs-6">Beneficio</h4>
                         </div>
                         <div class="col-6">
-                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastosBeneficio, 2) }} €</strong></h2>
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresosBeneficio - $gastosBeneficio, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
@@ -225,7 +225,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-6 col-md-12 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Balance</h2>
@@ -233,7 +233,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-6 col-md-12 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución por Género</h2>
@@ -242,7 +242,7 @@
 
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución por Ocupantes</h2>
@@ -250,7 +250,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución de Clientes por Rango de Edad</h2>
@@ -258,7 +258,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución de Prescriptores</h2>
@@ -267,7 +267,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución de Reservas por Apartamento</h2>
@@ -275,7 +275,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Distribución de Gastos por Categoría</h2>
@@ -283,7 +283,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Reservas Activas por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
@@ -291,7 +291,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Beneficio por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
@@ -997,12 +997,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }],
             chart: {
                 type: 'bar',
-                height: 350
+                height: 500
             },
             plotOptions: {
                 bar: {
                     borderRadius: 4,
-                    horizontal: true
+                    horizontal: true,
+                    barHeight: '60%'
                 }
             },
             dataLabels: {
@@ -1230,12 +1231,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }],
             chart: {
                 type: 'bar',
-                height: 350
+                height: 500
             },
             plotOptions: {
                 bar: {
                     borderRadius: 4,
-                    horizontal: true
+                    horizontal: true,
+                    barHeight: '60%'
                 }
             },
             dataLabels: {

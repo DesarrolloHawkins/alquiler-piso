@@ -124,6 +124,11 @@ class DashboardController extends Controller
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
         $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
 
+        // **Ingresos para beneficio (excluyendo categoría 12)**
+        $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', '!=', 12)
+            ->sum('quantity');
+
         // **Gastos para beneficio (excluyendo categorías 53 y 45)**
         $gastosBeneficio = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
             ->whereNotIn('categoria_id', [53, 45])
@@ -434,6 +439,7 @@ class DashboardController extends Controller
             // Beneficio año actual
             $ingresosMesActual = Ingresos::whereYear('date', $anioActual)
                 ->whereMonth('date', $mes)
+                ->where('categoria_id', '!=', 12)
                 ->sum('quantity');
             $gastosMesActual = abs(Gastos::whereYear('date', $anioActual)
                 ->whereMonth('date', $mes)
@@ -444,6 +450,7 @@ class DashboardController extends Controller
             // Beneficio año anterior
             $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)
                 ->whereMonth('date', $mes)
+                ->where('categoria_id', '!=', 12)
                 ->sum('quantity');
             $gastosMesAnterior = abs(Gastos::whereYear('date', $anioAnterior)
                 ->whereMonth('date', $mes)
@@ -459,6 +466,7 @@ class DashboardController extends Controller
             'fechaFin',
             'ingresos',
             'gastos',
+            'ingresosBeneficio',
             'gastosBeneficio',
             'labels',
             'data',
