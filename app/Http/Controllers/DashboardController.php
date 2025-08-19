@@ -122,7 +122,9 @@ class DashboardController extends Controller
         });
         // **Ingresos y gastos**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
-        $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
+        $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', '!=', 53)
+            ->sum('quantity'));
 
         // **Gráfico de Nacionalidades**
         $nacionalidades = Reserva::select('clientes.nacionalidad', DB::raw('COUNT(reservas.id) as total'))
@@ -432,6 +434,7 @@ class DashboardController extends Controller
                 ->sum('quantity');
             $gastosMesActual = abs(Gastos::whereYear('date', $anioActual)
                 ->whereMonth('date', $mes)
+                ->where('categoria_id', '!=', 53)
                 ->sum('quantity'));
             $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
@@ -441,6 +444,7 @@ class DashboardController extends Controller
                 ->sum('quantity');
             $gastosMesAnterior = abs(Gastos::whereYear('date', $anioAnterior)
                 ->whereMonth('date', $mes)
+                ->where('categoria_id', '!=', 53)
                 ->sum('quantity'));
             $beneficiosAnioAnterior[] = $ingresosMesAnterior - $gastosMesAnterior;
         }
