@@ -217,13 +217,13 @@ class WebhookController extends Controller
         foreach ($bookingData['rooms'] as $room) {
             $ratePlanId = $room['rate_plan_id'] ?? null;
             if (!$ratePlanId) {
-                \Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
+                Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
                 continue;
             }
 
             $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
             if (!$ratePlan) {
-                \Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
+                Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
                 continue;
             }
 
@@ -242,6 +242,7 @@ class WebhookController extends Controller
                 'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
                 'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
                 'estado_id' => 1, // Nueva reserva
+                'id_channex' => $bookingId,
             ]);
         }
 
@@ -328,7 +329,7 @@ class WebhookController extends Controller
             ]);
 
         if ($response->failed()) {
-            \Log::error('Error al enviar a OpenAI: ' . $response->body());
+            Log::error('Error al enviar a OpenAI: ' . $response->body());
             return null;
         }
 
