@@ -989,88 +989,46 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Labels:", labels);
         console.log("Data:", data);
 
-        // Función para generar colores aleatorios
-        function generateRandomColors(count) {
-            let colors = [];
-            for (let i = 0; i < count; i++) {
-                colors.push(`#${Math.floor(Math.random() * 16777215).toString(16)}`); // Generar color aleatorio
-            }
-            return colors;
-        }
 
-        // Generar colores en función del número de labels
-        // var colors = generateRandomColors(labels.length);
-        var colors = [];
-        for (let index = 0; index < labels.length; index++) {
-            colorVariable = getColorByIndex(index)
-            colors.push(colorVariable)
-        }
-
-        function getColorByIndex(index, opacity = 1) {
-            const r = (index * 137 + 83) % 256; // Números primos para rotación
-            const g = (index * 197 + 67) % 256; // Números primos para rotación
-            const b = (index * 229 + 47) % 256; // Números primos para rotación
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`; // Corrige la sintaxis
-        }
 
         var options = {
             series: [{
-                name: 'Porcentaje de Reservas',
                 data: data // Datos dinámicos
             }],
             chart: {
-                height: 400,
-                type: 'bar'
+                type: 'bar',
+                height: 350
             },
-            colors: colors, // Aplicar colores generados dinámicamente
             plotOptions: {
                 bar: {
-                    columnWidth: '70%', // Ajustar el ancho de las barras
-                    distributed: true // Colores únicos para cada barra
+                    borderRadius: 4,
+                    horizontal: true
                 }
             },
             dataLabels: {
-                enabled: true, // Mostrar etiquetas
+                enabled: true, // Habilitamos las etiquetas de datos
                 formatter: function (val) {
-                    return val + "%"; // Mostrar como porcentaje
+                    return val + '%'; // Mostramos el valor con el símbolo de porcentaje
                 },
-                offsetY: -20, // Ajustar posición
                 style: {
-                    fontSize: '10px', // Reducir tamaño del texto
-                    colors: ["#000"] // Color del texto
-                }
+                    fontSize: '12px',
+                    colors: ['#304758']
+                },
+                offsetX: 10 // Ajustamos la posición horizontal para mayor claridad
             },
             xaxis: {
                 categories: labels, // Nacionalidades dinámicas
                 labels: {
                     style: {
-                        colors: colors, // Aplicar colores a las etiquetas
-                        fontSize: '12px' // Ajustar tamaño del texto
-                    }
-                },
-                title: {
-                    text: 'Nacionalidades',
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold'
+                        fontSize: '12px'
                     }
                 }
             },
             yaxis: {
                 labels: {
                     formatter: function (val) {
-                        return val + "%"; // Formato del eje Y
+                        return val + '%'; // Opcional: Mostrar porcentaje en los ejes
                     }
-                }
-            },
-            title: {
-                text: 'Porcentaje de Reservas por Nacionalidad',
-                align: 'center',
-                style: {
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#444',
-                    fontFamily: "Nunito"
                 }
             }
         };
