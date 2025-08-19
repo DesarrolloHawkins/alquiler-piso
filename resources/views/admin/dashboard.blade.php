@@ -168,7 +168,7 @@
                             <h4 class="text-start mb-0 fs-6">Beneficio</h4>
                         </div>
                         <div class="col-6">
-                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastos, 2) }} €</strong></h2>
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($ingresos - $gastosBeneficio, 2) }} €</strong></h2>
                         </div>
                     </div>
                 </div>
