@@ -8,6 +8,7 @@ use App\Models\Ingresos;
 use App\Models\Cliente;
 use App\Models\Apartamento;
 use App\Models\CategoriaGastos;
+use App\Models\Estado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -543,6 +544,22 @@ class DashboardController extends Controller
             $beneficiosAnioAnterior[] = $ingresosMesAnterior - $gastosMesAnterior;
         }
 
+        // Variables para los filtros del modal de facturación
+        $apartamentos = Apartamento::whereNotNull('id_channex')->get();
+        
+        // Obtener orígenes únicos de las reservas
+        $origenes = Reserva::whereNotNull('origen')
+            ->distinct()
+            ->pluck('origen')
+            ->filter()
+            ->values();
+        
+        // Obtener estados de reserva
+        $estados = Estado::all();
+        
+        // Calcular total de facturación (suma de precios de reservas)
+        $totalFacturacion = $reservas->sum('precio');
+
         return view('admin.dashboard', compact(
             'countReservas',
             'sumPrecio',
@@ -582,7 +599,12 @@ class DashboardController extends Controller
             'beneficiosAnioActual',
             'beneficiosAnioAnterior',
             'anioActual',
-            'anioAnterior'
+            'anioAnterior',
+            // Variables para los filtros del modal
+            'apartamentos',
+            'origenes',
+            'estados',
+            'totalFacturacion'
         ));
     }
 

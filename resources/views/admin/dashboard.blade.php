@@ -430,137 +430,90 @@ document.addEventListener('DOMContentLoaded', function () {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body p-0">
-                <!-- Filtros mejorados -->
-                <div class="row p-3 mb-0 bg-light border-bottom">
+            <div class="modal-body p-4">
+                <!-- Filtros -->
+                <div class="row mb-4">
                     <div class="col-md-3">
-                        <label for="filtroApartamentoFacturacion" class="form-label fw-bold">
-                            <i class="fas fa-building me-1"></i>Apartamento
-                        </label>
-                        <select id="filtroApartamentoFacturacion" class="form-select form-select-sm">
+                        <label for="filtroApartamentoFacturacion" class="form-label fw-bold">Apartamento:</label>
+                        <select id="filtroApartamentoFacturacion" class="form-select">
                             <option value="">Todos los apartamentos</option>
-                            @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
-                                <option value="{{ $apartamento }}">{{ $apartamento }}</option>
+                            @foreach($apartamentos as $apartamento)
+                                <option value="{{ $apartamento->nombre }}">{{ $apartamento->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="filtroOrigenFacturacion" class="form-label fw-bold">
-                            <i class="fas fa-globe me-1"></i>Origen
-                        </label>
-                        <select id="filtroOrigenFacturacion" class="form-select form-select-sm">
+                        <label for="filtroOrigenFacturacion" class="form-label fw-bold">Origen:</label>
+                        <select id="filtroOrigenFacturacion" class="form-select">
                             <option value="">Todos los orígenes</option>
-                            @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
+                            @foreach($origenes as $origen)
                                 <option value="{{ $origen }}">{{ $origen }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="filtroEstadoFacturacion" class="form-label fw-bold">
-                            <i class="fas fa-tasks me-1"></i>Estado
-                        </label>
-                        <select id="filtroEstadoFacturacion" class="form-select form-select-sm">
+                        <label for="filtroEstadoFacturacion" class="form-label fw-bold">Estado:</label>
+                        <select id="filtroEstadoFacturacion" class="form-select">
                             <option value="">Todos los estados</option>
-                            @foreach($reservas->pluck('estado.nombre')->unique()->filter()->sort() as $estado)
-                                <option value="{{ $estado }}">{{ $estado }}</option>
+                            @foreach($estados as $estado)
+                                <option value="{{ $estado->nombre }}">{{ $estado->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="searchFacturacion" class="form-label fw-bold">
-                            <i class="fas fa-search me-1"></i>Buscar
-                        </label>
-                        <input type="text" id="searchFacturacion" class="form-control form-control-sm" placeholder="Buscar en la tabla...">
+                        <label for="searchFacturacion" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchFacturacion" class="form-control" placeholder="Buscar...">
                     </div>
                 </div>
 
-                <!-- Total destacado -->
-                <div class="row p-3 mb-0">
-                    <div class="col-12">
-                        <div class="alert alert-info d-flex justify-content-between align-items-center mb-0">
-                            <div>
-                                <i class="fas fa-calculator me-2"></i>
-                                <strong>Total Facturación Filtrada:</strong>
-                            </div>
-                            <div class="h4 mb-0 text-primary">
-                                <span id="totalFiltradoFacturacion">{{ number_format($reservas->sum('precio'), 2) }} €</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Total -->
+                <div class="alert alert-info mb-4">
+                    <strong>Total Facturación Filtrada: <span id="totalFacturacion">{{ number_format($totalFacturacion, 2, ',', '.') }} €</span></strong>
                 </div>
 
-                <!-- Tabla mejorada -->
-                <div class="table-container">
-                    <table id="tablaFacturacion" class="table table-striped table-hover table-bordered mb-0" style="width: 100%;">
+                <!-- Tabla -->
+                <div class="table-responsive">
+                    <table id="tablaFacturacion" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th class="text-center" style="width: 15%">
-                                    <i class="fas fa-user me-1"></i>Cliente
-                                </th>
-                                <th class="text-center" style="width: 20%">
-                                    <i class="fas fa-building me-1"></i>Apartamento
-                                </th>
-                                <th class="text-center" style="width: 10%">
-                                    <i class="fas fa-calendar-plus me-1"></i>Entrada
-                                </th>
-                                <th class="text-center" style="width: 10%">
-                                    <i class="fas fa-calendar-minus me-1"></i>Salida
-                                </th>
-                                <th class="text-center" style="width: 12%">
-                                    <i class="fas fa-euro-sign me-1"></i>Precio
-                                </th>
-                                <th class="text-center" style="width: 8%">
-                                    <i class="fas fa-users me-1"></i>Personas
-                                </th>
-                                <th class="text-center" style="width: 12%">
-                                    <i class="fas fa-globe me-1"></i>Origen
-                                </th>
-                                <th class="text-center" style="width: 13%">
-                                    <i class="fas fa-tasks me-1"></i>Estado
-                                </th>
+                                <th style="width: 12%;">CLIENTE</th>
+                                <th style="width: 20%;">APARTAMENTO</th>
+                                <th style="width: 10%;">ENTRADA</th>
+                                <th style="width: 10%;">SALIDA</th>
+                                <th style="width: 12%;">€ PRECIO</th>
+                                <th style="width: 8%;">PERSONAS</th>
+                                <th style="width: 12%;">ORIGEN</th>
+                                <th style="width: 16%;">ESTADO</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($reservas as $reserva)
-                                <tr data-id="{{ $reserva->id }}" class="cursor-pointer hover-row">
-                                    <td class="align-middle">
-                                        <strong>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</strong>
-                                    </td>
-                                    <td class="align-middle">
-                                        <small class="text-muted">{{ $reserva->apartamento->titulo ?? 'Sin título' }}</small>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge bg-light text-dark">
-                                            {{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}
+                                <tr data-id="{{ $reserva->id }}" style="cursor: pointer;">
+                                    <td>{{ $reserva->cliente->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->apartamento->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') : 'N/A' }}</td>
+                                    <td>{{ $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') : 'N/A' }}</td>
+                                    <td>{{ number_format($reserva->precio, 2, ',', '.') }} €</td>
+                                    <td>{{ $reserva->numero_personas ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->origen ?? 'N/A' }}</td>
+                                    <td>
+                                        @php
+                                            $estadoClass = '';
+                                            $estadoNombre = $reserva->estado->nombre ?? 'N/A';
+                                            
+                                            if (str_contains(strtolower($estadoNombre), 'facturado')) {
+                                                $estadoClass = 'bg-success';
+                                            } elseif (str_contains(strtolower($estadoNombre), 'pendiente')) {
+                                                $estadoClass = 'bg-warning text-dark';
+                                            } elseif (str_contains(strtolower($estadoNombre), 'cancelada')) {
+                                                $estadoClass = 'bg-danger';
+                                            } else {
+                                                $estadoClass = 'bg-secondary';
+                                            }
+                                        @endphp
+                                        <span class="badge {{ $estadoClass }}">
+                                            {{ $estadoNombre }}
                                         </span>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge bg-light text-dark">
-                                            {{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}
-                                        </span>
-                                    </td>
-                                    <td class="align-middle text-end" data-precio="{{ $reserva->precio }}">
-                                        <strong class="text-success">{{ number_format($reserva->precio, 2) }} €</strong>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        <span class="badge bg-info">{{ $reserva->numero_personas }}</span>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        <small class="text-muted">{{ $reserva->origen ?? 'No definido' }}</small>
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        @if($reserva->estado)
-                                            <span class="badge 
-                                                @if($reserva->estado->id == 1) bg-warning text-dark
-                                                @elseif($reserva->estado->id == 2) bg-info text-white
-                                                @elseif($reserva->estado->id == 3) bg-success text-white
-                                                @else bg-secondary text-white
-                                                @endif">
-                                                {{ $reserva->estado->nombre }}
-                                            </span>
-                                        @else
-                                            <span class="badge bg-secondary">Sin estado</span>
-                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -568,129 +521,71 @@ document.addEventListener('DOMContentLoaded', function () {
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i>Cerrar
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
 <style>
-/* Asegurar que el modal esté por encima del menú */
-.modal {
-    z-index: 9999 !important;
-}
-
-.modal-backdrop {
-    z-index: 9998 !important;
-}
-
-/* Contenedor de tabla que ocupe todo el ancho */
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    height: calc(100vh - 300px); /* Altura dinámica */
-}
-
+/* Estilos para la tabla */
 #tablaFacturacion {
     width: 100% !important;
-    margin: 0;
+    table-layout: fixed;
 }
 
-.cursor-pointer {
-    cursor: pointer;
+#tablaFacturacion th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    background-color: #343a40 !important;
+    border-bottom: 2px solid #495057;
+    padding: 12px 8px;
+    vertical-align: middle;
 }
 
-.hover-row:hover {
+#tablaFacturacion td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tablaFacturacion tbody tr:hover {
     background-color: #f8f9fa !important;
     transform: scale(1.01);
     transition: all 0.2s ease;
 }
 
-.table th {
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
+/* Colores específicos para estados */
+.badge.bg-success {
+    background-color: #28a745 !important;
+    color: white !important;
 }
 
-.table td {
-    vertical-align: middle;
-    font-size: 0.9rem;
-    white-space: nowrap;
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
 }
 
-.badge {
-    font-size: 0.75rem;
-    padding: 0.5em 0.75em;
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
 }
 
-.alert-info {
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    border: 1px solid #bee5eb;
-}
-
-.modal-fullscreen {
-    max-width: 100%;
-    margin: 0;
-    height: 100vh;
-}
-
-.modal-content {
-    height: 100vh;
-    border-radius: 0;
-}
-
-.modal-body {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.form-label {
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-}
-
-.form-select-sm, .form-control-sm {
-    font-size: 0.875rem;
-}
-
-/* DataTables personalizado */
-.dataTables_wrapper {
-    width: 100%;
-    padding: 0;
-}
-
-.dataTables_length, .dataTables_filter {
-    margin-bottom: 10px;
-}
-
-.dataTables_info, .dataTables_paginate {
-    margin-top: 10px;
-}
-
-/* Asegurar que los controles de DataTables no interfieran */
-.dataTables_filter input {
-    width: 200px !important;
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: white !important;
 }
 
 /* Responsive para pantallas pequeñas */
 @media (max-width: 768px) {
-    .modal-fullscreen {
-        margin: 0;
+    #tablaFacturacion {
+        font-size: 0.8rem;
     }
     
-    .table-container {
-        height: calc(100vh - 250px);
-    }
-    
-    .col-md-3 {
-        margin-bottom: 10px;
+    #tablaFacturacion th,
+    #tablaFacturacion td {
+        padding: 8px 4px;
     }
 }
 </style>
@@ -704,19 +599,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const tableFacturacion = $('#tablaFacturacion').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
             },
-            order: [[2, 'asc']],
             pageLength: 25,
-            lengthMenu: [10, 25, 50, 100],
-            responsive: false, // Desactivar responsive para control total
-            scrollX: true,
-            scrollY: 'calc(100vh - 350px)',
-            scrollCollapse: true,
-            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                 '<"row"<"col-sm-12"tr>>' +
-                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-            drawCallback: updateTotalFiltradoFacturacion
+            order: [[0, 'asc']],
+            responsive: true,
+            autoWidth: true,
+            columnDefs: [
+                {
+                    targets: '_all',
+                    className: 'text-center'
+                }
+            ],
+            initComplete: function () {
+                // Recalcular anchos después de la inicialización
+                this.api().columns.adjust();
+            }
+        });
+
+        // Recalcular anchos cuando cambie el tamaño de la ventana
+        $(window).on('resize', function () {
+            tableFacturacion.columns.adjust();
+        });
+
+        // Recalcular anchos cuando se muestre el modal
+        $('#modalFacturacion').on('shown.bs.modal', function () {
+            tableFacturacion.columns.adjust();
         });
 
         function updateTotalFiltradoFacturacion() {
