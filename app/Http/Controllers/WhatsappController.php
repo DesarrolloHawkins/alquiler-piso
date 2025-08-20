@@ -10,6 +10,8 @@ use App\Models\MensajeAuto;
 use App\Models\PromptAsistente;
 use App\Models\Reparaciones;
 use App\Models\Reserva;
+use App\Models\LimpiadoraGuardia;
+use App\Models\WhatsappTemplate;
 use App\Models\Whatsapp;
 use App\Services\ClienteService;
 use CURLFile;
@@ -170,7 +172,19 @@ class WhatsappController extends Controller
                 'date' => now(),
             ]);
 
-            // 2. Intentar obtener respuesta de ChatGPT
+            // 2. Clasificar el mensaje y notificar si procede
+            try {
+                $categoria = $this->clasificarMensaje($contenido);
+                if ($categoria === 'averia') {
+                    $this->gestionarAveria($waId, $contenido);
+                } elseif ($categoria === 'limpieza') {
+                    $this->gestionarLimpieza($waId, $contenido);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Fallo clasificando o notificando: ' . $e->getMessage());
+            }
+
+            // 3. Intentar obtener respuesta de ChatGPT
             $respuestaTexto = $this->enviarMensajeOpenAiChatCompletions($contenido, $waId);
 
             if ($respuestaTexto) {
@@ -358,14 +372,24 @@ class WhatsappController extends Controller
 
     public function gestionarAveria($phone, $mensaje)
     {
-        // Aquí podrías registrar la avería en la base de datos
-        return "Hemos registrado tu avería. Nuestro equipo te contactará pronto.";
+        // Registrar la avería en la base de datos
+        $this->registrarAveria($phone, $mensaje);
+        
+        // Enviar mensaje al técnico
+        $this->enviarMensajeTecnico($phone, $mensaje);
+        
+        return "Hemos registrado tu avería. Nuestro equipo técnico ha sido notificado y te contactará pronto.";
     }
 
     public function gestionarLimpieza($phone, $mensaje)
     {
-        // Aquí podrías programar una limpieza en el sistema
-        return "Hemos programado el servicio de limpieza. Te avisaremos cuando esté confirmado.";
+        // Registrar la solicitud de limpieza en la base de datos
+        $this->registrarLimpieza($phone, $mensaje);
+        
+        // Enviar mensaje a la limpiadora
+        $this->enviarMensajeLimpiadora($phone, $mensaje);
+        
+        return "Hemos programado el servicio de limpieza. Nuestro equipo de limpieza ha sido notificado y te avisaremos cuando esté confirmado.";
     }
 
     public function gestionarReserva($phone, $mensaje)
@@ -380,7 +404,228 @@ class WhatsappController extends Controller
         // Aquí iría tu código original para procesar la conversación con el asistente
     }
 
-    public function chatGpt($mensaje, $id, $phone = null, $idMensaje)
+    /**
+     * Registrar una avería en la base de datos
+     */
+    private function registrarAveria($phone, $mensaje)
+    {
+        // Aquí puedes implementar el registro en la base de datos
+        // Por ejemplo, crear un registro en una tabla de averías
+        Log::info("Avería registrada - Teléfono: {$phone}, Mensaje: {$mensaje}");
+    }
+
+    /**
+     * Registrar una solicitud de limpieza en la base de datos
+     */
+    private function registrarLimpieza($phone, $mensaje)
+    {
+        // Aquí puedes implementar el registro en la base de datos
+        // Por ejemplo, crear un registro en una tabla de solicitudes de limpieza
+        Log::info("Limpieza registrada - Teléfono: {$phone}, Mensaje: {$mensaje}");
+    }
+
+    /**
+     * Enviar mensaje al técnico usando template de WhatsApp
+     */
+    private function enviarMensajeTecnico($phone, $mensaje)
+    {
+        try {
+            // Obtener técnico disponible según horario actual
+            $tecnico = $this->obtenerTecnicoDisponible();
+            
+            if (!$tecnico) {
+                Log::warning("No hay técnicos disponibles para notificar");
+                return;
+            }
+
+            // Buscar template para averías
+            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%averia%')
+                ->orWhere('name', 'like', '%tecnico%')
+                ->orWhere('name', 'like', '%reparacion%')
+                ->first();
+
+            if ($template) {
+                // Enviar mensaje usando template
+                $this->enviarMensajeTemplate($tecnico->telefono, $template->template_id, [
+                    'cliente_telefono' => $phone,
+                    'mensaje' => $mensaje,
+                    'fecha' => now()->format('d/m/Y H:i')
+                ]);
+            } else {
+                // Enviar mensaje simple si no hay template
+                $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n📱 Cliente: {$phone}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                $this->contestarWhatsapp3($tecnico->telefono, $texto);
+            }
+
+            Log::info("Mensaje enviado al técnico: {$tecnico->telefono}");
+        } catch (\Exception $e) {
+            Log::error("Error enviando mensaje al técnico: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar mensaje a la limpiadora usando template de WhatsApp
+     */
+    private function enviarMensajeLimpiadora($phone, $mensaje)
+    {
+        try {
+            // Obtener limpiadora disponible según horario actual
+            $limpiadora = $this->obtenerLimpiadoraDisponible();
+            
+            if (!$limpiadora) {
+                Log::warning("No hay limpiadoras disponibles para notificar");
+                return;
+            }
+
+            // Buscar template para limpieza
+            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%limpieza%')
+                ->orWhere('name', 'like', '%limpiadora%')
+                ->orWhere('name', 'like', '%cleaning%')
+                ->first();
+
+            if ($template) {
+                // Enviar mensaje usando template
+                $this->enviarMensajeTemplate($limpiadora->telefono, $template->template_id, [
+                    'cliente_telefono' => $phone,
+                    'mensaje' => $mensaje,
+                    'fecha' => now()->format('d/m/Y H:i')
+                ]);
+            } else {
+                // Enviar mensaje simple si no hay template
+                $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n📱 Cliente: {$phone}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                $this->contestarWhatsapp3($limpiadora->telefono, $texto);
+            }
+
+            Log::info("Mensaje enviado a la limpiadora: {$limpiadora->telefono}");
+        } catch (\Exception $e) {
+            Log::error("Error enviando mensaje a la limpiadora: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar mensaje usando template de WhatsApp
+     */
+    private function enviarMensajeTemplate($phone, $templateId, $parameters = [])
+    {
+        $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+        
+        $mensajeTemplate = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $phone,
+            "type" => "template",
+            "template" => [
+                "name" => $templateId,
+                "language" => [
+                    "code" => "es"
+                ]
+            ]
+        ];
+
+        // Agregar parámetros si existen
+        if (!empty($parameters)) {
+            $mensajeTemplate["template"]["components"] = [
+                [
+                    "type" => "body",
+                    "parameters" => array_map(function($key, $value) {
+                        return [
+                            "type" => "text",
+                            "text" => $value
+                        ];
+                    }, array_keys($parameters), $parameters)
+                ]
+            ];
+        }
+
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $token
+        ])->post($urlMensajes, $mensajeTemplate);
+
+        if ($response->failed()) {
+            Log::error("❌ Error enviando template de WhatsApp: " . $response->body());
+            return ['error' => 'Error enviando template'];
+        }
+
+        $responseJson = $response->json();
+        Storage::disk('local')->put("Respuesta_Template_Whatsapp-{$phone}.txt", json_encode($responseJson, JSON_PRETTY_PRINT));
+
+        return $responseJson;
+    }
+
+    /**
+     * Obtener técnico disponible según horario actual
+     */
+    private function obtenerTecnicoDisponible()
+    {
+        $horaActual = now()->format('H:i');
+        $diaSemana = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
+        
+        // Mapear día de la semana a columnas de la base de datos
+        $diasColumnas = [
+            1 => 'lunes',
+            2 => 'martes', 
+            3 => 'miercoles',
+            4 => 'jueves',
+            5 => 'viernes',
+            6 => 'sabado',
+            0 => 'domingo'
+        ];
+        
+        $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
+        
+        // Buscar técnico disponible en el día y horario actual
+        $tecnico = Reparaciones::where($columnaDia, true)
+            ->where('hora_inicio', '<=', $horaActual)
+            ->where('hora_fin', '>=', $horaActual)
+            ->first();
+            
+        // Si no hay técnico en horario, buscar cualquier técnico
+        if (!$tecnico) {
+            $tecnico = Reparaciones::first();
+        }
+        
+        return $tecnico;
+    }
+
+    /**
+     * Obtener limpiadora disponible según horario actual
+     */
+    private function obtenerLimpiadoraDisponible()
+    {
+        $horaActual = now()->format('H:i');
+        $diaSemana = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
+        
+        // Mapear día de la semana a columnas de la base de datos
+        $diasColumnas = [
+            1 => 'lunes',
+            2 => 'martes', 
+            3 => 'miercoles',
+            4 => 'jueves',
+            5 => 'viernes',
+            6 => 'sabado',
+            0 => 'domingo'
+        ];
+        
+        $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
+        
+        // Buscar limpiadora disponible en el día y horario actual
+        $limpiadora = LimpiadoraGuardia::where($columnaDia, true)
+            ->where('hora_inicio', '<=', $horaActual)
+            ->where('hora_fin', '>=', $horaActual)
+            ->first();
+            
+        // Si no hay limpiadora en horario, buscar cualquier limpiadora
+        if (!$limpiadora) {
+            $limpiadora = LimpiadoraGuardia::first();
+        }
+        
+        return $limpiadora;
+    }
+
+    public function chatGpt($mensaje, $id, $phone = null, $idMensaje = null)
     {
         $categoria = $this->clasificarMensaje($mensaje);
 
@@ -545,33 +790,33 @@ class WhatsappController extends Controller
 
 
     // Vista de los mensajes
-public function whatsapp()
-{
-    // Obtener los IDs del último mensaje por cada remitente (excepto "guest")
-    $ids = ChatGpt::where('remitente', '!=', 'guest')
-        ->selectRaw('MAX(id) as id')
-        ->groupBy('remitente')
-        ->pluck('id');
+    public function whatsapp()
+    {
+        // Obtener los IDs del último mensaje por cada remitente (excepto "guest")
+        $ids = ChatGpt::where('remitente', '!=', 'guest')
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('remitente')
+            ->pluck('id');
 
-    // Cargar solo esos mensajes
-    $mensajes = ChatGpt::whereIn('id', $ids)
-        ->orderBy('created_at', 'desc')
-        ->get();
+        // Cargar solo esos mensajes
+        $mensajes = ChatGpt::whereIn('id', $ids)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    $resultado = [];
-    foreach ($mensajes as $mensaje) {
-        $mensaje['whatsapp_mensaje'] = $mensaje->whatsappMensaje;
+        $resultado = [];
+        foreach ($mensajes as $mensaje) {
+            $mensaje['whatsapp_mensaje'] = $mensaje->whatsappMensaje;
 
-        $cliente = Cliente::where('telefono', '+'.$mensaje->remitente)->first();
-        $mensaje['nombre_remitente'] = $cliente
-            ? ($cliente->nombre !== '' ? $cliente->nombre . ' ' . $cliente->apellido1 : $cliente->alias)
-            : 'Desconocido';
+            $cliente = Cliente::where('telefono', '+'.$mensaje->remitente)->first();
+            $mensaje['nombre_remitente'] = $cliente
+                ? ($cliente->nombre !== '' ? $cliente->nombre . ' ' . $cliente->apellido1 : $cliente->alias)
+                : 'Desconocido';
 
-        $resultado[$mensaje->remitente][] = $mensaje;
+            $resultado[$mensaje->remitente][] = $mensaje;
+        }
+
+        return view('whatsapp.index', compact('resultado'));
     }
-
-    return view('whatsapp.index', compact('resultado'));
-}
 
 
 
