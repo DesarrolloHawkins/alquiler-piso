@@ -356,10 +356,10 @@ class WhatsappController extends Controller
         $body = json_encode([
             'model' => 'gpt-4',
             'messages' => [
-                ['role' => 'system', 'content' => 'Eres un asistente que clasifica mensajes en: "averia", "limpieza", "reserva_apartamento", o "otro".'],
+                ['role' => 'system', 'content' => 'Eres un asistente que clasifica mensajes. Responde ÚNICAMENTE con una de estas palabras: "averia", "limpieza", "reserva_apartamento", o "otro". No agregues explicaciones ni texto adicional.'],
                 ['role' => 'user', 'content' => $mensaje]
             ],
-            'max_tokens' => 10
+            'max_tokens' => 5
         ]);
 
         Log::info("🌐 Enviando petición a OpenAI para clasificación...");
@@ -378,7 +378,17 @@ class WhatsappController extends Controller
         if (isset($response_data['choices'][0]['message']['content'])) {
             $categoria = trim(strtolower($response_data['choices'][0]['message']['content']));
             Log::info("✅ Clasificación exitosa: {$categoria}");
-            return $categoria;
+            
+            // Extraer solo la categoría relevante
+            if (strpos($categoria, 'averia') !== false) {
+                return 'averia';
+            } elseif (strpos($categoria, 'limpieza') !== false) {
+                return 'limpieza';
+            } elseif (strpos($categoria, 'reserva') !== false) {
+                return 'reserva_apartamento';
+            } else {
+                return 'otro';
+            }
         }
 
         Log::warning("⚠️ Error en clasificación, retornando 'otro'");
