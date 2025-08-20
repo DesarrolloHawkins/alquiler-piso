@@ -12,6 +12,7 @@ use App\Models\Reparaciones;
 use App\Models\Reserva;
 use App\Models\LimpiadoraGuardia;
 use App\Models\WhatsappTemplate;
+use App\Models\EmailNotificaciones;
 use App\Models\Whatsapp;
 use App\Services\ClienteService;
 use CURLFile;
@@ -511,6 +512,10 @@ class WhatsappController extends Controller
             }
 
             Log::info("Mensaje enviado al técnico: {$tecnico->telefono}");
+            
+            // Enviar notificación a todos los responsables configurados
+            $this->enviarNotificacionResponsables($phone, $mensaje, 'averia', $tecnico->nombre, $apartamento, $edificio);
+            
         } catch (\Exception $e) {
             Log::error("Error enviando mensaje al técnico: " . $e->getMessage());
         }
@@ -562,6 +567,10 @@ class WhatsappController extends Controller
             }
 
             Log::info("Mensaje enviado a la limpiadora: {$limpiadora->telefono}");
+            
+            // Enviar notificación a todos los responsables configurados
+            $this->enviarNotificacionResponsables($phone, $mensaje, 'limpieza', $limpiadora->usuario->name ?? 'Limpiadora', $apartamento, $edificio);
+            
         } catch (\Exception $e) {
             Log::error("Error enviando mensaje a la limpiadora: " . $e->getMessage());
         }
@@ -694,6 +703,67 @@ class WhatsappController extends Controller
         }
         
         return $limpiadora;
+    }
+
+    /**
+     * Enviar notificación a todos los responsables configurados
+     */
+    private function enviarNotificacionResponsables($phone, $mensaje, $tipo, $personalAsignado, $apartamento, $edificio)
+    {
+        Log::info("📢 ENVIAR NOTIFICACIÓN RESPONSABLES - Iniciando para tipo: {$tipo}");
+        
+        try {
+            // Obtener todos los responsables configurados
+            $responsables = EmailNotificaciones::all();
+            
+            if ($responsables->isEmpty()) {
+                Log::info("ℹ️ No hay responsables configurados para notificar");
+                return;
+            }
+            
+            Log::info("📋 Encontrados {$responsables->count()} responsables para notificar");
+            
+            foreach ($responsables as $responsable) {
+                try {
+                    if (!empty($responsable->telefono)) {
+                        // Enviar mensaje de WhatsApp al responsable
+                        $texto = $this->generarMensajeResponsable($phone, $mensaje, $tipo, $personalAsignado, $apartamento, $edificio);
+                        
+                        Log::info("📱 Enviando notificación a responsable: {$responsable->nombre} - {$responsable->telefono}");
+                        $this->contestarWhatsapp3($responsable->telefono, $texto);
+                        
+                        Log::info("✅ Notificación enviada exitosamente a: {$responsable->nombre}");
+                    } else {
+                        Log::warning("⚠️ Responsable {$responsable->nombre} no tiene teléfono configurado");
+                    }
+                } catch (\Exception $e) {
+                    Log::error("❌ Error enviando notificación a {$responsable->nombre}: " . $e->getMessage());
+                }
+            }
+            
+            Log::info("✅ ENVIAR NOTIFICACIÓN RESPONSABLES - Completado");
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Error general enviando notificaciones a responsables: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generar mensaje para responsables
+     */
+    private function generarMensajeResponsable($phone, $mensaje, $tipo, $personalAsignado, $apartamento, $edificio)
+    {
+        $emoji = ($tipo === 'averia') ? '🚨' : '🧹';
+        $tipoTexto = ($tipo === 'averia') ? 'AVERÍA' : 'LIMPIEZA';
+        
+        return "{$emoji} NOTIFICACIÓN DE {$tipoTexto}\n\n" .
+               "📱 Cliente: {$phone}\n" .
+               "🏠 Apartamento: {$apartamento}\n" .
+               "🏢 Edificio: {$edificio}\n" .
+               "💬 Mensaje: {$mensaje}\n" .
+               "👨‍🔧 Personal Asignado: {$personalAsignado}\n" .
+               "📅 Fecha: " . now()->format('d/m/Y H:i') . "\n\n" .
+               "ℹ️ Esta notificación se ha enviado automáticamente al personal correspondiente.";
     }
 
     /**
