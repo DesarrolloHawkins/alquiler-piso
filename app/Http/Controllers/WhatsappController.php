@@ -444,7 +444,7 @@ class WhatsappController extends Controller
 
             if ($template) {
                 // Enviar mensaje usando template con parámetros en el orden correcto
-                $this->enviarMensajeTemplate($tecnico->telefono, $template->template_id, [
+                $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
                     '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
                     '2' => $this->obtenerApartamentoCliente($phone) ?? 'Apartamento', // Apartamento del cliente
                     '3' => $this->obtenerEdificioCliente($phone) ?? 'Edificio', // Edificio del cliente
@@ -485,7 +485,7 @@ class WhatsappController extends Controller
 
             if ($template) {
                 // Enviar mensaje usando template
-                $this->enviarMensajeTemplate($limpiadora->telefono, $template->template_id, [
+                $this->enviarMensajeTemplate($limpiadora->telefono, $template->name, [
                     'cliente_telefono' => $phone,
                     'mensaje' => $mensaje,
                     'fecha' => now()->format('d/m/Y H:i')
@@ -505,7 +505,7 @@ class WhatsappController extends Controller
     /**
      * Enviar mensaje usando template de WhatsApp
      */
-    private function enviarMensajeTemplate($phone, $templateId, $parameters = [])
+    private function enviarMensajeTemplate($phone, $templateName, $parameters = [])
     {
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         
@@ -515,7 +515,7 @@ class WhatsappController extends Controller
             "to" => $phone,
             "type" => "template",
             "template" => [
-                "name" => $templateId,
+                "name" => $templateName,
                 "language" => [
                     "code" => "es"
                 ]
