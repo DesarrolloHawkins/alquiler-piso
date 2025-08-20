@@ -531,9 +531,9 @@ class WhatsappController extends Controller
             }
 
             // Buscar template para limpieza
-            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%limpieza%')
-                ->orWhere('name', 'like', '%limpiadora%')
-                ->orWhere('name', 'like', '%cleaning%')
+            Log::info("🔍 Buscando template para limpieza...");
+            $template = \App\Models\WhatsappTemplate::where('name', 'limpieza')
+                ->where('name', 'not like', '%_null%')
                 ->first();
 
             if ($template) {
@@ -544,11 +544,12 @@ class WhatsappController extends Controller
                 $apartamento = $this->obtenerApartamentoCliente($phone);
                 $edificio = $this->obtenerEdificioCliente($phone);
                 
-                // Enviar mensaje usando template (ajustar según las variables del template)
+                // Enviar mensaje usando template con los 4 parámetros que espera
                 $this->enviarMensajeTemplate($limpiadora->telefono, $template->name, [
-                    '1' => $limpiadora->usuario->name ?? 'Limpiadora', // Nombre de la limpiadora
-                    '2' => $apartamento, // Apartamento del cliente
-                    '3' => $edificio // Edificio del cliente
+                    '1' => $apartamento, // Apartamento del cliente
+                    '2' => $edificio, // Edificio del cliente
+                    '3' => $mensaje, // Información del cliente
+                    '4' => $phone // Número del cliente
                 ]);
             } else {
                 Log::warning("⚠️ No se encontró template para limpieza, enviando mensaje simple");
@@ -595,12 +596,12 @@ class WhatsappController extends Controller
             $mensajeTemplate["template"]["components"] = [
                 [
                     "type" => "body",
-                    "parameters" => array_map(function($key, $value) {
+                    "parameters" => array_values(array_map(function($value) {
                         return [
                             "type" => "text",
                             "text" => $value
                         ];
-                    }, array_keys($parameters), $parameters)
+                    }, $parameters))
                 ]
             ];
         }
