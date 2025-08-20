@@ -25,8 +25,8 @@
                     <th>Fecha Fin</th>
                     <th>Excluir</th>
                     {{-- <th>Excluir Semana</th> --}}
-                    <th>Tipo de Actualización</th>
-                    <th>Valores</th>
+                    <th>Configuracion</th>
+                    <th>Estancia Disponible</th>
                     {{-- <th>Restricciones</th> --}}
                     <th>Acciones</th>
                 </tr>
@@ -81,12 +81,22 @@
 
                     <td>
                         <select name="updates[0][update_type]" class="form-select update-type-select">
-                            <option value="availability">Disponibilidad</option>
-                            <option value="restrictions">Restricciones</option>
+                            <option value="availability">Basica</option>
+                            <option value="restrictions">Avanzada</option>
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="updates[0][value]" class="form-control availability-value" placeholder="Valor de disponibilidad">
+                        <input type="number" name="updates[0][value]" class="form-control availability-value" placeholder="Valor de disponibilidad" style="display: none;">
+                        <div class="availability-radio">
+                            <div class="form-check">
+                                <input type="radio" name="updates[0][value]" value="1" class="form-check-input">
+                                <label class="form-check-label">Sí</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" name="updates[0][value]" value="0" class="form-check-input">
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
                     </td>
                     <td class="restrictions-fields" style="display: none; max-width: 300px">
                         <div class="row">
@@ -173,17 +183,40 @@ document.addEventListener("DOMContentLoaded", function () {
             const valueCell = row.querySelector(".availability-value").closest("td"); // Celda de disponibilidad
             const restrictionsCell = row.querySelector(".restrictions-fields").closest("td"); // Celda de restricciones
             const restrictionsFields = row.querySelector(".restrictions-fields"); // Contenedor interno
+            const availabilityInput = row.querySelector(".availability-value"); // Input de número
+            const availabilityRadio = row.querySelector(".availability-radio"); // Radio buttons
 
             if (!valueCell || !restrictionsCell || !restrictionsFields) return; // Si algún elemento falta, no hace nada
+
+            // Obtener el encabezado de la columna (8ª columna, índice 7)
+            const tableHeader = document.querySelector("#updatesTable thead tr th:nth-child(8)");
 
             if (e.target.value === "availability") {
                 valueCell.style.display = "table-cell"; // Mostrar celda de disponibilidad
                 restrictionsCell.style.display = "none"; // Ocultar celda de restricciones
                 restrictionsFields.style.display = "none"; // Ocultar contenido de restricciones
+                
+                // Mostrar radio buttons y ocultar input de número
+                if (availabilityRadio) availabilityRadio.style.display = "block";
+                if (availabilityInput) availabilityInput.style.display = "none";
+                
+                // Cambiar el encabezado a "Estancia Disponible"
+                if (tableHeader) {
+                    tableHeader.textContent = "Estancia Disponible";
+                }
             } else {
                 valueCell.style.display = "none"; // Ocultar celda de disponibilidad
                 restrictionsCell.style.display = "table-cell"; // Mostrar celda de restricciones
                 restrictionsFields.style.display = "block"; // Asegurar que el contenido interno se muestre
+                
+                // Ocultar radio buttons y mostrar input de número (aunque no se vea la celda)
+                if (availabilityRadio) availabilityRadio.style.display = "none";
+                if (availabilityInput) availabilityInput.style.display = "block";
+                
+                // Cambiar el encabezado a "Información"
+                if (tableHeader) {
+                    tableHeader.textContent = "Información";
+                }
             }
         }
     });
@@ -232,9 +265,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const valueField = newRow.querySelector(".availability-value");
     const restrictionsFields = newRow.querySelector(".restrictions-fields");
     const updateTypeSelect = newRow.querySelector(".update-type-select");
+    const availabilityRadio = newRow.querySelector(".availability-radio");
 
     if (valueField) valueField.closest("td").style.display = "table-cell"; // Mostrar valor por defecto
     if (restrictionsFields) restrictionsFields.style.display = "none"; // Ocultar restricciones por defecto
+    
+    // Configurar visibilidad de radio buttons e input
+    if (availabilityRadio) availabilityRadio.style.display = "block"; // Mostrar radio buttons por defecto
+    if (valueField) valueField.style.display = "none"; // Ocultar input de número por defecto
 
     // Asegurar que el select de la nueva fila empiece en "Availability"
     if (updateTypeSelect) updateTypeSelect.value = "availability";
