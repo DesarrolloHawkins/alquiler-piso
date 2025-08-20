@@ -27,15 +27,16 @@ class DashboardController extends Controller
         $fechaFin = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
 
         // **Filtrar reservas por rango de fechas**
-        $reservas = Reserva::where('estado_id', '!=', 4)->where(function ($query) use ($fechaInicio, $fechaFin) {
-            $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-                ->orWhereBetween('fecha_salida', [$fechaInicio, $fechaFin])
-                ->orWhere(function ($subQuery) use ($fechaInicio, $fechaFin) {
-                    $subQuery->where('fecha_entrada', '<=', $fechaInicio)
-                            ->where('fecha_salida', '>=', $fechaFin);
-                });
-
-        })->get();
+        $reservas = Reserva::with(['cliente', 'apartamento', 'estado'])
+            ->where('estado_id', '!=', 4)
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
+                    ->orWhereBetween('fecha_salida', [$fechaInicio, $fechaFin])
+                    ->orWhere(function ($subQuery) use ($fechaInicio, $fechaFin) {
+                        $subQuery->where('fecha_entrada', '<=', $fechaInicio)
+                                ->where('fecha_salida', '>=', $fechaFin);
+                    });
+            })->get();
 
         // Debug para el filtro principal si es junio 2025
         if ($fechaInicio->format('Y-m') == '2025-06' && $fechaFin->format('Y-m') == '2025-06') {

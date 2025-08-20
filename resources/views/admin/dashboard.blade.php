@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="filtroApartamentoFacturacion" class="form-label">Filtrar por Apartamento</label>
                         <select id="filtroApartamentoFacturacion" class="form-select">
                             <option value="">Todos</option>
@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="filtroOrigenFacturacion" class="form-label">Filtrar por Origen</label>
                         <select id="filtroOrigenFacturacion" class="form-select">
                             <option value="">Todos</option>
@@ -448,7 +448,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label for="filtroEstadoFacturacion" class="form-label">Filtrar por Estado</label>
+                        <select id="filtroEstadoFacturacion" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($reservas->pluck('estado.nombre')->unique()->filter()->sort() as $estado)
+                                <option value="{{ $estado }}">{{ $estado }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label for="searchFacturacion" class="form-label">Buscar</label>
                         <input type="text" id="searchFacturacion" class="form-control" placeholder="Buscar...">
                     </div>
@@ -464,6 +473,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <th>Precio</th>
                             <th>Nº Personas</th>
                             <th>Origen</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -476,6 +486,20 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
                                 <td>{{ $reserva->numero_personas }}</td>
                                 <td>{{ $reserva->origen ?? 'No definido' }}</td>
+                                <td>
+                                    @if($reserva->estado)
+                                        <span class="badge 
+                                            @if($reserva->estado->id == 1) bg-warning
+                                            @elseif($reserva->estado->id == 2) bg-info
+                                            @elseif($reserva->estado->id == 3) bg-success
+                                            @else bg-secondary
+                                            @endif">
+                                            {{ $reserva->estado->nombre }}
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary">Sin estado</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -486,14 +510,57 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    $('#tablaFacturacion tbody').on('click', 'tr', function () {
-        var idFacturacion = $(this).data('id');
-        if (idFacturacion) {
-            window.open('/facturas/' + idFacturacion + '/edit', '_blank');
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableFacturacion = $('#tablaFacturacion').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            order: [[2, 'asc']],
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            drawCallback: updateTotalFiltradoFacturacion
+        });
+
+        function updateTotalFiltradoFacturacion() {
+            let total = 0;
+
+            // Usar API para obtener todas las filas filtradas, no solo las visibles
+            tableFacturacion.rows({ search: 'applied' }).every(function () {
+                const row = this.node();
+                const precio = parseFloat($(row).find('td[data-precio]').data('precio'));
+                if (!isNaN(precio)) total += precio;
+            });
+
+            // Mostrar total
+            $('#totalFiltradoFacturacion').text(total.toLocaleString('es-ES', {
+                style: 'currency',
+                currency: 'EUR'
+            }));
         }
+
+        $('#filtroApartamentoFacturacion').on('change', function () {
+            tableFacturacion.column(1).search(this.value).draw();
+        });
+
+        $('#filtroOrigenFacturacion').on('change', function () {
+            tableFacturacion.column(6).search(this.value).draw();
+        });
+
+        $('#filtroEstadoFacturacion').on('change', function () {
+            tableFacturacion.column(7).search(this.value).draw();
+        });
+
+        $('#searchFacturacion').on('keyup', function () {
+            tableFacturacion.search(this.value).draw();
+        });
+
+        $('#tablaFacturacion tbody').on('click', 'tr', function () {
+            var idReserva = $(this).data('id');
+            if (idReserva) {
+                window.open('/reservas/' + idReserva + '/show', '_blank');
+            }
+        });
     });
-});
 </script>
 
 <!-- Modal de Cobrado -->
@@ -808,6 +875,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         $('#filtroOrigenFacturacion').on('change', function () {
             tableFacturacion.column(6).search(this.value).draw();
+        });
+
+        $('#filtroEstadoFacturacion').on('change', function () {
+            tableFacturacion.column(7).search(this.value).draw();
         });
 
         $('#searchFacturacion').on('keyup', function () {
