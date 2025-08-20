@@ -422,92 +422,214 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <!-- Modal de Facturación -->
 <div class="modal fade" id="modalFacturacion" tabindex="-1" aria-labelledby="modalFacturacionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalFacturacionLabel">Detalle de Facturación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFacturacionLabel">
+                    <i class="fas fa-chart-line me-2"></i>Detalle de Facturación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <div class="row mb-3">
+                <!-- Filtros mejorados -->
+                <div class="row mb-4">
                     <div class="col-md-3">
-                        <label for="filtroApartamentoFacturacion" class="form-label">Filtrar por Apartamento</label>
-                        <select id="filtroApartamentoFacturacion" class="form-select">
-                            <option value="">Todos</option>
+                        <label for="filtroApartamentoFacturacion" class="form-label fw-bold">
+                            <i class="fas fa-building me-1"></i>Apartamento
+                        </label>
+                        <select id="filtroApartamentoFacturacion" class="form-select form-select-sm">
+                            <option value="">Todos los apartamentos</option>
                             @foreach($reservas->pluck('apartamento.titulo')->unique()->filter()->sort() as $apartamento)
                                 <option value="{{ $apartamento }}">{{ $apartamento }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="filtroOrigenFacturacion" class="form-label">Filtrar por Origen</label>
-                        <select id="filtroOrigenFacturacion" class="form-select">
-                            <option value="">Todos</option>
+                        <label for="filtroOrigenFacturacion" class="form-label fw-bold">
+                            <i class="fas fa-globe me-1"></i>Origen
+                        </label>
+                        <select id="filtroOrigenFacturacion" class="form-select form-select-sm">
+                            <option value="">Todos los orígenes</option>
                             @foreach($reservas->pluck('origen')->unique()->filter()->sort() as $origen)
                                 <option value="{{ $origen }}">{{ $origen }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="filtroEstadoFacturacion" class="form-label">Filtrar por Estado</label>
-                        <select id="filtroEstadoFacturacion" class="form-select">
-                            <option value="">Todos</option>
+                        <label for="filtroEstadoFacturacion" class="form-label fw-bold">
+                            <i class="fas fa-tasks me-1"></i>Estado
+                        </label>
+                        <select id="filtroEstadoFacturacion" class="form-select form-select-sm">
+                            <option value="">Todos los estados</option>
                             @foreach($reservas->pluck('estado.nombre')->unique()->filter()->sort() as $estado)
                                 <option value="{{ $estado }}">{{ $estado }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="searchFacturacion" class="form-label">Buscar</label>
-                        <input type="text" id="searchFacturacion" class="form-control" placeholder="Buscar...">
+                        <label for="searchFacturacion" class="form-label fw-bold">
+                            <i class="fas fa-search me-1"></i>Buscar
+                        </label>
+                        <input type="text" id="searchFacturacion" class="form-control form-control-sm" placeholder="Buscar en la tabla...">
                     </div>
                 </div>
-                <h3>Total filtrado: <span id="totalFiltradoFacturacion">{{ number_format($reservas->sum('precio'), 2) }} €</span></h3>
-                <table id="tablaFacturacion" class="display table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Apartamento</th>
-                            <th>Entrada</th>
-                            <th>Salida</th>
-                            <th>Precio</th>
-                            <th>Nº Personas</th>
-                            <th>Origen</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($reservas as $reserva)
-                            <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
-                                <td>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</td>
-                                <td>{{ $reserva->apartamento->titulo ?? 'Sin título' }}</td>
-                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
-                                <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
-                                <td>{{ $reserva->numero_personas }}</td>
-                                <td>{{ $reserva->origen ?? 'No definido' }}</td>
-                                <td>
-                                    @if($reserva->estado)
-                                        <span class="badge 
-                                            @if($reserva->estado->id == 1) bg-warning
-                                            @elseif($reserva->estado->id == 2) bg-info
-                                            @elseif($reserva->estado->id == 3) bg-success
-                                            @else bg-secondary
-                                            @endif">
-                                            {{ $reserva->estado->nombre }}
-                                        </span>
-                                    @else
-                                        <span class="badge bg-secondary">Sin estado</span>
-                                    @endif
-                                </td>
+
+                <!-- Total destacado -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-calculator me-2"></i>
+                                <strong>Total Facturación Filtrada:</strong>
+                            </div>
+                            <div class="h4 mb-0 text-primary">
+                                <span id="totalFiltradoFacturacion">{{ number_format($reservas->sum('precio'), 2) }} €</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla mejorada -->
+                <div class="table-responsive">
+                    <table id="tablaFacturacion" class="table table-striped table-hover table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 15%">
+                                    <i class="fas fa-user me-1"></i>Cliente
+                                </th>
+                                <th class="text-center" style="width: 20%">
+                                    <i class="fas fa-building me-1"></i>Apartamento
+                                </th>
+                                <th class="text-center" style="width: 10%">
+                                    <i class="fas fa-calendar-plus me-1"></i>Entrada
+                                </th>
+                                <th class="text-center" style="width: 10%">
+                                    <i class="fas fa-calendar-minus me-1"></i>Salida
+                                </th>
+                                <th class="text-center" style="width: 12%">
+                                    <i class="fas fa-euro-sign me-1"></i>Precio
+                                </th>
+                                <th class="text-center" style="width: 8%">
+                                    <i class="fas fa-users me-1"></i>Personas
+                                </th>
+                                <th class="text-center" style="width: 12%">
+                                    <i class="fas fa-globe me-1"></i>Origen
+                                </th>
+                                <th class="text-center" style="width: 13%">
+                                    <i class="fas fa-tasks me-1"></i>Estado
+                                </th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($reservas as $reserva)
+                                <tr data-id="{{ $reserva->id }}" class="cursor-pointer hover-row">
+                                    <td class="align-middle">
+                                        <strong>{{ $reserva->cliente->nombre ?? $reserva->cliente->alias }}</strong>
+                                    </td>
+                                    <td class="align-middle">
+                                        <small class="text-muted">{{ $reserva->apartamento->titulo ?? 'Sin título' }}</small>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge bg-light text-dark">
+                                            {{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge bg-light text-dark">
+                                            {{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle text-end" data-precio="{{ $reserva->precio }}">
+                                        <strong class="text-success">{{ number_format($reserva->precio, 2) }} €</strong>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge bg-info">{{ $reserva->numero_personas }}</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <small class="text-muted">{{ $reserva->origen ?? 'No definido' }}</small>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        @if($reserva->estado)
+                                            <span class="badge 
+                                                @if($reserva->estado->id == 1) bg-warning text-dark
+                                                @elseif($reserva->estado->id == 2) bg-info text-white
+                                                @elseif($reserva->estado->id == 3) bg-success text-white
+                                                @else bg-secondary text-white
+                                                @endif">
+                                                {{ $reserva->estado->nombre }}
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary">Sin estado</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.hover-row:hover {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border: 1px solid #bee5eb;
+}
+
+.modal-fullscreen {
+    max-width: 95%;
+    margin: 2.5%;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.form-select-sm, .form-control-sm {
+    font-size: 0.875rem;
+}
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -521,8 +643,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
             },
             order: [[2, 'asc']],
-            pageLength: 10,
-            lengthMenu: [5, 10, 25, 50, 100],
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            responsive: true,
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                 '<"row"<"col-sm-12"tr>>' +
+                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
             drawCallback: updateTotalFiltradoFacturacion
         });
 
