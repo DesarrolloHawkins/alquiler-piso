@@ -38,9 +38,9 @@
             // Tiempo de sesión en milisegundos
             var sessionLifetime = {{ config('session.lifetime') * 60000 }};
         </script>
-        @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/js/alerts.js'])
+        @vite(['resources/sass/app.scss', 'resources/js/app.js'])
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        {{-- <script src="{{ asset('js/alerts.js') }}"></script> --}}
+        <script src="{{ asset('js/alerts.js') }}"></script>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 @if(session('swal_success'))
