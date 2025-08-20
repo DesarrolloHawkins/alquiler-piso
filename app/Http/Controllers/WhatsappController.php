@@ -174,14 +174,22 @@ class WhatsappController extends Controller
 
             // 2. Clasificar el mensaje y notificar si procede
             try {
+                Log::info("🔍 Iniciando clasificación del mensaje: {$contenido}");
                 $categoria = $this->clasificarMensaje($contenido);
+                Log::info("📋 Mensaje clasificado como: {$categoria}");
+                
                 if ($categoria === 'averia') {
+                    Log::info("🚨 Mensaje clasificado como AVERÍA - Iniciando gestión");
                     $this->gestionarAveria($waId, $contenido);
                 } elseif ($categoria === 'limpieza') {
+                    Log::info("🧹 Mensaje clasificado como LIMPIEZA - Iniciando gestión");
                     $this->gestionarLimpieza($waId, $contenido);
+                } else {
+                    Log::info("📝 Mensaje clasificado como: {$categoria} - No requiere notificación");
                 }
             } catch (\Throwable $e) {
-                Log::warning('Fallo clasificando o notificando: ' . $e->getMessage());
+                Log::error('❌ Error en clasificación o notificación: ' . $e->getMessage());
+                Log::error('Stack trace: ' . $e->getTraceAsString());
             }
 
             // 3. Intentar obtener respuesta de ChatGPT
@@ -335,6 +343,8 @@ class WhatsappController extends Controller
 
     public function clasificarMensaje($mensaje)
     {
+        Log::info("🤖 CLASIFICAR MENSAJE - Iniciando para: {$mensaje}");
+        
         $token = env('TOKEN_OPENAI', 'valorPorDefecto');
         $url = 'https://api.openai.com/v1/chat/completions';
 
@@ -352,6 +362,8 @@ class WhatsappController extends Controller
             'max_tokens' => 10
         ]);
 
+        Log::info("🌐 Enviando petición a OpenAI para clasificación...");
+        
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -362,33 +374,46 @@ class WhatsappController extends Controller
         curl_close($curl);
 
         $response_data = json_decode($response, true);
-
+        
         if (isset($response_data['choices'][0]['message']['content'])) {
-            return trim(strtolower($response_data['choices'][0]['message']['content']));
+            $categoria = trim(strtolower($response_data['choices'][0]['message']['content']));
+            Log::info("✅ Clasificación exitosa: {$categoria}");
+            return $categoria;
         }
 
+        Log::warning("⚠️ Error en clasificación, retornando 'otro'");
         return 'otro';
     }
 
     public function gestionarAveria($phone, $mensaje)
     {
+        Log::info("🚨 GESTIONAR AVERÍA - Iniciando para teléfono: {$phone}");
+        
         // Registrar la avería en la base de datos
+        Log::info("📝 Registrando avería en logs...");
         $this->registrarAveria($phone, $mensaje);
         
         // Enviar mensaje al técnico
+        Log::info("👨‍🔧 Enviando mensaje al técnico...");
         $this->enviarMensajeTecnico($phone, $mensaje);
         
+        Log::info("✅ GESTIONAR AVERÍA - Completado");
         return "Hemos registrado tu avería. Nuestro equipo técnico ha sido notificado y te contactará pronto.";
     }
 
     public function gestionarLimpieza($phone, $mensaje)
     {
+        Log::info("🧹 GESTIONAR LIMPIEZA - Iniciando para teléfono: {$phone}");
+        
         // Registrar la solicitud de limpieza en la base de datos
+        Log::info("📝 Registrando solicitud de limpieza en logs...");
         $this->registrarLimpieza($phone, $mensaje);
         
         // Enviar mensaje a la limpiadora
+        Log::info("👩‍🔧 Enviando mensaje a la limpiadora...");
         $this->enviarMensajeLimpiadora($phone, $mensaje);
         
+        Log::info("✅ GESTIONAR LIMPIEZA - Completado");
         return "Hemos programado el servicio de limpieza. Nuestro equipo de limpieza ha sido notificado y te avisaremos cuando esté confirmado.";
     }
 
@@ -429,20 +454,29 @@ class WhatsappController extends Controller
      */
     private function enviarMensajeTecnico($phone, $mensaje)
     {
+        Log::info("👨‍🔧 ENVIAR MENSAJE TÉCNICO - Iniciando para cliente: {$phone}");
+        
         try {
             // Obtener técnico disponible según horario actual
+            Log::info("🔍 Buscando técnico disponible...");
             $tecnico = $this->obtenerTecnicoDisponible();
             
             if (!$tecnico) {
-                Log::warning("No hay técnicos disponibles para notificar");
+                Log::warning("⚠️ No hay técnicos disponibles para notificar");
                 return;
             }
+            
+            Log::info("✅ Técnico encontrado: {$tecnico->nombre} - Teléfono: {$tecnico->telefono}");
 
             // Buscar template para averías
+            Log::info("🔍 Buscando template para averías...");
             $template = \App\Models\WhatsappTemplate::where('name', 'like', '%reparaciones%')
                 ->first();
 
             if ($template) {
+                Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
+                Log::info("📱 Enviando mensaje usando template...");
+                
                 // Enviar mensaje usando template con parámetros en el orden correcto
                 $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
                     '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
@@ -452,6 +486,7 @@ class WhatsappController extends Controller
                     '5' => $phone // Número del cliente
                 ]);
             } else {
+                Log::warning("⚠️ No se encontró template para averías, enviando mensaje simple");
                 // Enviar mensaje simple si no hay template
                 $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n📱 Cliente: {$phone}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
                 $this->contestarWhatsapp3($tecnico->telefono, $texto);
@@ -507,6 +542,10 @@ class WhatsappController extends Controller
      */
     private function enviarMensajeTemplate($phone, $templateName, $parameters = [])
     {
+        Log::info("📱 ENVIAR MENSAJE TEMPLATE - Iniciando para: {$phone}");
+        Log::info("🔧 Template: {$templateName}");
+        Log::info("📋 Parámetros: " . json_encode($parameters));
+        
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
         
         $mensajeTemplate = [
@@ -539,6 +578,7 @@ class WhatsappController extends Controller
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("🌐 Enviando petición a WhatsApp API...");
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $token
@@ -550,6 +590,7 @@ class WhatsappController extends Controller
         }
 
         $responseJson = $response->json();
+        Log::info("✅ Respuesta exitosa de WhatsApp API: " . json_encode($responseJson));
         Storage::disk('local')->put("Respuesta_Template_Whatsapp-{$phone}.txt", json_encode($responseJson, JSON_PRETTY_PRINT));
 
         return $responseJson;
@@ -630,11 +671,15 @@ class WhatsappController extends Controller
      */
     private function obtenerApartamentoCliente($phone)
     {
+        Log::info("🏠 OBTENER APARTAMENTO CLIENTE - Buscando para teléfono: {$phone}");
+        
         try {
             // Buscar cliente por teléfono
             $cliente = Cliente::where('telefono', $phone)->first();
             
             if ($cliente) {
+                Log::info("✅ Cliente encontrado: {$cliente->nombre} {$cliente->apellido1}");
+                
                 // Buscar reserva activa del cliente
                 $reserva = Reserva::where('cliente_id', $cliente->id)
                     ->where('estado_id', '!=', 4) // No cancelada
@@ -643,13 +688,19 @@ class WhatsappController extends Controller
                     ->first();
                 
                 if ($reserva && $reserva->apartamento) {
+                    Log::info("✅ Apartamento encontrado: {$reserva->apartamento->nombre}");
                     return $reserva->apartamento->nombre;
+                } else {
+                    Log::warning("⚠️ No se encontró reserva activa para el cliente");
                 }
+            } else {
+                Log::warning("⚠️ Cliente no encontrado con teléfono: {$phone}");
             }
             
+            Log::info("🏠 Retornando: Apartamento no identificado");
             return 'Apartamento no identificado';
         } catch (\Exception $e) {
-            Log::error("Error obteniendo apartamento del cliente: " . $e->getMessage());
+            Log::error("❌ Error obteniendo apartamento del cliente: " . $e->getMessage());
             return 'Apartamento no identificado';
         }
     }
@@ -659,11 +710,15 @@ class WhatsappController extends Controller
      */
     private function obtenerEdificioCliente($phone)
     {
+        Log::info("🏢 OBTENER EDIFICIO CLIENTE - Buscando para teléfono: {$phone}");
+        
         try {
             // Buscar cliente por teléfono
             $cliente = Cliente::where('telefono', $phone)->first();
             
             if ($cliente) {
+                Log::info("✅ Cliente encontrado: {$cliente->nombre} {$cliente->apellido1}");
+                
                 // Buscar reserva activa del cliente
                 $reserva = Reserva::where('cliente_id', $cliente->id)
                     ->where('estado_id', '!=', 4) // No cancelada
@@ -672,13 +727,19 @@ class WhatsappController extends Controller
                     ->first();
                 
                 if ($reserva && $reserva->apartamento && $reserva->apartamento->edificioRelacion) {
+                    Log::info("✅ Edificio encontrado: {$reserva->apartamento->edificioRelacion->nombre}");
                     return $reserva->apartamento->edificioRelacion->nombre;
+                } else {
+                    Log::warning("⚠️ No se encontró edificio para la reserva");
                 }
+            } else {
+                Log::warning("⚠️ Cliente no encontrado con teléfono: {$phone}");
             }
             
+            Log::info("🏢 Retornando: Edificio no identificado");
             return 'Edificio no identificado';
         } catch (\Exception $e) {
-            Log::error("Error obteniendo edificio del cliente: " . $e->getMessage());
+            Log::error("❌ Error obteniendo edificio del cliente: " . $e->getMessage());
             return 'Edificio no identificado';
         }
     }
