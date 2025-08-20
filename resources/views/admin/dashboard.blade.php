@@ -430,9 +430,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-0">
                 <!-- Filtros mejorados -->
-                <div class="row mb-4">
+                <div class="row p-3 mb-0 bg-light border-bottom">
                     <div class="col-md-3">
                         <label for="filtroApartamentoFacturacion" class="form-label fw-bold">
                             <i class="fas fa-building me-1"></i>Apartamento
@@ -475,9 +475,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
 
                 <!-- Total destacado -->
-                <div class="row mb-3">
+                <div class="row p-3 mb-0">
                     <div class="col-12">
-                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center mb-0">
                             <div>
                                 <i class="fas fa-calculator me-2"></i>
                                 <strong>Total Facturación Filtrada:</strong>
@@ -490,8 +490,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
 
                 <!-- Tabla mejorada -->
-                <div class="table-responsive">
-                    <table id="tablaFacturacion" class="table table-striped table-hover table-bordered">
+                <div class="table-container">
+                    <table id="tablaFacturacion" class="table table-striped table-hover table-bordered mb-0" style="width: 100%;">
                         <thead class="table-dark">
                             <tr>
                                 <th class="text-center" style="width: 15%">
@@ -578,6 +578,27 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 <style>
+/* Asegurar que el modal esté por encima del menú */
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-backdrop {
+    z-index: 9998 !important;
+}
+
+/* Contenedor de tabla que ocupe todo el ancho */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    height: calc(100vh - 300px); /* Altura dinámica */
+}
+
+#tablaFacturacion {
+    width: 100% !important;
+    margin: 0;
+}
+
 .cursor-pointer {
     cursor: pointer;
 }
@@ -588,22 +609,18 @@ document.addEventListener('DOMContentLoaded', function () {
     transition: all 0.2s ease;
 }
 
-.table-responsive {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
 .table th {
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.85rem;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .table td {
     vertical-align: middle;
     font-size: 0.9rem;
+    white-space: nowrap;
 }
 
 .badge {
@@ -617,8 +634,21 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 .modal-fullscreen {
-    max-width: 95%;
-    margin: 2.5%;
+    max-width: 100%;
+    margin: 0;
+    height: 100vh;
+}
+
+.modal-content {
+    height: 100vh;
+    border-radius: 0;
+}
+
+.modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .form-label {
@@ -628,6 +658,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .form-select-sm, .form-control-sm {
     font-size: 0.875rem;
+}
+
+/* DataTables personalizado */
+.dataTables_wrapper {
+    width: 100%;
+    padding: 0;
+}
+
+.dataTables_length, .dataTables_filter {
+    margin-bottom: 10px;
+}
+
+.dataTables_info, .dataTables_paginate {
+    margin-top: 10px;
+}
+
+/* Asegurar que los controles de DataTables no interfieran */
+.dataTables_filter input {
+    width: 200px !important;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    .modal-fullscreen {
+        margin: 0;
+    }
+    
+    .table-container {
+        height: calc(100vh - 250px);
+    }
+    
+    .col-md-3 {
+        margin-bottom: 10px;
+    }
 }
 </style>
 
@@ -645,7 +709,10 @@ document.addEventListener('DOMContentLoaded', function () {
             order: [[2, 'asc']],
             pageLength: 25,
             lengthMenu: [10, 25, 50, 100],
-            responsive: true,
+            responsive: false, // Desactivar responsive para control total
+            scrollX: true,
+            scrollY: 'calc(100vh - 350px)',
+            scrollCollapse: true,
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
                  '<"row"<"col-sm-12"tr>>' +
                  '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
