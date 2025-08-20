@@ -20,6 +20,7 @@ use App\Http\Controllers\MetalicoController;
 use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\WhatsappTemplateController;
+use App\Http\Controllers\AlertController;
 
 /*
 |--------------------------------------------------------------------------
@@ -606,3 +607,16 @@ Route::get('/templates/{template}/status', [WhatsappTemplateController::class, '
 Route::get('/templates/{template}', [WhatsappTemplateController::class, 'show'])->name('templates.show');
 Route::get('/templates/{template}/edit', [WhatsappTemplateController::class, 'edit'])->name('templates.edit');
 Route::put('/templates/{template}', [WhatsappTemplateController::class, 'update'])->name('templates.update');
+
+// Rutas para alertas
+Route::middleware(['auth'])->group(function () {
+    Route::get('/alerts/unread', [App\Http\Controllers\AlertController::class, 'getUnreadAlerts'])->name('alerts.unread');
+    Route::post('/alerts/mark-read', [App\Http\Controllers\AlertController::class, 'markAsRead'])->name('alerts.mark-read');
+    Route::post('/alerts/mark-all-read', [App\Http\Controllers\AlertController::class, 'markAllAsRead'])->name('alerts.mark-all-read');
+    Route::delete('/alerts/{id}', [App\Http\Controllers\AlertController::class, 'destroy'])->name('alerts.destroy');
+    
+    // Rutas solo para administradores
+    Route::middleware(['auth', 'role:ADMIN'])->group(function () {
+        Route::post('/alerts/create', [App\Http\Controllers\AlertController::class, 'create'])->name('alerts.create');
+    });
+});

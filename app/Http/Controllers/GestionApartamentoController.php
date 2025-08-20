@@ -15,6 +15,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Auth; // Añade esta línea
 use App\Models\Checklist;
 use App\Models\ApartamentoLimpiezaItem;
+use App\Services\AlertService;
 
 class GestionApartamentoController extends Controller
 {
@@ -315,13 +316,24 @@ class GestionApartamentoController extends Controller
         $apartamentoLimpieza->status_id = 3;
         $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
+        
         $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
         if ($reserva != null) {
             $reserva->fecha_limpieza = $hoy;
             $reserva->save();
         }
-        // dd($reserva);
-        Alert::success('Fizalizado con Exito', 'Apartamento Fizalizado correctamente');
+
+        // Crear alerta si hay observaciones al finalizar la limpieza
+        if (!empty($apartamentoLimpieza->observacion)) {
+            $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
+            AlertService::createCleaningObservationAlert(
+                $apartamentoLimpieza->id,
+                $apartamentoNombre,
+                $apartamentoLimpieza->observacion
+            );
+        }
+
+        Alert::success('Finalizado con Éxito', 'Apartamento Finalizado correctamente');
 
         return redirect()->route('gestion.index');
     }

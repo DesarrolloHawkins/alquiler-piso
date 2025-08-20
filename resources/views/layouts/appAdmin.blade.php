@@ -38,8 +38,9 @@
             // Tiempo de sesión en milisegundos
             var sessionLifetime = {{ config('session.lifetime') * 60000 }};
         </script>
-        @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+        @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/js/alerts.js'])
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {{-- <script src="{{ asset('js/alerts.js') }}"></script> --}}
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 @if(session('swal_success'))
@@ -211,12 +212,52 @@
                                 <li class="nav-item"><a class="nav-link" href="{{ route('configuracion.index') }}">Configuración</a></li>
                             </ul>
 
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-flex">
-                                @csrf
-                                <button class="btn btn-outline-light" type="submit">Salir</button>
-                            </form>
+                            <!-- Notificaciones y Salir -->
+                            <div class="d-flex align-items-center">
+                                <!-- Botón de Notificaciones -->
+                                <button class="btn btn-outline-light me-2 position-relative" type="button" data-bs-toggle="modal" data-bs-target="#notificationsModal" id="notificationsBtn">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
+                                        0
+                                    </span>
+                                </button>
+
+                                <!-- Botón de Salir -->
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-flex">
+                                    @csrf
+                                    <button class="btn btn-outline-light" type="submit">Salir</button>
+                                </form>
+                            </div>
                         </div>
                     </nav>
+
+                    <!-- Modal de Notificaciones -->
+                    <div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="notificationsModalLabel">
+                                        <i class="fas fa-bell me-2"></i>Notificaciones
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="notificationsList">
+                                        <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                                        <div class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" id="markAllReadBtn">Marcar todas como leídas</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- Fondo de Sidebar Active --}}
                     <div id="fondoActiveSidebar" class="fondo-active-sidebar hidden">
