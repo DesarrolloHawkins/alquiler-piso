@@ -481,6 +481,7 @@ class WhatsappController extends Controller
             // Buscar template para averías
             Log::info("🔍 Buscando template para averías...");
             $template = \App\Models\WhatsappTemplate::where('name', 'reparaciones')
+                ->where('name', 'not like', '%_null%')
                 ->first();
 
             if ($template) {
