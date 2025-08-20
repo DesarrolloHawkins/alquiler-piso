@@ -511,6 +511,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Verificar si la tabla ya está inicializada
+        if ($.fn.DataTable.isDataTable('#tablaFacturacion')) {
+            $('#tablaFacturacion').DataTable().destroy();
+        }
+
         const tableFacturacion = $('#tablaFacturacion').DataTable({
             language: {
                 url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
@@ -842,6 +847,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Verificar si la tabla ya está inicializada
+        if ($.fn.DataTable.isDataTable('#tablaFacturacion')) {
+            $('#tablaFacturacion').DataTable().destroy();
+        }
+
         const tableFacturacion = $('#tablaFacturacion').DataTable({
             language: {
                 url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
