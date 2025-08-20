@@ -480,25 +480,32 @@ class WhatsappController extends Controller
 
             // Buscar template para averías
             Log::info("🔍 Buscando template para averías...");
-            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%reparaciones%')
+            $template = \App\Models\WhatsappTemplate::where('name', 'reparaciones')
                 ->first();
 
             if ($template) {
                 Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
                 Log::info("📱 Enviando mensaje usando template...");
                 
-                // Enviar mensaje usando template con parámetros en el orden correcto
+                // Obtener información del cliente
+                $apartamento = $this->obtenerApartamentoCliente($phone);
+                $edificio = $this->obtenerEdificioCliente($phone);
+                
+                // Enviar mensaje usando template con los 5 parámetros que espera
                 $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
                     '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
-                    '2' => $this->obtenerApartamentoCliente($phone) ?? 'Apartamento', // Apartamento del cliente
-                    '3' => $this->obtenerEdificioCliente($phone) ?? 'Edificio', // Edificio del cliente
+                    '2' => $apartamento, // Apartamento del cliente
+                    '3' => $edificio, // Edificio del cliente
                     '4' => $mensaje, // Información del cliente
                     '5' => $phone // Número del cliente
                 ]);
             } else {
                 Log::warning("⚠️ No se encontró template para averías, enviando mensaje simple");
                 // Enviar mensaje simple si no hay template
-                $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n📱 Cliente: {$phone}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                $apartamento = $this->obtenerApartamentoCliente($phone);
+                $edificio = $this->obtenerEdificioCliente($phone);
+                
+                $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n👨‍🔧 Técnico: {$tecnico->nombre}\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
                 $this->contestarWhatsapp3($tecnico->telefono, $texto);
             }
 
@@ -529,15 +536,26 @@ class WhatsappController extends Controller
                 ->first();
 
             if ($template) {
-                // Enviar mensaje usando template
+                Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
+                Log::info("📱 Enviando mensaje usando template...");
+                
+                // Obtener información del cliente
+                $apartamento = $this->obtenerApartamentoCliente($phone);
+                $edificio = $this->obtenerEdificioCliente($phone);
+                
+                // Enviar mensaje usando template (ajustar según las variables del template)
                 $this->enviarMensajeTemplate($limpiadora->telefono, $template->name, [
-                    'cliente_telefono' => $phone,
-                    'mensaje' => $mensaje,
-                    'fecha' => now()->format('d/m/Y H:i')
+                    '1' => $limpiadora->usuario->name ?? 'Limpiadora', // Nombre de la limpiadora
+                    '2' => $apartamento, // Apartamento del cliente
+                    '3' => $edificio // Edificio del cliente
                 ]);
             } else {
+                Log::warning("⚠️ No se encontró template para limpieza, enviando mensaje simple");
                 // Enviar mensaje simple si no hay template
-                $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n📱 Cliente: {$phone}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                $apartamento = $this->obtenerApartamentoCliente($phone);
+                $edificio = $this->obtenerEdificioCliente($phone);
+                
+                $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n👩‍🔧 Limpiadora: " . ($limpiadora->usuario->name ?? 'Limpiadora') . "\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
                 $this->contestarWhatsapp3($limpiadora->telefono, $texto);
             }
 
