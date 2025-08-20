@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Webklex\IMAP\Facades\Client;
 use ZipArchive;
+use App\Models\Cliente;
+use App\Models\InvoicesStatus;
 
 class InvoicesController extends Controller
 {
@@ -598,6 +600,58 @@ class InvoicesController extends Controller
            return response()->json(['success' => false, 'message' => 'La factura ya estaba generada.']);
        }
    }
+
+    public function edit($id)
+    {
+        $invoice = Invoices::with(['cliente', 'reserva', 'estado'])->findOrFail($id);
+        
+        // Obtener estados de factura disponibles
+        $estados = InvoicesStatus::all();
+        
+        // Obtener clientes disponibles
+        $clientes = Cliente::all();
+        
+        // Obtener reservas disponibles (si es necesario)
+        $reservas = Reserva::with(['apartamento', 'cliente'])->get();
+        
+        return view('admin.invoices.edit', compact('invoice', 'estados', 'clientes', 'reservas'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'cliente_id' => 'required|exists:clientes,id',
+            'reserva_id' => 'nullable|exists:reservas,id',
+            'invoice_status_id' => 'required|exists:invoices_status,id',
+            'concepto' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'fecha' => 'required|date',
+            'fecha_cobro' => 'nullable|date',
+            'base' => 'required|numeric|min:0',
+            'iva' => 'required|numeric|min:0',
+            'descuento' => 'nullable|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+        ]);
+
+        $invoice = Invoices::findOrFail($id);
+        
+        $invoice->update([
+            'cliente_id' => $request->cliente_id,
+            'reserva_id' => $request->reserva_id,
+            'invoice_status_id' => $request->invoice_status_id,
+            'concepto' => $request->concepto,
+            'description' => $request->description,
+            'fecha' => $request->fecha,
+            'fecha_cobro' => $request->fecha_cobro,
+            'base' => $request->base,
+            'iva' => $request->iva,
+            'descuento' => $request->descuento,
+            'total' => $request->total,
+        ]);
+
+        return redirect()->route('admin.facturas.index')
+                        ->with('success', 'Factura actualizada correctamente');
+    }
 
 
 }

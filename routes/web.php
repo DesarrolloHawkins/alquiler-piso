@@ -21,6 +21,9 @@ use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\WhatsappTemplateController;
 use App\Http\Controllers\AlertController;
+use App\Models\Cliente;
+use App\Models\InvoicesStatus;
+use App\Models\Reserva;
 
 /*
 |--------------------------------------------------------------------------
@@ -306,6 +309,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     // Facturas
     Route::get('/facturas',[App\Http\Controllers\InvoicesController::class, 'index'])->name('admin.facturas.index');
+    Route::get('/facturas/{id}/edit',[App\Http\Controllers\InvoicesController::class, 'edit'])->name('admin.facturas.edit');
+    Route::put('/facturas/{id}',[App\Http\Controllers\InvoicesController::class, 'update'])->name('admin.facturas.update');
     Route::get('/facturas-excel',[App\Http\Controllers\InvoicesController::class, 'exportInvoices'])->name('admin.facturas.export');
     Route::get('/facturas-descargar/{id}',[App\Http\Controllers\InvoicesController::class, 'previewPDF'])->name('admin.facturas.previewPDF');
     Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
