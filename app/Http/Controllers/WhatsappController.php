@@ -439,17 +439,17 @@ class WhatsappController extends Controller
             }
 
             // Buscar template para averías
-            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%averia%')
-                ->orWhere('name', 'like', '%tecnico%')
-                ->orWhere('name', 'like', '%reparacion%')
+            $template = \App\Models\WhatsappTemplate::where('name', 'like', '%reparaciones%')
                 ->first();
 
             if ($template) {
-                // Enviar mensaje usando template
+                // Enviar mensaje usando template con parámetros en el orden correcto
                 $this->enviarMensajeTemplate($tecnico->telefono, $template->template_id, [
-                    'cliente_telefono' => $phone,
-                    'mensaje' => $mensaje,
-                    'fecha' => now()->format('d/m/Y H:i')
+                    '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
+                    '2' => $this->obtenerApartamentoCliente($phone) ?? 'Apartamento', // Apartamento del cliente
+                    '3' => $this->obtenerEdificioCliente($phone) ?? 'Edificio', // Edificio del cliente
+                    '4' => $mensaje, // Información del cliente
+                    '5' => $phone // Número del cliente
                 ]);
             } else {
                 // Enviar mensaje simple si no hay template
@@ -623,6 +623,64 @@ class WhatsappController extends Controller
         }
         
         return $limpiadora;
+    }
+
+    /**
+     * Obtener el apartamento del cliente según su teléfono
+     */
+    private function obtenerApartamentoCliente($phone)
+    {
+        try {
+            // Buscar cliente por teléfono
+            $cliente = Cliente::where('telefono', $phone)->first();
+            
+            if ($cliente) {
+                // Buscar reserva activa del cliente
+                $reserva = Reserva::where('cliente_id', $cliente->id)
+                    ->where('estado_id', '!=', 4) // No cancelada
+                    ->where('fecha_entrada', '<=', now())
+                    ->where('fecha_salida', '>=', now())
+                    ->first();
+                
+                if ($reserva && $reserva->apartamento) {
+                    return $reserva->apartamento->nombre;
+                }
+            }
+            
+            return 'Apartamento no identificado';
+        } catch (\Exception $e) {
+            Log::error("Error obteniendo apartamento del cliente: " . $e->getMessage());
+            return 'Apartamento no identificado';
+        }
+    }
+
+    /**
+     * Obtener el edificio del cliente según su teléfono
+     */
+    private function obtenerEdificioCliente($phone)
+    {
+        try {
+            // Buscar cliente por teléfono
+            $cliente = Cliente::where('telefono', $phone)->first();
+            
+            if ($cliente) {
+                // Buscar reserva activa del cliente
+                $reserva = Reserva::where('cliente_id', $cliente->id)
+                    ->where('estado_id', '!=', 4) // No cancelada
+                    ->where('fecha_entrada', '<=', now())
+                    ->where('fecha_salida', '>=', now())
+                    ->first();
+                
+                if ($reserva && $reserva->apartamento && $reserva->apartamento->edificioRelacion) {
+                    return $reserva->apartamento->edificioRelacion->nombre;
+                }
+            }
+            
+            return 'Edificio no identificado';
+        } catch (\Exception $e) {
+            Log::error("Error obteniendo edificio del cliente: " . $e->getMessage());
+            return 'Edificio no identificado';
+        }
     }
 
     public function chatGpt($mensaje, $id, $phone = null, $idMensaje = null)
