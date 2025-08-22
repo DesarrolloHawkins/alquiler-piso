@@ -307,7 +307,7 @@ class WhatsappController extends Controller
                 }
                 $clave = $reserva->apartamento->claves ?? 'No asignada aún';
                 $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
-                $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅 Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*";
+                $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅, Apartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*";
 
                 $responseFinal = Http::withToken($apiKey)->post($endpoint, [
                     'model' => $modelo,
