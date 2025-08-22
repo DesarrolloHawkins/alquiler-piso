@@ -322,6 +322,8 @@ class WhatsappController extends Controller
                         ]
                     ]
                 ]);
+                return $responseFinal->json('choices.0.message.content');
+
                 /* if ($fechaEntrada->isToday()) {
                     if ($horaActual < '13:00') {
                         return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
