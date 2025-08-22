@@ -305,7 +305,23 @@ class WhatsappController extends Controller
                     $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
                     return "🪪 Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url";
                 }
+                $clave = $reserva->apartamento->claves ?? 'No asignada aún';
+                $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
+                $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅 Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*";
 
+                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                    'model' => $modelo,
+                    'messages' => [
+                        $promptSystem,
+                        ...$historial,
+                        ["role" => "assistant", "tool_calls" => [$toolCall]],
+                        [
+                            "role" => "tool",
+                            "tool_call_id" => $toolCall['id'],
+                            "content" => $respuestaFinal
+                        ]
+                    ]
+                ]);
                 /* if ($fechaEntrada->isToday()) {
                     if ($horaActual < '13:00') {
                         return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
@@ -316,7 +332,6 @@ class WhatsappController extends Controller
                     $clave = $reserva->apartamento->claves ?? 'No asignada aún';
                     $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
 
-                    $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅 Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*";
 
                     // Segunda llamada a OpenAI para integrar en la conversación
                     $responseFinal = Http::withToken($apiKey)->post($endpoint, [
