@@ -446,7 +446,7 @@
                                     <td>{{ $apartamento->proxima_reserva ?? 'N/A' }}</td>
                                     <td>{{ $apartamento->notas ?? 'Sin notas' }}</td>
                                     <td>
-                                        <a href="{{ route('apartamentos.edit', $apartamento->id) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('apartamentos.admin.edit', $apartamento->id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i> Editar
                                         </a>
                                     </td>
