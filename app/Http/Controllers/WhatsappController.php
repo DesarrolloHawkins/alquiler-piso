@@ -242,7 +242,8 @@ class WhatsappController extends Controller
                         "required" => ["codigo_reserva"]
                     ]
                 ]
-            ]
+            ],
+           
         ];
 
         $promptSystem = [
@@ -305,7 +306,7 @@ class WhatsappController extends Controller
                     return "🪪 Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url";
                 }
 
-                if ($fechaEntrada->isToday()) {
+                /* if ($fechaEntrada->isToday()) {
                     if ($horaActual < '13:00') {
                         return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
                     }
@@ -335,7 +336,7 @@ class WhatsappController extends Controller
                     return $responseFinal->json('choices.0.message.content');
                 } else {
                     return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
-                }
+                }*/ 
             }
         }
 
