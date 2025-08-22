@@ -303,37 +303,52 @@ class WhatsappController extends Controller
 
                 if (empty($reserva->dni_entregado)) {
                     $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
-                    return "🪪 Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url";
-                }
-                $clave = $reserva->apartamento->claves ?? 'No asignada aún';
-                $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
-                $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅, Apartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
-
-                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                    'model' => $modelo,
-                    'messages' => [
-                        $promptSystem,
-                        ...$historial,
-                        ["role" => "assistant", "tool_calls" => [$toolCall]],
-                        [
-                            "role" => "tool",
-                            "tool_call_id" => $toolCall['id'],
-                            "content" => $respuestaFinal
+                    // Segunda llamada a OpenAI para integrar en la conversación
+                    $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                        'model' => $modelo,
+                        'messages' => [
+                            $promptSystem,
+                            ...$historial,
+                            ["role" => "assistant", "tool_calls" => [$toolCall]],
+                            [
+                                "role" => "tool",
+                                "tool_call_id" => $toolCall['id'],
+                                "content" => "Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url"
+                            ]
                         ]
-                    ]
-                ]);
-                return $responseFinal->json('choices.0.message.content');
+                    ]);
 
-                /* if ($fechaEntrada->isToday()) {
+                    return $responseFinal->json('choices.0.message.content');
+                    //return ;
+                }
+                
+
+                if ($fechaEntrada->isToday()) {
                     if ($horaActual < '13:00') {
-                        return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
+                        // Segunda llamada a OpenAI para integrar en la conversación
+                        $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                            'model' => $modelo,
+                            'messages' => [
+                                $promptSystem,
+                                ...$historial,
+                                ["role" => "assistant", "tool_calls" => [$toolCall]],
+                                [
+                                    "role" => "tool",
+                                    "tool_call_id" => $toolCall['id'],
+                                    "content" => "Las claves estarán disponibles a partir de las 14:00 del día de entrada."
+                                ]
+                            ]
+                        ]);
+
+                        return $responseFinal->json('choices.0.message.content');
+                        //return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
                     }
 
 
 
                     $clave = $reserva->apartamento->claves ?? 'No asignada aún';
                     $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
-
+                    $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅, Apartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
 
                     // Segunda llamada a OpenAI para integrar en la conversación
                     $responseFinal = Http::withToken($apiKey)->post($endpoint, [
@@ -352,8 +367,23 @@ class WhatsappController extends Controller
 
                     return $responseFinal->json('choices.0.message.content');
                 } else {
-                    return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
-                }*/ 
+                    $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                        'model' => $modelo,
+                        'messages' => [
+                            $promptSystem,
+                            ...$historial,
+                            ["role" => "assistant", "tool_calls" => [$toolCall]],
+                            [
+                                "role" => "tool",
+                                "tool_call_id" => $toolCall['id'],
+                                "content" => "Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*."
+                            ]
+                        ]
+                    ]);
+
+                    return $responseFinal->json('choices.0.message.content');
+                    //return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
+                } 
             }
         }
 
