@@ -155,6 +155,95 @@
                 font-size: 1rem;
             }
         }
+        
+        /* Estilos para transiciones */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .transition-overlay::after {
+            content: '';
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Estilos para notificaciones de error */
+        .error-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+            z-index: 10000;
+            display: none;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .error-notification i {
+            margin-right: 10px;
+            color: #ffc107;
+        }
+        
+        .error-notification .close-notification {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            margin-left: 15px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+        
+        .error-notification .close-notification:hover {
+            opacity: 1;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Animaciones para transiciones de página */
+        body {
+            transition: opacity 0.3s ease;
+        }
+        
+        body.fade-out {
+            opacity: 0;
+        }
+        
+        body.fade-in {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -357,10 +446,10 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Redirigir al formulario de DNI
-                        window.location.href = response.redirect;
+                        // Transición suave al formulario de DNI
+                        transitionToForm(response.redirect);
                     } else {
-                        alert('Error al establecer el idioma: ' + response.message);
+                        showError('Error al establecer el idioma: ' + response.message);
                         // Restaurar botón
                         $('.loading').hide();
                         $('.btn-text').show();
@@ -368,7 +457,7 @@
                     }
                 },
                 error: function() {
-                    alert('Error al establecer el idioma');
+                    showError('Error al establecer el idioma');
                     // Restaurar botón
                     $('.loading').hide();
                     $('.btn-text').show();
@@ -376,6 +465,101 @@
                 }
             });
         });
+        
+        // Función para transición suave al formulario
+        function transitionToForm(url) {
+            // Crear overlay de transición
+            const overlay = $('<div class="transition-overlay"></div>');
+            $('body').append(overlay);
+            
+            // Mostrar overlay con animación
+            overlay.fadeIn(300, function() {
+                // Cambiar URL sin recargar
+                window.history.pushState({}, '', url);
+                
+                // Cargar contenido del formulario
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(html) {
+                        // Extraer solo el contenido del body
+                        const content = $(html).find('body').html();
+                        
+                        // Reemplazar contenido con transición suave
+                        $('body').addClass('fade-out');
+                        
+                        setTimeout(function() {
+                            $('body').html(content);
+                            $('body').removeClass('fade-out').addClass('fade-in');
+                            
+                            // Reinicializar scripts si es necesario
+                            initializeFormScripts();
+                            
+                            // Remover overlay
+                            overlay.fadeOut(300, function() {
+                                overlay.remove();
+                            });
+                        }, 200);
+                    },
+                    error: function() {
+                        // Si falla, hacer redirección normal
+                        overlay.fadeOut(200, function() {
+                            overlay.remove();
+                            window.location.href = url;
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Función para reinicializar scripts del formulario
+        function initializeFormScripts() {
+            // Reinicializar cualquier script necesario para el formulario
+            if (typeof initializeFormValidation === 'function') {
+                initializeFormValidation();
+            }
+            
+            // Reinicializar tooltips si existen
+            if (typeof $().tooltip === 'function') {
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+            
+            // Reinicializar select2 si existe
+            if (typeof $().select2 === 'function') {
+                $('.js-example-basic-single').select2();
+            }
+        }
+        
+        // Función para mostrar errores
+        function showError(message) {
+            // Crear notificación de error
+            const notification = $(`
+                <div class="error-notification">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>${message}</span>
+                    <button class="close-notification">&times;</button>
+                </div>
+            `);
+            
+            $('body').append(notification);
+            
+            // Mostrar con animación
+            notification.slideDown(300);
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(function() {
+                notification.slideUp(300, function() {
+                    notification.remove();
+                });
+            }, 5000);
+            
+            // Cerrar manualmente
+            notification.find('.close-notification').click(function() {
+                notification.slideUp(300, function() {
+                    notification.remove();
+                });
+            });
+        }
         
         // Efecto hover en el select
         $('#idioma').focus(function() {
