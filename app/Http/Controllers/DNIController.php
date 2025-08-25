@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class DNIController extends Controller
 {
@@ -233,10 +234,22 @@ class DNIController extends Controller
         $idiomaEstablecido = $cliente->idioma_establecido ?? false;
         $idiomaSeleccionado = session('locale');
         
-        // Si el idioma no está establecido y no hay idioma en sesión, mostrar selector
-        if (!$idiomaEstablecido && !$idiomaSeleccionado) {
+        // Debug: Log para ver qué está pasando
+        Log::info('DNI Controller Debug', [
+            'cliente_id' => $cliente->id,
+            'idioma_establecido' => $idiomaEstablecido,
+            'idioma_seleccionado' => $idiomaSeleccionado,
+            'cliente_idioma' => $cliente->idioma,
+            'cliente_nacionalidad' => $cliente->nacionalidad
+        ]);
+        
+        // Si el idioma no está establecido, mostrar selector (ignorar sesión por ahora)
+        if (!$idiomaEstablecido) {
+            Log::info('Mostrando selector de idioma - idioma no establecido');
             return view('dni.selector_idioma', compact('token', 'cliente'));
         }
+        
+        Log::info('Continuando al formulario principal - idioma ya establecido');
         
         // Usar el idioma de la sesión o el del cliente como fallback
         $idiomaFinal = $idiomaSeleccionado ?: $cliente->idioma ?: $cliente->nacionalidad;
