@@ -35,6 +35,7 @@ class Cliente extends Model
         'identificador',
         'idioma',
         'idiomas',
+        'idioma_establecido',
         'inactivo',
         'email_secundario',
         'nacionalidadStr',

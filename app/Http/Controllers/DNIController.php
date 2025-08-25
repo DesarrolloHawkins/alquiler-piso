@@ -228,9 +228,22 @@ class DNIController extends Controller
         $reserva = Reserva::where('token',$token)->first();
         // Obtenemos el Cliente
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
-        Session::put('idioma', $cliente->nacionalidad);
+        
+        // Verificar si el idioma ya está establecido
+        $idiomaEstablecido = $cliente->idioma_establecido ?? false;
+        $idiomaSeleccionado = session('locale');
+        
+        // Si el idioma no está establecido y no hay idioma en sesión, mostrar selector
+        if (!$idiomaEstablecido && !$idiomaSeleccionado) {
+            return view('dni.selector_idioma', compact('token', 'cliente'));
+        }
+        
+        // Usar el idioma de la sesión o el del cliente como fallback
+        $idiomaFinal = $idiomaSeleccionado ?: $cliente->idioma ?: $cliente->nacionalidad;
+        
+        Session::put('idioma', $idiomaFinal);
         // Cambiar el idioma de la aplicación
-        App::setLocale($cliente->nacionalidad);
+        App::setLocale($idiomaFinal);
 
         $idiomaCliente = $cliente->nacionalidad; // Esto contiene el idioma del cliente
         $paisCliente = "";
@@ -1676,6 +1689,7 @@ class DNIController extends Controller
     public function cambiarIdioma(Request $request)
     {
         $idioma = $request->input('idioma');
+        $token = $request->input('token');
         
         // Validar que el idioma sea válido
         $idiomasValidos = ['es', 'en', 'fr', 'de', 'it', 'pt'];
@@ -1683,6 +1697,23 @@ class DNIController extends Controller
         if (!in_array($idioma, $idiomasValidos)) {
             return response()->json(['success' => false, 'message' => 'Idioma no válido']);
         }
+        
+        // Obtener la reserva y el cliente
+        $reserva = Reserva::where('token', $token)->first();
+        if (!$reserva) {
+            return response()->json(['success' => false, 'message' => 'Reserva no encontrada']);
+        }
+        
+        $cliente = Cliente::where('id', $reserva->cliente_id)->first();
+        if (!$cliente) {
+            return response()->json(['success' => false, 'message' => 'Cliente no encontrado']);
+        }
+        
+        // Actualizar el idioma del cliente y marcarlo como establecido
+        $cliente->update([
+            'idioma' => $idioma,
+            'idioma_establecido' => true
+        ]);
         
         // Guardar el idioma en la sesión
         session(['locale' => $idioma]);
@@ -1693,7 +1724,7 @@ class DNIController extends Controller
         return response()->json([
             'success' => true, 
             'message' => 'Idioma cambiado correctamente',
-            'redirect' => url()->previous()
+            'redirect' => route('dni.index', $token)
         ]);
     }
 

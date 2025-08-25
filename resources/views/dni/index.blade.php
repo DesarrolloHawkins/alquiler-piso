@@ -113,6 +113,7 @@
             </div>
             <div class="col-sm-12">
 
+                @if(!$cliente->idioma_establecido)
                 <div class="card">
                     <div class="card-header bg-color-primero">
                         <h5 class="mb-0">
@@ -159,6 +160,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <div class="card mt-3" id="cardNumeroPersonas" style="display: none;">
                     <div class="card-header bg-color-primero">
@@ -983,12 +985,16 @@
         }
     }
 
-    // Mostrar formulario de número de personas si ya hay un idioma seleccionado
-    $(document).ready(function() {
-        if ($('#idioma').val() && $('#idioma').val() !== '') {
-            $('#cardNumeroPersonas').show();
-        }
-    });
+            // Mostrar formulario de número de personas si ya hay un idioma seleccionado o establecido
+        $(document).ready(function() {
+            @if($cliente->idioma_establecido)
+                $('#cardNumeroPersonas').show();
+            @else
+                if ($('#idioma').val() && $('#idioma').val() !== '') {
+                    $('#cardNumeroPersonas').show();
+                }
+            @endif
+        });
 
 </script>
 @endsection
