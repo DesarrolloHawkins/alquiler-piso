@@ -340,12 +340,9 @@
                                 <td>
                                     <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>
                                     @if(request()->get('filtro_estado') == 'eliminadas')
-                                        <form method="POST" action="{{ route('reservas.restore', $reserva->id) }}" style="display: inline;">
-                                            @csrf
-                                            <button type="submit" class="btn bg-success text-white" onclick="return confirm('¿Estás seguro de que quieres restaurar esta reserva?')">
-                                                <i class="fa-solid fa-undo me-1"></i>Restaurar
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn bg-success text-white" onclick="confirmarRestauracion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')">
+                                            <i class="fa-solid fa-undo me-1"></i>Restaurar
+                                        </button>
                                     @else
                                         <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
                                         <button type="button" class="btn bg-danger text-white" onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')">Eliminar</button>
@@ -390,6 +387,39 @@
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">
                         <i class="fa-solid fa-trash me-1"></i>Sí, Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para restaurar reserva -->
+<div class="modal fade" id="modalConfirmarRestauracion" tabindex="-1" aria-labelledby="modalConfirmarRestauracionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalConfirmarRestauracionLabel">
+                    <i class="fa-solid fa-undo me-2"></i>Confirmar Restauración
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres restaurar la siguiente reserva?</p>
+                <div class="alert alert-info">
+                    <strong>Cliente:</strong> <span id="clienteRestaurar"></span><br>
+                    <strong>Código de Reserva:</strong> <span id="codigoRestaurar"></span>
+                </div>
+                <p class="text-success"><strong>La reserva volverá a estar activa en el sistema.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-1"></i>Cancelar
+                </button>
+                <form id="formRestaurarReserva" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa-solid fa-undo me-1"></i>Sí, Restaurar
                     </button>
                 </form>
             </div>
@@ -453,6 +483,20 @@
             
             // Mostrar el modal
             var modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminacion'));
+            modal.show();
+        }
+
+        // Función para confirmar restauración de reserva
+        function confirmarRestauracion(id, cliente, codigo) {
+            // Llenar el modal con la información de la reserva
+            document.getElementById('clienteRestaurar').textContent = cliente;
+            document.getElementById('codigoRestaurar').textContent = codigo;
+            
+            // Configurar el formulario para la restauración
+            document.getElementById('formRestaurarReserva').action = "{{ route('reservas.restore', '') }}/" + id;
+            
+            // Mostrar el modal
+            var modal = new bootstrap.Modal(document.getElementById('modalConfirmarRestauracion'));
             modal.show();
         }
         </script>

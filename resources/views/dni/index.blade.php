@@ -115,11 +115,92 @@
 
                 <div class="card">
                     <div class="card-header bg-color-primero">
-                        Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
+                        <h5 class="mb-0">
+                            <i class="fa-solid fa-language me-2"></i>
+                            Seleccione su idioma / Select your language / Sélectionnez votre langue
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label for="idioma" class="form-label fw-bold">Idioma / Language / Langue:</label>
+                                    <select id="idioma" class="form-select form-select-lg" onchange="cambiarIdioma(this.value)">
+                                        <option value="es" {{ session('locale', 'es') == 'es' ? 'selected' : '' }}>Español</option>
+                                        <option value="en" {{ session('locale') == 'en' ? 'selected' : '' }}>English</option>
+                                        <option value="fr" {{ session('locale') == 'fr' ? 'selected' : '' }}>Français</option>
+                                        <option value="de" {{ session('locale') == 'de' ? 'selected' : '' }}>Deutsch</option>
+                                        <option value="it" {{ session('locale') == 'it' ? 'selected' : '' }}>Italiano</option>
+                                        <option value="pt" {{ session('locale') == 'pt' ? 'selected' : '' }}>Português</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fa-solid fa-info-circle me-2"></i>
+                                    <span id="textoIdioma">
+                                        @if(session('locale', 'es') == 'es')
+                                            Seleccione su idioma preferido para continuar con el proceso de registro.
+                                        @elseif(session('locale') == 'en')
+                                            Select your preferred language to continue with the registration process.
+                                        @elseif(session('locale') == 'fr')
+                                            Sélectionnez votre langue préférée pour continuer le processus d'enregistrement.
+                                        @elseif(session('locale') == 'de')
+                                            Wählen Sie Ihre bevorzugte Sprache aus, um mit dem Registrierungsprozess fortzufahren.
+                                        @elseif(session('locale') == 'it')
+                                            Seleziona la tua lingua preferita per continuare con il processo di registrazione.
+                                        @elseif(session('locale') == 'pt')
+                                            Selecione seu idioma preferido para continuar com o processo de registro.
+                                        @else
+                                            Seleccione su idioma preferido para continuar con el proceso de registro.
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="cardNumeroPersonas" style="display: none;">
+                    <div class="card-header bg-color-primero">
+                        <h5 class="mb-0" id="tituloNumeroPersonas">
+                            @if(session('locale', 'es') == 'es')
+                                Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
+                            @elseif(session('locale') == 'en')
+                                To continue, you must tell us the number of adults (over 18 years old) who will occupy the reservation.
+                            @elseif(session('locale') == 'fr')
+                                Pour continuer, vous devez nous dire le nombre d'adultes (plus de 18 ans) qui occuperont la réservation.
+                            @elseif(session('locale') == 'de')
+                                Um fortzufahren, müssen Sie uns die Anzahl der Erwachsenen (über 18 Jahre) mitteilen, die die Reservierung belegen werden.
+                            @elseif(session('locale') == 'it')
+                                Per continuare, devi dirci il numero di adulti (oltre 18 anni) che occuperanno la prenotazione.
+                            @elseif(session('locale') == 'pt')
+                                Para continuar, você deve nos dizer o número de adultos (maiores de 18 anos) que ocuparão a reserva.
+                            @else
+                                Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.
+                            @endif
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="row align-items-center">
-                            <div class="col-12" > Numero de Adultos:</div>
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold" id="labelNumeroAdultos">
+                                    @if(session('locale', 'es') == 'es')
+                                        Número de Adultos:
+                                    @elseif(session('locale') == 'en')
+                                        Number of Adults:
+                                    @elseif(session('locale') == 'fr')
+                                        Nombre d'adultes:
+                                    @elseif(session('locale') == 'de')
+                                        Anzahl der Erwachsenen:
+                                    @elseif(session('locale') == 'it')
+                                        Numero di adulti:
+                                    @elseif(session('locale') == 'pt')
+                                        Número de adultos:
+                                    @else
+                                        Número de Adultos:
+                                    @endif
+                                </label>
+                            </div>
                             <div class="col-6">
                                 <input type="number" id="numero" value="1" min="1" step="1" class="form-control w-100">
                                 <input type="hidden" name="idReserva" id="idReserva" value="{{$id}}">
@@ -130,9 +211,24 @@
                             <div class="col-3">
                                 <button id="restar" class="w-100 btn btn-secondary">-</button>
                             </div>
-
                         </div>
-                        <button id="enviar" class="btn btn-primary w-100 mt-3">Enviar</button>
+                        <button id="enviar" class="btn btn-primary w-100 mt-3" id="btnEnviar">
+                            @if(session('locale', 'es') == 'es')
+                                Continuar
+                            @elseif(session('locale') == 'en')
+                                Continue
+                            @elseif(session('locale') == 'fr')
+                                Continuer
+                            @elseif(session('locale') == 'de')
+                                Fortfahren
+                            @elseif(session('locale') == 'it')
+                                Continua
+                            @elseif(session('locale') == 'pt')
+                                Continuar
+                            @else
+                                Continuar
+                            @endif
+                        </button>
                     </div>
                 </div>
             </div>
@@ -815,6 +911,84 @@
         };
         reader.readAsDataURL(file);
     }
+
+            // Función para cambiar idioma
+        function cambiarIdioma(idioma) {
+            // Mostrar loading
+            $('#idioma').prop('disabled', true);
+            
+            // Hacer petición AJAX para cambiar el idioma
+            $.ajax({
+                url: '{{ route("dni.cambiarIdioma") }}',
+                type: 'POST',
+                data: {
+                    idioma: idioma,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Recargar la página para aplicar el nuevo idioma
+                        window.location.reload();
+                    } else {
+                        alert('Error al cambiar el idioma');
+                        $('#idioma').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    alert('Error al cambiar el idioma');
+                    $('#idioma').prop('disabled', false);
+                }
+            });
+        }
+
+    // Función para actualizar textos según el idioma
+    function actualizarTextos(idioma) {
+        const textos = {
+            es: {
+                titulo: 'Para poder continuar debes decirnos el numero de adultos (mayores de 18 años), que van ocupar la reserva.',
+                label: 'Número de Adultos:',
+                continuar: 'Continuar'
+            },
+            en: {
+                titulo: 'To continue, you must tell us the number of adults (over 18 years old) who will occupy the reservation.',
+                label: 'Number of Adults:',
+                continuar: 'Continue'
+            },
+            fr: {
+                titulo: 'Pour continuer, vous devez nous dire le nombre d\'adultes (plus de 18 ans) qui occuperont la réservation.',
+                label: 'Nombre d\'adultes:',
+                continuar: 'Continuer'
+            },
+            de: {
+                titulo: 'Um fortzufahren, müssen Sie uns die Anzahl der Erwachsenen (über 18 Jahre) mitteilen, die die Reservierung belegen werden.',
+                label: 'Anzahl der Erwachsenen:',
+                continuar: 'Fortfahren'
+            },
+            it: {
+                titulo: 'Per continuare, devi dirci il numero di adulti (oltre 18 anni) che occuperanno la prenotazione.',
+                label: 'Numero di adulti:',
+                continuar: 'Continua'
+            },
+            pt: {
+                titulo: 'Para continuar, você deve nos dizer o número de adultos (maiores de 18 anos) que ocuparão a reserva.',
+                label: 'Número de adultos:',
+                continuar: 'Continuar'
+            }
+        };
+
+        if (textos[idioma]) {
+            $('#tituloNumeroPersonas').text(textos[idioma].titulo);
+            $('#labelNumeroAdultos').text(textos[idioma].label);
+            $('#btnEnviar').text(textos[idioma].continuar);
+        }
+    }
+
+    // Mostrar formulario de número de personas si ya hay un idioma seleccionado
+    $(document).ready(function() {
+        if ($('#idioma').val() && $('#idioma').val() !== '') {
+            $('#cardNumeroPersonas').show();
+        }
+    });
 
 </script>
 @endsection

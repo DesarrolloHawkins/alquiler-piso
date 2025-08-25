@@ -19,6 +19,9 @@ class DNIController extends Controller
     public function index($token)
     {
         // Guardar el idioma en la sesión
+        if (session('locale')) {
+            App::setLocale(session('locale'));
+        }
 
         // Array de Paises
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
@@ -321,8 +324,21 @@ class DNIController extends Controller
 
         ];
 
-        $idiomaCliente = $cliente->nacionalidad;
-        $nombreArchivo = 'traducciones_' . $idiomaCliente . '.json';
+        // Usar el idioma de la sesión o el idioma del cliente como fallback
+        $idiomaCliente = session('locale', $cliente->nacionalidad);
+        
+        // Mapear códigos de idioma a nombres de archivo
+        $mapaIdiomas = [
+            'es' => 'Español',
+            'en' => 'Inglés',
+            'fr' => 'Francés',
+            'de' => 'Alemán',
+            'it' => 'Italiano',
+            'pt' => 'Portugués'
+        ];
+        
+        $idiomaArchivo = $mapaIdiomas[$idiomaCliente] ?? $idiomaCliente;
+        $nombreArchivo = 'traducciones_' . $idiomaArchivo . '.json';
         $path = storage_path('app/public/' . $nombreArchivo);
 
         if (file_exists($path)) {
@@ -1652,6 +1668,33 @@ class DNIController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Cambiar idioma del usuario
+     */
+    public function cambiarIdioma(Request $request)
+    {
+        $idioma = $request->input('idioma');
+        
+        // Validar que el idioma sea válido
+        $idiomasValidos = ['es', 'en', 'fr', 'de', 'it', 'pt'];
+        
+        if (!in_array($idioma, $idiomasValidos)) {
+            return response()->json(['success' => false, 'message' => 'Idioma no válido']);
+        }
+        
+        // Guardar el idioma en la sesión
+        session(['locale' => $idioma]);
+        
+        // Establecer el idioma para la aplicación
+        App::setLocale($idioma);
+        
+        return response()->json([
+            'success' => true, 
+            'message' => 'Idioma cambiado correctamente',
+            'redirect' => url()->previous()
+        ]);
     }
 
 }
