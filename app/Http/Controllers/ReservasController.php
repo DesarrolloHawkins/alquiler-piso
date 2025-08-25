@@ -44,7 +44,17 @@ class ReservasController extends Controller
     // Obtener fechas del request, usando null como predeterminado si no se especifican
     $fechaEntrada = $request->get('fecha_entrada');
     $fechaSalida = $request->get('fecha_salida');
-    $query = Reserva::with('cliente')->where('estado_id', '!=', 4);
+    $query = Reserva::with('cliente');
+    
+    // Aplicar filtro de estado de reservas
+    $filtroEstado = $request->get('filtro_estado', 'activas');
+    
+    if ($filtroEstado === 'activas') {
+        $query->where('estado_id', '!=', 4);
+    } elseif ($filtroEstado === 'eliminadas') {
+        $query->onlyTrashed(); // Solo reservas eliminadas (soft delete)
+    }
+    // Si es 'todas', no aplicamos filtro de estado
 
     $apartamentos = Apartamento::all();
 
@@ -98,6 +108,7 @@ class ReservasController extends Controller
         'fecha_entrada' => $fechaEntrada,
         'fecha_salida' => $fechaSalida,
         'filtro_apartamento' => $filtroApartamento,
+        'filtro_estado' => $filtroEstado,
     ]);
 
     return view('reservas.index', compact('reservas', 'apartamentos'));
@@ -331,8 +342,22 @@ class ReservasController extends Controller
     {
         $reserva = Reserva::find($id);
         if ($reserva) {
-            $reserva->delete();
+            $reserva->delete(); // Esto ahora usa soft delete
             return redirect()->route('reservas.index')->with('success', 'Reserva eliminada correctamente.');
+        } else {
+            return redirect()->route('reservas.index')->with('error', 'Reserva no encontrada.');
+        }
+    }
+
+    /**
+     * Restaurar una reserva eliminada
+     */
+    public function restore(string $id)
+    {
+        $reserva = Reserva::onlyTrashed()->find($id);
+        if ($reserva) {
+            $reserva->restore();
+            return redirect()->route('reservas.index')->with('success', 'Reserva restaurada correctamente.');
         } else {
             return redirect()->route('reservas.index')->with('error', 'Reserva no encontrada.');
         }

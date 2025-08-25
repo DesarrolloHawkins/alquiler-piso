@@ -148,13 +148,37 @@
                             </form>
                         </div>
                     </div>
+                    <div class="col-md-2">
+                        <div class="mb-3">
+                            <form action="{{ route('reservas.index') }}" method="GET">
+                                <div class="form-group">
+                                    <!-- Otros parámetros como campos ocultos -->
+                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
+                                    <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
+                                    <input type="hidden" name="search" value="{{ request()->get('search') }}">
+                                    <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+                                    <input type="hidden" name="fecha_entrada" value="{{ request()->get('fecha_entrada') }}">
+                                    <input type="hidden" name="fecha_salida" value="{{ request()->get('fecha_salida') }}">
+                                    <input type="hidden" name="filtro_apartamento" value="{{ request()->get('filtro_apartamento') }}">
+
+                                    <label for="filtro_estado">Estado de reservas:</label>
+                                    <select name="filtro_estado" id="filtro_estado" class="form-control" onchange="this.form.submit()">
+                                        <option value="activas" {{ request()->get('filtro_estado', 'activas') == 'activas' ? 'selected' : '' }}>Reservas Activas</option>
+                                        <option value="eliminadas" {{ request()->get('filtro_estado') == 'eliminadas' ? 'selected' : '' }}>Reservas Eliminadas</option>
+                                        <option value="todas" {{ request()->get('filtro_estado') == 'todas' ? 'selected' : '' }}>Todas las Reservas</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     <div class="col-md-10">
                         <div class="mb-3">
                             <form action="{{ route('reservas.index') }}" method="GET">
                                 <!-- Campos ocultos para mantener el orden y la dirección -->
-                                <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
-                                <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
-                                <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+                                                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
+                                    <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
+                                    <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
+                                    <input type="hidden" name="filtro_estado" value="{{ request()->get('filtro_estado', 'activas') }}">
 
                                 <div class="d-flex align-items-center">
                                     <input type="text" class="form-control me-2" id="search" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
@@ -315,8 +339,17 @@
                                 <td>{{ number_format($reserva->precio, 2) }} €</td>
                                 <td>
                                     <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>
-                                    <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
-                                    <a href="{{route('reservas.destroy', $reserva->id)}}" class="btn bg-danger text-white">Eliminar</a>
+                                    @if(request()->get('filtro_estado') == 'eliminadas')
+                                        <form method="POST" action="{{ route('reservas.restore', $reserva->id) }}" style="display: inline;">
+                                            @csrf
+                                            <button type="submit" class="btn bg-success text-white" onclick="return confirm('¿Estás seguro de que quieres restaurar esta reserva?')">
+                                                <i class="fa-solid fa-undo me-1"></i>Restaurar
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
+                                        <button type="button" class="btn bg-danger text-white" onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')">Eliminar</button>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
@@ -326,6 +359,40 @@
                 <!-- Paginación links -->
                 {{ $reservas->appends(request()->except('page'))->links() }}
 
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar reserva -->
+<div class="modal fade" id="modalConfirmarEliminacion" tabindex="-1" aria-labelledby="modalConfirmarEliminacionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalConfirmarEliminacionLabel">
+                    <i class="fa-solid fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar la siguiente reserva?</p>
+                <div class="alert alert-warning">
+                    <strong>Cliente:</strong> <span id="clienteEliminar"></span><br>
+                    <strong>Código de Reserva:</strong> <span id="codigoEliminar"></span>
+                </div>
+                <p class="text-danger"><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-1"></i>Cancelar
+                </button>
+                <form id="formEliminarReserva" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa-solid fa-trash me-1"></i>Sí, Eliminar
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -369,9 +436,25 @@
                 document.getElementById('search').value = '';
                 document.getElementById('fecha_entrada').value = '';
                 document.getElementById('fecha_salida').value = '';
+                document.getElementById('filtro_apartamento').value = '';
+                document.getElementById('filtro_estado').value = 'activas';
                 window.location.href = "{{ route('reservas.index') }}";
             });
         });
+
+        // Función para confirmar eliminación de reserva
+        function confirmarEliminacion(id, cliente, codigo) {
+            // Llenar el modal con la información de la reserva
+            document.getElementById('clienteEliminar').textContent = cliente;
+            document.getElementById('codigoEliminar').textContent = codigo;
+            
+            // Configurar el formulario para la eliminación
+            document.getElementById('formEliminarReserva').action = "{{ route('reservas.destroy', '') }}/" + id;
+            
+            // Mostrar el modal
+            var modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminacion'));
+            modal.show();
+        }
         </script>
 
 @endsection
