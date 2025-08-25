@@ -446,8 +446,15 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Transición suave al formulario de DNI
-                        transitionToForm(response.redirect);
+                        // Mostrar overlay de transición
+                        const overlay = $('<div class="transition-overlay"></div>');
+                        $('body').append(overlay);
+                        overlay.fadeIn(300);
+                        
+                        // Redirigir después de un breve delay para mostrar la transición
+                        setTimeout(function() {
+                            window.location.href = response.redirect;
+                        }, 500);
                     } else {
                         showError('Error al establecer el idioma: ' + response.message);
                         // Restaurar botón
@@ -466,69 +473,7 @@
             });
         });
         
-        // Función para transición suave al formulario
-        function transitionToForm(url) {
-            // Crear overlay de transición
-            const overlay = $('<div class="transition-overlay"></div>');
-            $('body').append(overlay);
-            
-            // Mostrar overlay con animación
-            overlay.fadeIn(300, function() {
-                // Cambiar URL sin recargar
-                window.history.pushState({}, '', url);
-                
-                // Cargar contenido del formulario
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    success: function(html) {
-                        // Extraer solo el contenido del body
-                        const content = $(html).find('body').html();
-                        
-                        // Reemplazar contenido con transición suave
-                        $('body').addClass('fade-out');
-                        
-                        setTimeout(function() {
-                            $('body').html(content);
-                            $('body').removeClass('fade-out').addClass('fade-in');
-                            
-                            // Reinicializar scripts si es necesario
-                            initializeFormScripts();
-                            
-                            // Remover overlay
-                            overlay.fadeOut(300, function() {
-                                overlay.remove();
-                            });
-                        }, 200);
-                    },
-                    error: function() {
-                        // Si falla, hacer redirección normal
-                        overlay.fadeOut(200, function() {
-                            overlay.remove();
-                            window.location.href = url;
-                        });
-                    }
-                });
-            });
-        }
-        
-        // Función para reinicializar scripts del formulario
-        function initializeFormScripts() {
-            // Reinicializar cualquier script necesario para el formulario
-            if (typeof initializeFormValidation === 'function') {
-                initializeFormValidation();
-            }
-            
-            // Reinicializar tooltips si existen
-            if (typeof $().tooltip === 'function') {
-                $('[data-toggle="tooltip"]').tooltip();
-            }
-            
-            // Reinicializar select2 si existe
-            if (typeof $().select2 === 'function') {
-                $('.js-example-basic-single').select2();
-            }
-        }
+
         
         // Función para mostrar errores
         function showError(message) {
