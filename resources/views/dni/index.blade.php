@@ -113,7 +113,7 @@
             </div>
             <div class="col-sm-12">
 
-                @if(!$cliente->idioma_establecido)
+                @if(!isset($cliente) || !$cliente->idioma_establecido)
                 <div class="card">
                     <div class="card-header bg-color-primero">
                         <h5 class="mb-0">
@@ -987,7 +987,7 @@
 
             // Mostrar formulario de número de personas si ya hay un idioma seleccionado o establecido
         $(document).ready(function() {
-            @if($cliente->idioma_establecido)
+            @if(isset($cliente) && $cliente->idioma_establecido)
                 $('#cardNumeroPersonas').show();
             @else
                 if ($('#idioma').val() && $('#idioma').val() !== '') {
