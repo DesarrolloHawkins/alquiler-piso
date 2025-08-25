@@ -114,6 +114,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
     Route::get('/reservas/{id}/destroy', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
+    Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
 
 
 
@@ -581,6 +582,10 @@ Route::post('/channex/ari/update-rates', [ARIController::class, 'update'])->name
 Route::get('/channex/ari/room-types/{property_id}', [ARIController::class, 'getByProperty']);
 Route::get('/channex/rate-plans/{propertyId}/{roomTypeId}', [ARIController::class, 'getRatePlans']);
 
+// Rutas para obtener precios diarios
+Route::post('/channex/ari/daily-prices', [ARIController::class, 'getDailyPrices'])->name('ari.dailyPrices');
+Route::post('/channex/ari/all-daily-prices', [ARIController::class, 'getAllDailyPrices'])->name('ari.allDailyPrices');
+
 // Webhooks
 Route::post('/channex', [App\Http\Controllers\ChannexController::class, 'webhook'])->name('channex.webhook');
 Route::post('/ari-changes', [App\Http\Controllers\ChannexController::class, 'ariChanges'])->name('channex.ariChanges');
@@ -623,5 +628,18 @@ Route::middleware(['auth'])->group(function () {
     // Rutas solo para administradores
     Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         Route::post('/alerts/create', [App\Http\Controllers\AlertController::class, 'create'])->name('alerts.create');
+    });
+});
+
+// Rutas de API para ARI
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/properties/{propertyId}/room-types', function($propertyId) {
+        // Usar la misma ruta que usa el sistema ARI existente
+        return redirect("/channex/ari/room-types/{$propertyId}");
+    });
+    
+    Route::get('/api/properties/{propertyId}/room-types/{roomTypeId}/rate-plans', function($propertyId, $roomTypeId) {
+        // Usar la misma ruta que usa el sistema ARI existente
+        return redirect("/channex/rate-plans/{$propertyId}/{$roomTypeId}");
     });
 });
