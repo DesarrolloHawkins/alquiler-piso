@@ -408,6 +408,14 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="text-center">Disponibilidad Mensual de Apartamentos</h2>
+                    <div id="chartDisponibilidadMensual"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1875,6 +1883,102 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         var chart = new ApexCharts(document.querySelector("#chartNochesPorMes"), options);
+        chart.render();
+    });
+
+    // Gráfico de Disponibilidad Mensual
+    document.addEventListener('DOMContentLoaded', function () {
+        var disponibilidadData = @json($disponibilidadMensual);
+        
+        var options = {
+            series: [{
+                name: 'Disponibilidad (%)',
+                data: disponibilidadData.map(item => item.porcentaje_disponibilidad)
+            }, {
+                name: 'Ocupación (%)',
+                data: disponibilidadData.map(item => item.porcentaje_ocupacion)
+            }],
+            chart: {
+                type: 'bar',
+                height: 350,
+                stacked: true,
+                toolbar: {
+                    show: true
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    endingShape: 'rounded'
+                },
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return Math.round(val) + '%';
+                },
+                style: {
+                    fontSize: '11px',
+                    colors: ['#fff']
+                }
+            },
+            stroke: {
+                show: true,
+                width: 2,
+                colors: ['transparent']
+            },
+            colors: ['#28a745', '#dc3545'],
+            xaxis: {
+                categories: disponibilidadData.map(item => item.mes),
+                labels: {
+                    style: {
+                        fontSize: '12px'
+                    },
+                    rotate: -45,
+                    rotateAlways: false
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Porcentaje (%)'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return Math.round(val) + '%';
+                    }
+                },
+                max: 100
+            },
+            fill: {
+                opacity: 1
+            },
+            tooltip: {
+                y: [{
+                    formatter: function (val) {
+                        return Math.round(val) + '%';
+                    }
+                }, {
+                    formatter: function (val) {
+                        return Math.round(val) + '%';
+                    }
+                }]
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center'
+            },
+            title: {
+                text: 'Disponibilidad vs Ocupación Mensual',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartDisponibilidadMensual"), options);
         chart.render();
     });
 </script>

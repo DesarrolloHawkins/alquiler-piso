@@ -189,6 +189,9 @@ class DashboardController extends Controller
         $rangoEdades = array_keys($rangoDefinido);
         $totalesEdades = array_values($edadesPorcentaje);
 
+        // **Gráfico de Disponibilidad Mensual**
+        $disponibilidadMensual = $this->calcularDisponibilidadMensual();
+
         // **Gráfico de Ocupantes**
         $ocupantesDefinidos = [
             '01' => 0,
@@ -604,7 +607,8 @@ class DashboardController extends Controller
             'apartamentos',
             'origenes',
             'estados',
-            'totalFacturacion'
+            'totalFacturacion',
+            'disponibilidadMensual'
         ));
     }
 
@@ -873,4 +877,89 @@ class DashboardController extends Controller
     //     ));
     // }
 
+    /**
+     * Calcular disponibilidad mensual según la lógica del cliente
+     * Desde enero hasta el mes actual del año en curso
+     * Para los meses que faltan, usar datos del año anterior
+     */
+    private function calcularDisponibilidadMensual()
+    {
+        $now = Carbon::now();
+        $anioActual = $now->year;
+        $mesActual = $now->month;
+        $totalApartamentos = Apartamento::whereNotNull('id_channex')->count();
+        
+        $disponibilidad = [];
+        
+        // Generar datos para los 12 meses
+        for ($mes = 1; $mes <= 12; $mes++) {
+            $anio = $anioActual;
+            
+            // Si el mes es mayor al mes actual, usar el año anterior
+            if ($mes > $mesActual) {
+                $anio = $anioActual - 1;
+            }
+            
+            $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+            $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+            $diasEnMes = $fechaInicio->daysInMonth;
+            
+            // Calcular capacidad máxima (todos los apartamentos disponibles todos los días)
+            $capacidadMaxima = $totalApartamentos * $diasEnMes;
+            
+            // Calcular ocupación real
+            $reservas = Reserva::with(['apartamento'])
+                ->where('estado_id', '!=', 4) // Excluir canceladas
+                ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                    $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
+                        ->orWhereBetween('fecha_salida', [$fechaInicio, $fechaFin])
+                        ->orWhere(function ($subQuery) use ($fechaInicio, $fechaFin) {
+                            $subQuery->where('fecha_entrada', '<=', $fechaInicio)
+                                    ->where('fecha_salida', '>=', $fechaFin);
+                        });
+                })->get();
+            
+            // Calcular noches ocupadas
+            $nochesOcupadas = 0;
+            $apartamentos = Apartamento::whereNotNull('id_channex')->get();
+            
+            foreach (CarbonPeriod::create($fechaInicio, $fechaFin) as $dia) {
+                $apartamentos->each(function ($apartamento) use ($reservas, $dia, &$nochesOcupadas) {
+                    $estaOcupado = $reservas->filter(function ($reserva) use ($apartamento, $dia) {
+                        $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+                        $fechaSalida = isset($reserva->fecha_salida)
+                            ? Carbon::parse($reserva->fecha_salida)
+                            : $fechaEntrada->copy()->addDay();
+                        
+                        return $reserva->apartamento_id === $apartamento->id && 
+                               $dia->between($fechaEntrada, $fechaSalida);
+                    })->isNotEmpty();
+                    
+                    if ($estaOcupado) {
+                        $nochesOcupadas++;
+                    }
+                });
+            }
+            
+            // Calcular disponibilidad
+            $nochesDisponibles = $capacidadMaxima - $nochesOcupadas;
+            $porcentajeDisponibilidad = $capacidadMaxima > 0 ? round(($nochesDisponibles / $capacidadMaxima) * 100, 2) : 0;
+            $porcentajeOcupacion = $capacidadMaxima > 0 ? round(($nochesOcupadas / $capacidadMaxima) * 100, 2) : 0;
+            
+            $disponibilidad[] = [
+                'mes' => $fechaInicio->format('M Y'),
+                'anio' => $anio,
+                'mes_numero' => $mes,
+                'capacidad_maxima' => $capacidadMaxima,
+                'noches_ocupadas' => $nochesOcupadas,
+                'noches_disponibles' => $nochesDisponibles,
+                'porcentaje_disponibilidad' => $porcentajeDisponibilidad,
+                'porcentaje_ocupacion' => $porcentajeOcupacion,
+                'total_apartamentos' => $totalApartamentos,
+                'dias_en_mes' => $diasEnMes
+            ];
+        }
+        
+        return $disponibilidad;
+    }
 }
