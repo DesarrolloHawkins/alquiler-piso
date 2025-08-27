@@ -68,3 +68,4 @@ class CheckTarifasTable extends Command
         $this->info('Verificación completada.');
     }
 }
+

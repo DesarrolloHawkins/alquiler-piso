@@ -164,6 +164,17 @@
                                     </ul>
                                 </li>
 
+                                <!-- Configuración de Descuentos -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        Descuentos
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.index') }}">Configuración</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.create') }}">Nueva Configuración</a></li>
+                                    </ul>
+                                </li>
+
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Tesorería

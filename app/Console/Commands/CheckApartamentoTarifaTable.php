@@ -62,3 +62,4 @@ class CheckApartamentoTarifaTable extends Command
         $this->info('Verificación completada.');
     }
 }
+

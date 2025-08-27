@@ -22,6 +22,7 @@ use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\WhatsappTemplateController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\ConfiguracionDescuentoController;
 use App\Models\Cliente;
 use App\Models\InvoicesStatus;
 use App\Models\Reserva;
@@ -88,6 +89,10 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/tarifas/{tarifa}/toggle-status', [TarifaController::class, 'toggleStatus'])->name('tarifas.toggle-status');
     Route::post('/tarifas/{tarifa}/asignar-apartamento', [TarifaController::class, 'asignarApartamento'])->name('tarifas.asignar-apartamento');
     Route::post('/tarifas/{tarifa}/desasignar-apartamento', [TarifaController::class, 'desasignarApartamento'])->name('tarifas.desasignar-apartamento');
+
+    // Configuración de Descuentos
+    Route::resource('configuracion-descuentos', ConfiguracionDescuentoController::class);
+    Route::post('/configuracion-descuentos/{configuracionDescuento}/toggle-status', [ConfiguracionDescuentoController::class, 'toggleStatus'])->name('configuracion-descuentos.toggle-status');
 
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');

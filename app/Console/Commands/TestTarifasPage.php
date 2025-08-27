@@ -54,3 +54,4 @@ class TestTarifasPage extends Command
         $this->info('Prueba completada.');
     }
 }
+

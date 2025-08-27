@@ -74,9 +74,45 @@ class Apartamento extends Model
     {
         return $this->hasMany(RoomType::class, 'property_id', 'id');
     }
+    
+    public function ratePlans()
+    {
+        return $this->hasMany(RatePlan::class, 'property_id', 'id');
+    }
+    
     public function edificio()
     {
         return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
     }
 
+    /**
+     * Relación con tarifas
+     */
+    public function tarifas()
+    {
+        return $this->belongsToMany(Tarifa::class, 'apartamento_tarifa')
+                    ->withPivot('activo')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Obtener tarifas activas
+     */
+    public function tarifasActivas()
+    {
+        return $this->tarifas()->wherePivot('activo', true);
+    }
+
+    /**
+     * Obtener tarifa vigente para una fecha específica
+     */
+    public function tarifaVigente($fecha)
+    {
+        return $this->tarifas()
+                    ->wherePivot('activo', true)
+                    ->where('activo', true)
+                    ->where('fecha_inicio', '<=', $fecha)
+                    ->where('fecha_fin', '>=', $fecha)
+                    ->first();
+    }
 }
