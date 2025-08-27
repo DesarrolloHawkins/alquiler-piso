@@ -387,8 +387,8 @@
                                                    {{ in_array($apartamento->id, old('apartamentos', [])) ? 'checked' : '' }}>
                                             <label for="apartamento_{{ $apartamento->id }}">
                                                 {{ $apartamento->nombre }}
-                                                @if($apartamento->edificio)
-                                                    <small class="text-muted d-block">{{ $apartamento->edificio->nombre }}</small>
+                                                @if($apartamento->edificioName)
+                                                    <small class="text-muted d-block">{{ $apartamento->edificioName->nombre }}</small>
                                                 @endif
                                             </label>
                                         </div>

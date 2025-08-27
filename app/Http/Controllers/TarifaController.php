@@ -6,6 +6,7 @@ use App\Models\Tarifa;
 use App\Models\Apartamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class TarifaController extends Controller
 {
@@ -23,7 +24,15 @@ class TarifaController extends Controller
      */
     public function create()
     {
-        $apartamentos = Apartamento::with('edificio')->get();
+        $apartamentos = Apartamento::with('edificioName')->get();
+        
+        // Verificar que las relaciones se cargaron correctamente
+        $apartamentos->each(function ($apartamento) {
+            if (!$apartamento->edificioName) {
+                Log::warning("Apartamento ID {$apartamento->id} no tiene edificio asociado");
+            }
+        });
+        
         return view('admin.tarifas.create', compact('apartamentos'));
     }
 
@@ -78,7 +87,9 @@ class TarifaController extends Controller
      */
     public function show(Tarifa $tarifa)
     {
-        $tarifa->load('apartamentos');
+        $tarifa->load(['apartamentos' => function($query) {
+            $query->with('edificioName');
+        }]);
         return view('admin.tarifas.show', compact('tarifa'));
     }
 
@@ -87,7 +98,15 @@ class TarifaController extends Controller
      */
     public function edit(Tarifa $tarifa)
     {
-        $apartamentos = Apartamento::with('edificio')->get();
+        $apartamentos = Apartamento::with('edificioName')->get();
+        
+        // Verificar que las relaciones se cargaron correctamente
+        $apartamentos->each(function ($apartamento) {
+            if (!$apartamento->edificioName) {
+                Log::warning("Apartamento ID {$apartamento->id} no tiene edificio asociado");
+            }
+        });
+        
         $tarifa->load('apartamentos');
         return view('admin.tarifas.edit', compact('tarifa', 'apartamentos'));
     }

@@ -332,7 +332,7 @@
                                     <div class="apartamento-item">
                                         <div class="apartamento-name">{{ $apartamento->nombre }}</div>
                                         @if($apartamento->edificio)
-                                            <div class="apartamento-building">{{ $apartamento->edificio->nombre }}</div>
+                                            <div class="apartamento-building">{{ $apartamento->edificioName ? $apartamento->edificioName->nombre : 'N/A' }}</div>
                                         @endif
                                     </div>
                                 @endforeach
