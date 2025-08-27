@@ -6,6 +6,7 @@ use App\Models\ConfiguracionDescuento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+
 class ConfiguracionDescuentoController extends Controller
 {
     /**
@@ -37,7 +38,7 @@ class ConfiguracionDescuentoController extends Controller
             'edificio_id' => 'required|exists:edificios,id',
             'porcentaje_descuento' => 'required|numeric|min:0|max:100',
             'porcentaje_incremento' => 'required|numeric|min:0|max:100',
-            'activo' => 'boolean',
+            'activo' => 'nullable|boolean',
             'condiciones' => 'nullable|array'
         ]);
 
@@ -53,7 +54,7 @@ class ConfiguracionDescuentoController extends Controller
             'edificio_id' => $request->edificio_id,
             'porcentaje_descuento' => $request->porcentaje_descuento,
             'porcentaje_incremento' => $request->porcentaje_incremento,
-            'activo' => $request->has('activo'),
+            'activo' => $request->boolean('activo', false),
             'condiciones' => $request->condiciones ?? [
                 'dia_semana' => 'friday',
                 'temporada' => 'baja',
@@ -95,7 +96,7 @@ class ConfiguracionDescuentoController extends Controller
             'edificio_id' => 'required|exists:edificios,id',
             'porcentaje_descuento' => 'required|numeric|min:0|max:100',
             'porcentaje_incremento' => 'required|numeric|min:0|max:100',
-            'activo' => 'boolean',
+            'activo' => 'nullable|boolean',
             'condiciones' => 'nullable|array'
         ]);
 
@@ -111,7 +112,7 @@ class ConfiguracionDescuentoController extends Controller
             'edificio_id' => $request->edificio_id,
             'porcentaje_descuento' => $request->porcentaje_descuento,
             'porcentaje_incremento' => $request->porcentaje_incremento,
-            'activo' => $request->has('activo'),
+            'activo' => $request->boolean('activo', false),
             'condiciones' => $request->condiciones ?? $configuracionDescuento->condiciones
         ]);
 

@@ -2,15 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Apartamento;
-use App\Models\Tarifa;
-use App\Models\Reserva;
 use App\Models\ConfiguracionDescuento;
+use App\Models\Apartamento;
+use App\Models\Reserva;
 use App\Models\HistorialDescuento;
-use App\Http\Controllers\ARIController;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
@@ -22,17 +19,17 @@ class AplicarDescuentosChannex extends Command
      * @var string
      */
     protected $signature = 'aplicar:descuentos-channex 
-                            {--fecha= : Fecha específica para analizar (formato: Y-m-d)}
-                            {--configuracion= : ID de la configuración de descuento a usar}
-                            {--dry-run : Solo mostrar qué se haría sin aplicar cambios}
-                            {--confirmar : Confirmar automáticamente sin preguntar}';
+                            {--fecha= : Fecha de análisis (YYYY-MM-DD)}
+                            {--configuracion= : ID de configuración específica}
+                            {--dry-run : Solo simular sin aplicar cambios}
+                            {--confirmar : Confirmar automáticamente}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Aplica descuentos de temporada baja a Channex y guarda el historial';
+    protected $description = 'Aplica descuentos o incrementos basados en ocupación por edificio';
 
     /**
      * Execute the console command.
@@ -43,136 +40,128 @@ class AplicarDescuentosChannex extends Command
         $configuracionId = $this->option('configuracion');
         $dryRun = $this->option('dry-run');
         $confirmar = $this->option('confirmar');
-        
-        $this->info('🚀 APLICANDO DESCUENTOS A CHANNEX');
-        $this->info('Fecha de análisis: ' . $fechaAnalisis->format('d/m/Y (l)'));
-        $this->info('Modo: ' . ($dryRun ? 'SIMULACIÓN' : 'APLICACIÓN REAL'));
+
+        $this->info('🔄 APLICANDO AJUSTES DE PRECIOS POR OCUPACIÓN DE EDIFICIO');
+        $this->line("Fecha de análisis: {$fechaAnalisis->format('d/m/Y')} (" . $fechaAnalisis->format('l') . ")");
         $this->line('');
 
-        // Obtener configuración de descuento
-        $configuracion = $this->obtenerConfiguracionDescuento($configuracionId);
-        if (!$configuracion) {
+        // Obtener configuraciones activas
+        $configuraciones = $this->obtenerConfiguraciones($configuracionId);
+        if ($configuraciones->isEmpty()) {
+            $this->warn('⚠️  No hay configuraciones de descuento activas');
             return;
         }
 
-        // Analizar apartamentos
-        $apartamentosConDescuento = $this->analizarApartamentos($fechaAnalisis, $configuracion);
-        
-        if (empty($apartamentosConDescuento)) {
-            $this->info('✅ No hay apartamentos que requieran descuento');
+        $edificiosConAccion = [];
+
+        foreach ($configuraciones as $configuracion) {
+            $this->line("🏢 Analizando edificio: {$configuracion->edificio->nombre}");
+            
+            // Verificar si es el día configurado
+            $diaConfigurado = $configuracion->condiciones['dia_semana'] ?? 'friday';
+            if (!$this->esDiaConfigurado($fechaAnalisis, $diaConfigurado)) {
+                $this->line("   ℹ️  No es el día configurado ({$this->getNombreDia($diaConfigurado)})");
+                continue;
+            }
+
+            // Calcular semana siguiente
+            $lunesSiguiente = $fechaAnalisis->copy()->addDays(3);
+            $juevesSiguiente = $lunesSiguiente->copy()->addDays(3);
+
+            // Determinar acción basada en ocupación
+            $accion = $configuracion->determinarAccionOcupacion($lunesSiguiente, $juevesSiguiente);
+            
+            if ($accion['accion'] === 'ninguna') {
+                $this->line("   ✅ Ocupación normal ({$accion['ocupacion_actual']}%), no se requiere acción");
+                continue;
+            }
+
+            $accionTexto = $accion['accion'] === 'descuento' ? 'DESCUENTO' : 'INCREMENTO';
+            $this->line("   🎯 ¡{$accionTexto} APLICABLE!");
+            $this->line("   📊 Ocupación: {$accion['ocupacion_actual']}% (límite: {$accion['ocupacion_limite']}%)");
+
+            // Analizar apartamentos del edificio
+            $apartamentosConAccion = $this->analizarApartamentosEdificio($configuracion, $lunesSiguiente, $juevesSiguiente, $accion);
+            
+            if (!empty($apartamentosConAccion)) {
+                $edificiosConAccion[] = [
+                    'configuracion' => $configuracion,
+                    'accion' => $accion,
+                    'apartamentos' => $apartamentosConAccion
+                ];
+            }
+        }
+
+        if (empty($edificiosConAccion)) {
+            $this->info('✅ No hay edificios que requieran ajuste de precios');
             return;
         }
 
         // Mostrar resumen
-        $this->mostrarResumen($apartamentosConDescuento, $configuracion);
+        $this->mostrarResumen($edificiosConAccion);
 
-        // Confirmar aplicación
-        if (!$confirmar && !$dryRun) {
-            if (!$this->confirm('¿Deseas aplicar estos descuentos a Channex?')) {
+        // Confirmar si no es dry-run
+        if (!$dryRun && !$confirmar) {
+            if (!$this->confirm('¿Deseas aplicar los ajustes de precios?')) {
                 $this->info('❌ Operación cancelada');
                 return;
             }
         }
 
-        // Aplicar descuentos
-        $this->aplicarDescuentos($apartamentosConDescuento, $configuracion, $dryRun);
+        // Aplicar ajustes
+        $this->aplicarAjustes($edificiosConAccion, $dryRun);
     }
 
     /**
-     * Obtener configuración de descuento
+     * Obtener configuraciones activas
      */
-    private function obtenerConfiguracionDescuento($configuracionId = null)
+    private function obtenerConfiguraciones($configuracionId = null)
     {
         if ($configuracionId) {
-            $configuracion = ConfiguracionDescuento::find($configuracionId);
+            return ConfiguracionDescuento::with('edificio.apartamentos')
+                ->where('id', $configuracionId)
+                ->activas()
+                ->get();
         } else {
-            $configuracion = ConfiguracionDescuento::activas()->first();
+            return ConfiguracionDescuento::with('edificio.apartamentos')
+                ->activas()
+                ->get();
         }
-
-        if (!$configuracion) {
-            $this->error('❌ No se encontró configuración de descuento activa');
-            $this->line('Crea una configuración de descuento primero');
-            return null;
-        }
-
-        $this->info("📋 Configuración: {$configuracion->nombre}");
-        $this->line("   Descripción: {$configuracion->descripcion}");
-        $this->line("   Descuento: {$configuracion->porcentaje_formateado}");
-        $this->line('');
-
-        return $configuracion;
     }
 
     /**
-     * Analizar apartamentos para descuentos
+     * Analizar apartamentos de un edificio
      */
-    private function analizarApartamentos($fechaAnalisis, $configuracion)
+    private function analizarApartamentosEdificio($configuracion, $lunesSiguiente, $juevesSiguiente, $accion)
     {
-        $apartamentosConDescuento = [];
-
-        // Obtener apartamentos con id_channex
-        $apartamentos = Apartamento::whereNotNull('id_channex')
-            ->with(['edificioName', 'roomTypes', 'ratePlans', 'tarifas' => function($query) {
-                $query->where('tarifas.temporada_baja', true)
-                      ->where('tarifas.activo', true);
-            }])
-            ->get();
+        $apartamentosConAccion = [];
+        $apartamentos = $configuracion->edificio->apartamentos;
 
         foreach ($apartamentos as $apartamento) {
-            $descuento = $this->analizarApartamento($apartamento, $fechaAnalisis, $configuracion);
-            if ($descuento) {
-                $apartamentosConDescuento[] = $descuento;
+            // Verificar que tenga id_channex
+            if (!$apartamento->id_channex) {
+                continue;
+            }
+
+            $disponibilidad = $this->verificarDisponibilidad($apartamento, $lunesSiguiente, $juevesSiguiente);
+            $diasLibres = $disponibilidad['dias_libres'];
+            
+            if (!empty($diasLibres)) {
+                $apartamentosConAccion[] = [
+                    'apartamento' => $apartamento,
+                    'dias_libres' => $diasLibres,
+                    'fecha_inicio' => $lunesSiguiente,
+                    'fecha_fin' => $juevesSiguiente,
+                    'accion' => $accion
+                ];
             }
         }
 
-        return $apartamentosConDescuento;
+        return $apartamentosConAccion;
     }
 
     /**
-     * Analizar un apartamento específico
-     */
-    private function analizarApartamento($apartamento, $fechaAnalisis, $configuracion)
-    {
-        // Verificar si es viernes
-        if (!$fechaAnalisis->isFriday()) {
-            return null;
-        }
-
-        // Calcular semana siguiente
-        $lunesSiguiente = $fechaAnalisis->copy()->addDays(3);
-        $juevesSiguiente = $lunesSiguiente->copy()->addDays(3);
-
-        // Verificar tarifas de temporada baja
-        $tarifasTemporadaBaja = $apartamento->tarifas;
-        if ($tarifasTemporadaBaja->isEmpty()) {
-            return null;
-        }
-
-        foreach ($tarifasTemporadaBaja as $tarifa) {
-            // Verificar si la tarifa está vigente
-            if ($tarifa->fecha_inicio <= $juevesSiguiente && $tarifa->fecha_fin >= $lunesSiguiente) {
-                // Verificar disponibilidad
-                $disponibilidad = $this->verificarDisponibilidad($apartamento, $lunesSiguiente, $juevesSiguiente);
-                $diasLibres = $disponibilidad['dias_libres'];
-
-                if (!empty($diasLibres)) {
-                    return [
-                        'apartamento' => $apartamento,
-                        'tarifa' => $tarifa,
-                        'dias_libres' => $diasLibres,
-                        'fecha_inicio' => $lunesSiguiente,
-                        'fecha_fin' => $juevesSiguiente,
-                        'configuracion' => $configuracion
-                    ];
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Verificar disponibilidad
+     * Verificar disponibilidad de un apartamento
      */
     private function verificarDisponibilidad($apartamento, $fechaInicio, $fechaFin)
     {
@@ -205,103 +194,108 @@ class AplicarDescuentosChannex extends Command
     }
 
     /**
-     * Mostrar resumen de descuentos
+     * Mostrar resumen de ajustes
      */
-    private function mostrarResumen($apartamentosConDescuento, $configuracion)
+    private function mostrarResumen($edificiosConAccion)
     {
-        $this->info('📊 RESUMEN DE DESCUENTOS A APLICAR:');
+        $this->info('📊 RESUMEN DE AJUSTES A APLICAR:');
         $this->line('');
 
         $totalDias = 0;
         $ahorroTotal = 0;
 
-        foreach ($apartamentosConDescuento as $descuento) {
-            $apartamento = $descuento['apartamento'];
-            $tarifa = $descuento['tarifa'];
-            $diasLibres = $descuento['dias_libres'];
-            $disponibilidad = $this->verificarDisponibilidad($apartamento, $descuento['fecha_inicio'], $descuento['fecha_fin']);
+        foreach ($edificiosConAccion as $edificio) {
+            $configuracion = $edificio['configuracion'];
+            $accion = $edificio['accion'];
+            $apartamentos = $edificio['apartamentos'];
 
-            $precioConDescuento = $configuracion->calcularPrecioConDescuento($tarifa->precio);
-            $ahorroPorDia = $configuracion->calcularAhorroPorDia($tarifa->precio);
-            $ahorroTotalDias = $ahorroPorDia * count($diasLibres);
-
-            $this->line("🏠 {$apartamento->nombre}");
-            $this->line("   Tarifa: {$tarifa->nombre} ({$tarifa->precio}€)");
-            $this->line("   📊 Disponibilidad: {$disponibilidad['total_dias_libres']}/4 días libres, {$disponibilidad['total_dias_ocupados']}/4 días ocupados");
-            $this->line("   📅 Días libres (se aplicará descuento):");
-            foreach ($diasLibres as $fecha) {
-                $this->line("      ✅ {$fecha->format('d/m/Y (l)')}");
-            }
-            $this->line("   💰 Precio con descuento: {$precioConDescuento}€");
-            $this->line("   💵 Ahorro total: {$ahorroTotalDias}€");
+            $this->line("🏢 {$configuracion->edificio->nombre}");
+            $this->line("   Acción: " . ($accion['accion'] === 'descuento' ? 'DESCUENTO' : 'INCREMENTO'));
+            $this->line("   Porcentaje: {$accion['porcentaje']}%");
+            $this->line("   Ocupación: {$accion['ocupacion_actual']}%");
+            $this->line("   Apartamentos afectados: " . count($apartamentos));
             $this->line("");
 
-            $totalDias += count($diasLibres);
-            $ahorroTotal += $ahorroTotalDias;
+            foreach ($apartamentos as $apartamento) {
+                $diasLibres = $apartamento['dias_libres'];
+                $this->line("   🏠 {$apartamento['apartamento']->nombre}: " . count($diasLibres) . " días");
+                
+                foreach ($diasLibres as $fecha) {
+                    $this->line("      • {$fecha->format('d/m/Y (l)')}");
+                }
+                
+                $totalDias += count($diasLibres);
+            }
+            $this->line("");
         }
 
         $this->info("📈 TOTAL:");
-        $this->line("   Apartamentos: " . count($apartamentosConDescuento));
+        $this->line("   Edificios: " . count($edificiosConAccion));
         $this->line("   Días totales: {$totalDias}");
-        $this->line("   Ahorro total: {$ahorroTotal}€");
         $this->line("");
     }
 
     /**
-     * Aplicar descuentos
+     * Aplicar ajustes de precios
      */
-    private function aplicarDescuentos($apartamentosConDescuento, $configuracion, $dryRun)
+    private function aplicarAjustes($edificiosConAccion, $dryRun)
     {
-        $this->info('🔄 APLICANDO DESCUENTOS...');
+        $this->info('🔄 APLICANDO AJUSTES...');
         $this->line('');
 
         $exitosos = 0;
         $errores = 0;
 
-        foreach ($apartamentosConDescuento as $descuento) {
-            $apartamento = $descuento['apartamento'];
-            $tarifa = $descuento['tarifa'];
-            $diasLibres = $descuento['dias_libres'];
+        foreach ($edificiosConAccion as $edificio) {
+            $configuracion = $edificio['configuracion'];
+            $accion = $edificio['accion'];
+            $apartamentos = $edificio['apartamentos'];
 
-            $this->line("🏠 Procesando: {$apartamento->nombre}");
+            $this->line("🏢 Procesando: {$configuracion->edificio->nombre}");
 
-            try {
-                // Crear registro en historial
-                $historial = $this->crearHistorial($descuento, $configuracion);
+            foreach ($apartamentos as $apartamento) {
+                $apartamentoObj = $apartamento['apartamento'];
+                $diasLibres = $apartamento['dias_libres'];
 
-                if (!$dryRun) {
-                    // Aplicar descuento a Channex
-                    $resultado = $this->aplicarDescuentoChannex($apartamento, $diasLibres, $configuracion, $tarifa);
-                    
-                    // Actualizar estado del historial
-                    $historial->estado = $resultado['success'] ? 'aplicado' : 'error';
-                    $historial->datos_channex = $resultado['response'] ?? null;
-                    $historial->observaciones = $resultado['message'] ?? null;
-                    $historial->save();
+                $this->line("   🏠 {$apartamentoObj->nombre}");
 
-                    if ($resultado['success']) {
-                        $exitosos++;
-                        $this->info("   ✅ Descuento aplicado exitosamente");
+                try {
+                    // Crear registro en historial
+                    $historial = $this->crearHistorial($apartamento, $configuracion, $accion);
+
+                    if (!$dryRun) {
+                        // Aplicar ajuste a Channex
+                        $resultado = $this->aplicarAjusteChannex($apartamentoObj, $diasLibres, $configuracion, $accion);
+                        
+                        // Actualizar estado del historial
+                        $historial->estado = $resultado['success'] ? 'aplicado' : 'error';
+                        $historial->datos_channex = $resultado['response'] ?? null;
+                        $historial->observaciones = $resultado['message'] ?? null;
+                        $historial->save();
+
+                        if ($resultado['success']) {
+                            $exitosos++;
+                            $this->info("      ✅ Ajuste aplicado exitosamente");
+                        } else {
+                            $errores++;
+                            $this->error("      ❌ Error: " . ($resultado['message'] ?? 'Error desconocido'));
+                        }
                     } else {
-                        $errores++;
-                        $this->error("   ❌ Error: " . ($resultado['message'] ?? 'Error desconocido'));
+                        $exitosos++;
+                        $this->info("      ✅ Simulación exitosa");
                     }
-                } else {
-                    $exitosos++;
-                    $this->info("   ✅ Simulación exitosa");
-                }
 
-            } catch (\Exception $e) {
-                $errores++;
-                $this->error("   ❌ Error: " . $e->getMessage());
-                
-                if (!$dryRun) {
-                    $historial->estado = 'error';
-                    $historial->observaciones = $e->getMessage();
-                    $historial->save();
+                } catch (\Exception $e) {
+                    $errores++;
+                    $this->error("      ❌ Error: " . $e->getMessage());
+                    
+                    if (!$dryRun) {
+                        $historial->estado = 'error';
+                        $historial->observaciones = $e->getMessage();
+                        $historial->save();
+                    }
                 }
             }
-
             $this->line('');
         }
 
@@ -313,61 +307,60 @@ class AplicarDescuentosChannex extends Command
     /**
      * Crear registro en historial
      */
-    private function crearHistorial($descuento, $configuracion)
+    private function crearHistorial($apartamento, $configuracion, $accion)
     {
-        $apartamento = $descuento['apartamento'];
-        $tarifa = $descuento['tarifa'];
-        $diasLibres = $descuento['dias_libres'];
-
-        $precioConDescuento = $configuracion->calcularPrecioConDescuento($tarifa->precio);
-        $ahorroPorDia = $configuracion->calcularAhorroPorDia($tarifa->precio);
-        $ahorroTotal = $ahorroPorDia * count($diasLibres);
+        $apartamentoObj = $apartamento['apartamento'];
+        $diasLibres = $apartamento['dias_libres'];
+        
+        // Obtener tarifa del apartamento
+        $tarifa = $apartamentoObj->tarifas->first();
+        
+        $precioOriginal = $tarifa ? $tarifa->precio : 0;
+        $precioConAjuste = $accion['accion'] === 'descuento' 
+            ? $configuracion->calcularPrecioConDescuento($precioOriginal)
+            : $configuracion->calcularPrecioConIncremento($precioOriginal);
+        
+        $ahorroPorDia = $accion['accion'] === 'descuento'
+            ? $configuracion->calcularAhorroPorDia($precioOriginal)
+            : $configuracion->calcularGananciaPorDia($precioOriginal);
 
         return HistorialDescuento::create([
-            'apartamento_id' => $apartamento->id,
-            'tarifa_id' => $tarifa->id,
+            'apartamento_id' => $apartamentoObj->id,
+            'tarifa_id' => $tarifa ? $tarifa->id : null,
             'configuracion_descuento_id' => $configuracion->id,
-            'fecha_aplicacion' => now()->toDateString(),
-            'fecha_inicio_descuento' => $descuento['fecha_inicio'],
-            'fecha_fin_descuento' => $descuento['fecha_fin'],
-            'precio_original' => $tarifa->precio,
-            'precio_con_descuento' => $precioConDescuento,
-            'porcentaje_descuento' => $configuracion->porcentaje_descuento,
+            'fecha_aplicacion' => now(),
+            'fecha_inicio_descuento' => $apartamento['fecha_inicio'],
+            'fecha_fin_descuento' => $apartamento['fecha_fin'],
+            'precio_original' => $precioOriginal,
+            'precio_con_descuento' => $precioConAjuste,
+            'porcentaje_descuento' => $accion['porcentaje'],
             'dias_aplicados' => count($diasLibres),
-            'ahorro_total' => $ahorroTotal,
+            'ahorro_total' => $ahorroPorDia * count($diasLibres),
             'estado' => 'pendiente',
-            'observaciones' => 'Descuento de temporada baja aplicado automáticamente'
+            'observaciones' => "Ajuste por ocupación: {$accion['ocupacion_actual']}% ({$accion['accion']})"
         ]);
     }
 
     /**
-     * Aplicar descuento a Channex
+     * Aplicar ajuste a Channex
      */
-    private function aplicarDescuentoChannex($apartamento, $diasLibres, $configuracion, $tarifa)
+    private function aplicarAjusteChannex($apartamento, $diasLibres, $configuracion, $accion)
     {
         try {
-            // Primero verificar si ya tenemos precios establecidos para la temporada
-            $preciosEstablecidos = $this->verificarPreciosEstablecidos($apartamento, $diasLibres);
-            
-            if (!$preciosEstablecidos) {
-                // Establecer precios base para la temporada
-                $resultadoEstablecimiento = $this->establecerPreciosBase($apartamento, $diasLibres, $tarifa);
-                
-                if (!$resultadoEstablecimiento['success']) {
-                    return [
-                        'success' => false,
-                        'message' => 'Error estableciendo precios base: ' . $resultadoEstablecimiento['message']
-                    ];
-                }
-                
-                $this->line("   ✅ Precios base establecidos para la temporada");
-            } else {
-                $this->line("   ✅ Precios base ya establecidos para la temporada");
+            // Obtener tarifa del apartamento
+            $tarifa = $apartamento->tarifas->first();
+            if (!$tarifa) {
+                return [
+                    'success' => false,
+                    'message' => 'No se encontró tarifa para el apartamento'
+                ];
             }
 
-            // Ahora aplicar el descuento
-            $precioConDescuento = $configuracion->calcularPrecioConDescuento($tarifa->precio);
-            
+            $precioOriginal = $tarifa->precio;
+            $precioConAjuste = $accion['accion'] === 'descuento' 
+                ? $configuracion->calcularPrecioConDescuento($precioOriginal)
+                : $configuracion->calcularPrecioConIncremento($precioOriginal);
+
             // Obtener room types y rate plans del apartamento
             $roomTypes = $apartamento->roomTypes;
             $ratePlans = $apartamento->ratePlans;
@@ -389,7 +382,7 @@ class AplicarDescuentosChannex extends Command
                                 'room_type_id' => $roomType->id_channex,
                                 'rate_plan_id' => $ratePlan->id_channex,
                                 'date' => $fecha->format('Y-m-d'),
-                                'rate' => $precioConDescuento
+                                'rate' => $precioConAjuste
                             ];
                         }
                     }
@@ -406,7 +399,7 @@ class AplicarDescuentosChannex extends Command
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'message' => 'Descuento aplicado correctamente',
+                    'message' => ucfirst($accion['accion']) . ' aplicado correctamente',
                     'response' => [
                         'sent_data' => $updates,
                         'channex_response' => $response->json()
@@ -426,117 +419,44 @@ class AplicarDescuentosChannex extends Command
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Error aplicando descuento: ' . $e->getMessage()
+                'message' => 'Error aplicando ajuste: ' . $e->getMessage()
             ];
         }
     }
 
     /**
-     * Verificar si ya tenemos precios establecidos para la temporada
+     * Verifica si la fecha es el día configurado
      */
-    private function verificarPreciosEstablecidos($apartamento, $diasLibres)
+    private function esDiaConfigurado($fecha, $diaConfigurado)
     {
-        try {
-            // Obtener el primer día para verificar
-            $primerDia = $diasLibres->first();
-            $roomTypes = $apartamento->roomTypes;
-            $ratePlans = $apartamento->ratePlans;
-
-            if ($roomTypes->isEmpty() || $ratePlans->isEmpty()) {
-                return false;
-            }
-
-            // Verificar con el primer room type y rate plan
-            $roomType = $roomTypes->first();
-            $ratePlan = $ratePlans->first();
-
-            $response = Http::withHeaders([
-                'user-api-key' => env('CHANNEX_TOKEN'),
-            ])->get(env('CHANNEX_URL') . "/availability", [
-                'filter[property_id]' => $apartamento->id_channex,
-                'filter[room_type_id]' => $roomType->id_channex,
-                'filter[rate_plan_id]' => $ratePlan->id_channex,
-                'filter[date]' => $primerDia->format('Y-m-d'),
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['data']) && !empty($data['data'])) {
-                    foreach ($data['data'] as $item) {
-                        if (isset($item['attributes']['rate']) && $item['attributes']['rate'] > 0) {
-                            return true; // Ya hay precios establecidos
-                        }
-                    }
-                }
-            }
-
-            return false; // No hay precios establecidos
-
-        } catch (\Exception $e) {
-            // Si hay error, asumir que no hay precios establecidos
-            return false;
-        }
+        $dias = [
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+            'saturday' => 6,
+            'sunday' => 0
+        ];
+        
+        return $fecha->dayOfWeek === $dias[$diaConfigurado];
     }
 
     /**
-     * Establecer precios base para la temporada
+     * Obtiene el nombre del día en español
      */
-    private function establecerPreciosBase($apartamento, $diasLibres, $tarifa)
+    private function getNombreDia($diaConfigurado)
     {
-        try {
-            $roomTypes = $apartamento->roomTypes;
-            $ratePlans = $apartamento->ratePlans;
-            
-            if ($roomTypes->isEmpty() || $ratePlans->isEmpty()) {
-                return [
-                    'success' => false,
-                    'message' => 'No se encontraron room types o rate plans para el apartamento'
-                ];
-            }
-
-            $updates = [];
-            foreach ($diasLibres as $fecha) {
-                foreach ($roomTypes as $roomType) {
-                    foreach ($ratePlans as $ratePlan) {
-                        if ($ratePlan->room_type_id == $roomType->id) {
-                            $updates[] = [
-                                'property_id' => $apartamento->id_channex,
-                                'room_type_id' => $roomType->id_channex,
-                                'rate_plan_id' => $ratePlan->id_channex,
-                                'date' => $fecha->format('Y-m-d'),
-                                'rate' => $tarifa->precio
-                            ];
-                        }
-                    }
-                }
-            }
-
-            // Enviar actualización a Channex
-            $response = Http::withHeaders([
-                'user-api-key' => env('CHANNEX_TOKEN'),
-            ])->post(env('CHANNEX_URL') . "/restrictions", [
-                'values' => $updates
-            ]);
-
-            if ($response->successful()) {
-                return [
-                    'success' => true,
-                    'message' => 'Precios base establecidos correctamente',
-                    'response' => $response->json()
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'Error estableciendo precios base: ' . $response->body(),
-                    'response' => $response->json()
-                ];
-            }
-
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Error estableciendo precios base: ' . $e->getMessage()
-            ];
-        }
+        $dias = [
+            'monday' => 'Lunes',
+            'tuesday' => 'Martes',
+            'wednesday' => 'Miércoles',
+            'thursday' => 'Jueves',
+            'friday' => 'Viernes',
+            'saturday' => 'Sábado',
+            'sunday' => 'Domingo'
+        ];
+        
+        return $dias[$diaConfigurado] ?? $diaConfigurado;
     }
 }
