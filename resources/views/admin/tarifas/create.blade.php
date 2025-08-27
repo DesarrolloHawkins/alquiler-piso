@@ -29,21 +29,27 @@
         padding: 30px;
     }
     
-    .form-floating {
-        position: relative;
+    .form-group {
         margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
     }
     
     .form-control, .form-select {
         background: white;
         border: 2px solid #e9ecef;
         border-radius: 15px;
-        padding: 15px 15px 15px 15px;
+        padding: 15px;
         font-size: 1rem;
         transition: all 0.3s ease;
+        width: 100%;
         height: auto;
-        position: relative;
-        z-index: 0;
     }
     
     .form-control:focus, .form-select:focus {
@@ -60,32 +66,6 @@
     
     .form-control:focus::placeholder {
         opacity: 0.7;
-    }
-    
-    .form-floating label {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        color: #6c757d;
-        transition: all 0.3s ease;
-        pointer-events: none;
-        background: transparent;
-        padding: 0 5px;
-        font-size: 0.9rem;
-        z-index: 1;
-    }
-    
-    .form-control:focus + label,
-    .form-control:not(:placeholder-shown) + label,
-    .form-select:focus + label,
-    .form-select:not([value=""]) + label {
-        top: -10px;
-        left: 10px;
-        font-size: 0.8rem;
-        color: #667eea;
-        font-weight: 600;
-        background: white;
-        z-index: 2;
     }
     
     .btn-modern {
@@ -298,7 +278,8 @@
                                 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-floating">
+                                        <div class="form-group">
+                                            <label for="nombre" class="form-label">Nombre de la tarifa</label>
                                             <input type="text" 
                                                    class="form-control @error('nombre') is-invalid @enderror" 
                                                    id="nombre" 
@@ -306,7 +287,6 @@
                                                    placeholder="Nombre de la tarifa"
                                                    value="{{ old('nombre') }}" 
                                                    required>
-                                            <label for="nombre">Nombre de la tarifa</label>
                                             @error('nombre')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -314,7 +294,8 @@
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating">
+                                        <div class="form-group">
+                                            <label for="precio" class="form-label">Precio por noche (€)</label>
                                             <input type="number" 
                                                    class="form-control @error('precio') is-invalid @enderror" 
                                                    id="precio" 
@@ -324,7 +305,6 @@
                                                    min="0" 
                                                    value="{{ old('precio') }}" 
                                                    required>
-                                            <label for="precio">Precio por noche (€)</label>
                                             @error('precio')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -332,13 +312,13 @@
                                     </div>
                                 </div>
                                 
-                                <div class="form-floating">
+                                <div class="form-group">
+                                    <label for="descripcion" class="form-label">Descripción (opcional)</label>
                                     <textarea class="form-control @error('descripcion') is-invalid @enderror" 
                                               id="descripcion" 
                                               name="descripcion" 
                                               placeholder="Descripción de la tarifa"
                                               rows="3">{{ old('descripcion') }}</textarea>
-                                    <label for="descripcion">Descripción (opcional)</label>
                                     @error('descripcion')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -346,14 +326,14 @@
                                 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-floating">
+                                        <div class="form-group">
+                                            <label for="fecha_inicio" class="form-label">Fecha de inicio</label>
                                             <input type="date" 
                                                    class="form-control @error('fecha_inicio') is-invalid @enderror" 
                                                    id="fecha_inicio" 
                                                    name="fecha_inicio" 
                                                    value="{{ old('fecha_inicio') }}" 
                                                    required>
-                                            <label for="fecha_inicio">Fecha de inicio</label>
                                             @error('fecha_inicio')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -361,14 +341,14 @@
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating">
+                                        <div class="form-group">
+                                            <label for="fecha_fin" class="form-label">Fecha de fin</label>
                                             <input type="date" 
                                                    class="form-control @error('fecha_fin') is-invalid @enderror" 
                                                    id="fecha_fin" 
                                                    name="fecha_fin" 
                                                    value="{{ old('fecha_fin') }}" 
                                                    required>
-                                            <label for="fecha_fin">Fecha de fin</label>
                                             @error('fecha_fin')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
