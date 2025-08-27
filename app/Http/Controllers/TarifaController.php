@@ -23,7 +23,7 @@ class TarifaController extends Controller
      */
     public function create()
     {
-        $apartamentos = Apartamento::all();
+        $apartamentos = Apartamento::with('edificio')->get();
         return view('admin.tarifas.create', compact('apartamentos'));
     }
 
@@ -87,7 +87,7 @@ class TarifaController extends Controller
      */
     public function edit(Tarifa $tarifa)
     {
-        $apartamentos = Apartamento::all();
+        $apartamentos = Apartamento::with('edificio')->get();
         $tarifa->load('apartamentos');
         return view('admin.tarifas.edit', compact('tarifa', 'apartamentos'));
     }
