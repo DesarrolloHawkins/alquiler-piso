@@ -38,10 +38,12 @@
         background: white;
         border: 2px solid #e9ecef;
         border-radius: 15px;
-        padding: 15px;
+        padding: 15px 15px 15px 15px;
         font-size: 1rem;
         transition: all 0.3s ease;
         height: auto;
+        position: relative;
+        z-index: 0;
     }
     
     .form-control:focus, .form-select:focus {
@@ -51,6 +53,15 @@
         transform: translateY(-2px);
     }
     
+    .form-control::placeholder {
+        color: #adb5bd;
+        opacity: 1;
+    }
+    
+    .form-control:focus::placeholder {
+        opacity: 0.7;
+    }
+    
     .form-floating label {
         position: absolute;
         top: 15px;
@@ -58,9 +69,10 @@
         color: #6c757d;
         transition: all 0.3s ease;
         pointer-events: none;
-        background: white;
+        background: transparent;
         padding: 0 5px;
         font-size: 0.9rem;
+        z-index: 1;
     }
     
     .form-control:focus + label,
@@ -72,6 +84,8 @@
         font-size: 0.8rem;
         color: #667eea;
         font-weight: 600;
+        background: white;
+        z-index: 2;
     }
     
     .btn-modern {
