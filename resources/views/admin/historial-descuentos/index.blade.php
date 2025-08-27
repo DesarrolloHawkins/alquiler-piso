@@ -220,55 +220,43 @@
     </div>
 </div>
 
-<!-- Modal para Datos del Momento -->
-<div class="modal fade" id="modalDatosMomento" tabindex="-1" aria-labelledby="modalDatosMomentoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalDatosMomentoLabel">
-                    <i class="fas fa-info-circle me-2"></i>Datos del Momento de Aplicación
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="modalDatosMomentoBody">
-                <!-- Los datos se cargarán aquí -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 @endsection
 
 @push('scripts')
 <script>
 function verDatosMomento(historialId) {
-    // Mostrar loading
-    document.getElementById('modalDatosMomentoBody').innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando datos del momento...</p>
-        </div>
-    `;
+    console.log('Función verDatosMomento llamada con ID:', historialId);
     
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('modalDatosMomento'));
-    modal.show();
+    // Mostrar loading con SweetAlert2
+    Swal.fire({
+        title: 'Cargando datos...',
+        text: 'Obteniendo información del momento de aplicación',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
     
     // Cargar datos
     fetch(`/admin/historial-descuentos/${historialId}/datos-momento`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Respuesta del servidor:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Datos recibidos:', data);
+            
             if (data.error) {
-                document.getElementById('modalDatosMomentoBody').innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>${data.error}
-                    </div>
-                `;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin datos disponibles',
+                    text: data.error
+                });
                 return;
             }
             
@@ -276,82 +264,90 @@ function verDatosMomento(historialId) {
             const verificacion = data.verificacion;
             
             let html = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary"><i class="fas fa-building me-2"></i>Información del Edificio</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Nombre:</strong> ${datos.edificio.nombre}</li>
-                            <li><strong>Total Apartamentos:</strong> ${datos.edificio.total_apartamentos}</li>
-                        </ul>
+                <div style="text-align: left; font-size: 14px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <h6 style="color: #007bff; margin-bottom: 10px;"><i class="fas fa-building me-2"></i>Información del Edificio</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Nombre:</strong> ${datos.edificio.nombre}</li>
+                                <li><strong>Total Apartamentos:</strong> ${datos.edificio.total_apartamentos}</li>
+                            </ul>
+                            
+                            <h6 style="color: #007bff; margin: 15px 0 10px 0;"><i class="fas fa-cog me-2"></i>Configuración Aplicada</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Nombre:</strong> ${datos.configuracion.nombre}</li>
+                                <li><strong>Descuento:</strong> ${datos.configuracion.porcentaje_descuento}%</li>
+                                <li><strong>Incremento:</strong> ${datos.configuracion.porcentaje_incremento}%</li>
+                            </ul>
+                        </div>
                         
-                        <h6 class="text-primary mt-3"><i class="fas fa-cog me-2"></i>Configuración Aplicada</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Nombre:</strong> ${datos.configuracion.nombre}</li>
-                            <li><strong>Descuento:</strong> ${datos.configuracion.porcentaje_descuento}%</li>
-                            <li><strong>Incremento:</strong> ${datos.configuracion.porcentaje_incremento}%</li>
-                        </ul>
+                        <div>
+                            <h6 style="color: #007bff; margin-bottom: 10px;"><i class="fas fa-home me-2"></i>Información del Apartamento</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Nombre:</strong> ${datos.apartamento.nombre}</li>
+                                <li><strong>ID Channex:</strong> ${datos.apartamento.id_channex || 'N/A'}</li>
+                            </ul>
+                            
+                            <h6 style="color: #007bff; margin: 15px 0 10px 0;"><i class="fas fa-calendar me-2"></i>Fechas</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Análisis:</strong> ${datos.fecha_analisis}</li>
+                                <li><strong>Rango:</strong> ${datos.fecha_inicio} - ${datos.fecha_fin}</li>
+                                <li><strong>Días Libres:</strong> ${datos.total_dias}</li>
+                            </ul>
+                        </div>
                     </div>
                     
-                    <div class="col-md-6">
-                        <h6 class="text-primary"><i class="fas fa-home me-2"></i>Información del Apartamento</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Nombre:</strong> ${datos.apartamento.nombre}</li>
-                            <li><strong>ID Channex:</strong> ${datos.apartamento.id_channex || 'N/A'}</li>
-                        </ul>
+                    <hr style="margin: 20px 0;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <h6 style="color: #007bff; margin-bottom: 10px;"><i class="fas fa-chart-line me-2"></i>Datos de Ocupación</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Ocupación Actual:</strong> <span style="background: ${datos.ocupacion_actual < 50 ? '#28a745' : datos.ocupacion_actual > 80 ? '#dc3545' : '#ffc107'}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${datos.ocupacion_actual}%</span></li>
+                                <li><strong>Límite Aplicado:</strong> ${datos.ocupacion_limite}%</li>
+                                <li><strong>Acción:</strong> <span style="background: ${datos.accion === 'descuento' ? '#28a745' : '#ffc107'}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${datos.accion.toUpperCase()}</span></li>
+                                <li><strong>Porcentaje:</strong> ${datos.porcentaje}%</li>
+                            </ul>
+                        </div>
                         
-                        <h6 class="text-primary mt-3"><i class="fas fa-calendar me-2"></i>Fechas</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Análisis:</strong> ${datos.fecha_analisis}</li>
-                            <li><strong>Rango:</strong> ${datos.fecha_inicio} - ${datos.fecha_fin}</li>
-                            <li><strong>Días Libres:</strong> ${datos.total_dias}</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary"><i class="fas fa-chart-line me-2"></i>Datos de Ocupación</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Ocupación Actual:</strong> <span class="badge bg-${datos.ocupacion_actual < 50 ? 'success' : datos.ocupacion_actual > 80 ? 'danger' : 'warning'}">${datos.ocupacion_actual}%</span></li>
-                            <li><strong>Límite Aplicado:</strong> ${datos.ocupacion_limite}%</li>
-                            <li><strong>Acción:</strong> <span class="badge bg-${datos.accion === 'descuento' ? 'success' : 'warning'}">${datos.accion.toUpperCase()}</span></li>
-                            <li><strong>Porcentaje:</strong> ${datos.porcentaje}%</li>
-                        </ul>
+                        <div>
+                            <h6 style="color: #007bff; margin-bottom: 10px;"><i class="fas fa-euro-sign me-2"></i>Información Financiera</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li><strong>Precio Original:</strong> ${datos.precio_original}€</li>
+                                <li><strong>Precio con Ajuste:</strong> ${datos.precio_con_ajuste}€</li>
+                                <li><strong>Ahorro por Día:</strong> ${datos.ahorro_por_dia}€</li>
+                            </ul>
+                        </div>
                     </div>
                     
-                    <div class="col-md-6">
-                        <h6 class="text-primary"><i class="fas fa-euro-sign me-2"></i>Información Financiera</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Precio Original:</strong> ${datos.precio_original}€</li>
-                            <li><strong>Precio con Ajuste:</strong> ${datos.precio_con_ajuste}€</li>
-                            <li><strong>Ahorro por Día:</strong> ${datos.ahorro_por_dia}€</li>
-                        </ul>
+                    <hr style="margin: 20px 0;">
+                    
+                    <div style="background: ${verificacion.cumplidos ? '#d4edda' : '#fff3cd'}; border: 1px solid ${verificacion.cumplidos ? '#c3e6cb' : '#ffeaa7'}; padding: 15px; border-radius: 5px;">
+                        <h6 style="color: ${verificacion.cumplidos ? '#155724' : '#856404'}; margin-bottom: 10px;">
+                            <i class="fas fa-${verificacion.cumplidos ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                            Verificación de Requisitos
+                        </h6>
+                        <p style="margin: 5px 0;"><strong>Estado:</strong> ${verificacion.cumplidos ? 'REQUISITOS CUMPLIDOS' : 'REQUISITOS NO CUMPLIDOS'}</p>
+                        <p style="margin: 5px 0;"><strong>Razón:</strong> ${verificacion.razon}</p>
                     </div>
-                </div>
-                
-                <hr>
-                
-                <div class="alert alert-${verificacion.cumplidos ? 'success' : 'warning'}">
-                    <h6 class="alert-heading">
-                        <i class="fas fa-${verificacion.cumplidos ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                        Verificación de Requisitos
-                    </h6>
-                    <p class="mb-0"><strong>Estado:</strong> ${verificacion.cumplidos ? 'REQUISITOS CUMPLIDOS' : 'REQUISITOS NO CUMPLIDOS'}</p>
-                    <p class="mb-0"><strong>Razón:</strong> ${verificacion.razon}</p>
                 </div>
             `;
             
-            document.getElementById('modalDatosMomentoBody').innerHTML = html;
+            Swal.fire({
+                title: 'Datos del Momento de Aplicación',
+                html: html,
+                width: '800px',
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#007bff'
+            });
         })
         .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('modalDatosMomentoBody').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Error al cargar los datos del momento.
-                </div>
-            `;
+            console.error('Error en fetch:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al cargar datos',
+                text: `Error al cargar los datos del momento: ${error.message}`
+            });
         });
 }
 </script>

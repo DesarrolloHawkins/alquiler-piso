@@ -104,17 +104,23 @@ Route::get('/admin/historial-descuentos', [HistorialDescuentoController::class, 
 Route::get('/admin/historial-descuentos/{historial}', [HistorialDescuentoController::class, 'show'])->name('admin.historial-descuentos.show');
 Route::get('/admin/historial-descuentos/{historial}/datos-momento', [HistorialDescuentoController::class, 'getDatosMomento'])->name('admin.historial-descuentos.datos-momento');
 
-// Ruta de prueba temporal
-Route::get('/test-historico', function() {
-    return view('admin.historial-descuentos.index', [
-        'historial' => \App\Models\HistorialDescuento::with(['apartamento', 'tarifa', 'configuracionDescuento'])->paginate(20),
-        'estadisticas' => [
-            'total' => \App\Models\HistorialDescuento::count(),
-            'aplicados' => \App\Models\HistorialDescuento::where('estado', 'aplicado')->count(),
-            'pendientes' => \App\Models\HistorialDescuento::where('estado', 'pendiente')->count(),
-            'errores' => \App\Models\HistorialDescuento::where('estado', 'error')->count(),
-            'ahorro_total' => \App\Models\HistorialDescuento::where('estado', 'aplicado')->sum('ahorro_total')
-        ]
+// Ruta de prueba temporal sin middleware
+Route::get('/test-datos-momento/{id}', function($id) {
+    $historial = \App\Models\HistorialDescuento::find($id);
+    if (!$historial) {
+        return response()->json(['error' => 'Historial no encontrado']);
+    }
+    
+    if (!$historial->datos_momento) {
+        return response()->json(['error' => 'No hay datos del momento disponibles']);
+    }
+    
+    $verificacion = $historial->verificarRequisitosCumplidos();
+    
+    return response()->json([
+        'datos' => $historial->datos_momento,
+        'verificacion' => $verificacion,
+        'resumen' => $historial->resumen_datos_momento
     ]);
 });
 
