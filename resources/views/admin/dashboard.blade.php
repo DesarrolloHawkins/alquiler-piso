@@ -408,7 +408,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 rounded-4 mt-3">
+        <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h2 class="text-center">Disponibilidad Mensual de Apartamentos</h2>

@@ -153,6 +153,17 @@
                                     </ul>
                                 </li>
 
+                                <!-- Tarifas -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('tarifas*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        Tarifas
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('tarifas.index') }}">Ver Tarifas</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('tarifas.create') }}">Crear Tarifa</a></li>
+                                    </ul>
+                                </li>
+
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         Tesorería
