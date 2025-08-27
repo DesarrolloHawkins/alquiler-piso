@@ -21,6 +21,7 @@ use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\WhatsappTemplateController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\TarifaController;
 use App\Models\Cliente;
 use App\Models\InvoicesStatus;
 use App\Models\Reserva;
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
+
+    // Tarifas
+    Route::resource('tarifas', TarifaController::class);
+    Route::post('/tarifas/{tarifa}/toggle-status', [TarifaController::class, 'toggleStatus'])->name('tarifas.toggle-status');
+    Route::post('/tarifas/{tarifa}/asignar-apartamento', [TarifaController::class, 'asignarApartamento'])->name('tarifas.asignar-apartamento');
+    Route::post('/tarifas/{tarifa}/desasignar-apartamento', [TarifaController::class, 'desasignarApartamento'])->name('tarifas.desasignar-apartamento');
 
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');
