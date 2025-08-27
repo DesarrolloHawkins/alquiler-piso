@@ -23,6 +23,7 @@ use App\Http\Controllers\WhatsappTemplateController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ConfiguracionDescuentoController;
+use App\Http\Controllers\ComandoDescuentoController;
 use App\Models\Cliente;
 use App\Models\InvoicesStatus;
 use App\Models\Reserva;
@@ -93,6 +94,9 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Configuración de Descuentos
     Route::resource('configuracion-descuentos', ConfiguracionDescuentoController::class);
     Route::post('/configuracion-descuentos/{configuracionDescuento}/toggle-status', [ConfiguracionDescuentoController::class, 'toggleStatus'])->name('configuracion-descuentos.toggle-status');
+    
+    // Comandos de Descuento
+    Route::post('/admin/ejecutar-comando-descuentos', [ComandoDescuentoController::class, 'ejecutarComando'])->name('admin.ejecutar-comando-descuentos');
 
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');

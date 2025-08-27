@@ -45,6 +45,26 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="edificio_id">Edificio *</label>
+                                    <select class="form-control @error('edificio_id') is-invalid @enderror" 
+                                            id="edificio_id" name="edificio_id" required>
+                                        <option value="">Seleccionar edificio</option>
+                                        @foreach($edificios as $edificio)
+                                            <option value="{{ $edificio->id }}" {{ old('edificio_id') == $edificio->id ? 'selected' : '' }}>
+                                                {{ $edificio->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('edificio_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="porcentaje_descuento">Porcentaje de Descuento *</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control @error('porcentaje_descuento') is-invalid @enderror" 
@@ -59,7 +79,28 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                     <small class="form-text text-muted">
-                                        El descuento se aplicará sobre el precio base de la tarifa.
+                                        Descuento cuando la ocupación es menor al mínimo.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="porcentaje_incremento">Porcentaje de Incremento *</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control @error('porcentaje_incremento') is-invalid @enderror" 
+                                               id="porcentaje_incremento" name="porcentaje_incremento" 
+                                               value="{{ old('porcentaje_incremento', 15) }}" 
+                                               min="0" max="100" step="0.01" required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    @error('porcentaje_incremento')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">
+                                        Incremento cuando la ocupación supera el máximo.
                                     </small>
                                 </div>
                             </div>
@@ -97,7 +138,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="dia_semana">Día de la Semana</label>
                                             <select class="form-control" id="dia_semana" name="condiciones[dia_semana]">
@@ -112,7 +153,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="temporada">Temporada</label>
                                             <select class="form-control" id="temporada" name="condiciones[temporada]">
@@ -123,13 +164,25 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
-                                            <label for="dias_minimos_libres">Días Mínimos Libres</label>
-                                            <input type="number" class="form-control" id="dias_minimos_libres" 
-                                                   name="condiciones[dias_minimos_libres]" 
-                                                   value="{{ old('condiciones.dias_minimos_libres', 1) }}" 
-                                                   min="1" max="7">
+                                            <label for="ocupacion_minima">Ocupación Mínima (%)</label>
+                                            <input type="number" class="form-control" id="ocupacion_minima" 
+                                                   name="condiciones[ocupacion_minima]" 
+                                                   value="{{ old('condiciones.ocupacion_minima', 60) }}" 
+                                                   min="0" max="100">
+                                            <small class="form-text text-muted">Si baja de este % → Descuento</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="ocupacion_maxima">Ocupación Máxima (%)</label>
+                                            <input type="number" class="form-control" id="ocupacion_maxima" 
+                                                   name="condiciones[ocupacion_maxima]" 
+                                                   value="{{ old('condiciones.ocupacion_maxima', 80) }}" 
+                                                   min="0" max="100">
+                                            <small class="form-text text-muted">Si supera este % → Incremento</small>
                                         </div>
                                     </div>
                                 </div>
@@ -166,14 +219,28 @@ $(document).ready(function() {
         const precioConDescuento = precioEjemplo * (1 - porcentaje / 100);
         
         // Actualizar ejemplo en tiempo real
-        $('.form-text').html(`
-            El descuento se aplicará sobre el precio base de la tarifa.<br>
+        $(this).closest('.form-group').find('.form-text').html(`
+            Descuento cuando la ocupación es menor al mínimo.<br>
             <strong>Ejemplo:</strong> Precio de 100€ con ${porcentaje}% de descuento = ${precioConDescuento.toFixed(2)}€
+        `);
+    });
+
+    // Preview del incremento
+    $('#porcentaje_incremento').on('input', function() {
+        const porcentaje = parseFloat($(this).val()) || 0;
+        const precioEjemplo = 100;
+        const precioConIncremento = precioEjemplo * (1 + porcentaje / 100);
+        
+        // Actualizar ejemplo en tiempo real
+        $(this).closest('.form-group').find('.form-text').html(`
+            Incremento cuando la ocupación supera el máximo.<br>
+            <strong>Ejemplo:</strong> Precio de 100€ con ${porcentaje}% de incremento = ${precioConIncremento.toFixed(2)}€
         `);
     });
 
     // Trigger inicial
     $('#porcentaje_descuento').trigger('input');
+    $('#porcentaje_incremento').trigger('input');
 });
 </script>
 @endpush

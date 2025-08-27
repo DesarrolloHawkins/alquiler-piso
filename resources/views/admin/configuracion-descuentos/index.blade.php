@@ -36,8 +36,10 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Nombre</th>
+                                    <th>Edificio</th>
                                     <th>Descripción</th>
                                     <th>Descuento</th>
+                                    <th>Incremento</th>
                                     <th>Estado</th>
                                     <th>Creado</th>
                                     <th>Acciones</th>
@@ -51,11 +53,21 @@
                                             <strong>{{ $configuracion->nombre }}</strong>
                                         </td>
                                         <td>
+                                            <span class="badge badge-secondary">
+                                                {{ $configuracion->edificio->nombre ?? 'Sin edificio' }}
+                                            </span>
+                                        </td>
+                                        <td>
                                             {{ Str::limit($configuracion->descripcion, 50) }}
                                         </td>
                                         <td>
                                             <span class="badge badge-info">
                                                 {{ $configuracion->porcentaje_formateado }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-warning">
+                                                {{ $configuracion->porcentaje_incremento_formateado }}
                                             </span>
                                         </td>
                                         <td>
@@ -103,7 +115,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">
+                                        <td colspan="9" class="text-center">
                                             <div class="alert alert-info">
                                                 <i class="fas fa-info-circle mr-2"></i>
                                                 No hay configuraciones de descuento creadas.

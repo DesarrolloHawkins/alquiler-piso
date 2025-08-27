@@ -167,11 +167,25 @@
                                 <!-- Configuración de Descuentos -->
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Descuentos
+                                        <i class="fas fa-percentage me-1"></i>Descuentos
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.index') }}">Configuración</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.create') }}">Nueva Configuración</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.index') }}">
+                                            <i class="fas fa-cog me-2"></i>Configuración
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.create') }}">
+                                            <i class="fas fa-plus me-2"></i>Nueva Configuración
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="ejecutarComandoDescuentos('analizar')">
+                                            <i class="fas fa-search me-2"></i>Analizar Descuentos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="ejecutarComandoDescuentos('aplicar')">
+                                            <i class="fas fa-play me-2"></i>Aplicar Descuentos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="ejecutarComandoDescuentos('historial')">
+                                            <i class="fas fa-history me-2"></i>Ver Historial
+                                        </a></li>
                                     </ul>
                                 </li>
 
@@ -537,6 +551,92 @@
 
         @yield('scripts')
         @include('sweetalert::alert')
+
+        <!-- Script para comandos de descuento -->
+        <script>
+            function ejecutarComandoDescuentos(tipo) {
+                let comando = '';
+                let titulo = '';
+                
+                switch(tipo) {
+                    case 'analizar':
+                        comando = 'analizar:descuentos-temporada-baja';
+                        titulo = 'Analizar Descuentos';
+                        break;
+                    case 'aplicar':
+                        comando = 'aplicar:descuentos-channex';
+                        titulo = 'Aplicar Descuentos';
+                        break;
+                    case 'historial':
+                        comando = 'ver:historial-descuentos';
+                        titulo = 'Ver Historial';
+                        break;
+                }
+                
+                if (comando) {
+                    // Mostrar modal de confirmación
+                    Swal.fire({
+                        title: titulo,
+                        text: `¿Deseas ejecutar el comando "${comando}"?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, ejecutar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Mostrar loading
+                            Swal.fire({
+                                title: 'Ejecutando comando...',
+                                text: 'Por favor espera mientras se procesa la información',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                            
+                            // Ejecutar comando via AJAX
+                            fetch(`/admin/ejecutar-comando-descuentos`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({
+                                    comando: comando,
+                                    tipo: tipo
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        title: '¡Comando ejecutado!',
+                                        html: `<pre style="text-align: left; font-size: 12px; max-height: 400px; overflow-y: auto;">${data.output}</pre>`,
+                                        icon: 'success',
+                                        width: '800px'
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: data.message || 'Error ejecutando el comando',
+                                        icon: 'error'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Error de conexión: ' + error.message,
+                                    icon: 'error'
+                                });
+                            });
+                        }
+                    });
+                }
+            }
+        </script>
 
     </body>
 </html>

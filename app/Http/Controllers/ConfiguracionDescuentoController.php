@@ -13,7 +13,7 @@ class ConfiguracionDescuentoController extends Controller
      */
     public function index()
     {
-        $configuraciones = ConfiguracionDescuento::orderBy('created_at', 'desc')->get();
+        $configuraciones = ConfiguracionDescuento::with('edificio')->orderBy('created_at', 'desc')->get();
         return view('admin.configuracion-descuentos.index', compact('configuraciones'));
     }
 
@@ -22,7 +22,8 @@ class ConfiguracionDescuentoController extends Controller
      */
     public function create()
     {
-        return view('admin.configuracion-descuentos.create');
+        $edificios = \App\Models\Edificio::orderBy('nombre')->get();
+        return view('admin.configuracion-descuentos.create', compact('edificios'));
     }
 
     /**
@@ -33,7 +34,9 @@ class ConfiguracionDescuentoController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255|unique:configuracion_descuentos',
             'descripcion' => 'nullable|string',
+            'edificio_id' => 'required|exists:edificios,id',
             'porcentaje_descuento' => 'required|numeric|min:0|max:100',
+            'porcentaje_incremento' => 'required|numeric|min:0|max:100',
             'activo' => 'boolean',
             'condiciones' => 'nullable|array'
         ]);
@@ -47,12 +50,16 @@ class ConfiguracionDescuentoController extends Controller
         $configuracion = ConfiguracionDescuento::create([
             'nombre' => $request->nombre,
             'descripcion' => $request->descripcion,
+            'edificio_id' => $request->edificio_id,
             'porcentaje_descuento' => $request->porcentaje_descuento,
+            'porcentaje_incremento' => $request->porcentaje_incremento,
             'activo' => $request->has('activo'),
             'condiciones' => $request->condiciones ?? [
                 'dia_semana' => 'friday',
                 'temporada' => 'baja',
-                'dias_minimos_libres' => 1
+                'dias_minimos_libres' => 1,
+                'ocupacion_minima' => 60,
+                'ocupacion_maxima' => 80
             ]
         ]);
 
@@ -73,7 +80,8 @@ class ConfiguracionDescuentoController extends Controller
      */
     public function edit(ConfiguracionDescuento $configuracionDescuento)
     {
-        return view('admin.configuracion-descuentos.edit', compact('configuracionDescuento'));
+        $edificios = \App\Models\Edificio::orderBy('nombre')->get();
+        return view('admin.configuracion-descuentos.edit', compact('configuracionDescuento', 'edificios'));
     }
 
     /**
@@ -84,7 +92,9 @@ class ConfiguracionDescuentoController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255|unique:configuracion_descuentos,nombre,' . $configuracionDescuento->id,
             'descripcion' => 'nullable|string',
+            'edificio_id' => 'required|exists:edificios,id',
             'porcentaje_descuento' => 'required|numeric|min:0|max:100',
+            'porcentaje_incremento' => 'required|numeric|min:0|max:100',
             'activo' => 'boolean',
             'condiciones' => 'nullable|array'
         ]);
@@ -98,7 +108,9 @@ class ConfiguracionDescuentoController extends Controller
         $configuracionDescuento->update([
             'nombre' => $request->nombre,
             'descripcion' => $request->descripcion,
+            'edificio_id' => $request->edificio_id,
             'porcentaje_descuento' => $request->porcentaje_descuento,
+            'porcentaje_incremento' => $request->porcentaje_incremento,
             'activo' => $request->has('activo'),
             'condiciones' => $request->condiciones ?? $configuracionDescuento->condiciones
         ]);

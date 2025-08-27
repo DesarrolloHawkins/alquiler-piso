@@ -2,12 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Models\ConfiguracionDescuento;
 use App\Models\Apartamento;
-use App\Models\Tarifa;
 use App\Models\Reserva;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Console\Command;
 
 class AnalizarDescuentosTemporadaBaja extends Command
 {
@@ -16,14 +15,14 @@ class AnalizarDescuentosTemporadaBaja extends Command
      *
      * @var string
      */
-    protected $signature = 'analizar:descuentos-temporada-baja {--fecha= : Fecha específica para analizar (formato: Y-m-d)}';
+    protected $signature = 'analizar:descuentos-temporada-baja {--fecha= : Fecha de análisis (YYYY-MM-DD)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Analiza apartamentos con id_channex para aplicar descuentos de temporada baja';
+    protected $description = 'Analiza descuentos de temporada baja basados en ocupación por edificio';
 
     /**
      * Execute the console command.
@@ -32,64 +31,56 @@ class AnalizarDescuentosTemporadaBaja extends Command
     {
         $fechaAnalisis = $this->option('fecha') ? Carbon::parse($this->option('fecha')) : Carbon::now();
         
-        $this->info('🔍 ANALIZANDO DESCUENTOS DE TEMPORADA BAJA');
-        $this->info('Fecha de análisis: ' . $fechaAnalisis->format('d/m/Y (l)'));
+        $this->info('🔍 ANALIZANDO DESCUENTOS POR OCUPACIÓN DE EDIFICIO');
+        $this->line("Fecha de análisis: {$fechaAnalisis->format('d/m/Y')} (" . $fechaAnalisis->format('l') . ")");
         $this->line('');
 
-        // Obtener apartamentos con id_channex
-        $apartamentos = Apartamento::whereNotNull('id_channex')
-            ->with(['edificioName', 'tarifas' => function($query) {
-                $query->where('tarifas.temporada_baja', true)
-                      ->where('tarifas.activo', true);
-            }])
+        // Obtener configuraciones activas por edificio
+        $configuraciones = ConfiguracionDescuento::with('edificio.apartamentos')
+            ->activas()
             ->get();
 
-        if ($apartamentos->isEmpty()) {
-            $this->warn('❌ No se encontraron apartamentos con id_channex configurado.');
+        if ($configuraciones->isEmpty()) {
+            $this->warn("⚠️  No hay configuraciones de descuento activas");
             return;
         }
 
-        $this->info("📊 Se encontraron {$apartamentos->count()} apartamentos con id_channex:");
+        $this->info("📊 Se encontraron {$configuraciones->count()} configuraciones activas:");
         $this->line('');
 
-        $totalApartamentosAnalizados = 0;
-        $apartamentosConDescuento = 0;
+        $edificiosConAccion = 0;
 
-        foreach ($apartamentos as $apartamento) {
-            $this->analizarApartamento($apartamento, $fechaAnalisis, $totalApartamentosAnalizados, $apartamentosConDescuento);
+        foreach ($configuraciones as $configuracion) {
+            $this->analizarConfiguracion($configuracion, $fechaAnalisis, $edificiosConAccion);
         }
 
-        $this->line('');
         $this->info('📈 RESUMEN DEL ANÁLISIS:');
-        $this->info("   • Apartamentos analizados: {$totalApartamentosAnalizados}");
-        $this->info("   • Apartamentos con descuento aplicable: {$apartamentosConDescuento}");
-        
-        if ($apartamentosConDescuento > 0) {
-            $this->warn('   ⚠️  Se encontraron apartamentos que requieren descuento del 20%');
-        } else {
-            $this->info('   ✅ No se encontraron apartamentos que requieran descuento');
+        $this->line("   • Configuraciones analizadas: {$configuraciones->count()}");
+        $this->line("   • Edificios con acción aplicable: {$edificiosConAccion}");
+        if ($edificiosConAccion > 0) {
+            $this->warn("   ⚠️  Se encontraron edificios que requieren ajuste de precios");
         }
     }
 
     /**
-     * Analiza un apartamento específico
+     * Analiza una configuración específica
      */
-    private function analizarApartamento($apartamento, $fechaAnalisis, &$totalAnalizados, &$conDescuento)
+    private function analizarConfiguracion($configuracion, $fechaAnalisis, &$edificiosConAccion)
     {
-        $totalAnalizados++;
-        
-        $this->info("🏠 APARTAMENTO: {$apartamento->nombre}");
-        $this->line("   ID: {$apartamento->id}");
-        $this->line("   ID Channex: {$apartamento->id_channex}");
-        $this->line("   Edificio: " . ($apartamento->edificioName ? $apartamento->edificioName->nombre : 'Sin edificio'));
+        $this->info("🏢 EDIFICIO: {$configuracion->edificio->nombre}");
+        $this->line("   Configuración: {$configuracion->nombre}");
+        $this->line("   Descuento: {$configuracion->porcentaje_formateado}");
+        $this->line("   Incremento: {$configuracion->porcentaje_incremento_formateado}");
         $this->line('');
 
-        // Verificar si hoy es viernes
-        $esViernes = $fechaAnalisis->isFriday();
-        $this->line("   📅 ¿Es viernes? " . ($esViernes ? '✅ SÍ' : '❌ NO'));
+        // Verificar si hoy es el día configurado
+        $diaConfigurado = $configuracion->condiciones['dia_semana'] ?? 'friday';
+        $esDiaConfigurado = $this->esDiaConfigurado($fechaAnalisis, $diaConfigurado);
+        
+        $this->line("   📅 ¿Es {$this->getNombreDia($diaConfigurado)}? " . ($esDiaConfigurado ? '✅ SÍ' : '❌ NO'));
 
-        if (!$esViernes) {
-            $this->line("   ℹ️  No es viernes, no se aplica la lógica de descuento");
+        if (!$esDiaConfigurado) {
+            $this->line("   ℹ️  No es el día configurado, no se aplica la lógica");
             $this->line('');
             return;
         }
@@ -100,107 +91,65 @@ class AnalizarDescuentosTemporadaBaja extends Command
 
         $this->line("   📅 Semana siguiente: {$lunesSiguiente->format('d/m/Y (l)')} - {$juevesSiguiente->format('d/m/Y (l)')}");
 
-        // Verificar tarifas de temporada baja
-        $tarifasTemporadaBaja = $apartamento->tarifas;
+        // Calcular ocupación del edificio
+        $ocupacion = $configuracion->calcularOcupacionEdificio($lunesSiguiente, $juevesSiguiente);
+        $this->line("   📊 Ocupación del edificio: {$ocupacion}%");
+
+        // Determinar acción basada en ocupación
+        $accion = $configuracion->determinarAccionOcupacion($lunesSiguiente, $juevesSiguiente);
         
-        if ($tarifasTemporadaBaja->isEmpty()) {
-            $this->warn("   ⚠️  No tiene tarifas de temporada baja configuradas");
+        if ($accion['accion'] === 'ninguna') {
+            $this->line("   ✅ Ocupación normal ({$ocupacion}%), no se requiere acción");
             $this->line('');
             return;
         }
 
-        $this->line("   💰 Tarifas de temporada baja encontradas: {$tarifasTemporadaBaja->count()}");
+        $edificiosConAccion++;
         
-        foreach ($tarifasTemporadaBaja as $tarifa) {
-            $this->analizarTarifa($apartamento, $tarifa, $lunesSiguiente, $juevesSiguiente, $conDescuento);
+        if ($accion['accion'] === 'descuento') {
+            $this->warn("   🎯 ¡DESCUENTO APLICABLE!");
+            $this->line("   📉 Ocupación baja ({$ocupacion}% < {$accion['ocupacion_limite']}%)");
+            $this->line("   💰 Se aplicará descuento del {$accion['porcentaje']}%");
+        } else {
+            $this->warn("   🎯 ¡INCREMENTO APLICABLE!");
+            $this->line("   📈 Ocupación alta ({$ocupacion}% > {$accion['ocupacion_limite']}%)");
+            $this->line("   💰 Se aplicará incremento del {$accion['porcentaje']}%");
         }
 
+        // Analizar apartamentos del edificio
+        $this->analizarApartamentosEdificio($configuracion, $lunesSiguiente, $juevesSiguiente, $accion);
+        
         $this->line('');
     }
 
     /**
-     * Analiza una tarifa específica
+     * Analiza los apartamentos de un edificio
      */
-    private function analizarTarifa($apartamento, $tarifa, $lunesSiguiente, $juevesSiguiente, &$conDescuento)
+    private function analizarApartamentosEdificio($configuracion, $lunesSiguiente, $juevesSiguiente, $accion)
     {
-        $this->line("      📋 Tarifa: {$tarifa->nombre}");
-        $this->line("         Precio base: {$tarifa->precio}€");
-        $this->line("         Vigente: {$tarifa->fecha_inicio->format('d/m/Y')} - {$tarifa->fecha_fin->format('d/m/Y')}");
-
-        // Verificar si la tarifa está vigente en la semana siguiente
-        $tarifaVigente = $tarifa->fecha_inicio <= $juevesSiguiente && $tarifa->fecha_fin >= $lunesSiguiente;
+        $apartamentos = $configuracion->edificio->apartamentos;
         
-        if (!$tarifaVigente) {
-            $this->line("         ❌ No está vigente en la semana siguiente");
-            return;
-        }
-
-        $this->line("         ✅ Está vigente en la semana siguiente");
-
-        // Verificar disponibilidad (días libres) de lunes a jueves
-        $disponibilidad = $this->verificarDisponibilidad($apartamento, $lunesSiguiente, $juevesSiguiente);
-        $diasLibres = $disponibilidad['dias_libres'];
-        $diasOcupados = $disponibilidad['dias_ocupados'];
-        $reservasExistentes = $disponibilidad['reservas'];
-        $totalDiasLibres = $disponibilidad['total_dias_libres'];
-        $totalDiasOcupados = $disponibilidad['total_dias_ocupados'];
+        $this->line("   🏠 Apartamentos del edificio ({$apartamentos->count()}):");
         
-        $this->line("         📊 Resumen de disponibilidad:");
-        $this->line("            • Días libres: {$totalDiasLibres}/4");
-        $this->line("            • Días ocupados: {$totalDiasOcupados}/4");
+        $apartamentosConAccion = 0;
         
-        if (empty($diasLibres)) {
-            $this->line("         ❌ No hay días libres en la semana siguiente");
+        foreach ($apartamentos as $apartamento) {
+            $disponibilidad = $this->verificarDisponibilidad($apartamento, $lunesSiguiente, $juevesSiguiente);
+            $diasLibres = $disponibilidad['dias_libres'];
             
-            // Mostrar reservas existentes
-            if (!empty($reservasExistentes)) {
-                $this->line("         📋 Reservas existentes:");
-                foreach ($reservasExistentes as $fecha => $reservas) {
-                    $fechaObj = Carbon::parse($fecha);
-                    $this->line("            📅 {$fechaObj->format('d/m/Y (l)')}:");
-                    foreach ($reservas as $reserva) {
-                        $estado = $reserva->estado ? $reserva->estado->nombre : 'Sin estado';
-                        $cliente = $reserva->cliente ? $reserva->cliente->nombre : 'Sin cliente';
-                        $this->line("               • Reserva #{$reserva->id} - {$cliente} ({$estado})");
-                    }
+            if (!empty($diasLibres)) {
+                $apartamentosConAccion++;
+                $this->line("      ✅ {$apartamento->nombre}: " . count($diasLibres) . " días libres");
+                
+                foreach ($diasLibres as $fecha) {
+                    $this->line("         • {$fecha->format('d/m/Y (l)')}");
                 }
+            } else {
+                $this->line("      ❌ {$apartamento->nombre}: Sin días libres");
             }
-            return;
         }
-
-        $conDescuento++;
-        $this->warn("         🎯 ¡DESCUENTO APLICABLE!");
-        $this->line("         📅 Días libres (se aplicará descuento):");
         
-        foreach ($diasLibres as $fecha) {
-            $this->line("            ✅ {$fecha->format('d/m/Y (l)')} - LIBRE");
-        }
-
-        // Mostrar días ocupados
-        if (!empty($diasOcupados)) {
-            $this->line("         📅 Días ocupados (NO se aplicará descuento):");
-            foreach ($diasOcupados as $fecha) {
-                $this->line("            ❌ {$fecha->format('d/m/Y (l)')} - OCUPADO");
-            }
-        }
-
-        // Mostrar reservas existentes en días ocupados
-        if (!empty($reservasExistentes)) {
-            $this->line("         📋 Detalle de reservas en días ocupados:");
-            foreach ($reservasExistentes as $fecha => $reservas) {
-                $fechaObj = Carbon::parse($fecha);
-                $this->line("            📅 {$fechaObj->format('d/m/Y (l)')}:");
-                foreach ($reservas as $reserva) {
-                    $estado = $reserva->estado ? $reserva->estado->nombre : 'Sin estado';
-                    $cliente = $reserva->cliente ? $reserva->cliente->nombre : 'Sin cliente';
-                    $this->line("               • Reserva #{$reserva->id} - {$cliente} ({$estado})");
-                }
-            }
-        }
-
-        $precioConDescuento = $tarifa->precio * 0.8; // 20% de descuento
-        $this->line("         💰 Precio con descuento: {$precioConDescuento}€ (20% menos)");
-        $this->line("         📊 Ahorro por día: " . ($tarifa->precio - $precioConDescuento) . "€");
+        $this->line("   📊 Total apartamentos con acción: {$apartamentosConAccion}/{$apartamentos->count()}");
     }
 
     /**
@@ -239,5 +188,41 @@ class AnalizarDescuentosTemporadaBaja extends Command
             'total_dias_libres' => count($diasLibres),
             'total_dias_ocupados' => count($diasOcupados)
         ];
+    }
+
+    /**
+     * Verifica si la fecha es el día configurado
+     */
+    private function esDiaConfigurado($fecha, $diaConfigurado)
+    {
+        $dias = [
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+            'saturday' => 6,
+            'sunday' => 0
+        ];
+        
+        return $fecha->dayOfWeek === $dias[$diaConfigurado];
+    }
+
+    /**
+     * Obtiene el nombre del día en español
+     */
+    private function getNombreDia($diaConfigurado)
+    {
+        $dias = [
+            'monday' => 'Lunes',
+            'tuesday' => 'Martes',
+            'wednesday' => 'Miércoles',
+            'thursday' => 'Jueves',
+            'friday' => 'Viernes',
+            'saturday' => 'Sábado',
+            'sunday' => 'Domingo'
+        ];
+        
+        return $dias[$diaConfigurado] ?? $diaConfigurado;
     }
 }

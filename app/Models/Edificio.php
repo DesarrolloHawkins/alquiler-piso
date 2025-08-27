@@ -36,4 +36,9 @@ class Edificio extends Model
     {
         return $this->hasMany(Checklist::class);
     }
+
+    public function apartamentos()
+    {
+        return $this->hasMany(Apartamento::class, 'edificio_id');
+    }
 }

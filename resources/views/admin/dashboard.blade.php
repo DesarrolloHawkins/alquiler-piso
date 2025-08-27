@@ -419,6 +419,93 @@
     </div>
 </div>
 
+<!-- SECCIÓN DE ACCIONES RÁPIDAS -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h5 class="text-left mb-3">
+            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+        </h5>
+        <hr>
+    </div>
+</div>
+
+<div class="row justify-content-between align-items-stretch mb-4">
+    <!-- Tarjeta de Descuentos -->
+    <div class="col-md-3">
+        <div class="card h-100 border-primary clickable-card" onclick="window.location.href='{{ route('configuracion-descuentos.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-percentage fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title text-primary">Gestión de Descuentos</h5>
+                <p class="card-text">Configurar y aplicar descuentos automáticos de temporada baja</p>
+                <div class="mt-3">
+                    <button class="btn btn-primary btn-sm me-2" onclick="event.stopPropagation(); ejecutarComandoDescuentos('analizar')">
+                        <i class="fas fa-search me-1"></i>Analizar
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); ejecutarComandoDescuentos('aplicar')">
+                        <i class="fas fa-play me-1"></i>Aplicar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Tarifas -->
+    <div class="col-md-3">
+        <div class="card h-100 border-warning clickable-card" onclick="window.location.href='{{ route('tarifas.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-tags fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title text-warning">Gestión de Tarifas</h5>
+                <p class="card-text">Configurar tarifas por temporada y asignar a apartamentos</p>
+                <div class="mt-3">
+                    <a href="{{ route('tarifas.create') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nueva Tarifa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Reservas -->
+    <div class="col-md-3">
+        <div class="card h-100 border-info clickable-card" onclick="window.location.href='{{ route('reservas.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-check fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title text-info">Gestión de Reservas</h5>
+                <p class="card-text">Ver y gestionar todas las reservas del sistema</p>
+                <div class="mt-3">
+                    <a href="{{ route('reservas.create') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nueva Reserva
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Apartamentos -->
+    <div class="col-md-3">
+        <div class="card h-100 border-success clickable-card" onclick="window.location.href='{{ route('apartamentos.admin.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-home fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title text-success">Gestión de Apartamentos</h5>
+                <p class="card-text">Administrar apartamentos y sus configuraciones</p>
+                <div class="mt-3">
+                    <a href="{{ route('apartamentos.admin.create') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Apartamento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- MODALES --}}
 <!-- Modal de Libres Hoy -->
 <div class="modal fade" id="modalLibresHoy" tabindex="-1" aria-labelledby="modalLibresHoyLabel" aria-hidden="true">
