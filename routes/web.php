@@ -24,6 +24,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ConfiguracionDescuentoController;
 use App\Http\Controllers\ComandoDescuentoController;
+use App\Http\Controllers\HistorialDescuentoController;
 use App\Models\Cliente;
 use App\Models\InvoicesStatus;
 use App\Models\Reserva;
@@ -97,6 +98,25 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     
     // Comandos de Descuento
     Route::post('/admin/ejecutar-comando-descuentos', [ComandoDescuentoController::class, 'ejecutarComando'])->name('admin.ejecutar-comando-descuentos');
+
+// Rutas para historial de descuentos
+Route::get('/admin/historial-descuentos', [HistorialDescuentoController::class, 'index'])->name('admin.historial-descuentos.index');
+Route::get('/admin/historial-descuentos/{historial}', [HistorialDescuentoController::class, 'show'])->name('admin.historial-descuentos.show');
+Route::get('/admin/historial-descuentos/{historial}/datos-momento', [HistorialDescuentoController::class, 'getDatosMomento'])->name('admin.historial-descuentos.datos-momento');
+
+// Ruta de prueba temporal
+Route::get('/test-historico', function() {
+    return view('admin.historial-descuentos.index', [
+        'historial' => \App\Models\HistorialDescuento::with(['apartamento', 'tarifa', 'configuracionDescuento'])->paginate(20),
+        'estadisticas' => [
+            'total' => \App\Models\HistorialDescuento::count(),
+            'aplicados' => \App\Models\HistorialDescuento::where('estado', 'aplicado')->count(),
+            'pendientes' => \App\Models\HistorialDescuento::where('estado', 'pendiente')->count(),
+            'errores' => \App\Models\HistorialDescuento::where('estado', 'error')->count(),
+            'ahorro_total' => \App\Models\HistorialDescuento::where('estado', 'aplicado')->sum('ahorro_total')
+        ]
+    ]);
+});
 
     Route::post('/upload-excel', [MovimientosController::class, 'uploadExcel'])->name('upload.excel');
     Route::post('/upload-csv-booking', [MovimientosController::class, 'uploadCSV'])->name('upload.csvBooking');

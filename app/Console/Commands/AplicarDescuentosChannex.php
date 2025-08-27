@@ -324,6 +324,46 @@ class AplicarDescuentosChannex extends Command
             ? $configuracion->calcularAhorroPorDia($precioOriginal)
             : $configuracion->calcularGananciaPorDia($precioOriginal);
 
+        // Recopilar todos los datos del momento
+        $datosMomento = [
+            'fecha_analisis' => now()->format('Y-m-d H:i:s'),
+            'edificio' => [
+                'id' => $configuracion->edificio->id,
+                'nombre' => $configuracion->edificio->nombre,
+                'total_apartamentos' => $configuracion->edificio->apartamentos->count()
+            ],
+            'configuracion' => [
+                'id' => $configuracion->id,
+                'nombre' => $configuracion->nombre,
+                'porcentaje_descuento' => $configuracion->porcentaje_descuento,
+                'porcentaje_incremento' => $configuracion->porcentaje_incremento,
+                'condiciones' => $configuracion->condiciones
+            ],
+            'apartamento' => [
+                'id' => $apartamentoObj->id,
+                'nombre' => $apartamentoObj->nombre,
+                'id_channex' => $apartamentoObj->id_channex
+            ],
+            'tarifa' => $tarifa ? [
+                'id' => $tarifa->id,
+                'nombre' => $tarifa->nombre,
+                'precio' => $tarifa->precio
+            ] : null,
+            'accion' => $accion['accion'],
+            'porcentaje' => $accion['porcentaje'],
+            'ocupacion_actual' => $accion['ocupacion_actual'],
+            'ocupacion_limite' => $accion['ocupacion_limite'],
+            'dias_libres' => collect($diasLibres)->map(function($fecha) {
+                return $fecha->format('Y-m-d');
+            })->toArray(),
+            'fecha_inicio' => $apartamento['fecha_inicio']->format('Y-m-d'),
+            'fecha_fin' => $apartamento['fecha_fin']->format('Y-m-d'),
+            'precio_original' => $precioOriginal,
+            'precio_con_ajuste' => $precioConAjuste,
+            'ahorro_por_dia' => $ahorroPorDia,
+            'total_dias' => count($diasLibres)
+        ];
+
         return HistorialDescuento::create([
             'apartamento_id' => $apartamentoObj->id,
             'tarifa_id' => $tarifa ? $tarifa->id : null,
@@ -337,7 +377,8 @@ class AplicarDescuentosChannex extends Command
             'dias_aplicados' => count($diasLibres),
             'ahorro_total' => $ahorroPorDia * count($diasLibres),
             'estado' => 'pendiente',
-            'observaciones' => "Ajuste por ocupación: {$accion['ocupacion_actual']}% ({$accion['accion']})"
+            'observaciones' => "Ajuste por ocupación: {$accion['ocupacion_actual']}% ({$accion['accion']})",
+            'datos_momento' => $datosMomento
         ]);
     }
 

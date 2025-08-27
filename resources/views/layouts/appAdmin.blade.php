@@ -183,7 +183,7 @@
                                         <li><a class="dropdown-item" href="#" onclick="ejecutarComandoDescuentos('aplicar')">
                                             <i class="fas fa-play me-2"></i>Aplicar Descuentos
                                         </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="ejecutarComandoDescuentos('historial')">
+                                        <li><a class="dropdown-item" href="{{ route('admin.historial-descuentos.index') }}">
                                             <i class="fas fa-history me-2"></i>Ver Historial
                                         </a></li>
                                     </ul>
@@ -608,7 +608,12 @@
                                     tipo: tipo
                                 })
                             })
-                            .then(response => response.json())
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Error de red: ' + response.status);
+                                }
+                                return response.json();
+                            })
                             .then(data => {
                                 if (data.success) {
                                     Swal.fire({

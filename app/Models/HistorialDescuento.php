@@ -23,7 +23,8 @@ class HistorialDescuento extends Model
         'ahorro_total',
         'estado',
         'observaciones',
-        'datos_channex'
+        'datos_channex',
+        'datos_momento'
     ];
 
     protected $casts = [
@@ -35,7 +36,8 @@ class HistorialDescuento extends Model
         'porcentaje_descuento' => 'decimal:2',
         'dias_aplicados' => 'integer',
         'ahorro_total' => 'decimal:2',
-        'datos_channex' => 'array'
+        'datos_channex' => 'array',
+        'datos_momento' => 'array'
     ];
 
     /**
@@ -115,5 +117,85 @@ class HistorialDescuento extends Model
     public function getRangoFechasAttribute()
     {
         return $this->fecha_inicio_descuento->format('d/m/Y') . ' - ' . $this->fecha_fin_descuento->format('d/m/Y');
+    }
+
+    /**
+     * Obtener datos del momento de aplicación
+     */
+    public function getDatosMomentoAttribute($value)
+    {
+        if (is_string($value)) {
+            return json_decode($value, true);
+        }
+        return $value;
+    }
+
+    /**
+     * Verificar si se cumplían los requisitos en el momento
+     */
+    public function verificarRequisitosCumplidos()
+    {
+        if (!$this->datos_momento) {
+            return [
+                'cumplidos' => false,
+                'razon' => 'No hay datos del momento disponibles'
+            ];
+        }
+
+        $datos = $this->datos_momento;
+        
+        // Verificar ocupación
+        $ocupacionActual = $datos['ocupacion_actual'] ?? 0;
+        $ocupacionMinima = $datos['configuracion']['condiciones']['ocupacion_minima'] ?? 60;
+        $ocupacionMaxima = $datos['configuracion']['condiciones']['ocupacion_maxima'] ?? 80;
+        
+        $accion = $datos['accion'] ?? 'ninguna';
+        
+        if ($accion === 'descuento') {
+            $cumplido = $ocupacionActual < $ocupacionMinima;
+            return [
+                'cumplidos' => $cumplido,
+                'razon' => $cumplido 
+                    ? "Ocupación ({$ocupacionActual}%) < Mínima ({$ocupacionMinima}%)" 
+                    : "Ocupación ({$ocupacionActual}%) >= Mínima ({$ocupacionMinima}%)"
+            ];
+        } elseif ($accion === 'incremento') {
+            $cumplido = $ocupacionActual > $ocupacionMaxima;
+            return [
+                'cumplidos' => $cumplido,
+                'razon' => $cumplido 
+                    ? "Ocupación ({$ocupacionActual}%) > Máxima ({$ocupacionMaxima}%)" 
+                    : "Ocupación ({$ocupacionActual}%) <= Máxima ({$ocupacionMaxima}%)"
+            ];
+        }
+        
+        return [
+            'cumplidos' => false,
+            'razon' => 'No se aplicó ninguna acción'
+        ];
+    }
+
+    /**
+     * Obtener resumen de datos del momento
+     */
+    public function getResumenDatosMomentoAttribute()
+    {
+        if (!$this->datos_momento) {
+            return 'No hay datos disponibles';
+        }
+
+        $datos = $this->datos_momento;
+        $verificacion = $this->verificarRequisitosCumplidos();
+        
+        $resumen = "📊 DATOS DEL MOMENTO:\n";
+        $resumen .= "🏢 Edificio: " . ($datos['edificio']['nombre'] ?? 'N/A') . "\n";
+        $resumen .= "📅 Fecha análisis: " . ($datos['fecha_analisis'] ?? 'N/A') . "\n";
+        $resumen .= "📈 Ocupación: " . ($datos['ocupacion_actual'] ?? 'N/A') . "%\n";
+        $resumen .= "🎯 Acción: " . ($datos['accion'] ?? 'N/A') . "\n";
+        $resumen .= "💰 Porcentaje: " . ($datos['porcentaje'] ?? 'N/A') . "%\n";
+        $resumen .= "✅ Requisitos cumplidos: " . ($verificacion['cumplidos'] ? 'SÍ' : 'NO') . "\n";
+        $resumen .= "📝 Razón: " . $verificacion['razon'];
+        
+        return $resumen;
     }
 }

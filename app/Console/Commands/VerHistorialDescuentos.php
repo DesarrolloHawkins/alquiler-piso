@@ -99,6 +99,18 @@ class VerHistorialDescuentos extends Command
             $this->line("📝 Observaciones: {$registro->observaciones}");
         }
         
+        // Mostrar datos del momento si están disponibles
+        if ($registro->datos_momento) {
+            $verificacion = $registro->verificarRequisitosCumplidos();
+            $this->line("📊 DATOS DEL MOMENTO:");
+            $this->line("   🏢 Edificio: " . ($registro->datos_momento['edificio']['nombre'] ?? 'N/A'));
+            $this->line("   📅 Fecha análisis: " . ($registro->datos_momento['fecha_analisis'] ?? 'N/A'));
+            $this->line("   📈 Ocupación: " . ($registro->datos_momento['ocupacion_actual'] ?? 'N/A') . "%");
+            $this->line("   🎯 Acción: " . ($registro->datos_momento['accion'] ?? 'N/A'));
+            $this->line("   ✅ Requisitos cumplidos: " . ($verificacion['cumplidos'] ? 'SÍ' : 'NO'));
+            $this->line("   📝 Razón: " . $verificacion['razon']);
+        }
+        
         $this->line("🕒 Creado: {$registro->created_at->format('d/m/Y H:i:s')}");
         $this->line('');
     }

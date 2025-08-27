@@ -34,11 +34,19 @@ class ComandoDescuentoController extends Controller
             // Configurar output buffer para capturar la salida
             $output = new BufferedOutput();
             
+            // Preparar parámetros según el comando
+            $parametros = [];
+            
+            if ($tipo === 'analizar') {
+                $parametros['--fecha'] = now()->format('Y-m-d');
+            } elseif ($tipo === 'aplicar') {
+                $parametros['--fecha'] = now()->format('Y-m-d');
+                $parametros['--dry-run'] = true;
+            }
+            // Para 'historial' no se necesitan parámetros especiales
+            
             // Ejecutar comando
-            $exitCode = Artisan::call($comando, [
-                '--fecha' => now()->format('Y-m-d'),
-                '--dry-run' => ($tipo === 'aplicar' ? true : false)
-            ], $output);
+            $exitCode = Artisan::call($comando, $parametros, $output);
             
             $outputContent = $output->fetch();
             
