@@ -224,7 +224,6 @@
 
 @endsection
 
-@push('scripts')
 <script>
 function verDatosMomento(historialId) {
     console.log('Función verDatosMomento llamada con ID:', historialId);
@@ -351,4 +350,3 @@ function verDatosMomento(historialId) {
         });
 }
 </script>
-@endpush

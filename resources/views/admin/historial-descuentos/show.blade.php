@@ -198,9 +198,10 @@
 
 @endsection
 
-@push('scripts')
 <script>
 function verDatosCompletos(historialId) {
+    console.log('Función verDatosCompletos llamada con ID:', historialId);
+    
     // Mostrar loading con SweetAlert2
     Swal.fire({
         title: 'Cargando datos completos...',
@@ -323,4 +324,3 @@ function verDatosCompletos(historialId) {
         });
 }
 </script>
-@endpush
