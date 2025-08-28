@@ -639,36 +639,15 @@ padding: 5px 5px !important;
     @endif
 </div>
 
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     let currentPerson = 0;
     const totalPersons = {{ $reserva->numero_personas ?? 0 }};
     
-    // Inicializar Select2
+    // Inicializar todo cuando el DOM esté listo
     $(document).ready(function() {
-        // Pequeño delay para asegurar que todo esté cargado
-        setTimeout(function() {
-            // Verificar que jQuery y Select2 estén disponibles
-            if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-                for (let i = 0; i < totalPersons; i++) {
-                    try {
-                        $('.js-example-basic-single' + i).select2({
-                            theme: 'bootstrap-5',
-                            width: '100%'
-                        });
-                    } catch (error) {
-                        console.warn('Error inicializando Select2 para índice ' + i + ':', error);
-                    }
-                }
-            } else {
-                console.error('jQuery o Select2 no están disponibles');
-                // Fallback: usar selects normales de Bootstrap
-                $('.form-select').addClass('form-control');
-            }
-        }, 100);
-        
-        // Actualizar progreso inicial
-        updateProgress();
+        console.log('DOM listo, inicializando...');
         
         // Mostrar formulario de número de personas si ya hay un idioma seleccionado o establecido
         @if(isset($cliente) && ($cliente->idioma_establecido ?? false))
@@ -680,6 +659,25 @@ padding: 5px 5px !important;
                 $('#cardIdioma').hide();
             }
         @endif
+        
+        // Inicializar Select2 después de un pequeño delay
+        setTimeout(function() {
+            if (typeof $.fn.select2 !== 'undefined') {
+                for (let i = 0; i < totalPersons; i++) {
+                    try {
+                        $('.js-example-basic-single' + i).select2({
+                            theme: 'bootstrap-5',
+                            width: '100%'
+                        });
+                    } catch (error) {
+                        console.warn('Error inicializando Select2 para índice ' + i + ':', error);
+                    }
+                }
+            }
+        }, 100);
+        
+        // Actualizar progreso inicial
+        updateProgress();
     });
     
     // Función para cambiar idioma
@@ -791,20 +789,30 @@ padding: 5px 5px !important;
         }
     }
     
-    // Funciones para número de personas
-    $('#sumar').click(function() {
-        let valor = parseInt($('#numero').val());
-        $('#numero').val(valor + 1);
-    });
-    
-    $('#restar').click(function() {
-        let valor = parseInt($('#numero').val());
-        if (valor > 1) {
-            $('#numero').val(valor - 1);
-        }
-    });
-    
-    $('#enviar').click(function() {
+        // Funciones para número de personas
+        console.log('Inicializando botones de número de personas...');
+        
+        $('#sumar').click(function() {
+            console.log('Botón sumar clickeado');
+            let valor = parseInt($('#numero').val());
+            console.log('Valor actual:', valor);
+            $('#numero').val(valor + 1);
+            console.log('Nuevo valor:', valor + 1);
+        });
+        
+        $('#restar').click(function() {
+            console.log('Botón restar clickeado');
+            let valor = parseInt($('#numero').val());
+            console.log('Valor actual:', valor);
+            if (valor > 1) {
+                $('#numero').val(valor - 1);
+                console.log('Nuevo valor:', valor - 1);
+            } else {
+                console.log('No se puede restar más, valor mínimo es 1');
+            }
+        });
+        
+        $('#enviar').click(function() {
         const numero = $('#numero').val();
         const idReserva = $('#idReserva').val();
         
@@ -875,6 +883,7 @@ padding: 5px 5px !important;
         $(this).removeClass('border-primary');
     });
 </script>
+@endpush
 
 <style>
     /* Estilos adicionales para transiciones */
