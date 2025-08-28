@@ -289,6 +289,9 @@ padding: 5px 5px !important;
                         </div>
                         
                         <div class="text-center mt-4">
+                            <!-- Botón de test temporal -->
+                            <button type="button" onclick="testBotones()" class="btn btn-warning mb-2">Test Botones</button>
+                            
                             <button id="enviar" class="btn btn-modern" id="btnEnviar">
                                 <span class="loading">
                                     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -792,25 +795,81 @@ padding: 5px 5px !important;
         // Funciones para número de personas
         console.log('Inicializando botones de número de personas...');
         
-        $('#sumar').click(function() {
+        // Verificar que los elementos existen
+        console.log('Elemento #sumar existe:', $('#sumar').length);
+        console.log('Elemento #restar existe:', $('#restar').length);
+        console.log('Elemento #numero existe:', $('#numero').length);
+        
+        // Usar on() en lugar de click() para mayor compatibilidad
+        $(document).on('click', '#sumar', function(e) {
+            e.preventDefault();
             console.log('Botón sumar clickeado');
-            let valor = parseInt($('#numero').val());
+            let input = $('#numero');
+            let valor = parseInt(input.val()) || 1;
             console.log('Valor actual:', valor);
-            $('#numero').val(valor + 1);
+            input.val(valor + 1);
             console.log('Nuevo valor:', valor + 1);
         });
         
-        $('#restar').click(function() {
+        $(document).on('click', '#restar', function(e) {
+            e.preventDefault();
             console.log('Botón restar clickeado');
-            let valor = parseInt($('#numero').val());
+            let input = $('#numero');
+            let valor = parseInt(input.val()) || 1;
             console.log('Valor actual:', valor);
             if (valor > 1) {
-                $('#numero').val(valor - 1);
+                input.val(valor - 1);
                 console.log('Nuevo valor:', valor - 1);
             } else {
                 console.log('No se puede restar más, valor mínimo es 1');
             }
         });
+        
+        // Función alternativa con JavaScript puro
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado, configurando botones con JS puro...');
+            
+            const btnSumar = document.getElementById('sumar');
+            const btnRestar = document.getElementById('restar');
+            const inputNumero = document.getElementById('numero');
+            
+            if (btnSumar) {
+                btnSumar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Botón sumar clickeado (JS puro)');
+                    let valor = parseInt(inputNumero.value) || 1;
+                    inputNumero.value = valor + 1;
+                    console.log('Nuevo valor (JS puro):', valor + 1);
+                });
+            }
+            
+            if (btnRestar) {
+                btnRestar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Botón restar clickeado (JS puro)');
+                    let valor = parseInt(inputNumero.value) || 1;
+                    if (valor > 1) {
+                        inputNumero.value = valor - 1;
+                        console.log('Nuevo valor (JS puro):', valor - 1);
+                    }
+                });
+            }
+        });
+        
+        // Función de test para verificar que todo funciona
+        window.testBotones = function() {
+            console.log('=== TEST DE BOTONES ===');
+            console.log('jQuery disponible:', typeof $ !== 'undefined');
+            console.log('Elemento #sumar:', $('#sumar').length);
+            console.log('Elemento #restar:', $('#restar').length);
+            console.log('Elemento #numero:', $('#numero').length);
+            console.log('Valor actual del input:', $('#numero').val());
+            
+            // Test manual
+            let valor = parseInt($('#numero').val()) || 1;
+            $('#numero').val(valor + 1);
+            console.log('Valor después de incremento manual:', $('#numero').val());
+        };
         
         $('#enviar').click(function() {
         const numero = $('#numero').val();
