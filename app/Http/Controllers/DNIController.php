@@ -243,13 +243,13 @@ class DNIController extends Controller
             'cliente_nacionalidad' => $cliente->nacionalidad
         ]);
         
-        // Si el idioma no está establecido, mostrar selector (ignorar sesión por ahora)
+        // Si el idioma no está establecido, mostrar selector
         if (!$idiomaEstablecido) {
             Log::info('Mostrando selector de idioma - idioma no establecido');
-            return view('dni.selector_idioma', compact('token', 'cliente'));
+            // No redirigir a otra vista, continuar con la vista principal
+        } else {
+            Log::info('Continuando al formulario principal - idioma ya establecido');
         }
-        
-        Log::info('Continuando al formulario principal - idioma ya establecido');
         
         // Usar el idioma de la sesión o el del cliente como fallback
         $idiomaFinal = $idiomaSeleccionado ?: $cliente->idioma ?: $cliente->nacionalidad;
@@ -640,8 +640,16 @@ class DNIController extends Controller
             ]
         ];
 
+        // Log final para debug
+        Log::info('DNI Controller - Variables pasadas a la vista', [
+            'cliente_id' => $cliente->id ?? 'null',
+            'cliente_idioma_establecido' => $cliente->idioma_establecido ?? 'null',
+            'reserva_numero_personas' => $reserva->numero_personas ?? 'null',
+            'idioma_establecido' => $idiomaEstablecido
+        ]);
+
         //dd($data);
-        return view('dni.index', compact('id', 'paises', 'reserva', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo'));
+        return view('dni.index', compact('id', 'paises', 'reserva', 'cliente', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo'));
     }
 
     public function listadoPaises(){

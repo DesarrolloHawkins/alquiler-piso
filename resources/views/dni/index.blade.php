@@ -231,7 +231,7 @@ padding: 5px 5px !important;
                 </div>
 
                 @if(!isset($cliente) || !($cliente->idioma_establecido ?? false))
-                <div class="form-card">
+                <div class="form-card" id="cardIdioma">
                     <div class="form-header">
                         <h3><i class="fa-solid fa-language me-2"></i>Selecciona tu idioma</h3>
                     </div>
@@ -258,7 +258,7 @@ padding: 5px 5px !important;
                 </div>
                 @endif
 
-                <div class="form-card mt-4" id="cardNumeroPersonas" style="display: none;">
+                <div class="form-card mt-4" id="cardNumeroPersonas" style="{{ isset($cliente) && ($cliente->idioma_establecido ?? false) ? '' : 'display: none;' }}">
                     <div class="form-header">
                         <h3><i class="fa-solid fa-users me-2"></i>Número de personas</h3>
                     </div>
@@ -673,9 +673,11 @@ padding: 5px 5px !important;
         // Mostrar formulario de número de personas si ya hay un idioma seleccionado o establecido
         @if(isset($cliente) && ($cliente->idioma_establecido ?? false))
             $('#cardNumeroPersonas').show();
+            $('#cardIdioma').hide();
         @else
             if ($('#idioma').val() && $('#idioma').val() !== '') {
                 $('#cardNumeroPersonas').show();
+                $('#cardIdioma').hide();
             }
         @endif
     });
