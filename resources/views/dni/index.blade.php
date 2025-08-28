@@ -648,6 +648,21 @@ padding: 5px 5px !important;
     let currentPerson = 0;
     const totalPersons = {{ $reserva->numero_personas ?? 0 }};
     
+    // Función de test global (ANTES del document.ready)
+    window.testBotones = function() {
+        console.log('=== TEST DE BOTONES ===');
+        console.log('jQuery disponible:', typeof $ !== 'undefined');
+        console.log('Elemento #sumar:', $('#sumar').length);
+        console.log('Elemento #restar:', $('#restar').length);
+        console.log('Elemento #numero:', $('#numero').length);
+        console.log('Valor actual del input:', $('#numero').val());
+        
+        // Test manual
+        let valor = parseInt($('#numero').val()) || 1;
+        $('#numero').val(valor + 1);
+        console.log('Valor después de incremento manual:', $('#numero').val());
+    };
+    
     // Inicializar todo cuando el DOM esté listo
     $(document).ready(function() {
         console.log('DOM listo, inicializando...');
@@ -855,21 +870,6 @@ padding: 5px 5px !important;
                 });
             }
         });
-        
-        // Función de test global (fuera del document.ready)
-        window.testBotones = function() {
-            console.log('=== TEST DE BOTONES ===');
-            console.log('jQuery disponible:', typeof $ !== 'undefined');
-            console.log('Elemento #sumar:', $('#sumar').length);
-            console.log('Elemento #restar:', $('#restar').length);
-            console.log('Elemento #numero:', $('#numero').length);
-            console.log('Valor actual del input:', $('#numero').val());
-            
-            // Test manual
-            let valor = parseInt($('#numero').val()) || 1;
-            $('#numero').val(valor + 1);
-            console.log('Valor después de incremento manual:', $('#numero').val());
-        };
         
         $('#enviar').click(function() {
         const numero = $('#numero').val();
