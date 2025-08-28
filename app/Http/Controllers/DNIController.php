@@ -969,14 +969,28 @@ class DNIController extends Controller
 
 
     public function storeNumeroPersonas(Request $request){
-        $reserva = Reserva::find($request->id);
+        \Log::info('storeNumeroPersonas llamado', [
+            'request_data' => $request->all(),
+            'idReserva' => $request->idReserva,
+            'numero' => $request->numero
+        ]);
+        
+        $reserva = Reserva::find($request->idReserva);
         if (!$reserva) {
-            return response(404);
-
+            \Log::error('Reserva no encontrada', ['idReserva' => $request->idReserva]);
+            return response()->json(['success' => false, 'message' => 'Reserva no encontrada'], 404);
         }
-        $reserva->numero_personas = $request->cantidad;
+        
+        \Log::info('Reserva encontrada', [
+            'reserva_id' => $reserva->id,
+            'numero_personas_actual' => $reserva->numero_personas,
+            'numero_personas_nuevo' => $request->numero
+        ]);
+        
+        $reserva->numero_personas = $request->numero;
         $reserva->save();
-        return redirect(route('dni.index', $reserva->token));
+        
+        return response()->json(['success' => true, 'message' => 'Número de personas actualizado correctamente']);
     }
 
     public function obtenerStringDNI($tipo){
@@ -1701,6 +1715,12 @@ class DNIController extends Controller
      */
     public function cambiarIdioma(Request $request)
     {
+        \Log::info('cambiarIdioma llamado', [
+            'request_data' => $request->all(),
+            'idioma' => $request->input('idioma'),
+            'token' => $request->input('token')
+        ]);
+        
         $idioma = $request->input('idioma');
         $token = $request->input('token');
         
@@ -1708,17 +1728,20 @@ class DNIController extends Controller
         $idiomasValidos = ['es', 'en', 'fr', 'de', 'it', 'pt'];
         
         if (!in_array($idioma, $idiomasValidos)) {
+            \Log::error('Idioma no válido', ['idioma' => $idioma]);
             return response()->json(['success' => false, 'message' => 'Idioma no válido']);
         }
         
         // Obtener la reserva y el cliente
         $reserva = Reserva::where('token', $token)->first();
         if (!$reserva) {
+            \Log::error('Reserva no encontrada', ['token' => $token]);
             return response()->json(['success' => false, 'message' => 'Reserva no encontrada']);
         }
         
         $cliente = Cliente::where('id', $reserva->cliente_id)->first();
         if (!$cliente) {
+            \Log::error('Cliente no encontrado', ['reserva_id' => $reserva->id, 'cliente_id' => $reserva->cliente_id]);
             return response()->json(['success' => false, 'message' => 'Cliente no encontrado']);
         }
         
@@ -1733,6 +1756,12 @@ class DNIController extends Controller
         
         // Establecer el idioma para la aplicación
         App::setLocale($idioma);
+        
+        \Log::info('Idioma cambiado exitosamente', [
+            'cliente_id' => $cliente->id,
+            'idioma' => $idioma,
+            'token' => $token
+        ]);
         
         return response()->json([
             'success' => true, 

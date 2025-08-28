@@ -50,9 +50,26 @@ class WebhookController extends Controller
         return response()->json(['status' => true]);
     }
 
+    /**
+     * Maneja webhooks de reservas de Channex
+     * 
+     * Según la documentación de Channex:
+     * - Cada modificación de reserva genera un nuevo revision_id
+     * - El booking_id permanece igual para la misma reserva
+     * - Se debe verificar si la reserva ya existe antes de crear una nueva
+     * - Las modificaciones incluyen cambios en fechas, habitaciones, precios, etc.
+     * 
+     * LÓGICA IMPLEMENTADA:
+     * 1. Si la reserva existe (modificación): ACTUALIZAR la existente
+     * 2. Si la reserva NO existe (nueva): CREAR una nueva
+     * 3. NUNCA crear nueva reserva después de actualizar una existente
+     * 
+     * @param Request $request
+     * @param int $id ID del apartamento
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function bookingAny(Request $request, $id)
     {
-        // dd($request->all());
         // Guardar la request entrante como archivo para depuración
         $fileName = 'booking_' . now()->format('Ymd_His') . '_' . Str::random(6) . '.json';
         Storage::disk('local')->put('logs/bookings/' . $fileName, json_encode($request->all(), JSON_PRETTY_PRINT));
@@ -167,18 +184,20 @@ class WebhookController extends Controller
             }
         }
 
-        // Si la reserva es nueva o confirmada, continuar con el flujo normal
-        // $cliente = Cliente::firstOrCreate(
-        //     ['email' => $bookingData['customer']['mail']],
-        //     [
-        //         'alias' => $bookingData['customer']['name'] . ' ' . $bookingData['customer']['surname'],
-        //         'nombre' => $bookingData['customer']['name'],
-        //         'apellido1' => $bookingData['customer']['surname'],
-        //         'telefono' => $bookingData['customer']['phone'],
-        //         'direccion' => $bookingData['customer']['address'],
-        //         'nacionalidad' => $bookingData['customer']['country'],
-        //     ]
-        // );
+        // Verificar si es una reserva nueva o una modificación
+        $codigoReserva = $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'];
+        $reservaExistente = Reserva::where('codigo_reserva', $codigoReserva)
+            ->orWhere('id_channex', $bookingId)
+            ->first();
+
+        Log::info('Procesando webhook de reserva', [
+            'evento' => $evento,
+            'booking_id' => $bookingId,
+            'revision_id' => $revisionId,
+            'codigo_reserva' => $codigoReserva,
+            'es_modificacion' => $reservaExistente ? true : false,
+            'estado_channex' => $estadoReserva
+        ]);
 
         $customer = $bookingData['customer'];
 
@@ -213,37 +232,160 @@ class WebhookController extends Controller
             }
         }
 
+        // === LÓGICA DE MODIFICACIÓN vs NUEVA RESERVA ===
+        // Si es una modificación, actualizar la reserva existente
+        if ($reservaExistente) {
+            Log::info('Modificando reserva existente', [
+                'codigo_reserva' => $codigoReserva,
+                'id_channex' => $bookingId,
+                'revision_id' => $revisionId,
+                'reserva_id' => $reservaExistente->id,
+                'datos_actuales' => [
+                    'fecha_entrada' => $reservaExistente->fecha_entrada,
+                    'fecha_salida' => $reservaExistente->fecha_salida,
+                    'precio' => $reservaExistente->precio,
+                    'numero_personas' => $reservaExistente->numero_personas,
+                    'neto' => $reservaExistente->neto
+                ]
+            ]);
 
-        foreach ($bookingData['rooms'] as $room) {
-            $ratePlanId = $room['rate_plan_id'] ?? null;
-            if (!$ratePlanId) {
-                Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
-                continue;
-            }
-
-            $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
-            if (!$ratePlan) {
-                Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
-                continue;
-            }
-
-            $roomTypeId = $ratePlan->room_type_id;
-
-            Reserva::create([
+            // Actualizar datos del cliente si han cambiado
+            $reservaExistente->cliente_id = $cliente->id;
+            
+            // Actualizar datos generales de la reserva
+            $reservaExistente->update([
                 'cliente_id' => $cliente->id,
-                'apartamento_id' => $apartamento->id,
-                'room_type_id' => $roomTypeId,
                 'origen' => $bookingData['ota_name'],
-                'fecha_entrada' => $room['checkin_date'],
-                'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
-                'codigo_reserva' => $bookingData['ota_reservation_code'] ?? $bookingData['booking_id'],
-                'precio' => floatval(str_replace(',', '.', $room['amount'])),
-                'numero_personas' => $room['occupancy']['adults'],
                 'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
                 'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
-                'estado_id' => 1, // Nueva reserva
-                'id_channex' => $bookingId,
+                'updated_at' => now(),
             ]);
+            
+            // Actualizar las habitaciones con los nuevos datos (fechas y precios)
+            // Estos son los campos más importantes que suelen cambiar en las modificaciones:
+            // - fecha_entrada: Cambio de fecha de llegada
+            // - fecha_salida: Cambio de fecha de salida  
+            // - precio: Cambio de tarifa/precio
+            // - numero_personas: Cambio en el número de huéspedes
+            // - room_type_id: Cambio de tipo de habitación
+            foreach ($bookingData['rooms'] as $room) {
+                $ratePlanId = $room['rate_plan_id'] ?? null;
+                if (!$ratePlanId) {
+                    Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
+                    continue;
+                }
+
+                $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
+                if (!$ratePlan) {
+                    Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
+                    continue;
+                }
+
+                $roomTypeId = $ratePlan->room_type_id;
+
+                // Actualizar la reserva existente con los nuevos datos
+                $reservaExistente->update([
+                    'fecha_entrada' => $room['checkin_date'],
+                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                    'numero_personas' => $room['occupancy']['adults'],
+                    'room_type_id' => $roomTypeId,
+                ]);
+                
+                // Detectar cambios importantes
+                $cambios = [];
+                if ($reservaExistente->fecha_entrada != $room['checkin_date']) {
+                    $cambios['fecha_entrada'] = [
+                        'anterior' => $reservaExistente->fecha_entrada,
+                        'nuevo' => $room['checkin_date']
+                    ];
+                }
+                if ($reservaExistente->fecha_salida != Carbon::parse($room['checkout_date'])->toDateString()) {
+                    $cambios['fecha_salida'] = [
+                        'anterior' => $reservaExistente->fecha_salida,
+                        'nuevo' => Carbon::parse($room['checkout_date'])->toDateString()
+                    ];
+                }
+                if ($reservaExistente->precio != floatval(str_replace(',', '.', $room['amount']))) {
+                    $cambios['precio'] = [
+                        'anterior' => $reservaExistente->precio,
+                        'nuevo' => floatval(str_replace(',', '.', $room['amount']))
+                    ];
+                }
+                if ($reservaExistente->numero_personas != $room['occupancy']['adults']) {
+                    $cambios['numero_personas'] = [
+                        'anterior' => $reservaExistente->numero_personas,
+                        'nuevo' => $room['occupancy']['adults']
+                    ];
+                }
+                
+                Log::info('Reserva actualizada con nuevos datos', [
+                    'reserva_id' => $reservaExistente->id,
+                    'fecha_entrada' => $room['checkin_date'],
+                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                    'numero_personas' => $room['occupancy']['adults'],
+                    'cambios_detectados' => $cambios
+                ]);
+            }
+            
+            Log::info('Reserva existente actualizada', [
+                'reserva_id' => $reservaExistente->id,
+                'codigo_reserva' => $codigoReserva
+            ]);
+            
+            // IMPORTANTE: No crear nueva reserva, solo actualizar la existente
+            Log::info('Modificación completada - NO se creará nueva reserva');
+        } else {
+            Log::info('Creando nueva reserva', [
+                'codigo_reserva' => $codigoReserva,
+                'booking_id' => $bookingId
+            ]);
+        }
+
+        // Solo crear nueva reserva si NO es una modificación
+        if (!$reservaExistente) {
+            foreach ($bookingData['rooms'] as $room) {
+                $ratePlanId = $room['rate_plan_id'] ?? null;
+                if (!$ratePlanId) {
+                    Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
+                    continue;
+                }
+
+                $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
+                if (!$ratePlan) {
+                    Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
+                    continue;
+                }
+
+                $roomTypeId = $ratePlan->room_type_id;
+
+                Reserva::create([
+                    'cliente_id' => $cliente->id,
+                    'apartamento_id' => $apartamento->id,
+                    'room_type_id' => $roomTypeId,
+                    'origen' => $bookingData['ota_name'],
+                    'fecha_entrada' => $room['checkin_date'],
+                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                    'codigo_reserva' => $codigoReserva,
+                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                    'numero_personas' => $room['occupancy']['adults'],
+                    'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
+                    'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
+                    'estado_id' => 1, // Nueva reserva
+                    'id_channex' => $bookingId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                Log::info('Nueva reserva creada', [
+                    'codigo_reserva' => $codigoReserva,
+                    'booking_id' => $bookingId,
+                    'fecha_entrada' => $room['checkin_date'],
+                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                    'precio' => floatval(str_replace(',', '.', $room['amount']))
+                ]);
+            }
         }
 
         // Marcar la revisión como revisada en Channex
@@ -259,7 +401,25 @@ class WebhookController extends Controller
             ], $ackResponse->status());
         }
 
-        return response()->json(['status' => true, 'message' => 'Reserva guardada y marcada como revisada']);
+        $mensaje = $reservaExistente 
+            ? 'Reserva modificada y marcada como revisada' 
+            : 'Nueva reserva guardada y marcada como revisada';
+
+        $response = [
+            'status' => true, 
+            'message' => $mensaje,
+            'tipo' => $reservaExistente ? 'modificacion' : 'nueva',
+            'codigo_reserva' => $codigoReserva,
+            'revision_id' => $revisionId
+        ];
+
+        // Si es una modificación, incluir información sobre los cambios
+        if ($reservaExistente && isset($cambios) && !empty($cambios)) {
+            $response['cambios'] = $cambios;
+            $response['message'] .= ' - Campos actualizados: ' . implode(', ', array_keys($cambios));
+        }
+
+        return response()->json($response);
     }
 
     function enviarMensajeOpenAiChatCompletions($id, $nuevoMensaje, $remitente)

@@ -127,17 +127,20 @@
     }
     
     .alert-modern {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.9);
         border-radius: 10px;
         padding: 15px;
         margin: 20px 0;
-        color: white;
+        color: #495057;
         text-align: center;
         border: none;
+        font-weight: 500;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
     
     .alert-modern i {
         margin-right: 8px;
+        color: #667eea;
     }
     
     .progress-bar-container {
@@ -208,6 +211,14 @@
             font-size: 1rem;
         }
     }
+
+
+.form-floating>label {
+
+height: fit-content !important;
+padding: 5px 5px !important;
+
+}
 </style>
 
 <div class="container">
@@ -629,19 +640,32 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let currentPerson = 0;
     const totalPersons = {{ $reserva->numero_personas ?? 0 }};
     
     // Inicializar Select2
     $(document).ready(function() {
-        for (let i = 0; i < totalPersons; i++) {
-            $('.js-example-basic-single' + i).select2({
-                theme: 'bootstrap-5',
-                width: '100%'
-            });
-        }
+        // Pequeño delay para asegurar que todo esté cargado
+        setTimeout(function() {
+            // Verificar que jQuery y Select2 estén disponibles
+            if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                for (let i = 0; i < totalPersons; i++) {
+                    try {
+                        $('.js-example-basic-single' + i).select2({
+                            theme: 'bootstrap-5',
+                            width: '100%'
+                        });
+                    } catch (error) {
+                        console.warn('Error inicializando Select2 para índice ' + i + ':', error);
+                    }
+                }
+            } else {
+                console.error('jQuery o Select2 no están disponibles');
+                // Fallback: usar selects normales de Bootstrap
+                $('.form-select').addClass('form-control');
+            }
+        }, 100);
         
         // Actualizar progreso inicial
         updateProgress();
@@ -665,6 +689,7 @@
             type: 'POST',
             data: {
                 idioma: idioma,
+                token: '{{ $reserva->token }}',
                 _token: '{{ csrf_token() }}'
             },
             success: function(response) {
@@ -681,8 +706,15 @@
                     $('#idioma').prop('disabled', false);
                 }
             },
-            error: function() {
-                showError('Error al cambiar el idioma');
+            error: function(xhr, status, error) {
+                console.error('Error al cambiar idioma:', { xhr, status, error });
+                let errorMessage = 'Error al cambiar el idioma';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage += ': ' + xhr.responseJSON.message;
+                }
+                
+                showError(errorMessage);
                 $('#idioma').prop('disabled', false);
             }
         });
@@ -774,6 +806,8 @@
         const numero = $('#numero').val();
         const idReserva = $('#idReserva').val();
         
+        console.log('Enviando datos:', { numero, idReserva });
+        
         $('.loading').show();
         $('.btn-text').hide();
         $(this).prop('disabled', true);
@@ -796,8 +830,9 @@
                     $('#enviar').prop('disabled', false);
                 }
             },
-            error: function() {
-                showError('Error al actualizar el número de personas');
+            error: function(xhr, status, error) {
+                console.error('Error en la petición:', { xhr, status, error });
+                showError('Error al actualizar el número de personas: ' + error);
                 $('.loading').hide();
                 $('.btn-text').show();
                 $('#enviar').prop('disabled', false);
