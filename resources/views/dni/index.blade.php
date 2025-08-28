@@ -779,7 +779,7 @@
         $(this).prop('disabled', true);
         
         $.ajax({
-            url: '{{ route("dni.actualizarNumeroPersonas") }}',
+            url: '{{ route("dni.storeNumeroPersonas") }}',
             type: 'POST',
             data: {
                 numero: numero,
