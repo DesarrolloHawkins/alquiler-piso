@@ -292,8 +292,8 @@ class Kernel extends ConsoleKernel
             // Reservas
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
             ->where('estado_id', '!=', 4)
-            ->where('dni_entregado', '!=', null)
-            ->get();
+/*             ->where('dni_entregado', '!=', null)
+ */            ->get();
 
             foreach($reservas as $reserva){
 
@@ -617,7 +617,9 @@ class Kernel extends ConsoleKernel
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
 
-            $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))->where('dni_entregado', '!=', null)->get();
+            $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))
+            /* ->where('dni_entregado', '!=', null) */
+            ->get();
 
             foreach($reservas as $reserva){
                 // Fecha de Hoy
