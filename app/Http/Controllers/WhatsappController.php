@@ -516,16 +516,16 @@ class WhatsappController extends Controller
         Log::info("👨‍🔧 ENVIAR MENSAJE TÉCNICO - Iniciando para cliente: {$phone}");
         
         try {
-            // Obtener técnico disponible según horario actual
-            Log::info("🔍 Buscando técnico disponible...");
-            $tecnico = $this->obtenerTecnicoDisponible();
+            // Obtener todos los técnicos
+            Log::info("🔍 Buscando todos los técnicos...");
+            $tecnicos = $this->obtenerTecnicoDisponible();
             
-            if (!$tecnico) {
+            if ($tecnicos->isEmpty()) {
                 Log::warning("⚠️ No hay técnicos disponibles para notificar");
                 return;
             }
             
-            Log::info("✅ Técnico encontrado: {$tecnico->nombre} - Teléfono: {$tecnico->telefono}");
+            Log::info("✅ Técnicos encontrados: " . $tecnicos->count() . " técnicos");
 
             // Buscar template para averías
             Log::info("🔍 Buscando template para averías...");
@@ -533,39 +533,42 @@ class WhatsappController extends Controller
                 ->where('name', 'not like', '%_null%')
                 ->first();
 
-            if ($template) {
-                Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
-                Log::info("📱 Enviando mensaje usando template...");
-                
-                // Obtener información del cliente
-                $apartamento = $this->obtenerApartamentoCliente($phone);
-                $edificio = $this->obtenerEdificioCliente($phone);
-                
-                // Enviar mensaje usando template con los 5 parámetros que espera
-                $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
-                    '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
-                    '2' => $apartamento, // Apartamento del cliente
-                    '3' => $edificio, // Edificio del cliente
-                    '4' => $mensaje, // Información del cliente
-                    '5' => $phone // Número del cliente
-                ]);
-            } else {
-                Log::warning("⚠️ No se encontró template para averías, enviando mensaje simple");
-                // Enviar mensaje simple si no hay template
-                $apartamento = $this->obtenerApartamentoCliente($phone);
-                $edificio = $this->obtenerEdificioCliente($phone);
-                
-                $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n👨‍🔧 Técnico: {$tecnico->nombre}\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
-                $this->contestarWhatsapp3($tecnico->telefono, $texto);
-            }
+            // Obtener información del cliente (una sola vez)
+            $apartamento = $this->obtenerApartamentoCliente($phone);
+            $edificio = $this->obtenerEdificioCliente($phone);
 
-            Log::info("Mensaje enviado al técnico: {$tecnico->telefono}");
+            // Enviar mensaje a cada técnico
+            foreach ($tecnicos as $tecnico) {
+                Log::info("📱 Enviando mensaje al técnico: {$tecnico->nombre} - {$tecnico->telefono}");
+                
+                if ($template) {
+                    Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
+                    
+                    // Enviar mensaje usando template con los 5 parámetros que espera
+                    $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
+                        '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
+                        '2' => $apartamento, // Apartamento del cliente
+                        '3' => $edificio, // Edificio del cliente
+                        '4' => $mensaje, // Información del cliente
+                        '5' => $phone // Número del cliente
+                    ]);
+                } else {
+                    Log::warning("⚠️ No se encontró template para averías, enviando mensaje simple");
+                    
+                    // Enviar mensaje simple si no hay template
+                    $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n👨‍🔧 Técnico: {$tecnico->nombre}\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                    $this->contestarWhatsapp3($tecnico->telefono, $texto);
+                }
+
+                Log::info("✅ Mensaje enviado al técnico: {$tecnico->telefono}");
+            }
             
-            // Enviar notificación a todos los responsables configurados
-            $this->enviarNotificacionResponsables($phone, $mensaje, 'averia', $tecnico->nombre, $apartamento, $edificio);
+            // Enviar notificación a todos los responsables configurados (solo una vez)
+            $primerTecnico = $tecnicos->first();
+            $this->enviarNotificacionResponsables($phone, $mensaje, 'averia', $primerTecnico->nombre, $apartamento, $edificio);
             
         } catch (\Exception $e) {
-            Log::error("Error enviando mensaje al técnico: " . $e->getMessage());
+            Log::error("Error enviando mensaje a los técnicos: " . $e->getMessage());
         }
     }
 
@@ -688,6 +691,12 @@ class WhatsappController extends Controller
      */
     private function obtenerTecnicoDisponible()
     {
+        // NUEVO: Enviar a todos los técnicos
+        $todosTecnicos = Reparaciones::all();
+        return $todosTecnicos;
+        
+        // CÓDIGO ORIGINAL COMENTADO - Selección por horario
+        /*
         $horaActual = now()->format('H:i');
         $diaSemana = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
         
@@ -716,6 +725,7 @@ class WhatsappController extends Controller
         }
         
         return $tecnico;
+        */
     }
 
     /**
