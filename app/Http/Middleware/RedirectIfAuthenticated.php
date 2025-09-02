@@ -19,15 +19,16 @@ class RedirectIfAuthenticated
     {
         $guards = empty($guards) ? [null] : $guards;
         foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
-                $user = Auth::guard($guard)->user();
-                switch ($user->role) {
-                    case 'ADMIN':
-                        return redirect('/home'); // Ruta para administradores.
-                    case 'USER':
-                        return redirect('/gestion'); // Ruta para usuarios estándar.
-                    default:
-                        return redirect('/'); // Ruta por defecto si el rol no coincide.
+            if (Auth::check()) {
+                $user = Auth::user();
+                
+                // Redirigir según el rol
+                if ($user->role === 'ADMIN') {
+                    return redirect('/admin');
+                } elseif ($user->role === 'USER') {
+                    return redirect('/home');
+                } elseif ($user->role === 'LIMPIEZA') {
+                    return redirect('/limpiadora/dashboard');
                 }
             }
         }

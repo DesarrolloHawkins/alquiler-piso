@@ -33,5 +33,11 @@ return [
     'channex' => [
         'webhook_url' => env('CHANNEX_WEBHOOK_URL', 'https://tu-dominio.com/webhook-handler'),
     ],
+    
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o'),
+        'max_tokens' => env('OPENAI_MAX_TOKENS', 500),
+    ],
 
 ];

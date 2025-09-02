@@ -324,7 +324,7 @@ class WhatsappController extends Controller
                 
 
                 if ($fechaEntrada->isToday()) {
-                    if ($horaActual < '13:00') {
+                    if ($horaActual < '14:00') {
                         // Segunda llamada a OpenAI para integrar en la conversación
                         $responseFinal = Http::withToken($apiKey)->post($endpoint, [
                             'model' => $modelo,

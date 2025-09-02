@@ -4,6 +4,8 @@ use App\Http\Controllers\CategoryEmailController;
 use App\Http\Controllers\CuentasContableController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\GestionApartamentoController;
+use App\Http\Controllers\GestionIncidenciasController;
+use App\Http\Controllers\Admin\AdminIncidenciasController;
 use App\Http\Controllers\MovimientosController;
 use App\Http\Controllers\StatusMailController;
 use Illuminate\Support\Facades\Route;
@@ -42,8 +44,19 @@ use App\Models\Reserva;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        // El usuario está autenticado, redirige a la ruta deseada.
-        return redirect()->route('gestion.index');
+        $user = Auth::user();
+        
+        // Redirigir según el rol del usuario
+        if ($user->role === 'ADMIN') {
+            return redirect('/admin');
+        } elseif ($user->role === 'USER') {
+            return redirect('/home');
+        } elseif ($user->role === 'LIMPIEZA') {
+            return redirect('/limpiadora/dashboard');
+        } else {
+            // Fallback para roles no reconocidos
+            return redirect('/home');
+        }
     }
     return view('welcome');
 })->name('inicio.welcome');
@@ -81,6 +94,8 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Apartamentos
     Route::get('/apartamentos', [App\Http\Controllers\ApartamentosController::class, 'indexAdmin'])->name('apartamentos.admin.index');
     Route::get('/apartamentos/create', [App\Http\Controllers\ApartamentosController::class, 'createAdmin'])->name('apartamentos.admin.create');
+    Route::get('/apartamentos/{id}', [App\Http\Controllers\ApartamentosController::class, 'showAdmin'])->name('apartamentos.admin.show');
+    Route::get('/apartamentos/{id}/estadisticas', [App\Http\Controllers\ApartamentosController::class, 'estadisticasAdmin'])->name('apartamentos.admin.estadisticas');
     Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
@@ -132,6 +147,17 @@ Route::get('/test-datos-momento/{id}', function($id) {
     // Limpieza
     Route::get('aparatamento-limpieza/{id}/show', [\App\Http\Controllers\ApartamentoLimpiezaController::class, 'show'])->name('apartamentoLimpieza.admin.show');
 
+    // Incidencias
+    Route::resource('admin/incidencias', AdminIncidenciasController::class)->names('admin.incidencias');
+    Route::post('/admin/incidencias/{incidencia}/resolver', [AdminIncidenciasController::class, 'resolver'])->name('admin.incidencias.resolver');
+    Route::post('/admin/incidencias/{incidencia}/cambiar-prioridad', [AdminIncidenciasController::class, 'cambiarPrioridad'])->name('admin.incidencias.cambiar-prioridad');
+    Route::get('/admin/incidencias-pendientes', [AdminIncidenciasController::class, 'getPendientes'])->name('admin.incidencias.pendientes');
+
+    // Alertas del Sistema
+    Route::get('/admin/alerts', function() {
+        return view('admin.alerts.index');
+    })->name('admin.alerts.index');
+
     // Reservas
     // Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
@@ -181,6 +207,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/edificios', [App\Http\Controllers\EdificiosController::class, 'index'])->name('admin.edificios.index');
     Route::get('/edificio-create', [App\Http\Controllers\EdificiosController::class, 'create'])->name('admin.edificio.create');
     Route::post('/edificio/store', [App\Http\Controllers\EdificiosController::class, 'store'])->name('admin.edificio.store');
+    Route::get('/edificio/{id}', [App\Http\Controllers\EdificiosController::class, 'show'])->name('admin.edificio.show');
     Route::get('/edificio/{id}/edit', [App\Http\Controllers\EdificiosController::class, 'edit'])->name('admin.edificio.edit');
     Route::post('/edificio/{id}/update', [App\Http\Controllers\EdificiosController::class, 'update'])->name('admin.edificio.update');
     Route::post('/edificio/{id}/destroy', [App\Http\Controllers\EdificiosController::class, 'destroy'])->name('admin.edificio.destroy');
@@ -325,17 +352,22 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/checklists', [App\Http\Controllers\ChecklistController::class, 'index'])->name('admin.checklists.index');
     Route::get('/checklists-create', [App\Http\Controllers\ChecklistController::class, 'create'])->name('admin.checklists.create');
     Route::post('/checklists/store', [App\Http\Controllers\ChecklistController::class, 'store'])->name('admin.checklists.store');
-    Route::get('/checklists/{id}/edit', [App\Http\Controllers\ChecklistController::class, 'edit_new'])->name('admin.checklists.edit');
+    Route::get('/checklists/{id}', [App\Http\Controllers\ChecklistController::class, 'show'])->name('admin.checklists.show');
+    Route::get('/checklists/{id}/edit', [App\Http\Controllers\ChecklistController::class, 'edit'])->name('admin.checklists.edit');
     Route::post('/checklists/{id}/update', [App\Http\Controllers\ChecklistController::class, 'update'])->name('admin.checklists.update');
     Route::post('/checklists/{id}/destroy', [App\Http\Controllers\ChecklistController::class, 'destroy'])->name('admin.checklists.destroy');
+    Route::post('/checklists/{id}/toggle-status', [App\Http\Controllers\ChecklistController::class, 'toggleStatus'])->name('admin.checklists.toggle-status');
 
     // Items_checklist - Limpieza
     Route::get('/items_checklist', [App\Http\Controllers\ItemChecklistController::class, 'index'])->name('admin.itemsChecklist.index');
     Route::get('/items_checklist-create', [App\Http\Controllers\ItemChecklistController::class, 'create'])->name('admin.itemsChecklist.create');
     Route::post('/items_checklist/store', [App\Http\Controllers\ItemChecklistController::class, 'store'])->name('admin.itemsChecklist.store');
+    Route::get('/items_checklist/{id}', [App\Http\Controllers\ItemChecklistController::class, 'show'])->name('admin.itemsChecklist.show');
     Route::get('/items_checklist/{id}/edit', [App\Http\Controllers\ItemChecklistController::class, 'edit'])->name('admin.itemsChecklist.edit');
     Route::post('/items_checklist/{id}/update', [App\Http\Controllers\ItemChecklistController::class, 'update'])->name('admin.itemsChecklist.update');
     Route::post('/items_checklist/{id}/destroy', [App\Http\Controllers\ItemChecklistController::class, 'destroy'])->name('admin.itemsChecklist.destroy');
+    Route::post('/items_checklist/{id}/toggle-status', [App\Http\Controllers\ItemChecklistController::class, 'toggleStatus'])->name('admin.itemsChecklist.toggle-status');
+    Route::post('/items_checklist/reorder', [App\Http\Controllers\ItemChecklistController::class, 'reorder'])->name('admin.itemsChecklist.reorder');
 
     // Proveedores
     Route::get('/proveedores', [App\Http\Controllers\ProveedoresController::class, 'index'])->name('admin.proveedores.index');
@@ -403,9 +435,13 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/empleados', [App\Http\Controllers\UserController::class, 'index'])->name('admin.empleados.index');
     Route::get('/empleados/create', [App\Http\Controllers\UserController::class, 'create'])->name('admin.empleados.create');
     Route::post('/empleados/store', [App\Http\Controllers\UserController::class, 'store'])->name('admin.empleados.store');
+    Route::get('/empleados/{id}', [App\Http\Controllers\UserController::class, 'show'])->name('admin.empleados.show');
     Route::get('/empleados/{id}/edit', [App\Http\Controllers\UserController::class, 'edit'])->name('admin.empleados.edit');
     Route::post('/empleados/{id}/update', [App\Http\Controllers\UserController::class, 'update'])->name('admin.empleados.update');
     Route::post('/empleados/{id}/destroy', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.empleados.destroy');
+    Route::post('/empleados/{id}/toggle-status', [App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.empleados.toggle-status');
+    Route::post('/empleados/{id}/reset-password', [App\Http\Controllers\UserController::class, 'resetPassword'])->name('admin.empleados.reset-password');
+    Route::post('/empleados/bulk-action', [App\Http\Controllers\UserController::class, 'bulkAction'])->name('admin.empleados.bulk-action');
 
     // Emails
     Route::get('/emails', [EmailController::class, 'index'])->name('admin.emails.index');
@@ -432,6 +468,10 @@ Route::get('/test-datos-momento/{id}', function($id) {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/pisos',[App\Http\Controllers\ApartamentosController::class, 'index'])->name('apartamentos.index');
+    
+    // Dashboard de Limpiadoras - Solo limpiadoras pueden acceder
+    Route::get('/limpiadora/dashboard', [App\Http\Controllers\LimpiadoraDashboardController::class, 'index'])->name('limpiadora.dashboard')->middleware('role:LIMPIEZA');
+    Route::get('/limpiadora/estadisticas', [App\Http\Controllers\LimpiadoraDashboardController::class, 'estadisticas'])->name('limpiadora.estadisticas')->middleware('role:LIMPIEZA');
 
     Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
 
@@ -439,19 +479,65 @@ Route::middleware('auth')->group(function () {
     Route::post('/fichajes/pausa/iniciar', [App\Http\Controllers\FichajeController::class, 'iniciarPausa'])->name('fichajes.pausa.iniciar');
     Route::post('/fichajes/pausa/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarPausa'])->name('fichajes.pausa.finalizar');
     Route::post('/fichajes/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarJornada'])->name('fichajes.finalizar');
-
+    
     //Holidays(Vacaciones users)
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holiday.index');
     Route::get('/holidays/edit/{id}', [HolidayController::class, 'edit'])->name('holiday.edit');
     Route::post('/holidays/store', [HolidayController::class, 'store'])->name('holiday.store');
     Route::get('/holidays/create', [HolidayController::class, 'create'])->name('holiday.create');
-    // Más rutas que solo deben ser accesibles
+    
+    // Gestion del Apartamento
+    Route::get('/gestion', [App\Http\Controllers\GestionApartamentoController::class, 'index'])->name('gestion.index');
+    Route::get('/gestion/reserva/{id}/info', [App\Http\Controllers\GestionApartamentoController::class, 'mostrarInfoReserva'])->name('gestion.reserva.info');
+    Route::get('/gestion-create/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create'])->name('gestion.create');
+    Route::post('/gestion-store', [App\Http\Controllers\GestionApartamentoController::class, 'store'])->name('gestion.store');
+    Route::get('/gestion-edit/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'edit'])->name('gestion.edit');
+    Route::post('/gestion-update/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'update'])->name('gestion.update');
+    Route::post('/gestion-update-zona-comun/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'updateZonaComun'])->name('gestion.updateZonaComun');
+    Route::post('/gestion-finalizar/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizar'])->name('gestion.finalizar');
+    Route::post('/gestion-finalizar-zona-comun/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizarZonaComun'])->name('gestion.finalizarZonaComun');
+    Route::get('/gestion-edit/{apartamentoLimpieza}/checklist-status', [App\Http\Controllers\GestionApartamentoController::class, 'checklistStatus'])->name('gestion.checklistStatus');
+    Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
+    Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
+    Route::post('/gestion/update-checkbox/', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
+    Route::get('/gestion-create-fondo/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create_fondo'])->name('gestion.create_fondo');
+    Route::get('/gestion-edit-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'editZonaComun'])->name('gestion.editZonaComun');
+    Route::get('/gestion-create-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'createZonaComun'])->name('gestion.createZonaComun');
+    Route::get('/gestion-checklist-status-zona-comun/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'checklistStatusZonaComun'])->name('gestion.checklistStatusZonaComun');
+
+    // Rutas de Incidencias para Limpiadoras
+    Route::get('gestion/incidencias', [GestionIncidenciasController::class, 'index'])->name('gestion.incidencias.index');
+    Route::get('gestion/incidencias/create', [GestionIncidenciasController::class, 'create'])->name('gestion.incidencias.create');
+    Route::post('gestion/incidencias/store', [GestionIncidenciasController::class, 'store'])->name('gestion.incidencias.store');
+    Route::get('gestion/incidencias/{id}', [GestionIncidenciasController::class, 'show'])->name('gestion.incidencias.show');
+    Route::get('gestion/incidencias/{id}/edit', [GestionIncidenciasController::class, 'edit'])->name('gestion.incidencias.edit');
+    Route::post('gestion/incidencias/{id}/update', [GestionIncidenciasController::class, 'update'])->name('gestion.incidencias.update');
+    Route::post('gestion/incidencias/{id}/destroy', [GestionIncidenciasController::class, 'destroy'])->name('gestion.incidencias.destroy');
+
+    // Rutas de gestión de reservas
+    Route::get('gestion/reservas', [App\Http\Controllers\GestionReservasController::class, 'index'])->name('gestion.reservas.index');
+    Route::get('gestion/reservas/buscar', [App\Http\Controllers\GestionReservasController::class, 'buscar'])->name('gestion.reservas.buscar');
+    Route::get('gestion/reservas/apartamentos', [App\Http\Controllers\GestionReservasController::class, 'obtenerApartamentos'])->name('gestion.reservas.apartamentos');
+    Route::get('gestion/reservas/estadisticas', [App\Http\Controllers\GestionReservasController::class, 'estadisticas'])->name('gestion.reservas.estadisticas');
+    Route::get('gestion/reservas/{id}', [App\Http\Controllers\GestionReservasController::class, 'show'])->name('gestion.reservas.show');
+    
+    // RUTA DE TEST TEMPORAL - Eliminar después de debuggear
+    Route::get('/test-fichaje', function() {
+        return response()->json([
+            'auth_check' => auth()->check(),
+            'user_id' => auth()->id(),
+            'user_email' => auth()->check() ? auth()->user()->email : null,
+            'user_role' => auth()->check() ? auth()->user()->role : null,
+            'session_id' => session()->getId(),
+            'csrf_token' => csrf_token()
+        ]);
+    })->middleware('auth');
 });
 
 
 
-// Vistas
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// Vistas - Solo ADMIN y USER pueden acceder
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('role:ADMIN,USER');
 Route::get('/test', [App\Http\Controllers\HomeController::class, 'test'])->name('home');
 Route::get('/email', [App\Http\Controllers\EstadoController::class, 'index'])->name('email.index');
 Route::post('/comprobacion-server', [App\Http\Controllers\EstadoController::class, 'comprobacionServer'])->name('comprobacionServer');
@@ -480,17 +566,9 @@ Route::post('/cancelar-airbnb/{reserva}', [App\Http\Controllers\ReservasControll
 Route::post('/actualizar-airbnb/{reserva}', [App\Http\Controllers\ReservasController::class, 'actualizarAirbnb'])->name('actualizarAirbnb.index');
 
 
-// Gestion del Apartamento
-Route::get('/gestion', [App\Http\Controllers\GestionApartamentoController::class, 'index'])->name('gestion.index');
-Route::get('/gestion-create/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create'])->name('gestion.create');
-Route::post('/gestion-store', [App\Http\Controllers\GestionApartamentoController::class, 'store'])->name('gestion.store');
-Route::get('/gestion-edit/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'edit'])->name('gestion.edit');
-Route::post('/gestion-update/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'update'])->name('gestion.update');
-Route::post('/gestion-finalizar/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizar'])->name('gestion.finalizar');
-Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
-Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
-Route::post('/gestion/update-checkbox/', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
-Route::get('/gestion-create-fondo/{id}', [GestionApartamentoController::class, 'create_fondo'])->name('gestion.create_fondo');
+
+
+//Route::resource('gestion/incidencias', GestionIncidenciasController::class, 'index')->names('gestion.incidencias');
 
 // Fotos
 Route::get('/fotos-dormitorio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.dormitorio');
@@ -686,3 +764,62 @@ Route::middleware(['auth'])->group(function () {
         return redirect("/channex/rate-plans/{$propertyId}/{$roomTypeId}");
     });
 });
+
+// Admin - Gestión de Limpiezas
+Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+    Route::get('/limpiezas', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'index'])->name('limpiezas.index');
+    Route::get('/limpiezas/{id}', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'show'])->name('limpiezas.show');
+    
+    // Gestión de Zonas Comunes
+    Route::resource('zonas-comunes', App\Http\Controllers\Admin\ZonaComunController::class);
+    Route::post('/zonas-comunes/{id}/toggle-status', [App\Http\Controllers\Admin\ZonaComunController::class, 'toggleStatus'])->name('zonas-comunes.toggle-status');
+    
+    // Gestión de Checklists de Zonas Comunes
+    Route::resource('checklists-zonas-comunes', App\Http\Controllers\Admin\ChecklistZonaComunController::class);
+    Route::post('/checklists-zonas-comunes/{id}/toggle-status', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'toggleStatus'])->name('checklists-zonas-comunes.toggle-status');
+    Route::get('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'manageItems'])->name('checklists-zonas-comunes.items');
+    Route::post('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'storeItem'])->name('checklists-zonas-comunes.store-item');
+    
+    // Gestión de Amenities
+    Route::resource('amenities', App\Http\Controllers\Admin\AmenityController::class);
+    Route::post('/amenities/{id}/toggle-status', [App\Http\Controllers\Admin\AmenityController::class, 'toggleStatus'])->name('amenities.toggle-status');
+    Route::post('/amenities/{id}/consumo', [App\Http\Controllers\Admin\AmenityController::class, 'registrarConsumo'])->name('amenities.consumo');
+    Route::post('/amenities/{id}/reposicion', [App\Http\Controllers\Admin\AmenityController::class, 'registrarReposicion'])->name('amenities.reposicion');
+    Route::post('/amenities/calcular-consumo', [App\Http\Controllers\Admin\AmenityController::class, 'calcularConsumoReserva'])->name('amenities.calcular-consumo');
+    Route::get('/amenities/{id}', [App\Http\Controllers\Admin\AmenityController::class, 'show'])->name('amenities.show');
+});
+
+// Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/amenities-limpieza/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'show'])->name('amenity.limpieza.show');
+    Route::post('/amenities-limpieza/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'store'])->name('amenity.limpieza.store');
+    Route::get('/amenities/{id}/historial', [App\Http\Controllers\AmenityLimpiezaController::class, 'historial'])->name('amenity.historial');
+    
+    // Nueva ruta para cargar amenities de una reserva
+Route::get('/amenities-reserva/{reservaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesReserva'])->name('amenity.reserva.get');
+
+// Nueva ruta para cargar amenities de una limpieza completada
+Route::get('/amenities-limpieza-completada/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesLimpiezaCompletada'])->name('amenity.limpieza.completada');
+});
+
+// Ruta específica para estadísticas de admin (FUERA del grupo para evitar conflictos)
+Route::get('/admin/limpiezas-estadisticas', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'estadisticas'])->name('admin.limpiezas.estadisticas')->middleware(['auth']);
+
+// Análisis de limpiezas
+Route::get('/limpiezas/analisis', [App\Http\Controllers\LimpiezaAnalisisController::class, 'index'])->name('limpiezas.analisis');
+Route::get('/limpiezas/estadisticas', [App\Http\Controllers\LimpiezaAnalisisController::class, 'estadisticas'])->name('limpiezas.estadisticas');
+
+Route::get('/gestion/reserva/{id}/info', [App\Http\Controllers\GestionApartamentoController::class, 'mostrarInfoReserva'])->name('gestion.reserva.info');
+Route::get('/gestion/limpieza/{id}/ver', [App\Http\Controllers\GestionApartamentoController::class, 'verLimpiezaCompletada'])->name('gestion.limpieza.ver');
+
+// Perfil de Usuario - Accesible para todos los usuarios autenticados
+Route::get('/user/profile', [App\Http\Controllers\UserProfileController::class, 'index'])->name('user.profile')->middleware('auth');
+Route::post('/user/profile/update', [App\Http\Controllers\UserProfileController::class, 'update'])->name('user.profile.update')->middleware('auth');
+Route::post('/user/profile/vacations', [App\Http\Controllers\UserProfileController::class, 'updateVacations'])->name('user.profile.vacations')->middleware('auth');
+Route::post('/user/profile/password', [App\Http\Controllers\UserProfileController::class, 'updatePassword'])->name('user.profile.password')->middleware('auth');
+Route::post('/user/profile/avatar', [App\Http\Controllers\UserProfileController::class, 'updateAvatar'])->name('user.profile.avatar')->middleware('auth');
+
+// Ruta de prueba para debuggear estadísticas
+Route::get('/user/profile/test-stats', [App\Http\Controllers\UserProfileController::class, 'testStats'])->name('user.profile.test-stats')->middleware('auth');
+
+

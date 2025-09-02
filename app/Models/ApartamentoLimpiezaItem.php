@@ -28,6 +28,8 @@ class ApartamentoLimpiezaItem extends Model
         'item_id',
         'estado',
         'checklist_id',
+        'item_checklist_zona_comun_id',
+        'checklist_zona_comun_id',
         'photo_url',
         'photo_cat' // Categoría de la foto
     ];
@@ -50,10 +52,26 @@ class ApartamentoLimpiezaItem extends Model
     }
 
     /**
+     * Get the checklist de zona común that owns the item.
+     */
+    public function checklistZonaComun()
+    {
+        return $this->belongsTo(ChecklistZonaComun::class, 'checklist_zona_comun_id');
+    }
+
+    /**
      * Get the item that owns the limpieza item.
      */
     public function item()
     {
         return $this->belongsTo(ItemChecklist::class, 'item_id');
+    }
+
+    /**
+     * Get the item de zona común that owns the limpieza item.
+     */
+    public function itemZonaComun()
+    {
+        return $this->belongsTo(ItemChecklistZonaComun::class, 'item_checklist_zona_comun_id');
     }
 }

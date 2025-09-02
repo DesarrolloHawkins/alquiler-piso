@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Reserva;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -23,7 +24,13 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'inactive'
+        'inactive',
+        'avatar',
+        'phone',
+        'address',
+        'birth_date',
+        'emergency_contact',
+        'emergency_phone'
     ];
 
     /**
@@ -44,11 +51,23 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'birth_date' => 'date',
     ];
 
     public function hasRole($role)
     {
-        return $this->roles()->where('name', $role)->exists();
+        return $this->role === $role;
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     // /**

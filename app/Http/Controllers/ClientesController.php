@@ -7,6 +7,7 @@ use App\Models\MensajeAuto;
 use App\Models\Photo;
 use App\Models\Reserva;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClientesController extends Controller
 {
@@ -24,17 +25,19 @@ class ClientesController extends Controller
                   ->orWhereNull('inactivo');
         })
         ->where(function ($query) use ($search) {
-            $query->where('alias', 'like', '%'.$search.'%')
-                  ->orWhere('apellido1', 'like', '%'.$search.'%')
-                  ->orWhere('apellido2', 'like', '%'.$search.'%')
-                  ->orWhere('nombre', 'like', '%'.$search.'%')
-                  ->orWhere('idioma', 'like', '%'.$search.'%');
+            if ($search) {
+                $query->where('alias', 'like', '%'.$search.'%')
+                      ->orWhere('apellido1', 'like', '%'.$search.'%')
+                      ->orWhere('apellido2', 'like', '%'.$search.'%')
+                      ->orWhere('nombre', 'like', '%'.$search.'%')
+                      ->orWhere('idioma', 'like', '%'.$search.'%')
+                      ->orWhere('email', 'like', '%'.$search.'%');
+            }
         })
         ->orderBy($sort, $order)
-        ->paginate(10);
+        ->paginate(15);
 
-
-        return view('Clientes.index', compact('clientes'));
+        return view('Clientes.index', compact('clientes', 'search', 'sort', 'order'));
     }
 
     /**
@@ -56,7 +59,7 @@ class ClientesController extends Controller
             "Armenia" => "Armenio",
             "Australia" => "Inglés",
             "Austria" => "Alemán",
-            "Azerbaiyán" => "Azerí",
+            "Azerbaiyán" => "Azerbaiyano",
             "Bahamas" => "Inglés",
             "Bangladés" => "Bengalí",
             "Barbados" => "Inglés",
@@ -68,7 +71,7 @@ class ClientesController extends Controller
             "Birmania" => "Birmano",
             "Bolivia" => "Español",
             "Bosnia y Herzegovina" => "Bosnio",
-            "Botsuana" => "Inglés",
+            "Botsuana" => "Setsuana",
             "Brasil" => "Portugués",
             "Brunéi" => "Malayo",
             "Bulgaria" => "Búlgaro",
@@ -80,13 +83,13 @@ class ClientesController extends Controller
             "Camerún" => "Francés",
             "Canadá" => "Inglés",
             "Catar" => "Árabe",
-            "Chad" => "Francés",
+            "Chad" => "Árabe",
             "Chile" => "Español",
-            "China" => "Mandarín",
+            "China" => "Chino",
             "Chipre" => "Griego",
             "Ciudad del Vaticano" => "Italiano",
             "Colombia" => "Español",
-            "Comoras" => "Comorense",
+            "Comoras" => "Árabe",
             "Corea del Norte" => "Coreano",
             "Corea del Sur" => "Coreano",
             "Costa de Marfil" => "Francés",
@@ -108,7 +111,7 @@ class ClientesController extends Controller
             "Etiopía" => "Amárico",
             "Filipinas" => "Filipino",
             "Finlandia" => "Finés",
-            "Fiyi" => "Fiyiano",
+            "Fiyi" => "Inglés",
             "Francia" => "Francés",
             "Gabón" => "Francés",
             "Gambia" => "Inglés",
@@ -140,10 +143,10 @@ class ClientesController extends Controller
             "Kazajistán" => "Kazajo",
             "Kenia" => "Suajili",
             "Kirguistán" => "Kirguís",
-            "Kiribati" => "Inglés",
+            "Kiribati" => "Gilbertés",
             "Kuwait" => "Árabe",
             "Laos" => "Lao",
-            "Lesoto" => "Sesotho",
+            "Lesoto" => "Sesoto",
             "Letonia" => "Letón",
             "Líbano" => "Árabe",
             "Liberia" => "Inglés",
@@ -178,22 +181,22 @@ class ClientesController extends Controller
             "Omán" => "Árabe",
             "Países Bajos" => "Neerlandés",
             "Pakistán" => "Urdu",
-            "Palaos" => "Palauano",
+            "Palaos" => "Paluano",
             "Palestina" => "Árabe",
             "Panamá" => "Español",
-            "Papúa Nueva Guinea" => "Tok Pisin",
-            "Paraguay" => "Guaraní",
+            "Papúa Nueva Guinea" => "Inglés",
+            "Paraguay" => "Español",
             "Perú" => "Español",
             "Polonia" => "Polaco",
             "Portugal" => "Portugués",
             "Reino Unido" => "Inglés",
-            "República Centroafricana" => "Sango",
+            "República Centroafricana" => "Francés",
             "República Checa" => "Checo",
             "República de Macedonia" => "Macedonio",
             "República del Congo" => "Francés",
             "República Democrática del Congo" => "Francés",
             "República Dominicana" => "Español",
-            "República Sudafricana" => "Zulú",
+            "República Sudafricana" => "Afrikáans",
             "Ruanda" => "Kinyarwanda",
             "Rumanía" => "Rumano",
             "Rusia" => "Ruso",
@@ -241,7 +244,6 @@ class ClientesController extends Controller
             "Zimbabue" => "Inglés"
         ];
         return view('Clientes.create', compact('paises','idiomaAPais'));
-
     }
 
     /**
@@ -254,34 +256,50 @@ class ClientesController extends Controller
             'nombre' => 'required|string|max:255',
             'apellido1' => 'required|string|max:255',
             'apellido2' => 'nullable|string|max:255',
-            // 'fecha_nacimiento' => 'required|date',
             'sexo' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20', // Ajusta la longitud máxima según tus necesidades
-            'email' => 'required|email|max:255|unique:clientes,email', // Asegúrate de cambiar 'clientes' al nombre de tu tabla
-            'idiomas' => 'nullable|string|max:255', // Este campo es de sólo lectura en el formulario, considera si necesitas validarlo
+            'telefono' => 'required|string|max:20',
+            'email' => 'required|email|max:255|unique:clientes,email',
+            'idiomas' => 'nullable|string|max:255',
             'nacionalidad' => 'required|string|max:255',
-            // 'tipo_documento' => 'required|string|max:255|in:DNI,Pasaporte', // Asegúrate de que el tipo de documento esté dentro de los valores permitidos
-            // 'num_identificacion' => 'required|string|max:255',
-            // 'fecha_expedicion_doc' => 'required|date',
+            'tipo_documento' => 'nullable',
             'direccion' => 'nullable|string|max:255',
             'localidad' => 'nullable|string|max:255',
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
-            'tipo_documento' => 'nullable'
+        ];
+
+        // Mensajes de validación personalizados
+        $messages = [
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.max' => 'El nombre no puede tener más de 255 caracteres.',
+            'apellido1.required' => 'El primer apellido es obligatorio.',
+            'apellido1.max' => 'El primer apellido no puede tener más de 255 caracteres.',
+            'sexo.required' => 'El sexo es obligatorio.',
+            'telefono.required' => 'El teléfono es obligatorio.',
+            'telefono.max' => 'El teléfono no puede tener más de 20 caracteres.',
+            'email.required' => 'El email es obligatorio.',
+            'email.email' => 'El formato del email no es válido.',
+            'email.unique' => 'Este email ya está registrado.',
+            'nacionalidad.required' => 'La nacionalidad es obligatoria.',
         ];
 
         // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, $messages);
 
-        // Procesar los datos validados...
-        $cliente = new Cliente($validatedData);
-        $cliente->save();
+        try {
+            // Procesar los datos validados
+            $cliente = new Cliente($validatedData);
+            $cliente->save();
 
-        // Redireccionar o enviar una respuesta apropiada
-        return redirect()->route('clientes.index')->with('status', 'Cliente creado con éxito!');
+            return redirect()->route('clientes.index')
+                ->with('swal_success', '¡Cliente creado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al crear el cliente: ' . $e->getMessage());
+        }
     }
-
 
     /**
      * Display the specified resource.
@@ -291,8 +309,21 @@ class ClientesController extends Controller
         $reservas = Reserva::where('cliente_id', $cliente->id)->get();
         $mensajes = MensajeAuto::where('cliente_id', $cliente->id)->get();
         $photos = Photo::where('cliente_id', $cliente->id)->get();
-        return view('Clientes.show', compact('cliente', 'mensajes', 'photos', 'reservas'));
-        //
+        
+        // Estadísticas económicas
+        $estadisticasEconomicas = [
+            'total_pagado' => $reservas->sum('precio'),
+            'total_neto' => $reservas->sum('neto'),
+            'total_comisiones' => $reservas->sum('comision'),
+            'total_cargos_pago' => $reservas->sum('cargo_por_pago'),
+            'total_iva' => $reservas->sum('iva'),
+            'reservas_activas' => $reservas->where('estado_id', '!=', 4)->count(), // Excluir canceladas
+            'reservas_completadas' => $reservas->where('estado_id', 4)->count(),
+            'valor_promedio_reserva' => $reservas->count() > 0 ? round($reservas->avg('precio'), 2) : 0,
+            'reservas_pendientes_pago' => $reservas->where('estado_id', 1)->count(), // Asumiendo que estado_id 1 es pendiente
+        ];
+        
+        return view('Clientes.show', compact('cliente', 'mensajes', 'photos', 'reservas', 'estadisticasEconomicas'));
     }
 
     /**
@@ -300,7 +331,13 @@ class ClientesController extends Controller
      */
     public function edit(string $id)
     {
-        $cliente = Cliente::find($id);
+        $cliente = Cliente::findOrFail($id);
+        
+        // Obtener datos relacionados para las estadísticas
+        $reservas = \App\Models\Reserva::where('cliente_id', $cliente->id)->get();
+        $mensajes = \App\Models\MensajeAuto::where('cliente_id', $cliente->id)->get();
+        $photos = \App\Models\Photo::where('cliente_id', $cliente->id)->get();
+        
         $paises = array("Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Birmania","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Ciudad del Vaticano","Colombia","Comoras","Corea del Norte","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Islas Marshall","Islas Salomón","Israel","Italia","Jamaica","Japón","Jordania","Kazajistán","Kenia","Kirguistán","Kiribati","Kuwait","Laos","Lesoto","Letonia","Líbano","Liberia","Libia","Liechtenstein","Lituania","Luxemburgo","Madagascar","Malasia","Malaui","Maldivas","Malí","Malta","Marruecos","Mauricio","Mauritania","México","Micronesia","Moldavia","Mónaco","Mongolia","Montenegro","Mozambique","Namibia","Nauru","Nepal","Nicaragua","Níger","Nigeria","Noruega","Nueva Zelanda","Omán","Países Bajos","Pakistán","Palaos","Palestina","Panamá","Papúa Nueva Guinea","Paraguay","Perú","Polonia","Portugal","Reino Unido","República Centroafricana","República Checa","República de Macedonia","República del Congo","República Democrática del Congo","República Dominicana","República Sudafricana","Ruanda","Rumanía","Rusia","Samoa","San Cristóbal y Nieves","San Marino","San Vicente y las Granadinas","Santa Lucía","Santo Tomé y Príncipe","Senegal","Serbia","Seychelles","Sierra Leona","Singapur","Siria","Somalia","Sri Lanka","Suazilandia","Sudán","Sudán del Sur","Suecia","Suiza","Surinam","Tailandia","Tanzania","Tayikistán","Timor Oriental","Togo","Tonga","Trinidad y Tobago","Túnez","Turkmenistán","Turquía","Tuvalu","Ucrania","Uganda","Uruguay","Uzbekistán","Vanuatu","Venezuela","Vietnam","Yemen","Yibuti","Zambia","Zimbabue");
         $idiomaAPais = [
             "Afganistán" => "Pastún",
@@ -315,7 +352,7 @@ class ClientesController extends Controller
             "Armenia" => "Armenio",
             "Australia" => "Inglés",
             "Austria" => "Alemán",
-            "Azerbaiyán" => "Azerí",
+            "Azerbaiyán" => "Azerbaiyano",
             "Bahamas" => "Inglés",
             "Bangladés" => "Bengalí",
             "Barbados" => "Inglés",
@@ -327,7 +364,7 @@ class ClientesController extends Controller
             "Birmania" => "Birmano",
             "Bolivia" => "Español",
             "Bosnia y Herzegovina" => "Bosnio",
-            "Botsuana" => "Inglés",
+            "Botsuana" => "Setsuana",
             "Brasil" => "Portugués",
             "Brunéi" => "Malayo",
             "Bulgaria" => "Búlgaro",
@@ -339,13 +376,13 @@ class ClientesController extends Controller
             "Camerún" => "Francés",
             "Canadá" => "Inglés",
             "Catar" => "Árabe",
-            "Chad" => "Francés",
+            "Chad" => "Árabe",
             "Chile" => "Español",
-            "China" => "Mandarín",
+            "China" => "Chino",
             "Chipre" => "Griego",
             "Ciudad del Vaticano" => "Italiano",
             "Colombia" => "Español",
-            "Comoras" => "Comorense",
+            "Comoras" => "Árabe",
             "Corea del Norte" => "Coreano",
             "Corea del Sur" => "Coreano",
             "Costa de Marfil" => "Francés",
@@ -367,7 +404,7 @@ class ClientesController extends Controller
             "Etiopía" => "Amárico",
             "Filipinas" => "Filipino",
             "Finlandia" => "Finés",
-            "Fiyi" => "Fiyiano",
+            "Fiyi" => "Inglés",
             "Francia" => "Francés",
             "Gabón" => "Francés",
             "Gambia" => "Inglés",
@@ -399,10 +436,10 @@ class ClientesController extends Controller
             "Kazajistán" => "Kazajo",
             "Kenia" => "Suajili",
             "Kirguistán" => "Kirguís",
-            "Kiribati" => "Inglés",
+            "Kiribati" => "Gilbertés",
             "Kuwait" => "Árabe",
             "Laos" => "Lao",
-            "Lesoto" => "Sesotho",
+            "Lesoto" => "Sesoto",
             "Letonia" => "Letón",
             "Líbano" => "Árabe",
             "Liberia" => "Inglés",
@@ -437,22 +474,22 @@ class ClientesController extends Controller
             "Omán" => "Árabe",
             "Países Bajos" => "Neerlandés",
             "Pakistán" => "Urdu",
-            "Palaos" => "Palauano",
+            "Palaos" => "Paluano",
             "Palestina" => "Árabe",
             "Panamá" => "Español",
-            "Papúa Nueva Guinea" => "Tok Pisin",
-            "Paraguay" => "Guaraní",
+            "Papúa Nueva Guinea" => "Inglés",
+            "Paraguay" => "Español",
             "Perú" => "Español",
             "Polonia" => "Polaco",
             "Portugal" => "Portugués",
             "Reino Unido" => "Inglés",
-            "República Centroafricana" => "Sango",
+            "República Centroafricana" => "Francés",
             "República Checa" => "Checo",
             "República de Macedonia" => "Macedonio",
             "República del Congo" => "Francés",
             "República Democrática del Congo" => "Francés",
             "República Dominicana" => "Español",
-            "República Sudafricana" => "Zulú",
+            "República Sudafricana" => "Afrikáans",
             "Ruanda" => "Kinyarwanda",
             "Rumanía" => "Rumano",
             "Rusia" => "Ruso",
@@ -499,7 +536,7 @@ class ClientesController extends Controller
             "Zambia" => "Inglés",
             "Zimbabue" => "Inglés"
         ];
-        return view('Clientes.edit', compact('cliente','idiomaAPais','paises'));
+        return view('Clientes.edit', compact('cliente', 'reservas', 'mensajes', 'photos', 'idiomaAPais', 'paises'));
     }
 
     /**
@@ -507,7 +544,6 @@ class ClientesController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         // Encuentra el cliente por ID
         $cliente = Cliente::findOrFail($id);
 
@@ -520,7 +556,12 @@ class ClientesController extends Controller
             'fecha_nacimiento' => 'required|date',
             'sexo' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
-            'email' => 'required|email|max:255|unique:clientes,email,' . $cliente->id, // Ignora el email del cliente actual
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('clientes', 'email')->ignore($cliente->id)
+            ],
             'nacionalidad' => 'required|string|max:255',
             'tipo_documento' => 'required|string|max:255|in:DNI,Pasaporte',
             'num_identificacion' => 'required|string|max:255',
@@ -532,14 +573,45 @@ class ClientesController extends Controller
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
         ];
+
+        // Mensajes de validación personalizados
+        $messages = [
+            'alias.required' => 'El alias es obligatorio.',
+            'alias.max' => 'El alias no puede tener más de 255 caracteres.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.max' => 'El nombre no puede tener más de 255 caracteres.',
+            'apellido1.required' => 'El primer apellido es obligatorio.',
+            'apellido1.max' => 'El primer apellido no puede tener más de 255 caracteres.',
+            'fecha_nacimiento.required' => 'La fecha de nacimiento es obligatoria.',
+            'fecha_nacimiento.date' => 'La fecha de nacimiento debe ser una fecha válida.',
+            'sexo.required' => 'El sexo es obligatorio.',
+            'telefono.max' => 'El teléfono no puede tener más de 20 caracteres.',
+            'email.required' => 'El email es obligatorio.',
+            'email.email' => 'El formato del email no es válido.',
+            'email.unique' => 'Este email ya está registrado por otro cliente.',
+            'nacionalidad.required' => 'La nacionalidad es obligatoria.',
+            'tipo_documento.required' => 'El tipo de documento es obligatorio.',
+            'tipo_documento.in' => 'El tipo de documento debe ser DNI o Pasaporte.',
+            'num_identificacion.required' => 'El número de identificación es obligatorio.',
+            'fecha_expedicion_doc.required' => 'La fecha de expedición del documento es obligatoria.',
+            'fecha_expedicion_doc.date' => 'La fecha de expedición debe ser una fecha válida.',
+            'idiomas.required' => 'Los idiomas son obligatorios.',
+        ];
+
         // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, $messages);
 
-        // Actualizar el cliente con los datos validados
-        $cliente->update($validatedData);
+        try {
+            // Actualizar el cliente con los datos validados
+            $cliente->update($validatedData);
 
-        // Redireccionar a una ruta de éxito o devolver una respuesta
-        return redirect()->route('clientes.index')->with('status', 'Cliente actualizado con éxito!');
+            return redirect()->route('clientes.index')
+                ->with('swal_success', '¡Cliente actualizado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al actualizar el cliente: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -547,10 +619,16 @@ class ClientesController extends Controller
      */
     public function destroy(string $id)
     {
-        $cliente = Cliente::findOrFail($id);
-        $cliente->inactivo = 1;
-        $cliente->save();
+        try {
+            $cliente = Cliente::findOrFail($id);
+            $cliente->inactivo = 1;
+            $cliente->save();
 
-        return redirect()->route('clientes.index')->with('status', 'Cliente inactivado con exito!');
+            return redirect()->route('clientes.index')
+                ->with('swal_success', '¡Cliente inactivado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('swal_error', 'Error al inactivar el cliente: ' . $e->getMessage());
+        }
     }
 }

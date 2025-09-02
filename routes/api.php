@@ -67,3 +67,8 @@ Route::prefix('/webhooks')->group(function () {
 });
 
 Route::post('/fotos-cocina-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina-store');
+
+// Análisis de fotos con OpenAI
+Route::post('/analyze-photo', [App\Http\Controllers\Api\PhotoAnalysisController::class, 'analyzePhoto'])->name('api.analyze-photo');
+Route::post('/mark-responsibility', [App\Http\Controllers\Api\ResponsibilityController::class, 'markResponsibility'])->name('api.mark-responsibility');
+Route::get('/photo-analysis/{id}', [App\Http\Controllers\Api\PhotoAnalysisDetailController::class, 'show'])->name('api.photo-analysis.show');

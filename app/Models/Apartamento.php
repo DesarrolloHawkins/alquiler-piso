@@ -50,19 +50,11 @@ class Apartamento extends Model
         'created_at', 'updated_at', 'deleted_at',
     ];
 
-     /**
-     * Obtener el usuario
+    /**
+     * Relación con el edificio
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function edificioName()
-    {
-        return $this->belongsTo(\App\Models\Edificio::class,'edificio_id');
-    }
-    public function edificioRelacion()
-    {
-        return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
-    }
      /**
      * Relación con las fotos del apartamento.
      */
@@ -84,6 +76,14 @@ class Apartamento extends Model
     {
         return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
     }
+    
+    /**
+     * Relación con el edificio (alias alternativo)
+     */
+    public function edificioRel()
+    {
+        return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
+    }
 
     /**
      * Relación con tarifas
@@ -93,6 +93,14 @@ class Apartamento extends Model
         return $this->belongsToMany(Tarifa::class, 'apartamento_tarifa')
                     ->withPivot('activo')
                     ->withTimestamps();
+    }
+
+    /**
+     * Relación con reservas
+     */
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'apartamento_id');
     }
 
     /**

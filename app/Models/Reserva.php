@@ -38,7 +38,10 @@ class Reserva extends Model
         'neto',
         'comision',
         'cargo_por_pago',
-        'iva'
+        'iva',
+        'numero_ninos',
+        'edades_ninos',
+        'notas_ninos'
     ];
 
     /**
@@ -48,6 +51,15 @@ class Reserva extends Model
      */
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
+    ];
+
+    /**
+     * Los atributos que deben ser convertidos a tipos nativos.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'edades_ninos' => 'array',
     ];
 
     /**
@@ -134,7 +146,10 @@ class Reserva extends Model
     {
         $hoy = Carbon::now();
         return self::whereDate('fecha_entrada','<=', $hoy)
-                ->where('estado_id', '!=', 4)
+                ->where(function($query) {
+                    $query->where('estado_id', '!=', 4)
+                          ->orWhereNull('estado_id');
+                })
                 ->get();
     }
 
@@ -148,7 +163,10 @@ class Reserva extends Model
     {
         $manana = Carbon::now()->addDay();
         return self::whereDate('fecha_salida', $manana)
-                   ->where('estado_id', '!=', 4)
+                   ->where(function($query) {
+                       $query->where('estado_id', '!=', 4)
+                             ->orWhereNull('estado_id');
+                   })
                    ->get();
     }
 
@@ -161,22 +179,57 @@ class Reserva extends Model
     {
         $hoy = Carbon::now();
         return self::whereDate('fecha_limpieza', $hoy)
-                ->where('estado_id', '!=', 4)
+                ->where(function($query) {
+                    $query->where('estado_id', '!=', 4)
+                          ->orWhereNull('estado_id');
+                })
                 ->get();
     }
 
      // Aquí agregamos la función para obtener la siguiente reserva
      public function siguienteReserva()
      {
+         // Verificar que fecha_salida no sea NULL antes de hacer la consulta
+         if (is_null($this->fecha_salida)) {
+             // Devolver una consulta vacía en lugar de null
+             return $this->hasOne(Reserva::class, 'apartamento_id', 'apartamento_id')
+                        ->whereRaw('1 = 0'); // Condición imposible para que no devuelva resultados
+         }
+         
          return $this->hasOne(Reserva::class, 'apartamento_id', 'apartamento_id')
                     ->where('fecha_entrada', '>', $this->fecha_salida)
-                    ->where('estado_id', '!=', 4)
+                    ->where(function($query) {
+                        $query->where('estado_id', '!=', 4)
+                              ->orWhereNull('estado_id');
+                    })
                     ->orderBy('fecha_entrada', 'asc');
+     }
+
+     // Nueva relación para obtener la reserva que entra hoy (misma fecha que la salida)
+     public function reservaEntraHoy()
+     {
+         // Verificar que fecha_salida no sea NULL antes de hacer la consulta
+         if (is_null($this->fecha_salida)) {
+             // Devolver una consulta vacía en lugar de null
+             return $this->belongsTo(Reserva::class, 'apartamento_id', 'apartamento_id')
+                        ->whereRaw('1 = 0'); // Condición imposible para que no devuelva resultados
+         }
+         
+         return $this->belongsTo(Reserva::class, 'apartamento_id', 'apartamento_id')
+                    ->where('fecha_entrada', '=', $this->fecha_salida)
+                    ->where(function($query) {
+                        $query->where('estado_id', '!=', 4)
+                              ->orWhereNull('estado_id');
+                    })
+                    ->where('id', '!=', $this->id);
      }
 
     public function scopeActivas($query)
     {
-        return $query->where('estado_id', '!=', 4);
+        return $query->where(function($query) {
+            $query->where('estado_id', '!=', 4)
+                  ->orWhereNull('estado_id');
+        });
     }
 
 }

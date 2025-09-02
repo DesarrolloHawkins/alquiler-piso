@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ChecklistZonaComun;
 
 class ApartamentoLimpieza extends Model
 {
@@ -25,8 +26,11 @@ class ApartamentoLimpieza extends Model
      */
     protected $fillable = [
         'apartamento_id',
+        'zona_comun_id',
+        'tipo_limpieza',
         'status_id',
         'reserva_id',
+        'empleada_id',
         'bano',
         'bano_toallas_aseos',
         'bano_toallas_mano',
@@ -109,6 +113,10 @@ class ApartamentoLimpieza extends Model
         'amenities_caramelos',
         'amenities_',
         'observacion',
+        'consentimiento_finalizacion',
+        'motivo_consentimiento',
+        'fecha_consentimiento',
+        'user_id_consentimiento',
         'fecha_comienzo',
         'fecha_fin',
         'user_id'
@@ -122,6 +130,8 @@ class ApartamentoLimpieza extends Model
     protected $casts = [
         'fecha_comienzo' => 'datetime',
         'fecha_fin' => 'datetime',
+        'consentimiento_finalizacion' => 'boolean',
+        'fecha_consentimiento' => 'datetime',
     ];
 
     /**
@@ -155,26 +165,37 @@ class ApartamentoLimpieza extends Model
         return $this->belongsTo(Apartamento::class, 'apartamento_id');
     }
 
-    // // Relación con Reserva
-    // public function reserva()
-    // {
-    //     return $this->belongsTo(Reserva::class, 'reserva_id');
-    // }
+    // Relación con Zona Común
+    public function zonaComun()
+    {
+        return $this->belongsTo(ZonaComun::class, 'zona_comun_id');
+    }
+
+    // Relación con Reserva
+    public function reserva()
+    {
+        return $this->belongsTo(Reserva::class, 'reserva_id');
+    }
 
     // Relación con el estado de la limpieza
     public function estado()
     {
         return $this->belongsTo(ApartamentoLimpiezaEstado::class, 'status_id');
     }
+
+    // Relación con empleada (usuario que realiza la limpieza)
+    public function empleada()
+    {
+        return $this->belongsTo(User::class, 'empleada_id');
+    }
     public function itemsMarcados()
     {
-        return $this->belongsToMany(ItemChecklist::class, 'apartamento_item_checklist', 'apartamento_limpieza_id', 'item_checklist_id');
+        return $this->hasMany(\App\Models\ApartamentoLimpiezaItem::class, 'id_limpieza', 'id');
     }
 
     public function controles()
     {
-        return $this->belongsToMany(ItemChecklist::class, 'apartamento_item_checklist', 'apartamento_limpieza_id', 'item_checklist_id')
-                    ->withPivot('status'); // Asumiendo que también estás almacenando un 'status' o cualquier otro dato adicional.
+        return $this->hasMany(\App\Models\ApartamentoLimpiezaItem::class, 'id_limpieza', 'id');
     }
 
 
@@ -185,17 +206,53 @@ class ApartamentoLimpieza extends Model
     {
         return $this->hasMany(Photo::class, 'limpieza_id');
     }
-
-    // Obtener el Checklist del edificio relacionado con el apartamento
-    public function checklist()
+    
+    // Relación con amenities consumidos
+    public function amenitiesConsumidos()
     {
-        return $this->apartamento->edificio->checklist;
+        return $this->hasMany(\App\Models\AmenityConsumo::class, 'limpieza_id');
     }
 
-    // Obtener los ítems del Checklist del edificio
+    // Relación con análisis de fotos
+    public function analisis()
+    {
+        return $this->hasMany(\App\Models\PhotoAnalysis::class, 'limpieza_id');
+    }
+
+    // Obtener el Checklist según el tipo de limpieza
+    public function checklist()
+    {
+        if ($this->tipo_limpieza === 'zona_comun' && $this->zona_comun_id) {
+            // Para zonas comunes, obtener checklists específicos
+            return ChecklistZonaComun::activos()->ordenados()->first();
+        } else {
+            // Para apartamentos, obtener el checklist del edificio
+            return $this->apartamento->edificio->checklist;
+        }
+    }
+
+    // Obtener los ítems del Checklist según el tipo
     public function itemChecklists()
     {
-        return $this->checklist->items;
+        if ($this->tipo_limpieza === 'zona_comun' && $this->zona_comun_id) {
+            // Para zonas comunes, obtener items de checklists de zonas comunes
+            $checklist = ChecklistZonaComun::activos()->ordenados()->first();
+            return $checklist ? $checklist->items : collect();
+        } else {
+            // Para apartamentos, obtener items del checklist del edificio
+            return $this->checklist->items;
+        }
+    }
+
+    // Obtener el nombre del elemento (apartamento o zona común)
+    public function getElementoNombre()
+    {
+        if ($this->tipo_limpieza === 'zona_comun' && $this->zonaComun) {
+            return $this->zonaComun->nombre;
+        } elseif ($this->apartamento) {
+            return $this->apartamento->nombre;
+        }
+        return 'Elemento no encontrado';
     }
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
@@ -207,8 +264,7 @@ class ApartamentoLimpieza extends Model
         // Obtener la fecha y hora actual en el formato deseado
         $fechaActual = Carbon::now()->format('Y-m-d');
         return self::where('status_id', 2)
-                ->whereDate('fecha_comienzo', $fechaActual)
-                ->get();
+                ->whereDate('fecha_comienzo', $fechaActual);
     }
     /**
      * Obtener apartamentos fechas salida para el dia de mañana
@@ -221,7 +277,6 @@ class ApartamentoLimpieza extends Model
 
         return self::where('status_id', 3)
                 ->whereDate('fecha_comienzo', $fechaActual)
-                ->whereDate('fecha_fin', $fechaActual)
-                ->get();
+                ->whereDate('fecha_fin', $fechaActual);
     }
 }

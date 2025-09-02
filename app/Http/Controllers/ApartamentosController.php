@@ -6,11 +6,13 @@ use App\Models\Apartamento;
 use App\Models\Edificio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class ApartamentosController extends Controller
 {
     private $apiUrl = 'https://staging.channex.io/api/v1';
-    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
+    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx';
+
     /**
      * Display a listing of the resource.
      */
@@ -26,11 +28,13 @@ class ApartamentosController extends Controller
         $sort = $request->get('sort', 'id');
         $order = $request->get('order', 'asc');
         $edificioId = $request->get('edificio_id');
-        $apartamentoId = $request->get('apartamento_id'); // <-- lo recogemos también
+        $apartamentoId = $request->get('apartamento_id');
+        
         $apartamentoslist = Apartamento::all();
         $apartamentos = Apartamento::when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', '%' . $search . '%')
+                      ->orWhere('titulo', 'like', '%' . $search . '%')
                       ->orWhere('id', 'like', '%' . $search . '%');
                 });
             })
@@ -38,176 +42,311 @@ class ApartamentosController extends Controller
                 $query->where('edificio_id', $edificioId);
             })
             ->when($apartamentoId, function ($query, $apartamentoId) {
-                $query->where('id', $apartamentoId); // <- aquí filtras por ID exacto
+                $query->where('id', $apartamentoId);
             })
             ->orderBy($sort, $order)
-            ->paginate(30);
+            ->paginate(20);
 
         $edificios = Edificio::all();
 
-        return view('admin.apartamentos.index', compact('apartamentoslist', 'apartamentos', 'edificios'));
+        return view('admin.apartamentos.index', compact('apartamentoslist', 'apartamentos', 'edificios', 'search', 'sort', 'order'));
     }
-
-
-
 
     public function createAdmin()
     {
         $edificios = Edificio::all();
-
         return view('admin.apartamentos.create', compact('edificios'));
     }
 
     public function editAdmin($id)
     {
-        $apartamento = Apartamento::find($id);
+        $apartamento = Apartamento::findOrFail($id);
         $edificios = Edificio::all();
         return view('admin.apartamentos.edit', compact('apartamento','edificios'));
     }
+
     public function updateAdmin(Request $request, $id)
     {
         $apartamento = Apartamento::findOrFail($id);
 
-        // Reglas de validación, puedes agregar más según sea necesario
+        // Reglas de validación completas para Channex
         $rules = [
-            'edificio_id' => 'required|exists:edificios,id' // ejemplo de validación
+            'edificio_id' => 'required|exists:edificios,id',
+            'titulo' => 'required|string|max:255',
+            'claves' => 'required|string|max:255',
+            'property_type' => 'required|string|in:apartment,hotel,hostel,villa,guest_house',
+            'currency' => 'required|string|size:3',
+            'country' => 'required|string|size:2',
+            'state' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'address' => 'required|string|max:500',
+            'zip_code' => 'required|string|max:20',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'timezone' => 'required|string|max:100',
+            'description' => 'nullable|string|max:2000',
+            'important_information' => 'nullable|string|max:2000',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'website' => 'nullable|url|max:500',
+        ];
+
+        // Mensajes de validación personalizados
+        $messages = [
+            'edificio_id.required' => 'El edificio es obligatorio.',
+            'edificio_id.exists' => 'El edificio seleccionado no existe.',
+            'titulo.required' => 'El título es obligatorio.',
+            'titulo.max' => 'El título no puede tener más de 255 caracteres.',
+            'claves.required' => 'Las claves de acceso son obligatorias.',
+            'claves.max' => 'Las claves no pueden tener más de 255 caracteres.',
+            'property_type.required' => 'El tipo de propiedad es obligatorio.',
+            'property_type.in' => 'El tipo de propiedad debe ser válido.',
+            'currency.required' => 'La moneda es obligatoria.',
+            'currency.size' => 'La moneda debe tener exactamente 3 caracteres.',
+            'country.required' => 'El país es obligatorio.',
+            'country.size' => 'El código de país debe tener exactamente 2 caracteres.',
+            'state.required' => 'El estado/provincia es obligatorio.',
+            'city.required' => 'La ciudad es obligatoria.',
+            'address.required' => 'La dirección es obligatoria.',
+            'zip_code.required' => 'El código postal es obligatorio.',
+            'latitude.numeric' => 'La latitud debe ser un número válido.',
+            'latitude.between' => 'La latitud debe estar entre -90 y 90.',
+            'longitude.numeric' => 'La longitud debe ser un número válido.',
+            'longitude.between' => 'La longitud debe estar entre -180 y 180.',
+            'timezone.required' => 'La zona horaria es obligatoria.',
+            'description.max' => 'La descripción no puede tener más de 2000 caracteres.',
+            'important_information.max' => 'La información importante no puede tener más de 2000 caracteres.',
+            'email.email' => 'El formato del email no es válido.',
+            'website.url' => 'El formato de la URL no es válido.',
         ];
 
         // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, $messages);
 
-        // Asignar solo si no vienen como null
-        if ($request->has('titulo')) {
-            $apartamento->titulo = $request->input('titulo');
+        try {
+            // Actualizar solo los campos que vienen en la request
+            if ($request->has('titulo')) {
+                $apartamento->titulo = $validatedData['titulo'];
+            }
+            if ($request->has('claves')) {
+                $apartamento->claves = $validatedData['claves'];
+            }
+            if ($request->has('property_type')) {
+                $apartamento->property_type = $validatedData['property_type'];
+            }
+            if ($request->has('currency')) {
+                $apartamento->currency = $validatedData['currency'];
+            }
+            if ($request->has('country')) {
+                $apartamento->country = $validatedData['country'];
+            }
+            if ($request->has('state')) {
+                $apartamento->state = $validatedData['state'];
+            }
+            if ($request->has('city')) {
+                $apartamento->city = $validatedData['city'];
+            }
+            if ($request->has('address')) {
+                $apartamento->address = $validatedData['address'];
+            }
+            if ($request->has('zip_code')) {
+                $apartamento->zip_code = $validatedData['zip_code'];
+            }
+            if ($request->has('latitude')) {
+                $apartamento->latitude = $validatedData['latitude'];
+            }
+            if ($request->has('longitude')) {
+                $apartamento->longitude = $validatedData['longitude'];
+            }
+            if ($request->has('timezone')) {
+                $apartamento->timezone = $validatedData['timezone'];
+            }
+            if ($request->has('description')) {
+                $apartamento->description = $validatedData['description'];
+            }
+            if ($request->has('important_information')) {
+                $apartamento->important_information = $validatedData['important_information'];
+            }
+            if ($request->has('email')) {
+                $apartamento->email = $validatedData['email'];
+            }
+            if ($request->has('phone')) {
+                $apartamento->phone = $validatedData['phone'];
+            }
+            if ($request->has('website')) {
+                $apartamento->website = $validatedData['website'];
+            }
+
+            // Actualizar el edificio
+            $apartamento->edificio_id = $validatedData['edificio_id'];
+
+            // Guardar los cambios
+            $apartamento->save();
+
+            return redirect()->route('apartamentos.admin.index')
+                ->with('swal_success', '¡Apartamento actualizado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al actualizar el apartamento: ' . $e->getMessage());
         }
-
-        if ($request->has('id_booking')) {
-            $apartamento->id_booking = $request->input('id_booking');
-        }
-
-        if ($request->has('id_web')) {
-            $apartamento->id_web = $request->input('id_web');
-        }
-
-        if ($request->has('nombre')) {
-            $apartamento->nombre = $request->input('nombre');
-        }
-
-        if ($request->has('claves')) {
-            $apartamento->claves = $request->input('claves');
-        }
-
-        // Actualizar solo si el edificio_id está presente
-        $apartamento->edificio_id = $validatedData['edificio_id'];
-
-        // Guardar los cambios
-        $apartamento->save();
-
-        // Redireccionar con mensaje de éxito
-        return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
     }
 
     public function storeAdmin(Request $request)
     {
+        // Reglas de validación completas para Channex
         $rules = [
-                // 'nombre' => 'required|string|max:255',
-                // 'id_booking' => 'required|string|max:255',
-                // 'id_web' => 'required|string|max:255',
-                // 'titulo' => 'required|string|max:255',
-                'claves' => 'required|string|max:255',
-                'edificio_id' => 'required'
+            'claves' => 'required|string|max:255',
+            'edificio_id' => 'required|exists:edificios,id',
+            'titulo' => 'required|string|max:255',
+            'property_type' => 'required|string|in:apartment,hotel,hostel,villa,guest_house',
+            'currency' => 'required|string|size:3',
+            'country' => 'required|string|size:2',
+            'state' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'address' => 'required|string|max:500',
+            'zip_code' => 'required|string|max:20',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'timezone' => 'required|string|max:100',
+            'description' => 'nullable|string|max:2000',
+            'important_information' => 'nullable|string|max:2000',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'website' => 'nullable|url|max:500',
+        ];
+
+        // Mensajes de validación personalizados
+        $messages = [
+            'claves.required' => 'Las claves de acceso son obligatorias.',
+            'claves.max' => 'Las claves no pueden tener más de 255 caracteres.',
+            'edificio_id.required' => 'El edificio es obligatorio.',
+            'edificio_id.exists' => 'El edificio seleccionado no existe.',
+            'titulo.required' => 'El título es obligatorio.',
+            'titulo.max' => 'El título no puede tener más de 255 caracteres.',
+            'property_type.required' => 'El tipo de propiedad es obligatorio.',
+            'property_type.in' => 'El tipo de propiedad debe ser válido.',
+            'currency.required' => 'La moneda es obligatoria.',
+            'currency.size' => 'La moneda debe tener exactamente 3 caracteres.',
+            'country.required' => 'El país es obligatorio.',
+            'country.size' => 'El código de país debe tener exactamente 2 caracteres.',
+            'state.required' => 'El estado/provincia es obligatorio.',
+            'city.required' => 'La ciudad es obligatoria.',
+            'address.required' => 'La dirección es obligatoria.',
+            'zip_code.required' => 'El código postal es obligatorio.',
+            'latitude.numeric' => 'La latitud debe ser un número válido.',
+            'latitude.between' => 'La latitud debe estar entre -90 y 90.',
+            'longitude.numeric' => 'La longitud debe ser un número válido.',
+            'longitude.between' => 'La longitud debe estar entre -180 y 180.',
+            'timezone.required' => 'La zona horaria es obligatoria.',
+            'description.max' => 'La descripción no puede tener más de 2000 caracteres.',
+            'important_information.max' => 'La información importante no puede tener más de 2000 caracteres.',
+            'email.email' => 'El formato del email no es válido.',
+            'website.url' => 'El formato de la URL no es válido.',
         ];
 
         // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
-        $apartamento = Apartamento::create($validatedData);
+        $validatedData = $request->validate($rules, $messages);
 
-       // Redireccionar a una ruta de éxito o devolver una respuesta
-       return redirect()->route('apartamentos.admin.index')->with('status', 'Apartamento actualizado con éxito!');
+        try {
+            // Crear el apartamento con los datos validados
+            $apartamento = Apartamento::create($validatedData);
+
+            return redirect()->route('apartamentos.admin.index')
+                ->with('swal_success', '¡Apartamento creado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al crear el apartamento: ' . $e->getMessage());
+        }
     }
 
     public function registrarWebhooks($id){
-        $apartamento = Apartamento::find($id);
+        try {
+            $apartamento = Apartamento::findOrFail($id);
 
-        $url = 'https://staging.channex.io/api/v1/webhooks';
+            $url = 'https://staging.channex.io/api/v1/webhooks';
 
-        $masks = [
-            [
-                'nombre' => 'ari',
-                'url' => 'ari-changes'
-            ],
-            [
-                'nombre' => 'booking',
-                'url' => 'booking-any'
-            ],
-            [
-                'nombre' => 'booking_unmapped_room',
-                'url' => 'booking-unmapped-room'
-            ],
-            [
-                'nombre' => 'booking_unmapped_rate',
-                'url' => 'booking-unmapped-rate'
-            ],
-            [
-                'nombre' => 'message',
-                'url' => 'message'
-            ],
-            [
-                'nombre' => 'sync_error',
-                'url' => 'sync-error'
-            ],
-            [
-                'nombre' => 'reservation_request',
-                'url' => 'reservation-request'
-            ],
-            [
-                'nombre' => 'alteration_request',
-                'url' => 'alteration_request'
-            ],
-            [
-                'nombre' => 'review',
-                'url' => 'review'
-            ],
-        ];
-        $responses = [];
-
-        foreach ($masks as $mask) {
-
-            $data = [
-                "property_id" => $apartamento->id_channex,
-                "callback_url" => "https://crm.apartamentosalgeciras.com/api/webhooks/". $apartamento->id ."/" . $mask['url'],
-                "event_mask" => $mask['nombre'],
-                "request_params" => new \stdClass(), // Según la documentación, debe ser un objeto vacío si no se usan parámetros
-                "headers" => new \stdClass(),       // Según la documentación, debe ser un objeto vacío si no se usan encabezados
-                "is_active" => true, // Espacio extra eliminado
-                "send_data" => true,
+            $masks = [
+                [
+                    'nombre' => 'ari',
+                    'url' => 'ari-changes'
+                ],
+                [
+                    'nombre' => 'booking',
+                    'url' => 'booking-any'
+                ],
+                [
+                    'nombre' => 'booking_unmapped_room',
+                    'url' => 'booking-unmapped-room'
+                ],
+                [
+                    'nombre' => 'booking_unmapped_rate',
+                    'url' => 'booking-unmapped-rate'
+                ],
+                [
+                    'nombre' => 'message',
+                    'url' => 'message'
+                ],
+                [
+                    'nombre' => 'sync_error',
+                    'url' => 'sync-error'
+                ],
+                [
+                    'nombre' => 'reservation_request',
+                    'url' => 'reservation-request'
+                ],
+                [
+                    'nombre' => 'alteration_request',
+                    'url' => 'alteration_request'
+                ],
+                [
+                    'nombre' => 'review',
+                    'url' => 'review'
+                ],
             ];
+            $responses = [];
 
-            // Petición a la API
-            $response = Http::withHeaders([
-                'user-api-key' => $this->apiToken,
-            ])->post($url, ['webhook' => $data]);
+            foreach ($masks as $mask) {
+                $data = [
+                    "property_id" => $apartamento->id_channex,
+                    "callback_url" => "https://crm.apartamentosalgeciras.com/api/webhooks/". $apartamento->id ."/" . $mask['url'],
+                    "event_mask" => $mask['nombre'],
+                    "request_params" => new \stdClass(),
+                    "headers" => new \stdClass(),
+                    "is_active" => true,
+                    "send_data" => true,
+                ];
 
-            // Manejo de respuesta
-            if ($response->successful()) {
-                $responses[] = [
-                    'status' => 'success',
-                    'message' => 'Webhook registrado con éxito',
-                    'data' => $response->json(),
-                ];
-            } else {
-                $responses[] = [
-                    'status' => 'error',
-                    'message' => 'Error al registrar webhook',
-                    'data' => $response->json(),
-                ];
+                // Petición a la API
+                $response = Http::withHeaders([
+                    'user-api-key' => $this->apiToken,
+                ])->post($url, ['webhook' => $data]);
+
+                // Manejo de respuesta
+                if ($response->successful()) {
+                    $responses[] = [
+                        'status' => 'success',
+                        'message' => 'Webhook registrado con éxito',
+                        'data' => $response->json(),
+                    ];
+                } else {
+                    $responses[] = [
+                        'status' => 'error',
+                        'message' => 'Error al registrar webhook',
+                        'data' => $response->json(),
+                    ];
+                }
             }
-
+            
+            return response()->json($responses);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error interno: ' . $e->getMessage()
+            ], 500);
         }
-        return response()->json($responses);
     }
-
-
 
     /**
      * Show the form for creating a new resource.
@@ -234,6 +373,152 @@ class ApartamentosController extends Controller
     }
 
     /**
+     * Display the specified apartment in admin panel.
+     */
+    public function showAdmin(string $id)
+    {
+        try {
+            $apartamento = Apartamento::with(['photos', 'tarifas', 'edificioRel', 'reservas.cliente', 'reservas.estado'])->findOrFail($id);
+            $edificios = Edificio::all();
+            
+            return view('admin.apartamentos.show', compact('apartamento', 'edificios'));
+        } catch (\Exception $e) {
+            return redirect()->route('apartamentos.admin.index')
+                ->with('swal_error', 'Apartamento no encontrado: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display apartment statistics in admin panel.
+     */
+    public function estadisticasAdmin(string $id)
+    {
+        try {
+            $apartamento = Apartamento::with([
+                'photos', 
+                'tarifas', 
+                'edificioRel', 
+                'reservas.cliente', 
+                'reservas.estado'
+            ])->findOrFail($id);
+
+            // Estadísticas generales
+            $totalReservas = $apartamento->reservas->count();
+            $precioPromedio = $apartamento->reservas->avg('precio') ?? 0;
+            $totalIngresos = $apartamento->reservas->sum('precio') ?? 0;
+            $totalFotos = $apartamento->photos->count();
+
+            // Estadísticas por mes (últimos 12 meses)
+            $estadisticasMensuales = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $fecha = now()->subMonths($i);
+                $mes = $fecha->format('M Y');
+                
+                $reservasMes = $apartamento->reservas()
+                    ->whereYear('fecha_entrada', $fecha->year)
+                    ->whereMonth('fecha_entrada', $fecha->month)
+                    ->get();
+                
+                $estadisticasMensuales[$mes] = [
+                    'reservas' => $reservasMes->count(),
+                    'ingresos' => $reservasMes->sum('precio'),
+                    'promedio' => $reservasMes->avg('precio') ?? 0
+                ];
+            }
+
+            // Estadísticas por estado de reserva
+            $estadosReservas = $apartamento->reservas
+                ->groupBy('estado.nombre')
+                ->map(function ($reservas) {
+                    return $reservas->count();
+                })
+                ->toArray();
+
+            // Top clientes
+            $topClientes = $apartamento->reservas
+                ->groupBy('cliente.nombre')
+                ->map(function ($reservas) {
+                    return [
+                        'nombre' => $reservas->first()->cliente->nombre ?? 'Sin nombre',
+                        'total_reservas' => $reservas->count(),
+                        'total_gastado' => $reservas->sum('precio'),
+                        'ultima_reserva' => $reservas->max('fecha_entrada')
+                    ];
+                })
+                ->sortByDesc('total_gastado')
+                ->take(10)
+                ->values()
+                ->toArray();
+
+            // Estadísticas de ocupación por día de la semana
+            $ocupacionSemanal = [];
+            $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            
+            foreach ($diasSemana as $index => $dia) {
+                $reservasDia = $apartamento->reservas()
+                    ->whereRaw('WEEKDAY(fecha_entrada) = ?', [$index])
+                    ->get();
+                
+                $ocupacionSemanal[$dia] = [
+                    'reservas' => $reservasDia->count(),
+                    'porcentaje' => $totalReservas > 0 ? round(($reservasDia->count() / $totalReservas) * 100, 1) : 0
+                ];
+            }
+            
+            // Convertir a array para Chart.js
+            $ocupacionSemanal = array_map(function($item) {
+                return [
+                    'reservas' => $item['reservas'],
+                    'porcentaje' => $item['porcentaje']
+                ];
+            }, $ocupacionSemanal);
+
+            // Estadísticas de temporada
+            $reservasTemporadaAlta = $apartamento->reservas()
+                ->whereMonth('fecha_entrada', '>=', 6)
+                ->whereMonth('fecha_entrada', '<=', 9)
+                ->get();
+            
+            $reservasTemporadaBaja = $apartamento->reservas()
+                ->where(function($query) {
+                    $query->whereMonth('fecha_entrada', '<=', 3)
+                          ->orWhereMonth('fecha_entrada', '>=', 10);
+                })
+                ->get();
+
+            $estadisticasTemporada = [
+                'alta' => [
+                    'reservas' => $reservasTemporadaAlta->count(),
+                    'ingresos' => $reservasTemporadaAlta->sum('precio'),
+                    'promedio' => $reservasTemporadaAlta->avg('precio') ?? 0
+                ],
+                'baja' => [
+                    'reservas' => $reservasTemporadaBaja->count(),
+                    'ingresos' => $reservasTemporadaBaja->sum('precio'),
+                    'promedio' => $reservasTemporadaBaja->avg('precio') ?? 0
+                ]
+            ];
+
+            return view('admin.apartamentos.estadisticas', compact(
+                'apartamento',
+                'totalReservas',
+                'precioPromedio',
+                'totalIngresos',
+                'totalFotos',
+                'estadisticasMensuales',
+                'estadosReservas',
+                'topClientes',
+                'ocupacionSemanal',
+                'estadisticasTemporada'
+            ));
+
+        } catch (\Exception $e) {
+            return redirect()->route('apartamentos.admin.index')
+                ->with('swal_error', 'Error al cargar estadísticas: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
@@ -254,6 +539,15 @@ class ApartamentosController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $apartamento = Apartamento::findOrFail($id);
+            $apartamento->delete();
+
+            return redirect()->route('apartamentos.admin.index')
+                ->with('swal_success', '¡Apartamento eliminado exitosamente!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('swal_error', 'Error al eliminar el apartamento: ' . $e->getMessage());
+        }
     }
 }

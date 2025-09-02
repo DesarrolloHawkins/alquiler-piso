@@ -1,75 +1,101 @@
 @extends('layouts.appAdmin')
 
+@section('title', 'Gestión de Apartamentos')
+
 @section('content')
-<style>
-    .inactive-sort {
-        color: #ffffff;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #ffa3fa;
-        font-weight: bold;
-        text-decoration: none;
-    }
-</style>
-<style>
-    .inactive-sort {
-        color: #ffffff;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #ffa3fa;
-        font-weight: bold;
-        text-decoration: none;
-    }
-    .min-width-apto {
-        min-width: 250px; /* Esto hace que no se aplaste */
-    }
-    .input-group .form-select,
-    .input-group .form-control {
-        margin-right: 10px; /* Espacio entre selects */
-    }
-</style>
-
-
 <div class="container-fluid">
-    <div class="d-flex flex-colum mb-3">
-        <h2 class="mb-0 me-3 encabezado_top">{{ __('Nuestros Apartamentos') }}</h2>
-        <a href="{{ route('apartamentos.admin.create') }}" class="btn bg-color-sexto text-uppercase">
-            <i class="fa-solid fa-plus me-2"></i>
-            Crear Apartamento
-        </a>
-    </div>
-    <hr class="mb-3">
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            @if (session('status'))
-                <div class="alert alert-success" role="alert">
-                    {{ session('status') }}
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h2 mb-1 text-dark fw-bold">
+                        <i class="fas fa-building me-2 text-primary"></i>
+                        Gestión de Apartamentos
+                    </h1>
+                    <p class="text-muted mb-0">Gestiona todos los apartamentos y propiedades del sistema</p>
                 </div>
-            @endif
+                <div class="d-flex gap-2">
+                    <a href="{{ route('apartamentos.admin.create') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Crear Apartamento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <h6 class="text-uppercase"><i class="fa-solid fa-filter me-1"></i> Filtros</h6>
-            <!-- Formulario de búsqueda -->
-            <form action="{{ route('apartamentos.admin.index') }}" method="GET" class="mb-3" id="search_form">
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                    <div>
-                        <label class="form-label mb-0 me-2" for="apartamento_id">Apartamento</label>
-                        <select class="form-select min-width-apto" name="apartamento_id" id="apartamento_id">
-                            <option value="">Todos</option>
+    <!-- Dashboard de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card shadow-sm border-0 bg-gradient-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-2x mb-2"></i>
+                    <h4 class="mb-1">{{ $apartamentos->total() }}</h4>
+                    <small>Total Apartamentos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card shadow-sm border-0 bg-gradient-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4 class="mb-1">{{ $apartamentos->where('id_channex', '!=', null)->count() }}</h4>
+                    <small>Sincronizados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card shadow-sm border-0 bg-gradient-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h4 class="mb-1">{{ $apartamentos->where('id_channex', null)->count() }}</h4>
+                    <small>Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card shadow-sm border-0 bg-gradient-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-2x mb-2"></i>
+                    <h4 class="mb-1">{{ $edificios->count() }}</h4>
+                    <small>Edificios</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-filter me-2 text-primary"></i>
+                Filtros y Búsqueda
+            </h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('apartamentos.admin.index') }}" method="GET" id="search_form">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="apartamento_id" class="form-label fw-semibold">
+                            <i class="fas fa-home me-1 text-primary"></i>Apartamento
+                        </label>
+                        <select class="form-select" name="apartamento_id" id="apartamento_id">
+                            <option value="">Todos los apartamentos</option>
                             @foreach($apartamentoslist as $apartamento)
                                 <option value="{{ $apartamento->id }}"
                                     {{ request()->get('apartamento_id') == $apartamento->id ? 'selected' : '' }}>
-                                    {{ $apartamento->titulo }}
+                                    {{ $apartamento->titulo ?? $apartamento->nombre }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div>
-                        <label class="form-label mb-0 me-2" for="edificio_id">Edificio</label>
-                        <select name="edificio_id" id="edificio_id" class="form-select min-width-apto">
-                            <option value="">Seleccione un edificio</option>
+                    <div class="col-md-4">
+                        <label for="edificio_id" class="form-label fw-semibold">
+                            <i class="fas fa-building me-1 text-primary"></i>Edificio
+                        </label>
+                        <select name="edificio_id" id="edificio_id" class="form-select">
+                            <option value="">Todos los edificios</option>
                             @foreach ($edificios as $edificio)
                                 <option value="{{ $edificio->id }}" {{ request()->get('edificio_id') == $edificio->id ? 'selected' : '' }}>
                                     {{ $edificio->nombre }}
@@ -78,117 +104,456 @@
                         </select>
                     </div>
 
-                    <button type="button" onclick="limpiar()" class="btn bg-color-segundo">Eliminar filtros</button>
-                    <button type="submit" class="btn bg-color-primero">Buscar</button>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="d-flex gap-2 w-100">
+                            <button type="button" onclick="limpiarFiltros()" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
+        </div>
+    </div>
 
+    <!-- Lista de apartamentos -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-semibold text-dark">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    Lista de Apartamentos
+                </h5>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-primary px-3 py-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {{ $apartamentos->count() }} de {{ $apartamentos->total() }} apartamentos
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if($apartamentos->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0">
+                                    <a href="{{ route('apartamentos.admin.index', array_merge(request()->query(), ['sort' => 'id', 'order' => request('sort') == 'id' && request('order') == 'asc' ? 'desc' : 'asc'])) }}" 
+                                       class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="fas fa-hashtag me-1 text-primary"></i>ID
+                                        @if(request('sort') == 'id')
+                                            <i class="fas fa-sort-{{ request('order') == 'asc' ? 'up' : 'down' }} ms-auto"></i>
+                                        @else
+                                            <i class="fas fa-sort ms-auto text-muted"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ route('apartamentos.admin.index', array_merge(request()->query(), ['sort' => 'nombre', 'order' => request('sort') == 'nombre' && request('order') == 'asc' ? 'desc' : 'asc'])) }}" 
+                                       class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="fas fa-home me-1 text-primary"></i>Nombre
+                                        @if(request('sort') == 'nombre')
+                                            <i class="fas fa-sort-{{ request('order') == 'asc' ? 'up' : 'down' }} ms-auto"></i>
+                                        @else
+                                            <i class="fas fa-sort ms-auto text-muted"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ route('apartamentos.admin.index', array_merge(request()->query(), ['sort' => 'edificio', 'order' => request('sort') == 'edificio' && request('order') == 'asc' ? 'desc' : 'asc'])) }}" 
+                                       class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="fas fa-building me-1 text-primary"></i>Edificio
+                                        @if(request('sort') == 'edificio')
+                                            <i class="fas fa-sort-{{ request('order') == 'asc' ? 'up' : 'down' }} ms-auto"></i>
+                                        @else
+                                            <i class="fas fa-sort ms-auto text-muted"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <i class="fas fa-key me-1 text-primary"></i>ID Booking
+                                </th>
+                                <th class="border-0">
+                                    <i class="fas fa-bed me-1 text-primary"></i>ID Airbnb
+                                </th>
+                                <th class="border-0">
+                                    <i class="fas fa-globe me-1 text-primary"></i>ID Web
+                                </th>
+                                <th class="border-0 text-center">
+                                    <i class="fas fa-cogs me-1 text-primary"></i>Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($apartamentos as $apartamento)
+                                <tr class="align-middle">
+                                    <td>
+                                        <span class="badge bg-secondary fs-6">#{{ $apartamento->id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-3">
+                                                <span class="avatar-text">
+                                                    {{ strtoupper(substr($apartamento->titulo ?? $apartamento->nombre ?? 'A', 0, 1)) }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-semibold text-dark">{{ $apartamento->titulo ?? $apartamento->nombre ?? 'Sin título' }}</h6>
+                                                @if($apartamento->property_type)
+                                                    <small class="text-muted">
+                                                        <span class="badge bg-info">{{ ucfirst($apartamento->property_type) }}</span>
+                                                    </small>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($apartamento->edificio_id && $apartamento->edificioName)
+                                            <span class="fw-semibold">{{ $apartamento->edificioName->nombre }}</span>
+                                        @else
+                                            <span class="text-muted">Sin asignar</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($apartamento->id_booking)
+                                            <code class="bg-light px-2 py-1 rounded">{{ $apartamento->id_booking }}</code>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($apartamento->id_airbnb)
+                                            <code class="bg-light px-2 py-1 rounded">{{ $apartamento->id_airbnb }}</code>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($apartamento->id_web)
+                                            <code class="bg-light px-2 py-1 rounded">{{ $apartamento->id_web }}</code>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('apartamentos.admin.show', $apartamento->id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Ver apartamento">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('apartamentos.admin.edit', $apartamento->id) }}" 
+                                               class="btn btn-sm btn-outline-warning" 
+                                               title="Editar apartamento">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if($apartamento->id_channex)
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-info" 
+                                                        title="Registrar webhooks"
+                                                        onclick="registrarWebhooks({{ $apartamento->id }})">
+                                                    <i class="fas fa-sync"></i>
+                                                </button>
+                                            @endif
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    title="Eliminar apartamento"
+                                                    onclick="confirmarEliminacion({{ $apartamento->id }}, '{{ $apartamento->titulo ?? $apartamento->nombre }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
-
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr class="bg-color-primero-table">
-                        <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
-                                ID
-                                @if (request('sort') == 'id')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'nombre' ? 'active-sort' : 'inactive-sort' }}">
-                                Nombre
-                                @if (request('sort') == 'nombre')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col">
-                            <a href="{{ route('apartamentos.admin.index', ['sort' => 'edificio', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'edificio' ? 'active-sort' : 'inactive-sort' }}">
-                                Edificio
-                                @if (request('sort') == 'edificio')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col" class="inactive-sort">ID Booking</th>
-                        <th scope="col" class="inactive-sort">ID Airbnb</th>
-                        <th scope="col" class="inactive-sort">ID Web</th>
-                        <th scope="col" class="inactive-sort" style="width: 200px;">Acción</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach ($apartamentos as $apartamento)
-                        <tr>
-                            <td scope="row">{{ $apartamento->id }}</td>
-                            <td>{{ $apartamento->titulo }}</td>
-                            <td>{{ $apartamento->edificio_id != null ? $apartamento->edificioName->nombre : 'N/A' }}</td>
-                            <td>{{ $apartamento->id_booking }}</td>
-                            <td>{{ $apartamento->id_airbnb }}</td>
-                            <td>{{ $apartamento->id_web }}</td>
-                            <td style="width:30%;">
-                                {{-- <a href="{{ route('apartamentos.admin.show', $apartamento->id) }}" class="btn bg-color-cuarto text-black">Ver</a> --}}
-                                <a href="{{ route('apartamentos.admin.edit', $apartamento->id) }}" class="btn bg-color-quinto">Editar</a>
-                                <form action="{{ route('apartamentos.admin.destroy', $apartamento->id) }}" method="POST" style="display: inline;" class="delete-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <!-- Paginación links -->
-            {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!}
+                <!-- Paginación -->
+                <div class="d-flex justify-content-center py-4">
+                    {{ $apartamentos->appends(request()->query())->links() }}
+                </div>
+            @else
+                <div class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-building text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3 fw-semibold">No hay apartamentos</h4>
+                        <p class="text-muted">No se encontraron apartamentos con los filtros aplicados.</p>
+                        <a href="{{ route('apartamentos.admin.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Crear Primer Apartamento
+                        </a>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
+
+<!-- Formulario oculto para eliminación -->
+<form id="delete-form" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
 @endsection
 
-@section('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Verificar si SweetAlert2 está definido
-        if (typeof Swal === 'undefined') {
-            console.error('SweetAlert2 is not loaded');
-            return;
-        }
+@section('styles')
+<style>
+/* Gradientes personalizados */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
 
-        // Botones de eliminar
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-                const form = this.closest('form');
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "¡No podrás revertir esto!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
-        });
+.bg-gradient-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+/* Avatar pequeño */
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content-center;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+}
+
+.avatar-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e3e6f0;
+    padding: 1rem;
+}
+
+.table td {
+    border-bottom: 1px solid #f8f9fa;
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fc;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e3e6f0;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Estado vacío */
+.empty-state {
+    padding: 2rem;
+}
+
+.empty-state i {
+    opacity: 0.7;
+}
+
+/* Animaciones */
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Paginación personalizada */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    border-radius: 8px;
+    border: 1px solid #e3e6f0;
+    color: #667eea;
+    margin: 0 2px;
+}
+
+.page-link:hover {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between .btn {
+        width: 100%;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .col-lg-3 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+@endsection
+
+@section('scriptHead')
+<script>
+// Función para limpiar filtros
+function limpiarFiltros() {
+    window.location.href = '{{ route("apartamentos.admin.index") }}';
+}
+
+// Función para confirmar eliminación
+function confirmarEliminacion(apartamentoId, apartamentoNombre) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        html: `¿Deseas eliminar el apartamento <strong>${apartamentoNombre}</strong>?<br><br>Esta acción no se puede deshacer.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#FF3B30',
+        cancelButtonColor: '#8E8E93',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.getElementById('delete-form');
+            form.action = `{{ url('apartamentos/admin') }}/${apartamentoId}`;
+            form.submit();
+        }
+    });
+}
+
+// Función para registrar webhooks
+function registrarWebhooks(apartamentoId) {
+    Swal.fire({
+        title: 'Registrando Webhooks',
+        text: 'Por favor espera mientras se registran los webhooks...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
     });
 
-    function limpiar() {
-        document.getElementById("apartamento_id").value = "";
-        document.getElementById("edificio_id").value = "";
-        document.getElementById("search_form").submit();
-    }
+    fetch(`/apartamentos/admin/${apartamentoId}/webhooks`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        data.forEach(item => {
+            if (item.status === 'success') successCount++;
+            else errorCount++;
+        });
 
+        Swal.fire({
+            title: 'Webhooks Registrados',
+            html: `
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle text-success fa-2x"></i>
+                    </div>
+                    <p><strong>${successCount}</strong> webhooks registrados exitosamente</p>
+                    ${errorCount > 0 ? `<p class="text-warning"><strong>${errorCount}</strong> webhooks con errores</p>` : ''}
+                </div>
+            `,
+            icon: 'success',
+            confirmButtonText: 'Aceptar'
+        });
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al registrar los webhooks: ' + error.message,
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+    });
+}
+
+// Mostrar mensajes de éxito/error con SweetAlert
+@if(session('swal_success'))
+    Swal.fire({
+        title: '¡Éxito!',
+        text: '{{ session("swal_success") }}',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#34C759'
+    });
+@endif
+
+@if(session('swal_error'))
+    Swal.fire({
+        title: 'Error',
+        text: '{{ session("swal_error") }}',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#FF3B30'
+    });
+@endif
 </script>
 @endsection

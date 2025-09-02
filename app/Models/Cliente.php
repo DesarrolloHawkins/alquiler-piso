@@ -66,6 +66,9 @@ class Cliente extends Model
      */
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
+        'fecha_nacimiento', 'fecha_expedicion_doc',
+        'fecha_firma_contrato', 'fecha_hora_entrada', 'fecha_hora_salida',
+        'fecha_caducidad_tarjeta', 'fecha_pago',
     ];
 
 }

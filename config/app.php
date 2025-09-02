@@ -168,6 +168,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\CookieServiceProvider::class,
         //leifermendez\police\PoliceProvider::class,
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
         App\Providers\ClienteServiceProvider::class,

@@ -506,6 +506,81 @@
     </div>
 </div>
 
+<!-- Nueva fila de tarjetas de gestión -->
+<div class="row justify-content-between align-items-stretch mb-4">
+    <!-- Tarjeta de Incidencias -->
+    <div class="col-md-3">
+        <div class="card h-100 border-danger clickable-card" onclick="window.location.href='{{ route('admin.incidencias.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <h5 class="card-title text-danger">Gestión de Incidencias</h5>
+                <p class="card-text">Gestionar y resolver incidencias reportadas por el personal</p>
+                <div class="mt-3">
+                    <span class="badge bg-danger fs-6" id="incidenciasPendientes">
+                        <i class="fas fa-clock me-1"></i>Cargando...
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Limpiezas -->
+    <div class="col-md-3">
+        <div class="card h-100 border-info clickable-card" onclick="window.location.href='{{ route('admin.limpiezas.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-broom fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title text-info">Gestión de Limpiezas</h5>
+                <p class="card-text">Supervisar y gestionar las tareas de limpieza</p>
+                <div class="mt-3">
+                    <a href="{{ route('admin.limpiezas.index') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-eye me-1"></i>Ver Limpiezas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Personal -->
+    <div class="col-md-3">
+        <div class="card h-100 border-warning clickable-card" onclick="window.location.href='{{ route('admin.empleados.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-users-cog fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title text-warning">Gestión de Personal</h5>
+                <p class="card-text">Administrar empleados, jornadas y vacaciones</p>
+                <div class="mt-3">
+                    <a href="{{ route('admin.empleados.index') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-users me-1"></i>Ver Personal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Clientes -->
+    <div class="col-md-3">
+        <div class="card h-100 border-success clickable-card" onclick="window.location.href='{{ route('clientes.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-friends fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title text-success">Gestión de Clientes</h5>
+                <p class="card-text">Administrar la base de datos de clientes</p>
+                <div class="mt-3">
+                    <a href="{{ route('clientes.create') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- MODALES --}}
 <!-- Modal de Libres Hoy -->
 <div class="modal fade" id="modalLibresHoy" tabindex="-1" aria-labelledby="modalLibresHoyLabel" aria-hidden="true">
@@ -2068,5 +2143,31 @@ document.addEventListener('DOMContentLoaded', function () {
         var chart = new ApexCharts(document.querySelector("#chartDisponibilidadMensual"), options);
         chart.render();
     });
+
+    // Cargar incidencias pendientes
+    document.addEventListener('DOMContentLoaded', function () {
+        cargarIncidenciasPendientes();
+    });
+
+    function cargarIncidenciasPendientes() {
+        fetch('{{ route("admin.incidencias.pendientes") }}')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('incidenciasPendientes');
+                if (data.length > 0) {
+                    badge.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${data.length} Pendientes`;
+                    badge.className = 'badge bg-danger fs-6';
+                } else {
+                    badge.innerHTML = `<i class="fas fa-check me-1"></i>0 Pendientes`;
+                    badge.className = 'badge bg-success fs-6';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar incidencias:', error);
+                const badge = document.getElementById('incidenciasPendientes');
+                badge.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>Error`;
+                badge.className = 'badge bg-secondary fs-6';
+            });
+    }
 </script>
 @endsection

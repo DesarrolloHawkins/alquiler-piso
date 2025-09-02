@@ -26,4 +26,9 @@ class ItemChecklist extends Model
                     ->withTimestamps();
     }
 
+    public function checklist()
+    {
+        return $this->belongsTo(Checklist::class, 'checklist_id');
+    }
+
 }

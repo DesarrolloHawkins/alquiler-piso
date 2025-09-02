@@ -13,6 +13,7 @@ use App\Models\Alerts\Alert;
 use App\Models\HolidaysPetitions;
 use App\Models\Logs\LogsEmail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 
 class HolidayController extends Controller
@@ -109,15 +110,29 @@ class HolidayController extends Controller
         $data['admin_user_id'] = Auth::user()->id;
         $data['holidays_status_id'] =3; //Pending
 
+        // Debug logging
+        Log::info('HolidayController - Datos recibidos:', $data);
+        Log::info('HolidayController - Usuario ID:', ['id' => Auth::user()->id]);
+
         // Dates
         if(isset($data['from_date'])){
             if ($data['from_date'] != null){
-                $data['from_date'] = date('Y-m-d', strtotime(str_replace('/', '-',  $data['from_date'])));
+                // Convertir tanto formato dd/mm/aaaa como YYYY-MM-DD
+                if (strpos($data['from_date'], '/') !== false) {
+                    $data['from_date'] = date('Y-m-d', strtotime(str_replace('/', '-',  $data['from_date'])));
+                } else {
+                    $data['from_date'] = date('Y-m-d', strtotime($data['from_date']));
+                }
             }
         }
         if(isset($data['to_date'])){
             if ($data['to_date'] != null){
-                $data['to_date'] = date('Y-m-d', strtotime(str_replace('/', '-',  $data['to_date'])));
+                // Convertir tanto formato dd/mm/aaaa como YYYY-MM-DD
+                if (strpos($data['to_date'], '/') !== false) {
+                    $data['to_date'] = date('Y-m-d', strtotime(str_replace('/', '-',  $data['to_date'])));
+                } else {
+                    $data['to_date'] = date('Y-m-d', strtotime($data['to_date']));
+                }
             }
         }
 
@@ -137,6 +152,14 @@ class HolidayController extends Controller
         $dataToToTime = strtotime($data['to_date']);
         $dataToDateTime = new \DateTime();
         $dataToDateTime->setTimestamp($dataToToTime);
+
+        // Debug logging de fechas procesadas
+        Log::info('HolidayController - Fechas procesadas:', [
+            'from_date' => $data['from_date'],
+            'to_date' => $data['to_date'],
+            'from_datetime' => $dataFromDateTime->format('Y-m-d H:i:s'),
+            'to_datetime' => $dataToDateTime->format('Y-m-d H:i:s')
+        ]);
 
         if($data['half_day'] == 1){
             if($dataFromDateTime != $dataToDateTime){
@@ -159,6 +182,15 @@ class HolidayController extends Controller
         $petitionQuantityDays = $petitionQuantityDaysInterval->days;
         $petitionQuantityDays += 1;
 
+        // Debug logging para cálculo de días
+        Log::info('HolidayController - Cálculo de días:', [
+            'from' => $dataFromDateTime->format('Y-m-d'),
+            'to' => $dataToDateTime->format('Y-m-d'),
+            'diff_days' => $petitionQuantityDaysInterval->days,
+            'total_days' => $petitionQuantityDays,
+            'single_day' => ($dataFromDateTime == $dataToDateTime)
+        ]);
+
         // Si la fecha es la misma se ha pedido 1 día.
         $petitionSingleDay = false;
         if ($dataFromDateTime == $dataToDateTime ){
@@ -175,7 +207,13 @@ class HolidayController extends Controller
         ////////////////////////////////////////
 
         // Usuario esté activo
+        Log::info('HolidayController - Validando usuario activo:', [
+            'user_id' => Auth::user()->id,
+            'inactive' => Auth::user()->inactive
+        ]);
+        
         if(Auth::user()->inactive){
+            Log::info('HolidayController - Error: Usuario inactivo');
             return redirect()->back()->with('toast', [
                 'icon' => 'error',
                 'mensaje' => 'Usuario inactivo'
@@ -191,9 +229,11 @@ class HolidayController extends Controller
 
         // Si es fin de semana y un día solo
         if( $petitionSingleDay && $signleDayisWeekend){
+            $dayName = $dataFromDateTime->format('l');
+            $dayDate = $dataFromDateTime->format('d/m/Y');
             return redirect()->back()->with('toast', [
                 'icon' => 'error',
-                'mensaje' => 'La fecha no puede ser fin de semana'
+                'mensaje' => "No se pueden solicitar vacaciones en fin de semana. El {$dayName} {$dayDate} no es un día válido. Por favor, selecciona un día laborable (lunes a viernes)."
               ]
           );
         }
@@ -203,19 +243,41 @@ class HolidayController extends Controller
         $end = $dataToDateTime;
         $end->modify('+1 day');
         $period = new \DatePeriod($start, new \DateInterval('P1D'), $end);
+        
+        // Debug logging para validación de fin de semana
+        Log::info('HolidayController - Validando fin de semana:', [
+            'start' => $start->format('Y-m-d D'),
+            'end' => $end->format('Y-m-d D')
+        ]);
+        
+        $weekendDays = [];
         foreach($period as $dt) {
             $curr = $dt->format('D');
+            $weekendDay = $dt->format('d/m/Y');
+            Log::info('HolidayController - Día en periodo:', [
+                'fecha' => $dt->format('Y-m-d'),
+                'dia_semana' => $curr,
+                'es_finde' => ($curr == 'Sat' || $curr == 'Sun')
+            ]);
             // Si es Sábado o Domingo
             if ($curr == 'Sat' || $curr == 'Sun' ) {
-                return redirect()->back()->with('toast', [
-                    'icon' => 'error',
-                    'mensaje' => 'Las fechas no pueden ser fin de semana'
-                  ]
-              );
+                $weekendDays[] = $weekendDay;
             }
         }
-        //****** BUG *****
-        // No deja por ejemplo si el usuario tiene el dia 25 y 27 el 26 estando libre
+        
+        // Si hay días de fin de semana, mostrar error con detalles
+        if (!empty($weekendDays)) {
+            Log::info('HolidayController - Error: Fechas de fin de semana detectadas', [
+                'fechas_finde' => $weekendDays
+            ]);
+            
+            $weekendDaysText = implode(', ', $weekendDays);
+            return redirect()->back()->with('toast', [
+                'icon' => 'error',
+                'mensaje' => "No se pueden solicitar vacaciones en fin de semana. Las siguientes fechas no son válidas: {$weekendDaysText}. Por favor, selecciona solo días laborables (lunes a viernes)."
+              ]
+          );
+        }
 
 
         // Que no tenga vacaciones ya pedidas ese día o periodo
@@ -244,18 +306,29 @@ class HolidayController extends Controller
         $dataToDateTime->setTimestamp($dataToToTime);
 
         if($dataFromDateTime < $todayTime || $dataToDateTime < $todayTime ){
+            $todayFormatted = $todayTime->format('d/m/Y');
             return redirect()->back()->with('toast', [
                 'icon' => 'error',
-                'mensaje' => 'Las fechas deben ser posterior a la actual'
+                'mensaje' => "No se pueden solicitar vacaciones en fechas pasadas. Hoy es {$todayFormatted}. Por favor, selecciona fechas futuras."
               ]
           );
         }
 
         // Si dispone de los días necesarios
+        Log::info('HolidayController - Validando días disponibles:', [
+            'dias_solicitados' => $petitionQuantityDays,
+            'dias_disponibles' => $userHolidaysQuantity ? $userHolidaysQuantity->quantity : 'No configurado',
+            'suficientes' => $userHolidaysQuantity ? ($petitionQuantityDays <= $userHolidaysQuantity->quantity) : false
+        ]);
+        
         if( $petitionQuantityDays > $userHolidaysQuantity->quantity   ){
+            Log::info('HolidayController - Error: Días insuficientes', [
+                'dias_solicitados' => $petitionQuantityDays,
+                'dias_disponibles' => $userHolidaysQuantity->quantity
+            ]);
             return redirect()->back()->with('toast', [
                 'icon' => 'error',
-                'mensaje' => 'No dispone de días de vacaciones suficientes'
+                'mensaje' => "No tienes suficientes días de vacaciones. Estás solicitando {$petitionQuantityDays} días pero solo tienes {$userHolidaysQuantity->quantity} días disponibles. Por favor, ajusta el rango de fechas."
               ]
           );
         }
@@ -277,6 +350,16 @@ class HolidayController extends Controller
         $data['to'] =$data['to_date'];
         $data['total_days'] = $petitionQuantityDays;
         $petitionQuantityDaysNegative = -1 * abs($petitionQuantityDays);
+
+        // Debug logging antes de crear la petición
+        Log::info('HolidayController - Creando petición:', [
+            'admin_user_id' => $data['admin_user_id'],
+            'from' => $data['from'],
+            'to' => $data['to'],
+            'total_days' => $data['total_days'],
+            'half_day' => $data['half_day'],
+            'holidays_status_id' => $data['holidays_status_id']
+        ]);
 
         // Guardar
         $holidayPetition = HolidaysPetitions::create($data);

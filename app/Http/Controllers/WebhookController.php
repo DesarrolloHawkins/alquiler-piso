@@ -289,6 +289,9 @@ class WebhookController extends Controller
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
+                    'notas_ninos' => $this->generarNotasNinos($room['occupancy']),
                     'room_type_id' => $roomTypeId,
                 ]);
                 
@@ -319,12 +322,32 @@ class WebhookController extends Controller
                     ];
                 }
                 
+                // Detectar cambios en información de niños
+                $numeroNinosNuevo = ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0);
+                $edadesNinosNuevas = $room['occupancy']['ages'] ?? [];
+                
+                if ($reservaExistente->numero_ninos != $numeroNinosNuevo) {
+                    $cambios['numero_ninos'] = [
+                        'anterior' => $reservaExistente->numero_ninos,
+                        'nuevo' => $numeroNinosNuevo
+                    ];
+                }
+                
+                if ($reservaExistente->edades_ninos != $edadesNinosNuevas) {
+                    $cambios['edades_ninos'] = [
+                        'anterior' => $reservaExistente->edades_ninos,
+                        'nuevo' => $edadesNinosNuevas
+                    ];
+                }
+                
                 Log::info('Reserva actualizada con nuevos datos', [
                     'reserva_id' => $reservaExistente->id,
                     'fecha_entrada' => $room['checkin_date'],
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
                     'cambios_detectados' => $cambios
                 ]);
             }
@@ -370,6 +393,9 @@ class WebhookController extends Controller
                     'codigo_reserva' => $codigoReserva,
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
+                    'notas_ninos' => $this->generarNotasNinos($room['occupancy']),
                     'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
                     'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
                     'estado_id' => 1, // Nueva reserva
@@ -383,7 +409,10 @@ class WebhookController extends Controller
                     'booking_id' => $bookingId,
                     'fecha_entrada' => $room['checkin_date'],
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
-                    'precio' => floatval(str_replace(',', '.', $room['amount']))
+                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                    'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? []
                 ]);
             }
         }
@@ -793,99 +822,62 @@ class WebhookController extends Controller
         return response()->json(['status' => true]);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public function handleWebhook(Request $request)
+    /**
+     * Genera notas descriptivas sobre los niños en la reserva
+     *
+     * @param array $occupancy
+     * @return string|null
+     */
+    private function generarNotasNinos($occupancy)
     {
-        // Log de ejemplo para depuración
-        Log::info('Webhook recibido', $request->all());
-
-        // Verifica si la estructura del evento es válida
-        $validated = $request->validate([
-            'event' => 'required|string',
-            'property_id' => 'required|string',
-            'payload' => 'nullable|array',
-        ]);
-
-        // Procesa el evento según el tipo
-        switch ($validated['event']) {
-            case 'ari':
-                $this->processAriEvent($validated['property_id'], $validated['payload']);
-                break;
-            case 'booking':
-                $this->processBookingEvent($validated['property_id'], $validated['payload']);
-                break;
-            case 'booking_unmapped_room':
-                $this->processUnmappedRoomEvent($validated['property_id'], $validated['payload']);
-                break;
-            default:
-                Log::warning("Evento desconocido recibido: {$validated['event']}");
+        $notas = [];
+        
+        $totalNinos = ($occupancy['children'] ?? 0) + ($occupancy['infants'] ?? 0);
+        
+        if ($totalNinos > 0) {
+            $notas[] = "Niños: {$totalNinos}";
+            
+            // Información específica sobre infants (bebés)
+            if (isset($occupancy['infants']) && $occupancy['infants'] > 0) {
+                $notas[] = "Bebés: {$occupancy['infants']}";
+            }
+            
+            // Información específica sobre children (niños)
+            if (isset($occupancy['children']) && $occupancy['children'] > 0) {
+                $notas[] = "Niños mayores: {$occupancy['children']}";
+            }
+            
+            if (isset($occupancy['ages']) && is_array($occupancy['ages'])) {
+                $edades = [];
+                foreach ($occupancy['ages'] as $edad) {
+                    if ($edad <= 2) {
+                        $edades[] = "bebé ({$edad} años)";
+                    } elseif ($edad <= 12) {
+                        $edades[] = "niño ({$edad} años)";
+                    } else {
+                        $edades[] = "adolescente ({$edad} años)";
+                    }
+                }
+                $notas[] = "Edades: " . implode(', ', $edades);
+            }
+            
+            // Información adicional sobre cunas si hay bebés
+            if (isset($occupancy['ages']) && in_array(0, $occupancy['ages'])) {
+                $notas[] = "Se requiere cuna para bebé";
+            }
+            
+            // Información sobre camas adicionales si hay niños
+            if ($totalNinos > 0) {
+                $notas[] = "Se pueden proporcionar camas adicionales para niños";
+            }
+            
+            // Información específica sobre infants
+            if (isset($occupancy['infants']) && $occupancy['infants'] > 0) {
+                $notas[] = "Consideraciones especiales para bebés";
+            }
         }
-
-        return response()->json(['message' => 'Webhook recibido con éxito'], 200);
-    }
-
-    private function processAriEvent($propertyId, $data)
-    {
-        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
-
-        Log::info("Procesando evento ARI para la propiedad {$propertyId}", $data);
-        Storage::disk('publico')->put("accepted-reservation{$fecha}.txt", json_encode($data));
-
-        // Lógica para manejar los cambios en ARI
-    }
-
-    private function processBookingEvent($propertyId, $data)
-    {
-        // Encuentra la propiedad en la base de datos
-        $apartamento = Apartamento::where('id_channex', $propertyId)->first();
-
-        if (!$apartamento) {
-            Log::error("Propiedad no encontrada para ID: {$propertyId}");
-            return;
-        }
-
-        // Guarda o actualiza la información de la reserva
-        foreach ($data['bookings'] ?? [] as $booking) {
-            Reserva::updateOrCreate(
-                ['booking_id' => $booking['id']],
-                [
-                    'apartamento_id' => $apartamento->id,
-                    'fecha_inicio' => $booking['start_date'],
-                    'fecha_fin' => $booking['end_date'],
-                    'huespedes' => $booking['guests'],
-                    'estado' => $booking['status'],
-                ]
-            );
-        }
-    }
-
-    private function processUnmappedRoomEvent($propertyId, $data)
-    {
-        Log::info("Procesando evento de habitación no mapeada para la propiedad {$propertyId}", $data);
-        // Lógica para manejar habitaciones no mapeadas
+        
+        return !empty($notas) ? implode('. ', $notas) . '.' : null;
     }
 }
 

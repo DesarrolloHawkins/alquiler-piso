@@ -1,101 +1,182 @@
 @extends('layouts.appPersonal')
 
-@section('title')
-    {{ __('Mis Vacaciones - ') }}
-@endsection
-
-@section('css')
-<link rel="stylesheet" href="{{ asset('assets/vendors/simple-datatables/style.css') }}">
-@endsection
+@section('title', 'Crear Petición de Vacaciones')
 
 @section('content')
-<div class="container" style="padding-right: 1.5rem !important; padding-left: 1.5rem !important;">
-    <div class="row">
-        <div class="col-sm-12 col-md-12 mb-3">
-            <h3 class="text-center" style="width: 100%"><i class="fa-solid fa-umbrella-beach"></i> Mis Vacaciones</h3>
-        </div>
-
-        <div class="col-sm-12 col-md-12 mb-3">
-            <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end m-auto w-100 text-center">
-                <ol class="breadcrumb m-auto justify-content-center">
-                    {{-- <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li> --}}
-                    <li class="breadcrumb-item"><a href="{{ route('holiday.index') }}" class="link-breadcrumb">Mis Vacaciones</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Petición de días</li>
-                </ol>
-            </nav>
+<div class="holiday-create-container">
+    <!-- Header de la Página -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <div class="header-text">
+                <h1>Crear Petición de Vacaciones</h1>
+                <p>Solicita tus días de vacaciones</p>
+            </div>
         </div>
     </div>
-    <div class="page-heading">
-        <div class="row justify-content-center">
-            @if ($userHolidaysQuantity != null)
-                <div class="col-lg col-md-6 mt-4">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            @if ($userHolidaysQuantity->quantity)
-                                <p class="fs-4">Tienes <span class="text-success"><strong>{{ $userHolidaysQuantity->quantity }}</strong></span> {{ Str::plural('día', $userHolidaysQuantity->quantity) }} de vacaciones</p>
-                            @else
-                                <p>No tienes días de vacaciones</p>
-                            @endif
 
-                            @if ($numberOfHolidayPetitions)
-                                <p class="fs-4">Tienes <span class="text-warning"><strong>{{ $numberOfHolidayPetitions }}</strong></span> {{ Str::plural('petición', $numberOfHolidayPetitions) }} pendiente{{ $numberOfHolidayPetitions > 1 ? 's' : '' }}</p>
-                            @else
-                                <p class="fs-4">No tienes peticiones pendientes</p>
-                            @endif
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-section">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('holiday.index') }}" class="breadcrumb-link">
+                        <i class="fas fa-arrow-left"></i>
+                        Mis Vacaciones
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-plus"></i>
+                    Nueva Petición
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    @if ($userHolidaysQuantity != null)
+        <!-- Información de Vacaciones Disponibles -->
+        <div class="holiday-info-section">
+            <div class="info-cards">
+                <div class="info-card primary">
+                    <div class="card-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">{{ $userHolidaysQuantity->quantity ?? 0 }}</div>
+                        <div class="card-label">Días Disponibles</div>
+                    </div>
+                </div>
+
+                <div class="info-card warning">
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">{{ $numberOfHolidayPetitions ?? 0 }}</div>
+                        <div class="card-label">Peticiones Pendientes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estados de Vacaciones -->
+        <div class="status-section">
+            <h3 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                Estados de las Peticiones
+            </h3>
+            <div class="status-legend">
+                <div class="status-item">
+                    <div class="status-color pending"></div>
+                    <span>Pendiente</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color approved"></div>
+                    <span>Aceptada</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-color denied"></div>
+                    <span>Denegada</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de Petición -->
+        <div class="form-section">
+            <div class="form-header">
+                <h3 class="section-title">
+                    <i class="fas fa-edit"></i>
+                    Nueva Petición de Vacaciones
+                </h3>
+            </div>
+
+            <form method="POST" action="{{ route('holiday.store') }}" enctype="multipart/form-data" class="holiday-form">
+                @csrf
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="from_date" class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            Fecha de Inicio
+                        </label>
+                        <input type="date" name="from_date" class="form-control" id="from_date" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="to_date" class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            Fecha de Fin
+                        </label>
+                        <input type="date" name="to_date" class="form-control" id="to_date" required />
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <div class="checkbox-wrapper">
+                            <input class="form-check-input" type="checkbox" id="half_day" name="half_day" value="1">
+                            <label class="form-check-label" for="half_day">
+                                <i class="fas fa-clock"></i>
+                                Incluir medio día
+                            </label>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-12 col-md-6 mt-4">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h5 class="mb-4"><strong>ESTADOS</strong></h5>
-                            <p>
-                                <i class="fa fa-square" style="color:#FFDD9E"></i> PENDIENTE
-                                <i class="fa fa-square" style="margin-left:5%; color:#C3EBC4"></i> ACEPTADA
-                                <i class="fa fa-square" style="margin-left:5%; color:#FBC4C4"></i> DENEGADA
-                            </p>
-                        </div>
-                    </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Enviar Petición</span>
+                    </button>
                 </div>
-                <section class="section pt-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <form method="POST" action="{{ route('holiday.store') }}" enctype="multipart/form-data" data-callback="formCallback">
-                                @csrf
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-3 fs-4">
-                                        <label for="from_date" class="form-label">Desde</label>
-                                        <input type="date" name="from_date" class="form-control" id="from_date" />
-                                    </div>
-                                    <div class="col-md-3 fs-4">
-                                        <label for="to_date" class="form-label">Hasta</label>
-                                        <input type="date" name="to_date" class="form-control" id="to_date" />
-                                    </div>
-                                    <div class="col-md-3 fs-4">
-                                        <label class="form-label">Medio día</label>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="half_day" name="half_day" value="1">
-                                            <label class="form-check-label" for="half_day">Sí</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button type="submit" class="btn bg-color-primero width-auto">Realizar Petición</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </section>
-            @else
-                <i class="fa-solid fa-circle-exclamation text-center mt-3 text-warning" style="font-size: 5rem"></i>
-                <h4 class="text-center mt-3">No tienes días de vacaciones para solicitar</h4>
-                <a class="btn bg-color-primero fs-4 mt-3 width-auto" href="{{route('holiday.index')}}"><i class="fa-solid fa-rotate-left"></i><span class="mx-3">VOVLER</span></a>
-            @endif
+            </form>
         </div>
-    </div>
+
+    @else
+        <!-- Estado Vacío -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>No tienes días de vacaciones disponibles</h3>
+            <p>Contacta con administración para configurar tus días de vacaciones</p>
+            <a href="{{ route('holiday.index') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver a Mis Vacaciones</span>
+            </a>
+        </div>
+    @endif
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/holiday-create.css') }}">
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fromDate = document.getElementById('from_date');
+    const toDate = document.getElementById('to_date');
+    
+    if (fromDate && toDate) {
+        fromDate.addEventListener('change', function() {
+            toDate.min = this.value;
+            if (toDate.value && toDate.value < this.value) {
+                toDate.value = this.value;
+            }
+        });
+        
+        toDate.addEventListener('change', function() {
+            fromDate.max = this.value;
+            if (fromDate.value && fromDate.value > this.value) {
+                fromDate.value = this.value;
+            }
+        });
+    }
+});
+</script>
+@endpush
+
 @section('scripts')
-{{-- @include('partials.toast') --}}
+    @include('partials.toast')
 @endsection

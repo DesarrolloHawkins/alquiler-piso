@@ -35,6 +35,7 @@ class Kernel extends ConsoleKernel
         // \App\Console\Commands\CheckComprobacion::class,
         // \App\Console\Commands\FetchEmails::class,
         // \App\Console\Commands\CategorizeEmails::class,
+        \App\Console\Commands\CleanExpiredSessions::class,
     ];
 
 
@@ -292,8 +293,8 @@ class Kernel extends ConsoleKernel
             // Reservas
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
             ->where('estado_id', '!=', 4)
-            /* ->where('dni_entregado', '!=', null) */
             ->get();
+            /* ->where('dni_entregado', '!=', null) */
 
             foreach($reservas as $reserva){
 
@@ -618,8 +619,8 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
 
             $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))
-            /* ->where('dni_entregado', '!=', null) */
             ->get();
+            /* ->where('dni_entregado', '!=', null) */
 
             foreach($reservas as $reserva){
                 // Fecha de Hoy
@@ -1714,16 +1715,16 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
+                Bonjour '.$cliente.'!! L\'emplacement des appartements est: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l\'appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
                 </p>
                 <p style="margin: 0 !important">
-                    J’espère que vous passerez un séjour merveilleux.
+                    J\'espère que vous passerez un séjour merveilleux.
                 </p>
                 <br>
-                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                <p style="margin: 0 !important">Merci d\'utiliser notre application!</p>
                 ';
 
                 return $temaplate;
@@ -1878,16 +1879,16 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Allez sur Google Map</a>.
+                Bonjour '.$cliente.'!! L\'emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Allez sur Google Map</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l\'appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
                 </p>
                 <p style="margin: 0 !important">
-                    J’espère que vous passerez un séjour merveilleux.
+                    J\'espère que vous passerez un séjour merveilleux.
                 </p>
                 <br>
-                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                <p style="margin: 0 !important">Merci d\'utiliser notre application!</p>
                 ';
 
                 return $temaplate;

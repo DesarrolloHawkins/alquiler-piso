@@ -6,7 +6,32 @@
 
 @section('content')
 <div class="container-fluid">
-    <h2 class="mb-3">{{ __('Resumen de Limpieza del Apartamento') }}</h2>
+    <!-- Header con botones de acción -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="mb-1">{{ __('Resumen de Limpieza del Apartamento') }}</h2>
+                    <p class="text-muted mb-0">
+                        Apartamento: <strong>{{ $apartamentoLimpieza->apartamento->nombre }}</strong> | 
+                        @if($apartamentoLimpieza->reserva)
+                            Reserva: <strong>{{ $apartamentoLimpieza->reserva->codigo_reserva ?? 'N/A' }}</strong>
+                        @else
+                            Sin reserva activa
+                        @endif
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('amenity.limpieza.show', $apartamentoLimpieza->id) }}" class="btn btn-primary">
+                        <i class="fas fa-pump-soap me-2"></i>Gestionar Amenities
+                    </a>
+                    <a href="{{ route('apartamentos.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
     <hr class="mb-4">
 
     @foreach ($checklists as $checklist)

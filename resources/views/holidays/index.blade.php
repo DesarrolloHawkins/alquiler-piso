@@ -1,235 +1,243 @@
 @extends('layouts.appPersonal')
 
-@section('title')
-    {{ __('Mis Vacaciones - ') }}
-@endsection
+@section('title', 'Mis Vacaciones')
 
 @section('bienvenido')
     <h5 class="navbar-brand mb-0 w-auto text-center text-white">Mis Vacaciones</h5>
 @endsection
 
-@section('css')
-    <link rel="stylesheet" href="assets/vendors/simple-datatables/style.css">
-    <link rel="stylesheet" href="{{asset('assets/vendors/choices.js/choices.min.css')}}" />
-@endsection
-
 @section('content')
-    <div class="container" style="padding-right: 1.5rem !important; padding-left: 1.5rem !important;">
-        <div class="row">
-            <div class="col-sm-12 col-md-12 mb-3">
-                <h3 class="text-center" style="width: 100%"><i class="fa-solid fa-umbrella-beach"></i> Mis Vacaciones</h3>
+<div class="holidays-index-container">
+    <!-- Header de la Página -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fas fa-umbrella-beach"></i>
             </div>
-
-            <div class="col-sm-12 col-md-12 mb-3 justify-content-center d-flex">
-                <a class="btn bg-color-segundo fs-4 width-auto" href="{{route('holiday.create')}}">
-                    <i class="fa-solid fa-plus"></i> Petición de vacaciones
-                </a>
-            </div>
-        </div>
-        <div class="page-heading mt-4" style="box-shadow: none !important">
-            <div class="row align-items-start">
-                {{-- DIAS DISPONIBLES Y PETICIONES --}}
-                <div class="col-sm-12 col-md-6" style="text-align: center">
-                    <div class="row justify-content-center align-items-center g-2">
-                        <div class="col-sm-12 col-md-6">
-                            <p for="status"><strong>DIAS DISPONIBLES</strong></p>
-                            @if($userHolidaysQuantity)
-                                @if($userHolidaysQuantity->quantity == 1)
-                                    <p for="have">Tienes <span style="color:green"><strong>{{$userHolidaysQuantity->quantity}}</strong></span> día de vacaciones</p>
-                                @endif
-                                @if($userHolidaysQuantity->quantity >1 )
-                                    <p for="have">Tienes <span style="color:green"><strong>{{$userHolidaysQuantity->quantity}}</strong></span> días de vacaciones</p>
-                                @endif
-                            @else
-                                <p for="have">No tienes días de vacaciones</p>
-                            @endif
-                        </div>
-                        <div class="col-sm-12 col-md-6">
-                            <p for="status"><strong>PETICIONES</strong></p>
-                            @if($numberOfHolidayPetitions)
-                                @if($numberOfHolidayPetitions == 1)
-                                    <p for="pendant">Tienes <span style="color:orange"><strong>{{$numberOfHolidayPetitions}}</strong></span> petición pendiente</p>
-                                @endif
-                                @if($numberOfHolidayPetitions >1 )
-                                    <p for="pendant">Tienes <span style="color:orange"><strong>{{$numberOfHolidayPetitions}}</strong></span> peticiones pendientes</p>
-                                @endif
-                            @else
-                                <p for="pendant">No tienes peticiones pendientes</p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                {{-- ESTADOS --}}
-                <div class="col-sm-12 col-md-6">
-                    <div class="card2">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12" style="text-align: center">
-                                    <p for="status"><strong>ESTADOS</strong></p>
-                                    <p for="pendant">
-                                        <i class="fa fa-square" aria-hidden="true" style="color:#FFDD9E"></i>&nbsp;&nbsp;PENDIENTE
-                                        <i class="fa fa-square" aria-hidden="true" style="margin-left:5%;color:#C3EBC4"></i>&nbsp;&nbsp;ACEPTADA
-                                        <i class="fa fa-square" aria-hidden="true" style="margin-left:5%;color:#FBC4C4"></i>&nbsp;&nbsp;DENEGADA
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <form method="GET" action="{{ route('holiday.index') }}" class="mb-4">
-                    <div class="row">
-                        <!-- Selector de número de elementos por página -->
-                        <div class="col-md-3 col-sm-12">
-                            <label for="perPage">Nº</label>
-                            <select name="perPage" id="perPage" class="form-select" onchange="this.form.submit()">
-                                <option value="10" {{ request('perPage') == 10 ? 'selected' : '' }}>10</option>
-                                <option value="25" {{ request('perPage') == 25 ? 'selected' : '' }}>25</option>
-                                <option value="50" {{ request('perPage') == 50 ? 'selected' : '' }}>50</option>
-                                <option value="all" {{ request('perPage') == 'all' ? 'selected' : '' }}>Todo</option>
-                            </select>
-                        </div>
-
-                        <!-- Campo de búsqueda -->
-                        <div class="col-md-5 col-sm-12">
-                            <label for="buscar">Buscar</label>
-                            <input type="text" name="buscar" id="buscar" class="form-control"
-                                   value="{{ request('buscar') }}" placeholder="Escriba la palabra a buscar...">
-                        </div>
-
-                        <!-- Filtro por estado -->
-                        <div class="col-md-4 col-sm-12">
-                            <label for="estado">Estado</label>
-                            <select name="estado" id="estado" class="form-select" onchange="this.form.submit()">
-                                <option value="" {{ request('estado') == '' ? 'selected' : '' }}>Todos</option>
-                                <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Aceptada</option>
-                                <option value="2" {{ request('estado') == '2' ? 'selected' : '' }}>Denegada</option>
-                                <option value="3" {{ request('estado') == '3' ? 'selected' : '' }}>Pendiente</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-
-
-                <!-- Tabla de resultados -->
-                @if ($holidays->count())
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    @foreach ([
-                                        'from' => 'DÍA/S PEDIDOS',
-                                        'half_day' => 'MEDIO DÍA',
-                                        'total_days' => 'DÍAS EN TOTAL',
-                                        'holidays_status_id' => 'ESTADO',
-                                        'created_at' => 'FECHA DE PETICIÓN',
-                                    ] as $field => $label)
-                                        <th>
-                                            <a href="{{ route('holiday.index', array_merge(request()->all(), ['sortColumn' => $field, 'sortDirection' => request('sortDirection') === 'asc' ? 'desc' : 'asc'])) }}">
-                                                {{ $label }}
-                                                @if (request('sortColumn') === $field)
-                                                    <span>{!! request('sortDirection') === 'asc' ? '&#9650;' : '&#9660;' !!}</span>
-                                                @endif
-                                            </a>
-                                        </th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($holidays as $holiday)
-                                    <tr
-                                        @if($holiday->holidays_status_id == 3)
-                                            class="table-warning" style="background-color:#FFDD9E"
-                                        @elseif($holiday->holidays_status_id == 1)
-                                            class="table-success" style="background-color:#C3EBC4"
-                                        @elseif($holiday->holidays_status_id == 2)
-                                            class="table-danger" style="background-color:#FBC4C4"
-                                        @endif
-                                    >
-                                        <td>{{ Carbon\Carbon::parse($holiday->from)->format('d/m/Y') . ' - ' . Carbon\Carbon::parse($holiday->to)->format('d/m/Y') }}</td>
-                                        <td>{!! $holiday->half_day ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>' !!}</td>
-                                        <td>{{ $holiday->total_days }}</td>
-                                        <td>
-                                            @if($holiday->holidays_status_id == 1)
-                                                Aceptada
-                                            @elseif($holiday->holidays_status_id == 2)
-                                                Denegada
-                                            @elseif($holiday->holidays_status_id == 3)
-                                                Pendiente
-                                            @endif
-                                        </td>
-                                        <td>{{ Carbon\Carbon::parse($holiday->created_at)->format('d/m/Y H:i:s') }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-
-                        <!-- Paginación -->
-                        {{ $holidays->appends(request()->all())->links() }}
-                    </div>
-
-                    <!-- Versión móvil -->
-                    <div class="d-md-none">
-                        @foreach ($holidays as $holiday)
-                            <div
-                                class="card mb-3
-                                    @if($holiday->holidays_status_id == 3)
-                                        table-warning
-                                    @elseif($holiday->holidays_status_id == 1)
-                                        table-success
-                                    @elseif($holiday->holidays_status_id == 2)
-                                        table-danger
-                                    @endif"
-                                style="
-                                    @if($holiday->holidays_status_id == 3)
-                                        background-color:#FFDD9E;
-                                    @elseif($holiday->holidays_status_id == 1)
-                                        background-color:#C3EBC4;
-                                    @elseif($holiday->holidays_status_id == 2)
-                                        background-color:#FBC4C4;
-                                    @endif"
-                            >
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        Días pedidos: {{ Carbon\Carbon::parse($holiday->from)->format('d/m/Y') . ' - ' . Carbon\Carbon::parse($holiday->to)->format('d/m/Y') }}
-                                    </h5>
-                                    <p class="card-text">
-                                        <strong>Medio Día:</strong> {!! $holiday->half_day ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>' !!}<br>
-                                        <strong>Días en Total:</strong> {{ $holiday->total_days }}<br>
-                                        <strong>Estado:</strong>
-                                        @if($holiday->holidays_status_id == 1)
-                                            Aceptada
-                                        @elseif($holiday->holidays_status_id == 2)
-                                            Denegada
-                                        @elseif($holiday->holidays_status_id == 3)
-                                            Pendiente
-                                        @endif
-                                        <br>
-                                        <strong>Fecha de Petición:</strong> {{ Carbon\Carbon::parse($holiday->created_at)->format('d/m/Y H:i:s') }}
-                                    </p>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        <!-- Paginación -->
-                        {{ $holidays->appends(request()->all())->links() }}
-                    </div>
-
-                @else
-                    <div class="text-center py-4">
-                        <h3>No se encontraron registros de <strong>Vacaciones</strong></h3>
-                    </div>
-                @endif
+            <div class="header-text">
+                <h1>Mis Vacaciones</h1>
+                <p>Gestiona tus solicitudes de vacaciones</p>
             </div>
         </div>
     </div>
+
+    <!-- Botón de Nueva Petición -->
+    <div class="action-section">
+        <a href="{{ route('holiday.create') }}" class="new-request-btn">
+            <i class="fas fa-plus"></i>
+            <span>Nueva Petición de Vacaciones</span>
+        </a>
+    </div>
+
+    <!-- Información de Vacaciones -->
+    <div class="info-section">
+        <div class="info-cards">
+            <!-- Días Disponibles -->
+            <div class="info-card primary">
+                <div class="card-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number">{{ $userHolidaysQuantity ? $userHolidaysQuantity->quantity : 0 }}</div>
+                    <div class="card-label">Días Disponibles</div>
+                </div>
+            </div>
+
+            <!-- Peticiones Pendientes -->
+            <div class="info-card warning">
+                <div class="card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-number">{{ $numberOfHolidayPetitions ?? 0 }}</div>
+                    <div class="card-label">Peticiones Pendientes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estados de Vacaciones -->
+    <div class="status-section">
+        <h3 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Estados de las Peticiones
+        </h3>
+        <div class="status-legend">
+            <div class="status-item">
+                <div class="status-color pending"></div>
+                <span>Pendiente</span>
+            </div>
+            <div class="status-item">
+                <div class="status-color approved"></div>
+                <span>Aceptada</span>
+            </div>
+            <div class="status-item">
+                <div class="status-color denied"></div>
+                <span>Denegada</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="filters-section">
+        <form method="GET" action="{{ route('holiday.index') }}" class="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="perPage">Elementos por página</label>
+                    <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
+                        <option value="10" {{ request('perPage') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('perPage') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('perPage') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="all" {{ request('perPage') == 'all' ? 'selected' : '' }}>Todo</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="buscar">Buscar</label>
+                    <input type="text" name="buscar" id="buscar" class="form-control"
+                           value="{{ request('buscar') }}" placeholder="Buscar peticiones...">
+                </div>
+
+                <div class="filter-group">
+                    <label for="estado">Estado</label>
+                    <select name="estado" id="estado" class="form-control" onchange="this.form.submit()">
+                        <option value="" {{ request('estado') == '' ? 'selected' : '' }}>Todos</option>
+                        <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Aceptada</option>
+                        <option value="2" {{ request('estado') == '2' ? 'selected' : '' }}>Denegada</option>
+                        <option value="3" {{ request('estado') == '3' ? 'selected' : '' }}>Pendiente</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Peticiones -->
+    @if ($holidays->count())
+        <!-- Versión Desktop -->
+        <div class="holidays-table desktop-only">
+            <table class="table">
+                <thead>
+                    <tr>
+                        @foreach ([
+                            'from' => 'Días Pedidos',
+                            'half_day' => 'Medio Día',
+                            'total_days' => 'Total Días',
+                            'holidays_status_id' => 'Estado',
+                            'created_at' => 'Fecha Petición',
+                        ] as $field => $label)
+                            <th>
+                                <a href="{{ route('holiday.index', array_merge(request()->all(), ['sortColumn' => $field, 'sortDirection' => request('sortDirection') === 'asc' ? 'desc' : 'asc'])) }}" class="sort-link">
+                                    {{ $label }}
+                                    @if (request('sortColumn') === $field)
+                                        <i class="fas fa-sort-{{ request('sortDirection') === 'asc' ? 'up' : 'down' }}"></i>
+                                    @endif
+                                </a>
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($holidays as $holiday)
+                        <tr class="holiday-row status-{{ $holiday->holidays_status_id }}">
+                            <td class="date-range">
+                                <i class="fas fa-calendar"></i>
+                                {{ Carbon\Carbon::parse($holiday->from)->format('d/m/Y') }} - {{ Carbon\Carbon::parse($holiday->to)->format('d/m/Y') }}
+                            </td>
+                            <td class="half-day">
+                                @if($holiday->half_day)
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Sí</span>
+                                @else
+                                    <span class="badge badge-secondary"><i class="fas fa-times"></i> No</span>
+                                @endif
+                            </td>
+                            <td class="total-days">
+                                <span class="days-number">{{ $holiday->total_days }}</span>
+                            </td>
+                            <td class="status">
+                                @if($holiday->holidays_status_id == 1)
+                                    <span class="status-badge approved">Aceptada</span>
+                                @elseif($holiday->holidays_status_id == 2)
+                                    <span class="status-badge denied">Denegada</span>
+                                @elseif($holiday->holidays_status_id == 3)
+                                    <span class="status-badge pending">Pendiente</span>
+                                @endif
+                            </td>
+                            <td class="created-date">
+                                <i class="fas fa-clock"></i>
+                                {{ Carbon\Carbon::parse($holiday->created_at)->format('d/m/Y H:i') }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Versión Móvil -->
+        <div class="holidays-cards mobile-only">
+            @foreach ($holidays as $holiday)
+                <div class="holiday-card status-{{ $holiday->holidays_status_id }}">
+                    <div class="card-header">
+                        <div class="date-range">
+                            <i class="fas fa-calendar"></i>
+                            {{ Carbon\Carbon::parse($holiday->from)->format('d/m/Y') }} - {{ Carbon\Carbon::parse($holiday->to)->format('d/m/Y') }}
+                        </div>
+                        <div class="status-badge">
+                            @if($holiday->holidays_status_id == 1)
+                                <span class="approved">Aceptada</span>
+                            @elseif($holiday->holidays_status_id == 2)
+                                <span class="denied">Denegada</span>
+                            @elseif($holiday->holidays_status_id == 3)
+                                <span class="pending">Pendiente</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-info">
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Medio día: {{ $holiday->half_day ? 'Sí' : 'No' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Total: {{ $holiday->total_days }} días</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>Solicitado: {{ Carbon\Carbon::parse($holiday->created_at)->format('d/m/Y H:i') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <!-- Paginación -->
+        <div class="pagination-section">
+            {{ $holidays->appends(request()->all())->links() }}
+        </div>
+
+    @else
+        <!-- Estado Vacío -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <h3>No tienes peticiones de vacaciones</h3>
+            <p>Cuando hagas una petición, aparecerá aquí</p>
+            <a href="{{ route('holiday.create') }}" class="new-request-btn">
+                <i class="fas fa-plus"></i>
+                <span>Hacer Primera Petición</span>
+            </a>
+        </div>
+    @endif
+</div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/holidays-index.css') }}">
+@endpush
+
 @section('scripts')
-
     @include('partials.toast')
-
 @endsection
 

@@ -14,6 +14,9 @@ class PhotoController extends Controller
     public function index($id, $cat) {
         $cat = (int) $cat;
 
+        // Obtener la limpieza con sus relaciones
+        $limpieza = ApartamentoLimpieza::with(['apartamento'])->findOrFail($id);
+
         $categorias = PhotoCategoria::whereJsonContains('id_cat', $cat)->get();
 
         $imagenes = ApartamentoLimpiezaItem::where('id_limpieza', $id)
@@ -21,12 +24,20 @@ class PhotoController extends Controller
             ->get()
             ->keyBy('item_id');
 
+        // Obtener análisis existentes de fotos
+        $analisisExistentes = \App\Models\PhotoAnalysis::where('limpieza_id', $id)
+            ->whereIn('categoria_id', $categorias->pluck('id'))
+            ->get()
+            ->keyBy('categoria_id');
+
         return view('photos.index', [
+            'limpieza' => $limpieza,
             'categorias' => $categorias,
             'imagenes' => $imagenes,
             'id' => $id,
             'cat' => $cat,
-            'checklist' => Checklist::find($cat)
+            'checklist' => Checklist::find($cat),
+            'analisisExistentes' => $analisisExistentes
         ]);
     }
 
@@ -43,17 +54,32 @@ class PhotoController extends Controller
 
             $imageUrl = 'images/' . $fileName;
 
-            // Guardar o actualizar la imagen en apartamento_limpieza_items
-            $registro = ApartamentoLimpiezaItem::updateOrCreate(
-                [
-                    'id_limpieza'  => $id,
-                    'checklist_id' => $request->checklist_id,
-                    'item_id'      => $request->item_id,
-                    'photo_url'    => $imageUrl,
-                    'photo_cat'    => 'image_' . $request->item_id, // Puedes adaptar esto si usas otro nombre
-                    'id_reserva' => $idReserva,
-                ]
-            );
+            // PRIMERO: Borrar fotos anteriores para este item específico
+            $fotosAnteriores = ApartamentoLimpiezaItem::where([
+                'id_limpieza' => $id,
+                'checklist_id' => $request->checklist_id,
+                'item_id' => $request->item_id
+            ])->whereNotNull('photo_url')->get();
+
+            foreach ($fotosAnteriores as $fotoAnterior) {
+                // Borrar archivo físico si existe
+                if ($fotoAnterior->photo_url && File::exists(public_path($fotoAnterior->photo_url))) {
+                    File::delete(public_path($fotoAnterior->photo_url));
+                }
+                // Borrar registro de la base de datos
+                $fotoAnterior->delete();
+            }
+
+            // AHORA: Crear el nuevo registro
+            $registro = ApartamentoLimpiezaItem::create([
+                'id_limpieza'  => $id,
+                'checklist_id' => $request->checklist_id,
+                'item_id'      => $request->item_id,
+                'photo_url'    => $imageUrl,
+                'photo_cat'    => 'image_' . $request->item_id,
+                'id_reserva'   => $idReserva,
+                'estado'       => 0 // Estado por defecto
+            ]);
 
             return response()->json([
                 'status' => 'success',
@@ -76,16 +102,19 @@ class PhotoController extends Controller
         $item = ApartamentoLimpiezaItem::findOrFail($id);
 
         if ($request->hasFile('imagen')) {
+            // Borrar archivo anterior si existe
             if ($item->photo_url && File::exists(public_path($item->photo_url))) {
                 File::delete(public_path($item->photo_url));
             }
 
+            // Subir nueva imagen
             $randomPrefix = Str::random(10);
             $imageName = $randomPrefix . '_' . time() . '.' . $request->imagen->getClientOriginalExtension();
             $request->imagen->move(public_path('images'), $imageName);
             $item->photo_url = 'images/' . $imageName;
         }
 
+        // Actualizar otros campos
         $item->photo_cat = $request->photo_cat ?? $item->photo_cat;
         $item->estado = $request->estado ?? $item->estado;
         $item->save();

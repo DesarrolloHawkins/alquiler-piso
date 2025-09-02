@@ -6,50 +6,226 @@ use App\Models\Fichaje;
 use App\Models\Pausa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class FichajeController extends Controller
 {
     public function iniciarJornada()
     {
-        $fichaje = new Fichaje([
-            'user_id' => Auth::id(),
-            'hora_entrada' => now(),
-        ]);
-        $fichaje->save();
-        return back()->with('status', 'Jornada iniciada')->with('refresh', true);
+        Log::info('FichajeController - Iniciando jornada para usuario: ' . Auth::id());
+        
+        try {
+            $userId = Auth::id();
+            $hoy = now()->toDateString();
+            
+            // VERIFICAR si ya hay una jornada activa
+            $jornadaActiva = Fichaje::where('user_id', $userId)
+                ->whereNull('hora_salida')
+                ->first();
+            
+            if ($jornadaActiva) {
+                Log::warning('FichajeController - Usuario ya tiene jornada activa ID: ' . $jornadaActiva->id);
+                return back()->with('error', 'Ya tienes una jornada activa iniciada a las ' . \Carbon\Carbon::parse($jornadaActiva->hora_entrada)->format('H:i'));
+            }
+            
+            // CALCULAR tiempo total trabajado hoy (antes de iniciar nueva)
+            $tiempoTrabajadoHoy = $this->calcularTiempoTrabajadoHoy($userId);
+            
+            // CREAR nueva jornada solo si no hay una activa
+            $fichaje = new Fichaje([
+                'user_id' => $userId,
+                'hora_entrada' => now(),
+            ]);
+            $fichaje->save();
+            
+            Log::info('FichajeController - Nueva jornada iniciada con ID: ' . $fichaje->id);
+            
+            // MENSAJE con tiempo trabajado hoy
+            if ($tiempoTrabajadoHoy > 0) {
+                $horas = intval($tiempoTrabajadoHoy / 60);
+                $minutos = $tiempoTrabajadoHoy % 60;
+                
+                if ($horas > 0) {
+                    $mensaje = "Jornada iniciada. Tiempo trabajado hoy: {$horas}h {$minutos}m";
+                } else {
+                    $mensaje = "Jornada iniciada. Tiempo trabajado hoy: {$minutos} minutos";
+                }
+            } else {
+                $mensaje = 'Jornada iniciada exitosamente';
+            }
+            
+            return back()->with('status', $mensaje)->with('refresh', true);
+            
+        } catch (\Exception $e) {
+            Log::error('FichajeController - Error iniciando jornada: ' . $e->getMessage());
+            return back()->with('error', 'Error al iniciar la jornada: ' . $e->getMessage());
+        }
     }
 
     public function iniciarPausa()
     {
-        $fichaje = Fichaje::where('user_id', Auth::id())->whereNull('hora_salida')->latest()->first();
+        Log::info('FichajeController - Iniciando pausa para usuario: ' . Auth::id());
+        
+        try {
+            $fichaje = Fichaje::where('user_id', Auth::id())
+                ->whereNull('hora_salida')
+                ->first();
 
-        if ($fichaje) {
+            if (!$fichaje) {
+                Log::warning('FichajeController - No se encontró jornada activa para usuario: ' . Auth::id());
+                return back()->with('error', 'No se encontró una jornada activa');
+            }
+
             $pausa = new Pausa([
                 'fichaje_id' => $fichaje->id,
                 'inicio_pausa' => now(),
             ]);
             $pausa->save();
+            
+            Log::info('FichajeController - Pausa iniciada con ID: ' . $pausa->id);
             return back()->with('status', 'Pausa iniciada')->with('refresh', true);
+            
+        } catch (\Exception $e) {
+            Log::error('FichajeController - Error iniciando pausa: ' . $e->getMessage());
+            return back()->with('error', 'Error al iniciar la pausa: ' . $e->getMessage());
         }
-
-        return back()->with('error', 'No se encontró una jornada activa');
     }
 
     public function finalizarPausa()
     {
-        $fichaje = Fichaje::where('user_id', Auth::id())->latest()->first();
-        $pausa = $fichaje->pausas()->whereNull('fin_pausa')->first();
-        $pausa->fin_pausa = now();
-        $pausa->save();
-        return back()->with('status', 'Pausa finalizada')->with('refresh', true);
+        Log::info('FichajeController - Finalizando pausa para usuario: ' . Auth::id());
+        
+        try {
+            $fichaje = Fichaje::where('user_id', Auth::id())
+                ->whereNull('hora_salida')
+                ->first();
+                
+            if (!$fichaje) {
+                Log::warning('FichajeController - No se encontró jornada activa para usuario: ' . Auth::id());
+                return back()->with('error', 'No se encontró una jornada activa');
+            }
+            
+            $pausa = $fichaje->pausas()->whereNull('fin_pausa')->first();
+            
+            if (!$pausa) {
+                Log::warning('FichajeController - No se encontró pausa activa para fichaje ID: ' . $fichaje->id);
+                return back()->with('error', 'No hay pausa activa para finalizar');
+            }
+            
+            $pausa->fin_pausa = now();
+            $pausa->save();
+            
+            Log::info('FichajeController - Pausa finalizada para fichaje ID: ' . $fichaje->id);
+            return back()->with('status', 'Pausa finalizada')->with('refresh', true);
+            
+        } catch (\Exception $e) {
+            Log::error('FichajeController - Error finalizando pausa: ' . $e->getMessage());
+            return back()->with('error', 'Error al finalizar la pausa: ' . $e->getMessage());
+        }
     }
 
     public function finalizarJornada()
     {
-        $fichaje = Fichaje::where('user_id', Auth::id())->latest()->first();
-        $fichaje->hora_salida = now();
-        $fichaje->save();
-        return back()->with('status', 'Jornada finalizada');
+        Log::info('=== FINALIZAR JORNADA - MÉTODO EJECUTADO ===');
+        Log::info('FichajeController - Finalizando jornada para usuario: ' . Auth::id());
+        Log::info('Request method: ' . request()->method());
+        Log::info('Request URL: ' . request()->url());
+        Log::info('Request headers: ' . json_encode(request()->headers->all()));
+        
+        try {
+            $userId = Auth::id();
+            $hoy = now()->toDateString();
+            
+            // OBTENER todas las jornadas del usuario para HOY (con o sin hora_salida)
+            $jornadasHoy = Fichaje::where('user_id', $userId)
+                ->whereDate('hora_entrada', $hoy)
+                ->get();
+                
+            Log::info('FichajeController - Jornadas encontradas para hoy: ' . $jornadasHoy->count());
+            
+            if ($jornadasHoy->isEmpty()) {
+                Log::warning('FichajeController - No se encontraron jornadas para hoy para usuario: ' . $userId);
+                return back()->with('error', 'No se encontró una jornada para finalizar hoy');
+            }
+            
+            // CALCULAR tiempo total trabajado hoy
+            $tiempoTotalTrabajado = 0;
+            $jornadasFinalizadas = 0;
+            
+            foreach ($jornadasHoy as $jornada) {
+                if ($jornada->hora_salida) {
+                    // Jornada ya finalizada, calcular tiempo
+                    $inicio = \Carbon\Carbon::parse($jornada->hora_entrada);
+                    $fin = \Carbon\Carbon::parse($jornada->hora_salida);
+                    $duracion = $inicio->diffInMinutes($fin);
+                    $tiempoTotalTrabajado += $duracion;
+                    
+                    Log::info("FichajeController - Jornada ID {$jornada->id} ya finalizada, duración: {$duracion} minutos");
+                } else {
+                    // Jornada activa, finalizarla
+                    Log::info('FichajeController - Finalizando jornada activa ID: ' . $jornada->id . ', hora_entrada: ' . $jornada->hora_entrada);
+                    
+                    $jornada->hora_salida = now();
+                    $jornada->save();
+                    
+                    // Calcular tiempo de esta jornada
+                    $inicio = \Carbon\Carbon::parse($jornada->hora_entrada);
+                    $fin = \Carbon\Carbon::parse($jornada->hora_salida);
+                    $duracion = $inicio->diffInMinutes($fin);
+                    $tiempoTotalTrabajado += $duracion;
+                    $jornadasFinalizadas++;
+                    
+                    Log::info("FichajeController - Jornada ID {$jornada->id} finalizada, duración: {$duracion} minutos");
+                }
+            }
+            
+            // CONVERTIR minutos a horas y minutos
+            $horas = intval($tiempoTotalTrabajado / 60);
+            $minutos = $tiempoTotalTrabajado % 60;
+            
+            Log::info('FichajeController - Total jornadas finalizadas: ' . $jornadasFinalizadas);
+            Log::info('FichajeController - Tiempo total trabajado hoy: ' . $tiempoTotalTrabajado . ' minutos (' . $horas . 'h ' . $minutos . 'm)');
+            
+            // MENSAJE personalizado según el tiempo trabajado
+            if ($horas > 0) {
+                $mensaje = "Jornada finalizada. Tiempo total trabajado hoy: {$horas}h {$minutos}m";
+            } else {
+                $mensaje = "Jornada finalizada. Tiempo total trabajado hoy: {$minutos} minutos";
+            }
+            
+            return back()->with('status', $mensaje)->with('refresh', true);
+            
+        } catch (\Exception $e) {
+            Log::error('FichajeController - Error finalizando jornada: ' . $e->getMessage());
+            Log::error('FichajeController - Stack trace: ' . $e->getTraceAsString());
+            return back()->with('error', 'Error al finalizar la jornada: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Calcular tiempo total trabajado hoy por un usuario
+     */
+    private function calcularTiempoTrabajadoHoy($userId)
+    {
+        $hoy = now()->toDateString();
+        $tiempoTotal = 0;
+        
+        // Obtener todas las jornadas del usuario para hoy
+        $jornadasHoy = Fichaje::where('user_id', $userId)
+            ->whereDate('hora_entrada', $hoy)
+            ->whereNotNull('hora_salida') // Solo jornadas finalizadas
+            ->get();
+            
+        foreach ($jornadasHoy as $jornada) {
+            $inicio = \Carbon\Carbon::parse($jornada->hora_entrada);
+            $fin = \Carbon\Carbon::parse($jornada->hora_salida);
+            $duracion = $inicio->diffInMinutes($fin);
+            $tiempoTotal += $duracion;
+        }
+        
+        Log::info("FichajeController - Tiempo total trabajado hoy para usuario {$userId}: {$tiempoTotal} minutos");
+        
+        return $tiempoTotal;
     }
 
     public function showControlPanel()
