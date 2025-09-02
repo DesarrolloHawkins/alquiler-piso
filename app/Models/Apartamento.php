@@ -72,10 +72,16 @@ class Apartamento extends Model
         return $this->hasMany(RatePlan::class, 'property_id', 'id');
     }
     
+    public function edificioName()
+    {
+        return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
+    }
+
     public function edificio()
     {
         return $this->belongsTo(\App\Models\Edificio::class, 'edificio_id');
     }
+    
     
     /**
      * Relación con el edificio (alias alternativo)
