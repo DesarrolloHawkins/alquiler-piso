@@ -133,64 +133,83 @@
         text-transform: uppercase;
     }
 </style>
-<div class="container-fluid">
-    <h4 class="mb-3">Calendario</h4>
 
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <div class="card">
-                {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
-                <div class="card-body" style="display: flex;flex-direction: column;">
-                    {{--
-                        1: '#769ECB', // Color para apartamento_id 1
-                        2: '#9DBAD5', // Color para apartamento_id 2
-                        3: '#FAF3DD', // Color para apartamento_id 3
-                        4: '#C8D6B9', // Color para apartamento_id 3
-                        5: '#DFD8C0', // Color para apartamento_id 3
-                        6: '#8FC1A9', // Color para apartamento_id 3
-                        7: '#7CAA98', // Color para apartamento_id 3,
-                    --}}
-                    {{-- <div class="apartamentos my-2" style="order: 1;">
-                        <div class="d-inline px-2" style="background-color: #769ECB; color:white">
-                            Atico
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #9DBAD5; color:white">
-                            Segundo A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #FAF3DD; color:black">
-                            Segundo B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #C8D6B9; color:black">
-                            Primero A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #DFD8C0; color:black">
-                            Primero B
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #8FC1A9; color:white">
-                            Bajo A
-                        </div>
-                        <div class="d-inline px-2" style="background-color: #7CAA98; color:white">
-                            Bajo B
-                        </div>
-                    </div> --}}
-                    <div id='calendar' style="order: 0;"></div>
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-calendar-alt text-primary me-2"></i>
+            Calendario de Reservas
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('reservas.index') }}">Reservas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Calendario</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('reservas.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Nueva Reserva
+        </a>
+        <a href="{{ route('reservas.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-2"></i>
+            Vista Lista
+        </a>
+    </div>
+</div>
 
-                </div>
-                <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title"  id="eventModalLabel">Detalles de la Reserva</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+<!-- Session Alerts -->
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+<!-- Calendario Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-check text-primary me-2"></i>
+            Calendario de Reservas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div id='calendar'></div>
+    </div>
+</div>
+
+<!-- Modal de Detalles de Reserva -->
+<div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="eventModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Detalles de la Reserva
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- El contenido se llena dinámicamente con JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>

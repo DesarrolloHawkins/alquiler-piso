@@ -240,12 +240,19 @@ class ReservasController extends Controller
      */
     public function show(Reserva $reserva)
     {
+        // Cargar las relaciones necesarias
+        $reserva->load([
+            'apartamento.edificioName',
+            'cliente',
+            'estado'
+        ]);
+        
         $huespedes = Huesped::where('reserva_id', $reserva->id)->get();
-        $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
+        $mensajes = MensajeAuto::with('categoria')->where('reserva_id', $reserva->id)->get();
         $photos = Photo::where('reserva_id', $reserva->id)->get();
         $factura = Invoices::where('reserva_id', $reserva->id)->first();
+        
         return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes', 'factura'));
-
     }
 
     /**
@@ -1384,7 +1391,39 @@ class ReservasController extends Controller
         return response()->json('Hemos avisado al equipo de limpieza.', 200);
     }
 
+    public function getApartamentosOcupacion()
+    {
+        try {
+            // Obtener apartamentos con id_channex no nulo y sus reservas activas
+            $apartamentos = Apartamento::whereNotNull('id_channex')
+                ->with(['reservas' => function($query) {
+                    $query->where('fecha_salida', '>=', Carbon::today())
+                          ->where('fecha_entrada', '<=', Carbon::today()->addDays(30)) // Próximos 30 días
+                          ->where('deleted_at', null);
+                }])->get();
 
+            // Formatear los datos para el frontend
+            $apartamentosData = $apartamentos->map(function($apartamento) {
+                return [
+                    'id' => $apartamento->id,
+                    'nombre' => $apartamento->nombre,
+                    'reservas' => $apartamento->reservas->map(function($reserva) {
+                        return [
+                            'id' => $reserva->id,
+                            'fecha_entrada' => $reserva->fecha_entrada,
+                            'fecha_salida' => $reserva->fecha_salida,
+                            'cliente_alias' => $reserva->cliente->alias ?? 'Sin cliente',
+                            'codigo_reserva' => $reserva->codigo_reserva ?? 'Sin código'
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json($apartamentosData);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al obtener apartamentos: ' . $e->getMessage()], 500);
+        }
+    }
 
 }
 

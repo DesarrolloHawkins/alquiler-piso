@@ -62,4 +62,20 @@ class Huesped extends Model
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
     ];
+
+    /**
+     * Relación con Reserva
+     */
+    public function reserva()
+    {
+        return $this->belongsTo(\App\Models\Reserva::class, 'reserva_id');
+    }
+
+    /**
+     * Relación con Photos
+     */
+    public function photos()
+    {
+        return $this->hasMany(\App\Models\Photo::class, 'huespedes_id');
+    }
 }

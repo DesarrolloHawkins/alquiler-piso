@@ -1,84 +1,165 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<style>
-    .inactive-sort {
-        color: #0F1739;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #757191;
-    }
-</style>
-<div class="container-fluid">
-    <h2 class="mb-3">{{ __('Nuestros Apartamentos') }}</h2>
-    <a href="{{route('admin.bancos.create')}}" class="btn bg-color-quinto">Crear banco</a>
-    <hr class="mb-5">
-    <div class="row justify-content-center">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-university text-primary me-2"></i>
+            Gestión de Bancos
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Bancos</li>
+            </ol>
+        </nav>
+    </div>
+</div>
 
-        <div class="col-md-12">
-            @if (session('status'))
-                 <div class="alert alert-success" role="alert">
-                    {{ session('status') }}
-                </div>
-            @endif
-            <!-- Formulario de búsqueda -->
-            <form action="{{ route('admin.bancos.index') }}" method="GET" class="mb-4">
-                <div class="input-group mb-5">
-                    <input type="text" class="form-control" name="search" placeholder="Buscar banco" value="{{ request()->get('search') }}">
-                    <button type="submit" class="btn bg-color-primero">Buscar</button>
-                </div>
-            </form>
+<!-- Session Alerts -->
+@if (session('status'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('status') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-            <table class="table table-striped table-hover">
-                <thead>
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-                    <tr>
-                        
-                        <th scope="col">
-                            <a href="{{ route('admin.bancos.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'id' ? 'active-sort' : 'inactive-sort' }}">
-                                ID
-                                @if (request('sort') == 'id')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col">
-                            <a href="{{ route('admin.bancos.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
-                               class="{{ request('sort') == 'nombre' ? 'active-sort' : 'inactive-sort' }}">
-                                Nombre
-                                @if (request('sort') == 'nombre')
-                                    <i class="fa {{ request('order', 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th scope="col" class="inactive-sort" style="width: 200px;">Acción</th>
-                    </tr>
-                </thead>
-
-
-                <tbody>
-                    @foreach ($bancos as $banco)
-                        <tr>
-                            <th scope="row">{{$banco->id}}</th>
-                            <td>{{$banco->nombre}}</td>
-                            <td style="width:auto;">
-                                <a href="{{route('admin.bancos.edit', $banco->id)}}" class="btn btn-secundario">Editar</a>
-                                <form action="{{ route('admin.bancos.destroy', $banco->id) }}" method="POST" style="display: inline;" class="delete-form">
-                                    @csrf
-                                    <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
-                                </form>
-                                {{-- <a href="{{route('clientes.destroy', $cliente->id)}}" class="btn btn-danger">Eliminar</a> --}}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <!-- Paginación links -->
-            {{-- {!! $apartamentos->appends(['search' => request()->get('search')])->links('pagination::bootstrap-5') !!} --}}
-
+<!-- Tarjeta de Acciones -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-tools text-primary me-2"></i>
+                Acciones
+            </h5>
+            <a href="{{ route('admin.bancos.create') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>
+                Crear Banco
+            </a>
         </div>
+    </div>
+</div>
+
+<!-- Tarjeta de Búsqueda -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-search text-primary me-2"></i>
+            Búsqueda
+        </h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ route('admin.bancos.index') }}" method="GET">
+            <div class="input-group input-group-lg">
+                <input type="text" class="form-control" name="search" placeholder="Buscar banco..." value="{{ request()->get('search') }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>
+                    Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tarjeta Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list text-primary me-2"></i>
+            Lista de Bancos
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        @if($bancos->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('admin.bancos.index', ['sort' => 'id', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-hashtag text-primary me-1"></i>ID
+                                    @if (request('sort') == 'id')
+                                        @if (request('order', 'asc') == 'asc')
+                                            <i class="fas fa-sort-up text-primary"></i>
+                                        @else
+                                            <i class="fas fa-sort-down text-primary"></i>
+                                        @endif
+                                    @endif
+                                </a>
+                            </th>
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('admin.bancos.index', ['sort' => 'nombre', 'order' => request('order', 'asc') == 'asc' ? 'desc' : 'asc', 'search' => request('search')]) }}"
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-university text-primary me-1"></i>Nombre
+                                    @if (request('sort') == 'nombre')
+                                        @if (request('order', 'asc') == 'asc')
+                                            <i class="fas fa-sort-up text-primary"></i>
+                                        @else
+                                            <i class="fas fa-sort-down text-primary"></i>
+                                        @endif
+                                    @endif
+                                </a>
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-cogs text-primary me-1"></i>Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($bancos as $banco)
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary fw-bold">#{{ $banco->id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-university text-info"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $banco->nombre }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('admin.bancos.edit', $banco->id) }}" 
+                                           class="btn btn-outline-warning btn-sm" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Editar banco">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm delete-btn" 
+                                                data-banco-id="{{ $banco->id }}"
+                                                data-banco-nombre="{{ $banco->nombre }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="Eliminar banco">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="text-center py-5">
+                <i class="fas fa-university fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay bancos disponibles</h5>
+                <p class="text-muted">No se encontraron bancos con los filtros aplicados.</p>
+            </div>
+        @endif
     </div>
 </div>
 @endsection
@@ -88,29 +169,59 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Verificar si SweetAlert2 está definido
-        if (typeof Swal === 'undefined') {
-            console.error('SweetAlert2 is not loaded');
-            return;
-        }
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
         // Botones de eliminar
         const deleteButtons = document.querySelectorAll('.delete-btn');
         deleteButtons.forEach(button => {
             button.addEventListener('click', function (event) {
                 event.preventDefault();
-                const form = this.closest('form');
+                const bancoId = this.getAttribute('data-banco-id');
+                const bancoNombre = this.getAttribute('data-banco-nombre');
+                
                 Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "¡No podrás revertir esto!",
+                    title: '¿Eliminar Banco?',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>Banco:</strong> ${bancoNombre}</p>
+                            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+                        </div>
+                    `,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar!',
-                    cancelButtonText: 'Cancelar'
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+                    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                    customClass: {
+                        confirmButton: 'btn btn-danger',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    buttonsStyling: false
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Crear formulario temporal para enviar la petición DELETE
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `{{ route('admin.bancos.destroy', '') }}/${bancoId}`;
+                        
+                        const csrfToken = document.createElement('input');
+                        csrfToken.type = 'hidden';
+                        csrfToken.name = '_token';
+                        csrfToken.value = '{{ csrf_token() }}';
+                        
+                        const methodField = document.createElement('input');
+                        methodField.type = 'hidden';
+                        methodField.name = '_method';
+                        methodField.value = 'DELETE';
+                        
+                        form.appendChild(csrfToken);
+                        form.appendChild(methodField);
+                        document.body.appendChild(form);
                         form.submit();
                     }
                 });

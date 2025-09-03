@@ -1,60 +1,254 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<div class="container">
-    <h1>Lista de Metálicos</h1>
-    <a href="{{ route('metalicos.create') }}" class="btn btn-primary">Nuevo Metálico</a>
-
-    @if(session('success'))
-        <div class="alert alert-success mt-2">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <table class="table mt-3">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Importe</th>
-                <th>Tipo</th>
-                <th>Fecha Ingreso</th>
-                <th>Saldo Acumulado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td colspan="5"></td>
-                <td><strong>Saldo Inicial:</strong> {{ number_format($saldoInicial, 2) }} €</td>
-                <td></td>
-            </tr>
-
-            @foreach($response as $metalico)
-            <tr>
-                <td>{{ $metalico->id }}</td>
-                <td>{{ $metalico->titulo }}</td>
-                <td>{{ number_format($metalico->importe, 2) }} €</td>
-                <td>
-                    @if($metalico->tipo === 'ingreso')
-                        <span class="badge bg-success">Ingreso</span>
-                    @else
-                        <span class="badge bg-danger">Gasto</span>
-                    @endif
-                </td>
-                <td>{{ $metalico->fecha_ingreso }}</td>
-                <td>{{ number_format($metalico->saldo, 2) }} €</td>
-                <td>
-                    <a href="{{ route('metalicos.show', $metalico) }}" class="btn btn-info btn-sm">Ver</a>
-                    <a href="{{ route('metalicos.edit', $metalico) }}" class="btn btn-warning btn-sm">Editar</a>
-                    <form action="{{ route('metalicos.destroy', $metalico) }}" method="POST" style="display:inline;">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar?')">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-coins text-primary me-2"></i>
+            Gestión de Metálicos
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Metálicos</li>
+            </ol>
+        </nav>
+    </div>
 </div>
+
+<!-- Session Alerts -->
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+<!-- Tarjeta de Acciones -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-tools text-primary me-2"></i>
+                Acciones
+            </h5>
+            <div class="btn-group" role="group">
+                <a href="{{ route('metalicos.create') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>
+                    Nuevo Metálico
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tarjeta de Saldo Inicial -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                <i class="fas fa-wallet text-success"></i>
+            </div>
+            <div>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins text-success me-2"></i>
+                    Saldo Inicial
+                </h5>
+                <p class="text-muted mb-0">Saldo base de la caja metálica</p>
+            </div>
+            <div class="ms-auto">
+                <h3 class="text-success mb-0">{{ number_format($saldoInicial, 2) }} €</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tarjeta Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list text-primary me-2"></i>
+            Lista de Movimientos Metálicos
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        @if($response->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-hashtag text-primary me-1"></i>ID
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-tag text-primary me-1"></i>Título
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-euro-sign text-primary me-1"></i>Importe
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-exchange-alt text-primary me-1"></i>Tipo
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-calendar text-primary me-1"></i>Fecha Ingreso
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-calculator text-primary me-1"></i>Saldo Acumulado
+                            </th>
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-cogs text-primary me-1"></i>Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($response as $metalico)
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary fw-bold">#{{ $metalico->id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-coins text-info"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $metalico->titulo }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold {{ $metalico->tipo === 'ingreso' ? 'text-success' : 'text-danger' }}">
+                                        {{ $metalico->tipo === 'ingreso' ? '+' : '-' }}{{ number_format($metalico->importe, 2) }} €
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($metalico->tipo === 'ingreso')
+                                        <span class="badge bg-success-subtle text-success">
+                                            <i class="fas fa-arrow-up me-1"></i>Ingreso
+                                        </span>
+                                    @else
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            <i class="fas fa-arrow-down me-1"></i>Gasto
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ \Carbon\Carbon::parse($metalico->fecha_ingreso)->format('d/m/Y') }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ number_format($metalico->saldo, 2) }} €</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('metalicos.show', $metalico) }}" 
+                                           class="btn btn-outline-info btn-sm" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('metalicos.edit', $metalico) }}" 
+                                           class="btn btn-outline-warning btn-sm" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Editar metálico">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm delete-btn" 
+                                                data-metalico-id="{{ $metalico->id }}"
+                                                data-metalico-titulo="{{ $metalico->titulo }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="Eliminar metálico">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="text-center py-5">
+                <i class="fas fa-coins fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay movimientos metálicos</h5>
+                <p class="text-muted">No se encontraron movimientos en la caja metálica.</p>
+            </div>
+        @endif
+    </div>
+</div>
+@endsection
+
+@include('sweetalert::alert')
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Botones de eliminar
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                const metalicoId = this.getAttribute('data-metalico-id');
+                const metalicoTitulo = this.getAttribute('data-metalico-titulo');
+                
+                Swal.fire({
+                    title: '¿Eliminar Metálico?',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
+                            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+                    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                    customClass: {
+                        confirmButton: 'btn btn-danger',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Crear formulario temporal para enviar la petición DELETE
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `{{ route('metalicos.destroy', '') }}/${metalicoId}`;
+                        
+                        const csrfToken = document.createElement('input');
+                        csrfToken.type = 'hidden';
+                        csrfToken.name = '_token';
+                        csrfToken.value = '{{ csrf_token() }}';
+                        
+                        const methodField = document.createElement('input');
+                        methodField.type = 'hidden';
+                        methodField.name = '_method';
+                        methodField.value = 'DELETE';
+                        
+                        form.appendChild(csrfToken);
+                        form.appendChild(methodField);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
 @endsection

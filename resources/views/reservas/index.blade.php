@@ -1,13 +1,12 @@
 @extends('layouts.appAdmin')
+
 @section('scriptHead')
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/es.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-
         document.addEventListener('DOMContentLoaded', function() {
-
             var calendarEl = document.getElementById('calendar');
             // Mapeo de apartamento_id a colores
             var apartmentColors = {
@@ -85,9 +84,9 @@
 
           calendar.render();
         });
-
-      </script>
+    </script>
 @endsection
+
 @section('content')
 <!-- Incluir el CSS de Flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -95,337 +94,426 @@
 <!-- Incluir Flatpickr y la localización en español -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-<style>
-    .inactive-sort {
-        color: #ffffff;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #ffa3fa;
-        font-weight: bold;
-        text-decoration: none;
-    }
-</style>
-<div class="container-fluid">
-    <div class="d-flex flex-colum mb-3">
-        <h2 class="mb-0 me-3 encabezado_top">{{ __('Reservas') }}</h2>
-        <a href="{{route('reservas.create')}}" class="btn bg-color-sexto text-uppercase">
-            <i class="fa-solid fa-plus me-2"></i>
-            Crear Reserva
-        </a>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-calendar-check text-primary me-2"></i>
+            Gestión de Reservas
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Reservas</li>
+            </ol>
+        </nav>
     </div>
-    <hr class="mb-3">
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-                {{-- <div class="card-header">{{ __('Nuestros Clientes') }}</div> --}}
-                @php
-                    $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
-                @endphp
-                @if (session('success'))
-                    <div class="alert alert-success" role="alert">
-                        {{ session('success') }}
-                    </div>
-                @endif
-                <h6 class="text-uppercase"><i class="fa-solid fa-filter me-1"></i> Filtros</h6>
-                <div class="row mb-4 align-items-end">
-                    <div class="col-md-2">
-                        <div class="mb-3">
-                            <form action="{{ route('reservas.index') }}" method="GET">
-                                <div class="form-group">
-                                        <!-- Otros parámetros como campos ocultos -->
-                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
-                                    <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
-                                    <input type="hidden" name="search" value="{{ request()->get('search') }}">
+</div>
 
-                                    <label for="perPage">Registros por página:</label>
-                                    <select name="perPage" id="perPage" class="form-control" onchange="this.form.submit()">
-                                        <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
-                                        <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
-                                        <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
-                                        <option value="100" {{ request()->get('perPage') == 100 ? 'selected' : '' }}>100</option>
-                                    </select>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="mb-3">
-                            <form action="{{ route('reservas.index') }}" method="GET">
-                                <div class="form-group">
-                                    <!-- Otros parámetros como campos ocultos -->
-                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by') }}">
-                                    <input type="hidden" name="direction" value="{{ request()->get('direction') }}">
-                                    <input type="hidden" name="search" value="{{ request()->get('search') }}">
-                                    <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-                                    <input type="hidden" name="fecha_entrada" value="{{ request()->get('fecha_entrada') }}">
-                                    <input type="hidden" name="fecha_salida" value="{{ request()->get('fecha_salida') }}">
-                                    <input type="hidden" name="filtro_apartamento" value="{{ request()->get('filtro_apartamento') }}">
+<!-- Session Alerts -->
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-                                    <label for="filtro_estado">Estado de reservas:</label>
-                                    <select name="filtro_estado" id="filtro_estado" class="form-control" onchange="this.form.submit()">
-                                        <option value="activas" {{ request()->get('filtro_estado', 'activas') == 'activas' ? 'selected' : '' }}>Reservas Activas</option>
-                                        <option value="eliminadas" {{ request()->get('filtro_estado') == 'eliminadas' ? 'selected' : '' }}>Reservas Eliminadas</option>
-                                        <option value="todas" {{ request()->get('filtro_estado') == 'todas' ? 'selected' : '' }}>Todas las Reservas</option>
-                                    </select>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="col-md-10">
-                        <div class="mb-3">
-                            <form action="{{ route('reservas.index') }}" method="GET">
-                                <!-- Campos ocultos para mantener el orden y la dirección -->
-                                                                    <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
-                                    <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
-                                    <input type="hidden" name="perPage" value="{{ request()->get('perPage') }}">
-                                    <input type="hidden" name="filtro_estado" value="{{ request()->get('filtro_estado', 'activas') }}">
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-                                <div class="d-flex align-items-center">
-                                    <input type="text" class="form-control me-2" id="search" name="search" placeholder="Buscar..." value="{{ request()->get('search') }}">
-                                    <div class="input-group me-2">
-                                        <label class="input-group-text" for="filtro_apartamento">Apartamento</label>
-                                        <select class="form-select min-width-apto" name="filtro_apartamento" id="filtro_apartamento" >
-                                            <option value="">Todos</option>
-                                            @foreach($apartamentos as $apartamento)
-                                                <option value="{{ $apartamento->id }}"
-                                                    {{ request()->get('filtro_apartamento') == $apartamento->id ? 'selected' : '' }}>
-                                                    {{ $apartamento->titulo }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <!-- Fecha de Entrada -->
-                                    <div class="input-group me-2">
-                                        <label class="input-group-text" for="fecha_entrada" id="label_fecha_entrada">Fecha de Inicio</label>
-                                        <input type="text" class="form-control" id="fecha_entrada" name="fecha_entrada" value="{{ request()->get('fecha_entrada') }}">
-                                    </div>
-
-                                    <!-- Fecha de Salida -->
-                                    <div class="input-group me-2">
-                                        <label class="input-group-text" for="fecha_salida" id="label_fecha_salida">Fecha de Fin</label>
-                                        <input type="text" class="form-control" id="fecha_salida" name="fecha_salida" value="{{ request()->get('fecha_salida') }}">
-                                    </div>
-
-                                    <!-- Botones -->
-                                    <button type="button" id="limpiarFiltros" class="btn bg-color-segundo me-2"><i class="fa-solid fa-trash"></i></button>
-                                    <button type="submit" class="btn bg-color-primero">Buscar</button>
-                                </div>
-                            </form>
-
-
-
-                        </div>
+<!-- Tarjeta de Acciones -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-tools text-primary me-2"></i>
+                Acciones
+            </h5>
+            <div class="d-flex gap-2">
+                <a href="{{ route('reservas.create') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>
+                    Crear Reserva
+                </a>
+                <button type="button" 
+                        class="btn btn-success btn-lg" 
+                        data-bs-toggle="tooltip" 
+                        title="Ver ocupación de apartamentos"
+                        onclick="mostrarOcupacionHoy()">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    Ocupación Hoy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Tarjeta de Filtros -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-filter text-primary me-2"></i>
+            Filtros de Búsqueda
+        </h5>
+    </div>
+    <div class="card-body">
+        @php
+            $orderDirection = request()->get('direction', 'asc') == 'asc' ? 'desc' : 'asc';
+        @endphp
+        
+        <form action="{{ route('reservas.index') }}" method="GET" id="filtrosForm">
+            <!-- Campos ocultos para mantener el orden y la dirección -->
+            <input type="hidden" name="order_by" value="{{ request()->get('order_by', 'fecha_entrada') }}">
+            <input type="hidden" name="direction" value="{{ request()->get('direction', 'asc') }}">
+            
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label for="perPage" class="form-label fw-semibold">
+                        <i class="fas fa-list-ol text-primary me-1"></i>
+                        Registros por página
+                    </label>
+                    <select name="perPage" id="perPage" class="form-select" onchange="this.form.submit()">
+                        <option value="10" {{ request()->get('perPage') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="20" {{ request()->get('perPage') == 20 ? 'selected' : '' }}>20</option>
+                        <option value="50" {{ request()->get('perPage') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request()->get('perPage') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="filtro_estado" class="form-label fw-semibold">
+                        <i class="fas fa-toggle-on text-primary me-1"></i>
+                        Estado
+                    </label>
+                    <select name="filtro_estado" id="filtro_estado" class="form-select" onchange="this.form.submit()">
+                        <option value="activas" {{ request()->get('filtro_estado', 'activas') == 'activas' ? 'selected' : '' }}>Reservas Activas</option>
+                        <option value="eliminadas" {{ request()->get('filtro_estado') == 'eliminadas' ? 'selected' : '' }}>Reservas Eliminadas</option>
+                        <option value="todas" {{ request()->get('filtro_estado') == 'todas' ? 'selected' : '' }}>Todas las Reservas</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="search" class="form-label fw-semibold">
+                        <i class="fas fa-search text-primary me-1"></i>
+                        Buscar
+                    </label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Buscar por cliente, código..." 
+                           value="{{ request()->get('search') }}"
+                           onkeypress="if(event.key==='Enter') this.form.submit()">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="filtro_apartamento" class="form-label fw-semibold">
+                        <i class="fas fa-building text-primary me-1"></i>
+                        Apartamento
+                    </label>
+                    <select class="form-select" name="filtro_apartamento" id="filtro_apartamento">
+                        <option value="">Todos</option>
+                        @foreach($apartamentos as $apartamento)
+                            <option value="{{ $apartamento->id }}"
+                                {{ request()->get('filtro_apartamento') == $apartamento->id ? 'selected' : '' }}>
+                                {{ $apartamento->titulo }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="fecha_entrada" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        Fecha Inicio
+                    </label>
+                    <input type="text" class="form-control" id="fecha_entrada" name="fecha_entrada" 
+                           value="{{ request()->get('fecha_entrada') }}" placeholder="dd/mm/yyyy">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="fecha_salida" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        Fecha Fin
+                    </label>
+                    <input type="text" class="form-control" id="fecha_salida" name="fecha_salida" 
+                           value="{{ request()->get('fecha_salida') }}" placeholder="dd/mm/yyyy">
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>
+                            Buscar
+                        </button>
+                        <button type="button" id="limpiarFiltros" class="btn btn-outline-secondary">
+                            <i class="fas fa-trash me-2"></i>
+                            Limpiar Filtros
+                        </button>
                     </div>
                 </div>
+            </div>
+        </form>
+    </div>
+</div>
 
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr class="bg-color-primero-table">
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'id' ? 'active-sort' : 'inactive-sort' }}">
-                                    ID
+<!-- Tarjeta Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list text-primary me-2"></i>
+            Lista de Reservas
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        @if($reservas->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'id', 'direction' => (request()->get('order_by') == 'id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-hashtag text-primary me-1"></i>ID
                                     @if(request()->get('order_by') == 'id')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'apartamento_id', 'direction' => (request()->get('order_by') == 'apartamento_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'apartamento_id' ? 'active-sort' : 'inactive-sort' }}">
-                                    Apartamento
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'apartamento_id', 'direction' => (request()->get('order_by') == 'apartamento_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-building text-primary me-1"></i>Apartamento
                                     @if(request()->get('order_by') == 'apartamento_id')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'cliente_id' ? 'active-sort' : 'inactive-sort' }}">
-                                    Nombre
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'cliente_id', 'direction' => (request()->get('order_by') == 'cliente_id' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-user text-primary me-1"></i>Cliente
                                     @if(request()->get('order_by') == 'cliente_id')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'dni_entregado' ? 'active-sort' : 'inactive-sort' }}">
-                                    DNI Entregado
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'dni_entregado', 'direction' => (request()->get('order_by') == 'dni_entregado' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-id-card text-primary me-1"></i>DNI
                                     @if(request()->get('order_by') == 'dni_entregado')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'fecha_entrada' ? 'active-sort' : 'inactive-sort' }}">
-                                    Fecha de Entrada
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'fecha_entrada', 'direction' => (request()->get('order_by') == 'fecha_entrada' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-calendar-plus text-primary me-1"></i>Entrada
                                     @if(request()->get('order_by') == 'fecha_entrada')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'fecha_salida' ? 'active-sort' : 'inactive-sort' }}">
-                                    Fecha de Salida
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'fecha_salida', 'direction' => (request()->get('order_by') == 'fecha_salida' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-calendar-minus text-primary me-1"></i>Salida
                                     @if(request()->get('order_by') == 'fecha_salida')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'origen' ? 'active-sort' : 'inactive-sort' }}">
-                                    Origen
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'origen', 'direction' => (request()->get('order_by') == 'origen' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-globe text-primary me-1"></i>Origen
                                     @if(request()->get('order_by') == 'origen')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" class="{{ request('order_by') == 'codigo_reserva' ? 'active-sort' : 'inactive-sort' }}">
-                                    Codigo de Reserva
+                            <th scope="col" class="border-0">
+                                <a href="{{ route('reservas.index', ['order_by' => 'codigo_reserva', 'direction' => (request()->get('order_by') == 'codigo_reserva' ? $orderDirection : 'asc'), 'search' => request()->get('search'),'perPage' => request()->get('perPage'), 'fecha_entrada' => request()->get('fecha_entrada'), 'fecha_salida' => request()->get('fecha_salida')]) }}" 
+                                   class="text-decoration-none text-dark fw-semibold">
+                                    <i class="fas fa-barcode text-primary me-1"></i>Código
                                     @if(request()->get('order_by') == 'codigo_reserva')
                                         @if(request()->get('direction') == 'asc')
-                                            &#9650; {{-- Icono de flecha hacia arriba --}}
+                                            <i class="fas fa-sort-up text-primary"></i>
                                         @else
-                                            &#9660; {{-- Icono de flecha hacia abajo --}}
+                                            <i class="fas fa-sort-down text-primary"></i>
                                         @endif
                                     @endif
                                 </a>
                             </th>
-                            <th scope="col">
-                                Precio
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-euro-sign text-primary me-1"></i>Precio
                             </th>
-                            <th scope="col">
-                                Accion
+                            <th scope="col" class="border-0">
+                                <i class="fas fa-cogs text-primary me-1"></i>Acciones
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($reservas as $reserva)
                             <tr>
-                                <th scope="row">{{$reserva->id}}</th>
-                                <td>{{$reserva->apartamento->titulo}}</td>
-                                <td>{{$reserva->cliente->alias}}</td>
-                                <td>@if($reserva->dni_entregado == 1) <span class="badge text-bg-success">Entregado</span> @else <span class="badge text-bg-danger">No entregado</span>@endif</td>
-                                <td>{{$reserva->fecha_entrada}}</td>
-                                <td>{{$reserva->fecha_salida}}</td>
-                                <td>{{$reserva->origen}}</td>
-                                <td>{{$reserva->codigo_reserva}}</td>
-                                <td>{{ number_format($reserva->precio, 2) }} €</td>
                                 <td>
-                                    <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>
-                                    @if(request()->get('filtro_estado') == 'eliminadas')
-                                        <button type="button" class="btn bg-success text-white" onclick="confirmarRestauracion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')">
-                                            <i class="fa-solid fa-undo me-1"></i>Restaurar
-                                        </button>
+                                    <span class="badge bg-primary-subtle text-primary fw-bold">#{{ $reserva->id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-building text-info"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $reserva->apartamento->titulo }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-user text-success"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $reserva->cliente->alias }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if($reserva->dni_entregado == 1)
+                                        <span class="badge bg-success-subtle text-success">
+                                            <i class="fas fa-check me-1"></i>Entregado
+                                        </span>
                                     @else
-                                        <a href="{{route('reservas.edit', $reserva->id)}}" class="btn bg-color-tercero">Editar</a>
-                                        <button type="button" class="btn bg-danger text-white" onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')">Eliminar</button>
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            <i class="fas fa-times me-1"></i>No entregado
+                                        </span>
                                     @endif
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-warning-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-calendar-plus text-warning"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-danger-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-calendar-minus text-danger"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-globe text-info"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $reserva->origen }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-secondary-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="fas fa-barcode text-secondary"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ $reserva->codigo_reserva }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold fs-5 text-success">
+                                        <i class="fas fa-euro-sign me-1"></i>{{ number_format($reserva->precio, 2) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('reservas.show', $reserva->id) }}" 
+                                           class="btn btn-outline-info btn-sm" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if(request()->get('filtro_estado') == 'eliminadas')
+                                            <button type="button" 
+                                                    class="btn btn-outline-success btn-sm" 
+                                                    onclick="confirmarRestauracion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Restaurar reserva">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('reservas.edit', $reserva->id) }}" 
+                                               class="btn btn-outline-warning btn-sm" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Editar reserva">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger btn-sm" 
+                                                    onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Eliminar reserva">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-
-                <!-- Paginación links -->
+            </div>
+        @else
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay reservas disponibles</h5>
+                <p class="text-muted">No se encontraron reservas con los filtros aplicados.</p>
+            </div>
+        @endif
+    </div>
+    
+    @if($reservas->count() > 0)
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-center">
                 {{ $reservas->appends(request()->except('page'))->links() }}
-
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmación para eliminar reserva -->
-<div class="modal fade" id="modalConfirmarEliminacion" tabindex="-1" aria-labelledby="modalConfirmarEliminacionLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="modalConfirmarEliminacionLabel">
-                    <i class="fa-solid fa-exclamation-triangle me-2"></i>Confirmar Eliminación
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de que quieres eliminar la siguiente reserva?</p>
-                <div class="alert alert-warning">
-                    <strong>Cliente:</strong> <span id="clienteEliminar"></span><br>
-                    <strong>Código de Reserva:</strong> <span id="codigoEliminar"></span>
-                </div>
-                <p class="text-danger"><strong>Esta acción no se puede deshacer.</strong></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-times me-1"></i>Cancelar
-                </button>
-                <form id="formEliminarReserva" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fa-solid fa-trash me-1"></i>Sí, Eliminar
-                    </button>
-                </form>
             </div>
         </div>
-    </div>
+    @endif
 </div>
 
-<!-- Modal de confirmación para restaurar reserva -->
-<div class="modal fade" id="modalConfirmarRestauracion" tabindex="-1" aria-labelledby="modalConfirmarRestauracionLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="modalConfirmarRestauracionLabel">
-                    <i class="fa-solid fa-undo me-2"></i>Confirmar Restauración
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de que quieres restaurar la siguiente reserva?</p>
-                <div class="alert alert-info">
-                    <strong>Cliente:</strong> <span id="clienteRestaurar"></span><br>
-                    <strong>Código de Reserva:</strong> <span id="codigoRestaurar"></span>
-                </div>
-                <p class="text-success"><strong>La reserva volverá a estar activa en el sistema.</strong></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-times me-1"></i>Cancelar
-                </button>
-                <form id="formRestaurarReserva" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-success">
-                        <i class="fa-solid fa-undo me-1"></i>Sí, Restaurar
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 @endsection
 
@@ -438,11 +526,6 @@
             locale: "es", // Configurar el idioma español usando "es"
             onChange: function(selectedDates, dateStr, instance) {
                 document.getElementById('fecha_entrada').value = dateStr; // Actualizar el valor del input
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                document.getElementById('label_fecha_entrada').addEventListener('click', function() {
-                    instance.open(); // Abrir calendario al hacer clic en la etiqueta
-                });
             }
         });
 
@@ -451,54 +534,362 @@
             locale: "es", // Configurar el idioma español usando "es"
             onChange: function(selectedDates, dateStr, instance) {
                 document.getElementById('fecha_salida').value = dateStr; // Actualizar el valor del input
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                document.getElementById('label_fecha_salida').addEventListener('click', function() {
-                    instance.open(); // Abrir calendario al hacer clic en la etiqueta
-                });
             }
         });
-    });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('limpiarFiltros').addEventListener('click', function () {
-                document.getElementById('search').value = '';
-                document.getElementById('fecha_entrada').value = '';
-                document.getElementById('fecha_salida').value = '';
-                document.getElementById('filtro_apartamento').value = '';
-                document.getElementById('filtro_estado').value = 'activas';
-                window.location.href = "{{ route('reservas.index') }}";
-            });
+
+        // Limpiar filtros
+        document.getElementById('limpiarFiltros').addEventListener('click', function () {
+            document.getElementById('search').value = '';
+            document.getElementById('fecha_entrada').value = '';
+            document.getElementById('fecha_salida').value = '';
+            document.getElementById('filtro_apartamento').value = '';
+            document.getElementById('filtro_estado').value = 'activas';
+            window.location.href = "{{ route('reservas.index') }}";
         });
 
-        // Función para confirmar eliminación de reserva
-        function confirmarEliminacion(id, cliente, codigo) {
-            // Llenar el modal con la información de la reserva
-            document.getElementById('clienteEliminar').textContent = cliente;
-            document.getElementById('codigoEliminar').textContent = codigo;
-            
-            // Configurar el formulario para la eliminación
-            document.getElementById('formEliminarReserva').action = "{{ route('reservas.destroy', '') }}/" + id;
-            
-            // Mostrar el modal
-            var modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminacion'));
-            modal.show();
-        }
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 
-        // Función para confirmar restauración de reserva
-        function confirmarRestauracion(id, cliente, codigo) {
-            // Llenar el modal con la información de la reserva
-            document.getElementById('clienteRestaurar').textContent = cliente;
-            document.getElementById('codigoRestaurar').textContent = codigo;
-            
-            // Configurar el formulario para la restauración
-            document.getElementById('formRestaurarReserva').action = "{{ route('reservas.restore', '') }}/" + id;
-            
-            // Mostrar el modal
-            var modal = new bootstrap.Modal(document.getElementById('modalConfirmarRestauracion'));
-            modal.show();
-        }
-        </script>
+    // Función para confirmar eliminación de reserva
+    function confirmarEliminacion(id, cliente, codigo) {
+        Swal.fire({
+            title: '¿Eliminar Reserva?',
+            html: `
+                <div class="text-start">
+                    <p><strong>Cliente:</strong> ${cliente}</p>
+                    <p><strong>Código de Reserva:</strong> ${codigo}</p>
+                    <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+            customClass: {
+                confirmButton: 'btn btn-danger',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Crear formulario temporal para enviar la petición DELETE
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ route('reservas.destroy', '') }}/${id}`;
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                const methodField = document.createElement('input');
+                methodField.type = 'hidden';
+                methodField.name = '_method';
+                methodField.value = 'DELETE';
+                
+                form.appendChild(csrfToken);
+                form.appendChild(methodField);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    // Función para confirmar restauración de reserva
+    function confirmarRestauracion(id, cliente, codigo) {
+        Swal.fire({
+            title: '¿Restaurar Reserva?',
+            html: `
+                <div class="text-start">
+                    <p><strong>Cliente:</strong> ${cliente}</p>
+                    <p><strong>Código de Reserva:</strong> ${codigo}</p>
+                    <p class="text-success mt-3"><strong>La reserva volverá a estar activa en el sistema.</strong></p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-undo me-2"></i>Sí, Restaurar',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Crear formulario temporal para enviar la petición POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ route('reservas.restore', '') }}/${id}`;
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    // Función para mostrar la ocupación de apartamentos (fuera de DOMContentLoaded)
+    window.mostrarOcupacionHoy = function() {
+        // Llenar información general
+        const hoy = new Date().toLocaleDateString('es-ES');
+        document.getElementById('apartamentoNombre').textContent = 'Todos los apartamentos';
+        document.getElementById('fechaEntrada').textContent = hoy;
+
+        // Obtener apartamentos con ocupación
+        fetch('/get-apartamentos-ocupacion')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('apartamentosContainer');
+                container.innerHTML = '';
+                
+                                // Ordenar apartamentos: libres primero, entradas hoy, luego ocupados desde antes
+                const apartamentosOrdenados = data.sort((a, b) => {
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    
+                    const getEstado = (apartamento) => {
+                        if (!apartamento.reservas || apartamento.reservas.length === 0) {
+                            return 0; // Libre
+                        }
+                        
+                        const reservaActiva = apartamento.reservas.find(reserva => {
+                            const entrada = new Date(reserva.fecha_entrada);
+                            const salida = new Date(reserva.fecha_salida);
+                            return entrada <= hoy && salida >= hoy;
+                        });
+                        
+                        if (reservaActiva) {
+                            const entradaReserva = new Date(reservaActiva.fecha_entrada);
+                            entradaReserva.setHours(0, 0, 0, 0);
+                            
+                            if (entradaReserva.getTime() === hoy.getTime()) {
+                                return 1; // Entrada hoy
+                            } else {
+                                return 2; // Ocupado desde antes
+                            }
+                        }
+                        
+                        return 0; // Libre
+                    };
+                    
+                    return getEstado(a) - getEstado(b);
+                });
+                
+                apartamentosOrdenados.forEach(apartamento => {
+                    const row = document.createElement('tr');
+                    
+                    let estadoTexto = 'Libre';
+                    let estadoColor = '';
+                    let rowClass = '';
+                    let fechasHtml = '-';
+                    let clienteHtml = '-';
+                    let codigoHtml = '-';
+                    
+                    if (apartamento.reservas && apartamento.reservas.length > 0) {
+                        const hoy = new Date();
+                        hoy.setHours(0, 0, 0, 0);
+                        
+                        const reservaActiva = apartamento.reservas.find(reserva => {
+                            const entrada = new Date(reserva.fecha_entrada);
+                            const salida = new Date(reserva.fecha_salida);
+                            return entrada <= hoy && salida >= hoy;
+                        });
+                        
+                        if (reservaActiva) {
+                            const entradaReserva = new Date(reservaActiva.fecha_entrada);
+                            entradaReserva.setHours(0, 0, 0, 0);
+                            
+                            if (entradaReserva.getTime() === hoy.getTime()) {
+                                // Entrada hoy
+                                estadoTexto = 'Entrada hoy';
+                                estadoColor = 'badge bg-warning text-dark';
+                                rowClass = 'table-warning';
+                            } else {
+                                // Ocupado desde antes
+                                estadoTexto = 'Ocupado (desde antes)';
+                                estadoColor = 'badge bg-info text-white';
+                                rowClass = 'table-info';
+                            }
+                            
+                            fechasHtml = `${reservaActiva.fecha_entrada} - ${reservaActiva.fecha_salida}`;
+                            clienteHtml = reservaActiva.cliente_alias;
+                            codigoHtml = reservaActiva.codigo_reserva;
+                        } else {
+                            // Libre
+                            estadoTexto = 'Libre';
+                            estadoColor = 'badge bg-success text-white';
+                            rowClass = 'table-success';
+                        }
+                    } else {
+                        // Libre
+                        estadoTexto = 'Libre';
+                        estadoColor = 'badge bg-success text-white';
+                        rowClass = 'table-success';
+                    }
+                    
+                    row.className = rowClass;
+                    row.innerHTML = `
+                        <td class="fw-semibold">
+                            <i class="fas fa-building text-primary me-2"></i>
+                            ${apartamento.nombre}
+                        </td>
+                        <td>
+                            <span class="${estadoColor}">${estadoTexto}</span>
+                        </td>
+                        <td class="text-muted">${fechasHtml}</td>
+                        <td class="text-muted">${clienteHtml}</td>
+                        <td class="text-muted">${codigoHtml}</td>
+                    `;
+                    
+                    container.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('apartamentosContainer').innerHTML = 
+                    '<tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error al cargar la ocupación</td></tr>';
+            });
+
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('modalOcupacion'));
+        modal.show();
+    };
+</script>
+
+<!-- Modal de Ocupación -->
+<div class="modal fade" id="modalOcupacion" tabindex="-1" aria-labelledby="modalOcupacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalOcupacionLabel">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    Ocupación de Apartamentos - Hoy
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Información General -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary-subtle">
+                                <h6 class="mb-0 text-primary">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Información de Ocupación
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Fecha Consulta:</strong> <span id="fechaEntrada"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Apartamentos:</strong> <span id="apartamentoNombre"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Estado:</strong> <span class="text-success fw-bold">Ocupación Actual</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado de Ocupación -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-building text-primary me-2"></i>
+                                    Estado de Ocupación por Apartamento
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="border-0">
+                                                    <i class="fas fa-building text-primary me-2"></i>
+                                                    Apartamento
+                                                </th>
+                                                <th class="border-0">
+                                                    <i class="fas fa-info-circle text-primary me-2"></i>
+                                                    Estado
+                                                </th>
+                                                <th class="border-0">
+                                                    <i class="fas fa-calendar text-primary me-2"></i>
+                                                    Fechas
+                                                </th>
+                                                <th class="border-0">
+                                                    <i class="fas fa-user text-primary me-2"></i>
+                                                    Cliente
+                                                </th>
+                                                <th class="border-0">
+                                                    <i class="fas fa-barcode text-primary me-2"></i>
+                                                    Código
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="apartamentosContainer">
+                                            <!-- Los apartamentos se cargarán aquí dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leyenda -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6 class="mb-2">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Leyenda de Estados de Ocupación
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <span class="badge bg-success me-2">●</span>
+                                    <strong>Ocupado desde antes de hoy</strong>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="badge bg-warning me-2">●</span>
+                                    <strong>Entrada hoy</strong>
+                                </div>
+                                <div class="col-md-4">
+                                    <span class="badge bg-secondary me-2">●</span>
+                                    <strong>Libre</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection

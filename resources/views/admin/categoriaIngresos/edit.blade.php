@@ -1,37 +1,76 @@
 @extends('layouts.appAdmin')
 
-@section('content')
-<style>
-    .inactive-sort {
-        color: #0F1739;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #757191;
-    }
-</style>
-<div class="container-fluid">
-    <h2 class="mb-3">{{ __('Editando categoria: ' . $categoria->nombre) }}</h2>
-    {{-- <a href="{{route('apartamentos.admin.create')}}" class="btn bg-color-quinto">Crear banco</a> --}}
-    <hr class="mb-5">
-    <div class="row justify-content-center">
-      <div class="col-md-12">
-        @if (session('status'))
-              <div class="alert alert-success" role="alert">
-                {{ session('status') }}
-            </div>
-        @endif
-        
-        <!-- Formulario de búsqueda -->
-        <form action="{{ route('admin.categoriaIngresos.update', $categoria->id) }}" method="POST" class="mb-4">
-          @csrf
-            <div class="form-grup mb-5">
-              <label for="form-label">Nombre del Banco</label>
-                <input type="text" class="form-control" name="nombre" placeholder="Nombre banco" value="{{$categoria->nombre}}">
-            </div>
-              <button type="submit" class="btn bg-color-primero">Actualizar Categoria</button>
-        </form>
+@section('title', 'Editar Categoría de Ingresos')
 
+@section('content')
+<div class="container-fluid">
+    <!-- Header de la Página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-edit me-2 text-warning"></i>
+                Editar Categoría: {{ $categoria->nombre }}
+            </h1>
+            <p class="text-muted mb-0">Modifica la información de la categoría seleccionada</p>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.categoriaIngresos.index') }}">Categorías de Ingresos</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Alertas de Sesión -->
+    @if (session('status'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ session('status') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Tarjeta del Formulario -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-edit me-2 text-primary"></i>
+                Información de la Categoría
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ route('admin.categoriaIngresos.update', $categoria->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                
+                <div class="form-group">
+                    <label for="nombre" class="form-label fw-semibold">
+                        <i class="fas fa-tag me-2 text-info"></i>Nombre de la Categoría
+                    </label>
+                    <input type="text" class="form-control form-control-lg" name="nombre" id="nombre" 
+                           placeholder="Ingrese el nombre de la categoría" value="{{ $categoria->nombre }}" required>
+                    @error('nombre')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                    <a href="{{ route('admin.categoriaIngresos.index') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Volver al Listado
+                    </a>
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="fas fa-save me-2"></i>
+                        Actualizar Categoría
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

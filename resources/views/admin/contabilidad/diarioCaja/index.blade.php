@@ -1,155 +1,217 @@
 @extends('layouts.appAdmin')
 
+@section('title', 'Diario de Caja')
+
 @section('content')
-<style>
-    .inactive-sort {
-        color: #0F1739;
-        text-decoration: none;
-    }
-    .active-sort {
-        color: #757191;
-    }
-    .custom-tooltip {
-        --bs-tooltip-bg: var(--bd-violet-bg);
-        --bs-tooltip-color: var(--bs-white);
-    }
-</style>
-<!-- Incluir jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Incluir Bootstrap JS -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <div class="container-fluid">
-    <h2 class="mb-3">Diario de Caja</h2>
-    {{-- <button type="button" class="btn bg-color-quinto" data-toggle="modal" data-target="#modalDiarioCaja">
-        Añadir al diario de caja
-    </button>
-    
-    <!-- Modal -->
-    <div class="modal fade" id="modalDiarioCaja" tabindex="-1" role="dialog" aria-labelledby="modalDiarioCajaLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalDiarioCajaLabel">Añadir al Diario de Caja</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <a href="{{ route('admin.diarioCaja.ingreso') }}" class="btn btn-primary">Añadir Ingreso</a>
-                    <a href="{{ route('admin.diarioCaja.gasto') }}" class="btn btn-secondary">Añadir Gasto</a>
-                </div>
-            </div>
+    <!-- Header de la Página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-book me-2 text-primary"></i>
+                Diario de Caja
+            </h1>
+            <p class="text-muted mb-0">Gestiona los movimientos contables y financieros</p>
         </div>
-    </div> --}}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Diario de Caja</li>
+            </ol>
+        </nav>
+    </div>
 
-    <hr class="mb-5">
-
-    <!-- Filtros -->
-    <form action="{{ route('admin.diarioCaja.index') }}" method="GET" class="mb-4">
-        <div class="row align-items-start">
-            <div class="col-md-2">
-                <label for="start_date" class="form-label">Fecha Inicio</label>
-                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-            </div>
-            <div class="col-md-2">
-                <label for="end_date" class="form-label">Fecha Fin</label>
-                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-            </div>
-            <div class="col-md-2">
-                <label for="estado_id" class="form-label">Estado</label>
-                <select name="estado_id" class="form-control">
-                    <option value="">Todos los Estados</option>
-                    @foreach ($estados as $estado)
-                        <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="cuenta_id" class="form-label">Cuenta</label>
-                <select name="cuenta_id" class="form-control">
-                    <option value="">Todas las Cuentas</option>
-                    @foreach ($cuentas as $cuenta)
-                        <option value="{{ $cuenta->id }}" {{ request('cuenta_id') == $cuenta->id ? 'selected' : '' }}>{{ $cuenta->numero .' - '. $cuenta->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="concepto" class="form-label">Concepto</label>
-                <input type="text" name="concepto" class="form-control" value="{{ request('concepto') }}" placeholder="Buscar concepto...">
-            </div>
-            <div class="col-md-2 align-items-end d-flex justify-content-center">
-                <button type="submit" class="btn btn-primary mt-4">Filtrar</button>
-            </div>
+    <!-- Tarjeta de Filtros -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-filter me-2 text-primary"></i>
+                Filtros de Búsqueda
+            </h5>
         </div>
-    </form>
+        <div class="card-body">
+            <form action="{{ route('admin.diarioCaja.index') }}" method="GET">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="start_date" class="form-label fw-semibold">Fecha Inicio</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="end_date" class="form-label fw-semibold">Fecha Fin</label>
+                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="estado_id" class="form-label fw-semibold">Estado</label>
+                        <select name="estado_id" class="form-select">
+                            <option value="">Todos los Estados</option>
+                            @foreach ($estados as $estado)
+                                <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="cuenta_id" class="form-label fw-semibold">Cuenta</label>
+                        <select name="cuenta_id" class="form-select">
+                            <option value="">Todas las Cuentas</option>
+                            @foreach ($cuentas as $cuenta)
+                                <option value="{{ $cuenta->id }}" {{ request('cuenta_id') == $cuenta->id ? 'selected' : '' }}>{{ $cuenta->numero .' - '. $cuenta->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="concepto" class="form-label fw-semibold">Concepto</label>
+                        <input type="text" name="concepto" class="form-control" value="{{ request('concepto') }}" placeholder="Buscar concepto...">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <div class="jumbotron">       
-                <div class="table-responsive">                   
-                    <table id="cuentas" class="table table-striped table-hover" style="width:100%">
-                        <thead>
+    <!-- Tabla de Movimientos -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-table me-2 text-primary"></i>
+                Movimientos del Diario
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="cuentas" class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="fw-semibold text-dark">
+                                <i class="fas fa-hashtag me-2 text-primary"></i>Asiento
+                            </th>
+                            <th class="fw-semibold text-dark">
+                                <i class="fas fa-calendar me-2 text-info"></i>Fecha
+                            </th>
+                            <th class="fw-semibold text-dark">
+                                <i class="fas fa-file-text me-2 text-success"></i>Concepto
+                            </th>
+                            <th class="fw-semibold text-dark">
+                                <i class="fas fa-credit-card me-2 text-warning"></i>Forma de Pago
+                            </th>
+                            <th class="fw-semibold text-dark text-end">
+                                <i class="fas fa-arrow-down me-2 text-danger"></i>Debe
+                            </th>
+                            <th class="fw-semibold text-dark text-end">
+                                <i class="fas fa-arrow-up me-2 text-success"></i>Haber
+                            </th>
+                            <th class="fw-semibold text-dark text-end">
+                                <i class="fas fa-balance-scale me-2 text-primary"></i>Saldo
+                            </th>
+                            <th class="fw-semibold text-dark text-center">
+                                <i class="fas fa-cogs me-2 text-secondary"></i>Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Saldo Inicial -->
+                        <tr class="table-info">
+                            <td colspan="4" class="fw-semibold">
+                                <i class="fas fa-coins me-2 text-warning"></i>Saldo Inicial
+                            </td>
+                            <td class="text-end fw-bold">{{ number_format($saldoInicial, 2) }} €</td>
+                            <td></td>
+                            <td class="text-end fw-bold">{{ number_format($saldoInicial, 2) }} €</td>
+                            <td></td>
+                        </tr>
+                        
+                        @if (count($response) > 0)
+                            @foreach ($response as $linea)
                             <tr>
-                                <th>Asiento</th>
-                                {{-- <th>Estado</th> --}}
-                                <th>Cuenta</th>
-                                <th>Fecha</th>
-                                <th>Concepto</th>
-                                <th>Forma de Pago</th>
-                                <th>Debe</th>
-                                <th>Haber</th>
-                                <th>Saldo</th>
-                                <th>Editar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="7"></td>
-                                <td><strong>Saldo Inicial:</strong></td>
-                                <td>{{ number_format($saldoInicial, 2) }} €</td>
-                                <td></td>
-                            </tr>
-                            
-                            @if (count($response) > 0)
-                                @foreach ($response as $linea)
-                                <tr>
-                                    <td>{{ $linea->asiento_contable }}</td>
-                                    {{-- <td>@if ($linea->estado == null)
-                                        <span class="badge bg-danger">No encontrado</span>
-                                        @else
-                                            {{ $linea->estado->nombre }}
-                                        @endif
-                                    </td> --}}
-                                    <td></td>
-                                    <td>{{ $linea->date }}</td>
-                                    <td>{{ $linea->concepto }}</td>
-                                    <td>{{ $linea->forma_pago }}</td>
-                                    <td>{{ number_format($linea->debe, 2) }} €</td>
-                                    <td>{{ number_format($linea->haber, 2) }} €</td>
-                                    <td>{{ number_format($linea->saldo, 2) }} €</td>
-                                    <td>
+                                <td class="align-middle">
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        {{ $linea->asiento_contable }}
+                                    </span>
+                                </td>
+                                <td class="align-middle">
+                                    <i class="fas fa-calendar-day me-2 text-muted"></i>
+                                    {{ $linea->date }}
+                                </td>
+                                <td class="align-middle">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-file-text text-muted"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">{{ $linea->concepto }}</h6>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge bg-info-subtle text-info">
+                                        {{ $linea->forma_pago }}
+                                    </span>
+                                </td>
+                                <td class="text-end align-middle">
+                                    @if($linea->debe > 0)
+                                        <span class="text-danger fw-semibold">
+                                            {{ number_format($linea->debe, 2) }} €
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-end align-middle">
+                                    @if($linea->haber > 0)
+                                        <span class="text-success fw-semibold">
+                                            {{ number_format($linea->haber, 2) }} €
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-end align-middle">
+                                    <span class="badge bg-primary-subtle text-primary fs-6">
+                                        {{ number_format($linea->saldo, 2) }} €
+                                    </span>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="btn-group" role="group">
                                         @if ($linea->tipo == 'ingreso')
-                                            <a href="{{ route('admin.ingresos.edit', $linea->ingreso_id) }}" class="btn btn-warning">Editar</a>
+                                            <a href="{{ route('admin.ingresos.edit', $linea->ingreso_id) }}" class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                         @elseif ($linea->tipo == 'gasto')
-                                            <a href="{{ route('admin.gastos.edit', $linea->gasto_id) }}" class="btn btn-warning">Editar</a>
+                                            <a href="{{ route('admin.gastos.edit', $linea->gasto_id) }}" class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                         @endif
                                         <form action="{{ route('admin.diarioCaja.destroyDiarioCaja', $linea->id) }}" method="POST" class="d-inline delete-form">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="button" class="btn btn-danger delete-btn">Eliminar</button>
-                                        </form>                                   
-                                    </td>                                    
-                                </tr>
-                                @endforeach
-                            @endif
-                        </tbody>
-                        
-                    </table>
-                </div>
+                                            <button type="button" class="btn btn-outline-danger btn-sm delete-btn">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="mb-4">
+                                        <i class="fas fa-book fa-4x text-muted"></i>
+                                    </div>
+                                    <h4 class="text-muted mb-3">No hay movimientos registrados</h4>
+                                    <p class="text-muted mb-0">No se encontraron movimientos para los filtros seleccionados.</p>
+                                </td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 @section('scripts')

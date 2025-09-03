@@ -177,6 +177,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
     Route::post('/reservas/update/{id}', [App\Http\Controllers\ReservasController::class, 'update'])->name('reservas.update');
     Route::get('/get-reservas', [App\Http\Controllers\ReservasController::class, 'getReservas'])->name('reservas.get');
+    Route::get('/get-apartamentos-ocupacion', [App\Http\Controllers\ReservasController::class, 'getApartamentosOcupacion'])->name('apartamentos.ocupacion');
     Route::get('/get-room-types/{apartamento_id}', [App\Http\Controllers\ReservasController::class, 'getRoomTypes']);
     Route::get('reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
@@ -188,7 +189,12 @@ Route::get('/test-datos-momento/{id}', function($id) {
 
     // Huespedes
     Route::get('/huespedes', [App\Http\Controllers\HuespedesController::class, 'index'])->name('huespedes.index');
+    Route::get('/huespedes/create', [App\Http\Controllers\HuespedesController::class, 'create'])->name('huespedes.create');
+    Route::post('/huespedes', [App\Http\Controllers\HuespedesController::class, 'store'])->name('huespedes.store');
     Route::get('/huesped/show/{id}', [App\Http\Controllers\HuespedesController::class, 'show'])->name('huespedes.show');
+    Route::get('/huespedes/{id}/edit', [App\Http\Controllers\HuespedesController::class, 'edit'])->name('huespedes.edit');
+    Route::put('/huespedes/{id}', [App\Http\Controllers\HuespedesController::class, 'update'])->name('huespedes.update');
+    Route::delete('/huespedes/{id}', [App\Http\Controllers\HuespedesController::class, 'destroy'])->name('huespedes.destroy');
 
     // Configuraciones
     Route::get('/configuracion', [App\Http\Controllers\ConfiguracionesController::class, 'index'])->name('configuracion.index');

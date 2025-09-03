@@ -9,19 +9,59 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
-<div class="container-fluid">
-    <div class="d-flex flex-colum mb-3">
-        <h2 class="mb-0 me-3 encabezado_top">{{ __('Añadir Reserva') }}</h2>
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-plus-circle text-primary me-2"></i>
+            Crear Nueva Reserva
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('reservas.index') }}">Reservas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Crear</li>
+            </ol>
+        </nav>
     </div>
-    {{-- <a href="{{route('clientes.create')}}" class="btn bg-color-quinto">Crear cliente</a> --}}
-    <hr>
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <form action="{{ route('reservas.store') }}" method="POST" class="row">
-                @csrf
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="cliente_id" class="form-label">Cliente ID</label>
-                    <select class="form-control select2 {{ $errors->has('cliente_id') ? 'is-invalid' : '' }}" name="cliente_id" id="cliente_id">
+</div>
+
+<!-- Session Alerts -->
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+<!-- Formulario Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-plus text-primary me-2"></i>
+            Información de la Reserva
+        </h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ route('reservas.store') }}" method="POST">
+            @csrf
+            
+            <div class="row g-3">
+                <!-- Cliente -->
+                <div class="col-md-6">
+                    <label for="cliente_id" class="form-label fw-semibold">
+                        <i class="fas fa-user text-primary me-1"></i>
+                        Cliente
+                    </label>
+                    <select class="form-select form-select-lg select2 {{ $errors->has('cliente_id') ? 'is-invalid' : '' }}" name="cliente_id" id="cliente_id">
                         <option value="">Seleccione un cliente</option>
                         @foreach($clientes as $cliente)
                             <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
@@ -30,39 +70,57 @@
                         @endforeach
                     </select>
                     @error('cliente_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="apartamento_id" class="form-label">Apartamento</label>
-                    <select class="form-control {{ $errors->has('apartamento_id') ? 'is-invalid' : '' }}" name="apartamento_id" id="apartamento_id">
+                <!-- Apartamento -->
+                <div class="col-md-6">
+                    <label for="apartamento_id" class="form-label fw-semibold">
+                        <i class="fas fa-building text-primary me-1"></i>
+                        Apartamento
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('apartamento_id') ? 'is-invalid' : '' }}" name="apartamento_id" id="apartamento_id">
                         <option value="">Seleccione un apartamento</option>
                         @foreach($apartamentos as $apartamento)
                             <option value="{{ $apartamento->id }}" {{ old('apartamento_id') == $apartamento->id ? 'selected' : '' }}>{{ $apartamento->titulo }}</option>
                         @endforeach
                     </select>
                     @error('apartamento_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <!-- Nuevo campo para seleccionar Room Type dinámicamente -->
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="room_type_id" class="form-label">Tipo de Habitación</label>
-                    <select class="form-control {{ $errors->has('room_type_id') ? 'is-invalid' : '' }}" name="room_type_id" id="room_type_id">
+                <!-- Tipo de Habitación -->
+                <div class="col-md-6">
+                    <label for="room_type_id" class="form-label fw-semibold">
+                        <i class="fas fa-bed text-primary me-1"></i>
+                        Tipo de Habitación
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('room_type_id') ? 'is-invalid' : '' }}" name="room_type_id" id="room_type_id">
                         <option value="">Seleccione un tipo de habitación</option>
                     </select>
                     @error('room_type_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="origen" class="form-label">Origen</label>
-                    <select class="form-control {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
+                <!-- Origen -->
+                <div class="col-md-6">
+                    <label for="origen" class="form-label fw-semibold">
+                        <i class="fas fa-globe text-primary me-1"></i>
+                        Origen
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
                         <option value="">Seleccione el origen</option>
                         <option value="Airbnb" {{ old('origen') == 'Airbnb' ? 'selected' : '' }}>Airbnb</option>
                         <option value="Booking" {{ old('origen') == 'Booking' ? 'selected' : '' }}>Booking</option>
@@ -70,91 +128,166 @@
                         <option value="Presencial" {{ old('origen') == 'Presencial' ? 'selected' : '' }}>Presencial</option>
                     </select>
                     @error('origen')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="estado_id" class="form-label">Estado de la Reserva</label>
-                    <select class="form-control {{ $errors->has('estado_id') ? 'is-invalid' : '' }}" name="estado_id" id="estado_id">
-                        <option value="">Seleccione un apartamento</option>
+
+                <!-- Estado de la Reserva -->
+                <div class="col-md-6">
+                    <label for="estado_id" class="form-label fw-semibold">
+                        <i class="fas fa-toggle-on text-primary me-1"></i>
+                        Estado de la Reserva
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('estado_id') ? 'is-invalid' : '' }}" name="estado_id" id="estado_id">
+                        <option value="">Seleccione un estado</option>
                         @foreach($estados as $estado)
                             <option value="{{ $estado->id }}" {{ old('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
                         @endforeach
                     </select>
                     @error('estado_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="codigo_reserva" class="form-label">Código de Reserva</label>
-                    <input type="text" class="form-control {{ $errors->has('codigo_reserva') ? 'is-invalid' : '' }}" name="codigo_reserva" value="{{ old('codigo_reserva') }}">
+                <!-- Código de Reserva -->
+                <div class="col-md-6">
+                    <label for="codigo_reserva" class="form-label fw-semibold">
+                        <i class="fas fa-barcode text-primary me-1"></i>
+                        Código de Reserva
+                    </label>
+                    <input type="text" class="form-control form-control-lg {{ $errors->has('codigo_reserva') ? 'is-invalid' : '' }}" name="codigo_reserva" value="{{ old('codigo_reserva') }}" placeholder="Ingrese el código de reserva">
                     @error('codigo_reserva')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="fecha_entrada" class="form-label">Fecha de Entrada</label>
-                    <input type="text" class="form-control {{ $errors->has('fecha_entrada') ? 'is-invalid' : '' }}" id="fecha_entrada" name="fecha_entrada" value="{{ old('fecha_entrada') }}" required>
+                <!-- Fecha de Entrada -->
+                <div class="col-md-6">
+                    <label for="fecha_entrada" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-plus text-primary me-1"></i>
+                        Fecha de Entrada
+                    </label>
+                    <input type="text" class="form-control form-control-lg {{ $errors->has('fecha_entrada') ? 'is-invalid' : '' }}" id="fecha_entrada" name="fecha_entrada" value="{{ old('fecha_entrada') }}" placeholder="dd/mm/yyyy" required>
                     @error('fecha_entrada')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="fecha_salida" class="form-label">Fecha de Salida</label>
-                    <input type="text" class="form-control {{ $errors->has('fecha_salida') ? 'is-invalid' : '' }}" id="fecha_salida" name="fecha_salida" value="{{ old('fecha_salida') }}" required>
+                <!-- Fecha de Salida -->
+                <div class="col-md-6">
+                    <label for="fecha_salida" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-minus text-primary me-1"></i>
+                        Fecha de Salida
+                    </label>
+                    <input type="text" class="form-control form-control-lg {{ $errors->has('fecha_salida') ? 'is-invalid' : '' }}" id="fecha_salida" name="fecha_salida" value="{{ old('fecha_salida') }}" placeholder="dd/mm/yyyy" required>
                     @error('fecha_salida')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="precio" class="form-label">Precio</label>
-                    <input type="text" class="form-control {{ $errors->has('precio') ? 'is-invalid' : '' }}" name="precio" value="{{ old('precio') }}">
+                <!-- Precio -->
+                <div class="col-md-6">
+                    <label for="precio" class="form-label fw-semibold">
+                        <i class="fas fa-euro-sign text-primary me-1"></i>
+                        Precio
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text">€</span>
+                        <input type="text" class="form-control {{ $errors->has('precio') ? 'is-invalid' : '' }}" name="precio" value="{{ old('precio') }}" placeholder="0.00">
+                    </div>
                     @error('precio')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @enderror
                 </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="verificado" class="form-label">Verificado</label>
-                    <div class="form-check">
-                        <input class="form-check-input {{ $errors->has('verificado') ? 'is-invalid' : '' }}" type="checkbox" name="verificado" id="verificado" value="1" {{ old('verificado') ? 'checked' : '' }}>
-                        <label class="form-check-label" for="verificado">Sí</label>
-                        @error('verificado')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                <!-- Checkboxes -->
+                <div class="col-12">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input form-check-input-lg {{ $errors->has('verificado') ? 'is-invalid' : '' }}" type="checkbox" name="verificado" id="verificado" value="1" {{ old('verificado') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-semibold" for="verificado">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Verificado
+                                </label>
+                                @error('verificado')
+                                    <div class="alert alert-danger alert-dismissible fade show mt-2">
+                                        <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input form-check-input-lg {{ $errors->has('dni_entregado') ? 'is-invalid' : '' }}" type="checkbox" name="dni_entregado" id="dni_entregado" value="1" {{ old('dni_entregado') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-semibold" for="dni_entregado">
+                                    <i class="fas fa-id-card text-info me-1"></i>
+                                    DNI Entregado
+                                </label>
+                                @error('dni_entregado')
+                                    <div class="alert alert-danger alert-dismissible fade show mt-2">
+                                        <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input form-check-input-lg {{ $errors->has('enviado_webpol') ? 'is-invalid' : '' }}" type="checkbox" name="enviado_webpol" id="enviado_webpol" value="1" {{ old('enviado_webpol') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-semibold" for="enviado_webpol">
+                                    <i class="fas fa-paper-plane text-warning me-1"></i>
+                                    Enviado Webpol
+                                </label>
+                                @error('enviado_webpol')
+                                    <div class="alert alert-danger alert-dismissible fade show mt-2">
+                                        <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="dni_entregado" class="form-label">DNI Entregado</label>
-                    <div class="form-check">
-                        <input class="form-check-input {{ $errors->has('dni_entregado') ? 'is-invalid' : '' }}" type="checkbox" name="dni_entregado" id="dni_entregado" value="1" {{ old('dni_entregado') ? 'checked' : '' }}>
-                        <label class="form-check-label" for="dni_entregado">Sí</label>
-                        @error('dni_entregado')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+            <!-- Botones de Acción -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{{ route('reservas.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver al Listado
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            Crear Reserva
+                        </button>
                     </div>
                 </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="enviado_webpol" class="form-label">Enviado Webpol</label>
-                    <div class="form-check">
-                        <input class="form-check-input {{ $errors->has('enviado_webpol') ? 'is-invalid' : '' }}" type="checkbox" name="enviado_webpol" id="enviado_webpol" value="1" {{ old('enviado_webpol') ? 'checked' : '' }}>
-                        <label class="form-check-label" for="enviado_webpol">Sí</label>
-                        @error('enviado_webpol')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-terminar w-100 fs-4 mt-4">Añadir</button>
-            </form>
-
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

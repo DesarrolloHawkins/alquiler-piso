@@ -836,7 +836,7 @@
                                 <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                                     <div class="photo-item text-center">
                                         <div class="photo-thumbnail mb-2">
-                                            <img src="{{ asset('storage/' . $photo->ruta) }}" 
+                                            <img src="{{ asset('storage/' . $photo->url) }}" 
                                                  alt="Foto del cliente" 
                                                  class="img-fluid rounded"
                                                  style="max-width: 100px; height: 100px; object-fit: cover;">

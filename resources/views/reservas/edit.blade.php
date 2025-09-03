@@ -7,76 +7,147 @@
 <!-- Fancybox JS -->
 <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4.0.27/dist/fancybox.umd.js"></script>
 
-<div class="container-fluid">
-    <div class="d-flex flex-colum mb-3">
-        <h2 class="mb-0 me-3 encabezado_top">{{ __('Información de la Reserva: ') }}<span class="text-primary align-baseline">{{$reserva->codigo_reserva}}</span></h2>
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-edit text-primary me-2"></i>
+            Editar Reserva: <span class="text-primary">{{ $reserva->codigo_reserva }}</span>
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('reservas.index') }}">Reservas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            </ol>
+        </nav>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            {{-- Formulario de Edición --}}
-            <div class="card">
-                <div class="card-body">
-                    <h4><i class="fa-regular fa-edit"></i> Editar Información de la Reserva</h4>
-                    <hr>
-                    <form action="{{ route('reservas.updateReserva', $reserva->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
+</div>
 
-                        <label for="apartamento_id" class="form-label">Apartamento</label>
-                        <select class="form-control {{ $errors->has('apartamento_id') ? 'is-invalid' : '' }}" name="apartamento_id" id="apartamento_id">
-                            <option value="">Seleccione un apartamento</option>
-                            @foreach($apartamentos as $apartamento)
-                                <option value="{{ $apartamento->id }}"
-                                    {{ (old('apartamento_id', $reserva->apartamento_id) == $apartamento->id) ? 'selected' : '' }}>
-                                    {{ $apartamento->titulo }}
-                                </option>
-                            @endforeach
-                        </select>
+<!-- Session Alerts -->
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-                        @error('apartamento_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
-                        <div class="mb-3">
-                                    <label for="origen" class="form-label">Origen</label>
-                                    <select class="form-control {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
-                                        <option value="">Seleccione el origen</option>
-                                        @foreach(['Airbnb', 'Booking', 'Web', 'Presencial'] as $origen)
-                                            <option value="{{ $origen }}"
-                                                {{ (old('origen', $reserva->origen) == $origen) ? 'selected' : '' }}>
-                                                {{ $origen }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                            @error('origen')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+<!-- Formulario Principal -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-edit text-primary me-2"></i>
+            Información de la Reserva
+        </h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ route('reservas.updateReserva', $reserva->id) }}" method="POST">
+            @csrf
+            @method('PUT')
+            
+            <div class="row g-3">
+                <!-- Apartamento -->
+                <div class="col-md-6">
+                    <label for="apartamento_id" class="form-label fw-semibold">
+                        <i class="fas fa-building text-primary me-1"></i>
+                        Apartamento
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('apartamento_id') ? 'is-invalid' : '' }}" name="apartamento_id" id="apartamento_id">
+                        <option value="">Seleccione un apartamento</option>
+                        @foreach($apartamentos as $apartamento)
+                            <option value="{{ $apartamento->id }}"
+                                {{ (old('apartamento_id', $reserva->apartamento_id) == $apartamento->id) ? 'selected' : '' }}>
+                                {{ $apartamento->titulo }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('apartamento_id')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
+                    @enderror
+                </div>
 
-                        <div class="mb-3">
-                            <label for="fecha_entrada" class="form-label">Fecha Entrada</label>
-                            <input type="date" class="form-control" id="fecha_entrada" name="fecha_entrada" value="{{ $reserva->fecha_entrada }}" required>
+                <!-- Origen -->
+                <div class="col-md-6">
+                    <label for="origen" class="form-label fw-semibold">
+                        <i class="fas fa-globe text-primary me-1"></i>
+                        Origen
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('origen') ? 'is-invalid' : '' }}" name="origen" id="origen">
+                        <option value="">Seleccione el origen</option>
+                        @foreach(['Airbnb', 'Booking', 'Web', 'Presencial'] as $origen)
+                            <option value="{{ $origen }}"
+                                {{ (old('origen', $reserva->origen) == $origen) ? 'selected' : '' }}>
+                                {{ $origen }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('origen')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
+                    @enderror
+                </div>
 
-                        <div class="mb-3">
-                            <label for="fecha_salida" class="form-label">Fecha Salida</label>
-                            <input type="date" class="form-control" id="fecha_salida" name="fecha_salida" value="{{ $reserva->fecha_salida }}" required>
-                        </div>
+                <!-- Fecha de Entrada -->
+                <div class="col-md-6">
+                    <label for="fecha_entrada" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-plus text-primary me-1"></i>
+                        Fecha de Entrada
+                    </label>
+                    <input type="date" class="form-control form-control-lg" id="fecha_entrada" name="fecha_entrada" value="{{ $reserva->fecha_entrada }}" required>
+                </div>
 
-                        <div class="mb-3">
-                            <label for="precio" class="form-label">Precio</label>
-                            <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ $reserva->precio }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-primary">Actualizar Reserva</button>
-                        </div>
-                    </form>
+                <!-- Fecha de Salida -->
+                <div class="col-md-6">
+                    <label for="fecha_salida" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-minus text-primary me-1"></i>
+                        Fecha de Salida
+                    </label>
+                    <input type="date" class="form-control form-control-lg" id="fecha_salida" name="fecha_salida" value="{{ $reserva->fecha_salida }}" required>
+                </div>
+
+                <!-- Precio -->
+                <div class="col-md-6">
+                    <label for="precio" class="form-label fw-semibold">
+                        <i class="fas fa-euro-sign text-primary me-1"></i>
+                        Precio
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text">€</span>
+                        <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ $reserva->precio }}" required>
+                    </div>
                 </div>
             </div>
 
-            {{-- Rest of the content... --}}
-
-        </div>
+            <!-- Botones de Acción -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{{ route('reservas.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver al Listado
+                        </a>
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            Actualizar Reserva
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

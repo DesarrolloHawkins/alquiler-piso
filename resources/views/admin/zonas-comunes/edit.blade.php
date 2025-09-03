@@ -5,14 +5,14 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="h3 mb-1 text-gray-800">
-            <i class="fas fa-plus-circle text-primary me-2"></i>
-            Crear Nueva Zona Común
+            <i class="fas fa-edit text-primary me-2"></i>
+            Editar Zona Común
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.zonas-comunes.index') }}">Zonas Comunes</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Crear</li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
             </ol>
         </nav>
     </div>
@@ -44,8 +44,9 @@
         </h5>
     </div>
     <div class="card-body">
-        <form action="{{ route('admin.zonas-comunes.store') }}" method="POST">
+        <form action="{{ route('admin.zonas-comunes.update', $zonaComun->id) }}" method="POST">
             @csrf
+            @method('PUT')
             
             <div class="row g-3">
                 <!-- Nombre -->
@@ -58,7 +59,7 @@
                            class="form-control form-control-lg {{ $errors->has('nombre') ? 'is-invalid' : '' }}" 
                            id="nombre" 
                            name="nombre" 
-                           value="{{ old('nombre') }}" 
+                           value="{{ old('nombre', $zonaComun->nombre) }}" 
                            placeholder="Ej: Recepción, Piscina, Gimnasio..."
                            required>
                     @error('nombre')
@@ -80,22 +81,22 @@
                             name="tipo" 
                             required>
                         <option value="">Seleccionar tipo...</option>
-                        <option value="zona_comun" {{ old('tipo') == 'zona_comun' ? 'selected' : '' }}>
+                        <option value="zona_comun" {{ old('tipo', $zonaComun->tipo) == 'zona_comun' ? 'selected' : '' }}>
                             Zona Común
                         </option>
-                        <option value="area_servicio" {{ old('tipo') == 'area_servicio' ? 'selected' : '' }}>
+                        <option value="area_servicio" {{ old('tipo', $zonaComun->tipo) == 'area_servicio' ? 'selected' : '' }}>
                             Área de Servicio
                         </option>
-                        <option value="recepcion" {{ old('tipo') == 'recepcion' ? 'selected' : '' }}>
+                        <option value="recepcion" {{ old('tipo', $zonaComun->tipo) == 'recepcion' ? 'selected' : '' }}>
                             Recepción
                         </option>
-                        <option value="piscina" {{ old('tipo') == 'piscina' ? 'selected' : '' }}>
+                        <option value="piscina" {{ old('tipo', $zonaComun->tipo) == 'piscina' ? 'selected' : '' }}>
                             Piscina
                         </option>
-                        <option value="gimnasio" {{ old('tipo') == 'gimnasio' ? 'selected' : '' }}>
+                        <option value="gimnasio" {{ old('tipo', $zonaComun->tipo) == 'gimnasio' ? 'selected' : '' }}>
                             Gimnasio
                         </option>
-                        <option value="terraza" {{ old('tipo') == 'terraza' ? 'selected' : '' }}>
+                        <option value="terraza" {{ old('tipo', $zonaComun->tipo) == 'terraza' ? 'selected' : '' }}>
                             Terraza
                         </option>
                     </select>
@@ -117,7 +118,7 @@
                            class="form-control form-control-lg {{ $errors->has('ubicacion') ? 'is-invalid' : '' }}" 
                            id="ubicacion" 
                            name="ubicacion" 
-                           value="{{ old('ubicacion') }}" 
+                           value="{{ old('ubicacion', $zonaComun->ubicacion) }}" 
                            placeholder="Ej: Planta baja, Primer piso...">
                     @error('ubicacion')
                         <div class="alert alert-danger alert-dismissible fade show mt-2">
@@ -137,7 +138,7 @@
                            class="form-control form-control-lg {{ $errors->has('orden') ? 'is-invalid' : '' }}" 
                            id="orden" 
                            name="orden" 
-                           value="{{ old('orden', 0) }}" 
+                           value="{{ old('orden', $zonaComun->orden ?? 0) }}" 
                            min="0"
                            placeholder="0">
                     @error('orden')
@@ -161,7 +162,7 @@
                               id="descripcion" 
                               name="descripcion" 
                               rows="4" 
-                              placeholder="Descripción detallada de la zona común...">{{ old('descripcion') }}</textarea>
+                              placeholder="Descripción detallada de la zona común...">{{ old('descripcion', $zonaComun->descripcion) }}</textarea>
                     @error('descripcion')
                         <div class="alert alert-danger alert-dismissible fade show mt-2">
                             <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
@@ -181,7 +182,7 @@
                         </a>
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-save me-2"></i>
-                            Crear Zona Común
+                            Actualizar Zona Común
                         </button>
                     </div>
                 </div>
