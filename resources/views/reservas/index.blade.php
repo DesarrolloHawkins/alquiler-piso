@@ -666,21 +666,26 @@
                             return 0; // Libre
                         }
                         
+                        // Buscar entrada de hoy
+                        const entradaHoy = apartamento.reservas.find(reserva => {
+                            const entrada = new Date(reserva.fecha_entrada);
+                            entrada.setHours(0, 0, 0, 0);
+                            return entrada.getTime() === hoy.getTime();
+                        });
+                        
+                        if (entradaHoy) {
+                            return 1; // Entrada hoy
+                        }
+                        
+                        // Buscar reserva activa (ocupada actualmente)
                         const reservaActiva = apartamento.reservas.find(reserva => {
                             const entrada = new Date(reserva.fecha_entrada);
                             const salida = new Date(reserva.fecha_salida);
-                            return entrada <= hoy && salida >= hoy;
+                            return entrada <= hoy && salida > hoy;
                         });
                         
                         if (reservaActiva) {
-                            const entradaReserva = new Date(reservaActiva.fecha_entrada);
-                            entradaReserva.setHours(0, 0, 0, 0);
-                            
-                            if (entradaReserva.getTime() === hoy.getTime()) {
-                                return 1; // Entrada hoy
-                            } else {
-                                return 2; // Ocupado desde antes
-                            }
+                            return 2; // Ocupado desde antes
                         }
                         
                         return 0; // Libre
@@ -703,28 +708,34 @@
                         const hoy = new Date();
                         hoy.setHours(0, 0, 0, 0);
                         
+                        // Buscar entrada de hoy
+                        const entradaHoy = apartamento.reservas.find(reserva => {
+                            const entrada = new Date(reserva.fecha_entrada);
+                            entrada.setHours(0, 0, 0, 0);
+                            return entrada.getTime() === hoy.getTime();
+                        });
+                        
+                        // Buscar reserva activa (ocupada actualmente)
                         const reservaActiva = apartamento.reservas.find(reserva => {
                             const entrada = new Date(reserva.fecha_entrada);
                             const salida = new Date(reserva.fecha_salida);
-                            return entrada <= hoy && salida >= hoy;
+                            // Solo considerar reservas que estén activas HOY (entrada <= hoy < salida)
+                            return entrada <= hoy && salida > hoy;
                         });
                         
-                        if (reservaActiva) {
-                            const entradaReserva = new Date(reservaActiva.fecha_entrada);
-                            entradaReserva.setHours(0, 0, 0, 0);
-                            
-                            if (entradaReserva.getTime() === hoy.getTime()) {
-                                // Entrada hoy
-                                estadoTexto = 'Entrada hoy';
-                                estadoColor = 'badge bg-warning text-dark';
-                                rowClass = 'table-warning';
-                            } else {
-                                // Ocupado desde antes
-                                estadoTexto = 'Ocupado (desde antes)';
-                                estadoColor = 'badge bg-info text-white';
-                                rowClass = 'table-info';
-                            }
-                            
+                        if (entradaHoy) {
+                            // Entrada hoy
+                            estadoTexto = 'Entrada hoy';
+                            estadoColor = 'badge bg-warning text-dark';
+                            rowClass = 'table-warning';
+                            fechasHtml = `${entradaHoy.fecha_entrada} - ${entradaHoy.fecha_salida}`;
+                            clienteHtml = entradaHoy.cliente_alias;
+                            codigoHtml = entradaHoy.codigo_reserva;
+                        } else if (reservaActiva) {
+                            // Ocupado desde antes
+                            estadoTexto = 'Ocupado (desde antes)';
+                            estadoColor = 'badge bg-info text-white';
+                            rowClass = 'table-info';
                             fechasHtml = `${reservaActiva.fecha_entrada} - ${reservaActiva.fecha_salida}`;
                             clienteHtml = reservaActiva.cliente_alias;
                             codigoHtml = reservaActiva.codigo_reserva;
