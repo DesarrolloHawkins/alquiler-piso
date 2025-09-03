@@ -681,6 +681,8 @@
                         const reservaActiva = apartamento.reservas.find(reserva => {
                             const entrada = new Date(reserva.fecha_entrada);
                             const salida = new Date(reserva.fecha_salida);
+                            entrada.setHours(0, 0, 0, 0);
+                            salida.setHours(0, 0, 0, 0);
                             return entrada <= hoy && salida > hoy;
                         });
                         
@@ -704,53 +706,57 @@
                     let clienteHtml = '-';
                     let codigoHtml = '-';
                     
-                    if (apartamento.reservas && apartamento.reservas.length > 0) {
-                        const hoy = new Date();
-                        hoy.setHours(0, 0, 0, 0);
-                        
-                        // Buscar entrada de hoy
-                        const entradaHoy = apartamento.reservas.find(reserva => {
-                            const entrada = new Date(reserva.fecha_entrada);
-                            entrada.setHours(0, 0, 0, 0);
-                            return entrada.getTime() === hoy.getTime();
-                        });
-                        
-                        // Buscar reserva activa (ocupada actualmente)
-                        const reservaActiva = apartamento.reservas.find(reserva => {
-                            const entrada = new Date(reserva.fecha_entrada);
-                            const salida = new Date(reserva.fecha_salida);
-                            // Solo considerar reservas que estén activas HOY (entrada <= hoy < salida)
-                            return entrada <= hoy && salida > hoy;
-                        });
-                        
-                        if (entradaHoy) {
-                            // Entrada hoy
-                            estadoTexto = 'Entrada hoy';
-                            estadoColor = 'badge bg-warning text-dark';
-                            rowClass = 'table-warning';
-                            fechasHtml = `${entradaHoy.fecha_entrada} - ${entradaHoy.fecha_salida}`;
-                            clienteHtml = entradaHoy.cliente_alias;
-                            codigoHtml = entradaHoy.codigo_reserva;
-                        } else if (reservaActiva) {
-                            // Ocupado desde antes
-                            estadoTexto = 'Ocupado (desde antes)';
-                            estadoColor = 'badge bg-info text-white';
-                            rowClass = 'table-info';
-                            fechasHtml = `${reservaActiva.fecha_entrada} - ${reservaActiva.fecha_salida}`;
-                            clienteHtml = reservaActiva.cliente_alias;
-                            codigoHtml = reservaActiva.codigo_reserva;
-                        } else {
-                            // Libre
-                            estadoTexto = 'Libre';
-                            estadoColor = 'badge bg-success text-white';
-                            rowClass = 'table-success';
-                        }
-                    } else {
-                        // Libre
-                        estadoTexto = 'Libre';
-                        estadoColor = 'badge bg-success text-white';
-                        rowClass = 'table-success';
-                    }
+                                           if (apartamento.reservas && apartamento.reservas.length > 0) {
+                           const hoy = new Date();
+                           hoy.setHours(0, 0, 0, 0);
+
+                           // Buscar entrada de hoy
+                           const entradaHoy = apartamento.reservas.find(reserva => {
+                               const entrada = new Date(reserva.fecha_entrada);
+                               entrada.setHours(0, 0, 0, 0);
+                               return entrada.getTime() === hoy.getTime();
+                           });
+
+                           // Buscar reserva activa (ocupada actualmente)
+                           // IMPORTANTE: Solo considerar reservas que estén activas HOY (entrada <= hoy < salida)
+                           // Esto excluye automáticamente las que salen hoy
+                           const reservaActiva = apartamento.reservas.find(reserva => {
+                               const entrada = new Date(reserva.fecha_entrada);
+                               const salida = new Date(reserva.fecha_salida);
+                               entrada.setHours(0, 0, 0, 0);
+                               salida.setHours(0, 0, 0, 0);
+                               // Solo considerar reservas que estén activas HOY (entrada <= hoy < salida)
+                               return entrada <= hoy && salida > hoy;
+                           });
+
+                           if (entradaHoy) {
+                               // Entrada hoy
+                               estadoTexto = 'Entrada hoy';
+                               estadoColor = 'badge bg-warning text-dark';
+                               rowClass = 'table-warning';
+                               fechasHtml = `${entradaHoy.fecha_entrada} - ${entradaHoy.fecha_salida}`;
+                               clienteHtml = entradaHoy.cliente_alias;
+                               codigoHtml = entradaHoy.codigo_reserva;
+                           } else if (reservaActiva) {
+                               // Ocupado desde antes
+                               estadoTexto = 'Ocupado (desde antes)';
+                               estadoColor = 'badge bg-info text-white';
+                               rowClass = 'table-info';
+                               fechasHtml = `${reservaActiva.fecha_entrada} - ${reservaActiva.fecha_salida}`;
+                               clienteHtml = reservaActiva.cliente_alias;
+                               codigoHtml = reservaActiva.codigo_reserva;
+                           } else {
+                               // Libre (incluye apartamentos que salen hoy)
+                               estadoTexto = 'Libre';
+                               estadoColor = 'badge bg-success text-white';
+                               rowClass = 'table-success';
+                           }
+                       } else {
+                           // Libre
+                           estadoTexto = 'Libre';
+                           estadoColor = 'badge bg-success text-white';
+                           rowClass = 'table-success';
+                       }
                     
                     row.className = rowClass;
                     row.innerHTML = `
