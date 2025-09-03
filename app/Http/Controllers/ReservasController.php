@@ -1394,12 +1394,14 @@ class ReservasController extends Controller
     public function getApartamentosOcupacion()
     {
         try {
-            // Obtener apartamentos con id_channex no nulo y sus reservas activas
-            $apartamentos = Apartamento::whereNotNull('id_channex')
+            // Obtener TODOS los apartamentos (misma lógica que el dashboard)
+            $apartamentos = Apartamento::whereNotNull('edificio_id')
+                ->whereNotNull('id_channex')
                 ->with(['reservas' => function($query) {
                     $query->where('fecha_salida', '>=', Carbon::today())
                           ->where('fecha_entrada', '<=', Carbon::today()->addDays(30)) // Próximos 30 días
-                          ->where('deleted_at', null);
+                          ->where('deleted_at', null)
+                          ->where('estado_id', '!=', 4); // Excluir canceladas
                 }])->get();
 
             // Formatear los datos para el frontend
