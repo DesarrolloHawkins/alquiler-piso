@@ -85,7 +85,7 @@ Route::get('/test-chat-gpt', [App\Http\Controllers\TestController::class, 'chatG
 // Rutas de admin
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
-    Route::get('/admin', function () { return view('admin.dashboard');})->name('inicio');
+    Route::get('/admin', [App\Http\Controllers\DashboardController::class, 'index'])->name('inicio');
 
     Route::resource('metalicos', MetalicoController::class);
     // Route::get('/metalico/create-gasto', [App\Http\Controllers\MetalicoController::class, 'createGasto'])->name('metalicos.createGasto');
@@ -793,6 +793,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/amenities/{id}/reposicion', [App\Http\Controllers\Admin\AmenityController::class, 'registrarReposicion'])->name('amenities.reposicion');
     Route::post('/amenities/calcular-consumo', [App\Http\Controllers\Admin\AmenityController::class, 'calcularConsumoReserva'])->name('amenities.calcular-consumo');
     Route::get('/amenities/{id}', [App\Http\Controllers\Admin\AmenityController::class, 'show'])->name('amenities.show');
+    
+    // Sistema de Inventario - Gestión de Proveedores
+    Route::resource('proveedores', App\Http\Controllers\Admin\ProveedorController::class);
+    
+    // Sistema de Inventario - Gestión de Artículos
+    Route::resource('articulos', App\Http\Controllers\Admin\ArticuloController::class);
+    Route::post('/articulos/{id}/reponer-stock', [App\Http\Controllers\Admin\ArticuloController::class, 'reponerStock'])->name('articulos.reponer-stock');
+    
+    // Sistema de Inventario - Gestión de Movimientos de Stock
+    Route::resource('movimientos-stock', App\Http\Controllers\Admin\MovimientoStockController::class);
+    Route::get('/movimientos-stock/exportar', [App\Http\Controllers\Admin\MovimientoStockController::class, 'exportar'])->name('movimientos-stock.exportar');
 });
 
 // Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)

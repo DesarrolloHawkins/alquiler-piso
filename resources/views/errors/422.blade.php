@@ -1,18 +1,18 @@
 @extends('layouts.error')
 
-@section('title', 'Página No Encontrada')
+@section('title', 'Error de Validación')
 
 @section('content')
 <div class="error-icon">
-    <i class="fas fa-search"></i>
+    <i class="fas fa-exclamation-circle"></i>
 </div>
 
-<h1 class="error-title">404</h1>
-<h2 class="error-subtitle">Página No Encontrada</h2>
+<h1 class="error-title">422</h1>
+<h2 class="error-subtitle">Error de Validación</h2>
 
 <p class="error-description">
-    Lo sentimos, la página que estás buscando no existe o ha sido movida. 
-    Verifica la URL o utiliza el botón de abajo para volver al inicio.
+    Los datos enviados no son válidos o están incompletos. Por favor, 
+    revisa la información e inténtalo de nuevo.
 </p>
 
 <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
@@ -22,11 +22,11 @@
     </a>
     <button onclick="history.back()" class="btn btn-outline-primary btn-error">
         <i class="fas fa-arrow-left me-2"></i>
-        Página Anterior
+        Volver Atrás
     </button>
 </div>
 
 <div class="error-code">
-    Error 404 - Página no encontrada
+    Error 422 - Datos de entrada no válidos
 </div>
 @endsection
