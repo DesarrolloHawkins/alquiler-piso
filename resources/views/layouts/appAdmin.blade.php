@@ -163,7 +163,7 @@
 
                                 <!-- Limpieza y Mantenimiento -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('limpiezas*') || request()->is('limpieza*') || request()->is('zonas-comunes*') || request()->is('checklists-zonas-comunes*') || request()->is('amenities*') || request()->is('admin/incidencias*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('limpiezas*') || request()->is('limpieza*') || request()->is('zonas-comunes*') || request()->is('checklists-zonas-comunes*') || request()->is('amenities*') || request()->is('admin/incidencias*') || request()->is('admin/proveedores*') || request()->is('admin/articulos*') || request()->is('admin/movimientos-stock*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-broom me-1"></i>Limpieza
                                     </a>
                                     <ul class="dropdown-menu">
@@ -187,6 +187,16 @@
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.amenities.index') }}">
                                             <i class="fas fa-gift me-2"></i>Gestión de Amenities
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.proveedores.index') }}">
+                                            <i class="fas fa-truck me-2"></i>Proveedores
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.articulos.index') }}">
+                                            <i class="fas fa-boxes me-2"></i>Artículos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.movimientos-stock.index') }}">
+                                            <i class="fas fa-exchange-alt me-2"></i>Movimientos de Stock
                                         </a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.limpiezaFondo.index') }}">
