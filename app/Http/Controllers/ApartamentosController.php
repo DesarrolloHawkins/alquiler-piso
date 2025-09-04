@@ -49,7 +49,21 @@ class ApartamentosController extends Controller
 
         $edificios = Edificio::all();
 
-        return view('admin.apartamentos.index', compact('apartamentoslist', 'apartamentos', 'edificios', 'search', 'sort', 'order'));
+        // Calcular estadísticas para cada apartamento del año actual
+        $añoActual = date('Y');
+        $estadisticasApartamentos = [];
+        
+        foreach ($apartamentos as $apartamento) {
+            $reservasAño = $apartamento->reservas()->whereYear('fecha_entrada', $añoActual)->get();
+            
+            $estadisticasApartamentos[$apartamento->id] = [
+                'ingresos_año' => $reservasAño->sum('precio'),
+                'ocupaciones_año' => $reservasAño->count(),
+                'ingresos_netos' => $reservasAño->sum('neto')
+            ];
+        }
+
+        return view('admin.apartamentos.index', compact('apartamentoslist', 'apartamentos', 'edificios', 'search', 'sort', 'order', 'estadisticasApartamentos', 'añoActual'));
     }
 
     public function createAdmin()
@@ -375,17 +389,96 @@ class ApartamentosController extends Controller
     /**
      * Display the specified apartment in admin panel.
      */
-    public function showAdmin(string $id)
+    public function showAdmin(string $id, Request $request)
     {
         try {
             $apartamento = Apartamento::with(['photos', 'tarifas', 'edificioRel', 'reservas.cliente', 'reservas.estado'])->findOrFail($id);
             $edificios = Edificio::all();
             
-            return view('admin.apartamentos.show', compact('apartamento', 'edificios'));
+            // Obtener filtros de fecha
+            $año = $request->get('año', date('Y'));
+            $mes = $request->get('mes');
+            
+            // Calcular estadísticas
+            $estadisticas = $this->calcularEstadisticasApartamento($apartamento, $año, $mes);
+            
+            return view('admin.apartamentos.show', compact('apartamento', 'edificios', 'estadisticas', 'año', 'mes'));
         } catch (\Exception $e) {
             return redirect()->route('apartamentos.admin.index')
                 ->with('swal_error', 'Apartamento no encontrado: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Calcular estadísticas de un apartamento
+     */
+    private function calcularEstadisticasApartamento($apartamento, $año, $mes = null)
+    {
+        $query = $apartamento->reservas()->whereYear('fecha_entrada', $año);
+        
+        if ($mes) {
+            $query->whereMonth('fecha_entrada', $mes);
+        }
+        
+        $reservas = $query->get();
+        
+        return [
+            'total_reservas' => $reservas->count(),
+            'total_ingresos' => $reservas->sum('precio'),
+            'ingresos_netos' => $reservas->sum('neto'),
+            'ocupacion_dias' => $reservas->sum(function($reserva) {
+                return \Carbon\Carbon::parse($reserva->fecha_entrada)->diffInDays($reserva->fecha_salida);
+            }),
+            'reservas_activas' => $reservas->where('estado_id', 3)->count(),
+            'reservas_completadas' => $reservas->where('estado_id', 4)->count(),
+            'reservas_canceladas' => $reservas->where('estado_id', 5)->count(),
+            'promedio_por_reserva' => $reservas->count() > 0 ? $reservas->avg('precio') : 0,
+            'mes_mas_ocupado' => $this->obtenerMesMasOcupado($apartamento, $año),
+            'reservas_por_mes' => $this->obtenerReservasPorMes($apartamento, $año)
+        ];
+    }
+
+    /**
+     * Obtener el mes más ocupado del año
+     */
+    private function obtenerMesMasOcupado($apartamento, $año)
+    {
+        $meses = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $count = $apartamento->reservas()
+                ->whereYear('fecha_entrada', $año)
+                ->whereMonth('fecha_entrada', $i)
+                ->count();
+            $meses[$i] = $count;
+        }
+        
+        $mesMasOcupado = array_keys($meses, max($meses))[0];
+        return [
+            'mes' => $mesMasOcupado,
+            'nombre' => \Carbon\Carbon::create($año, $mesMasOcupado, 1)->format('F'),
+            'reservas' => $meses[$mesMasOcupado]
+        ];
+    }
+
+    /**
+     * Obtener reservas por mes para el gráfico
+     */
+    private function obtenerReservasPorMes($apartamento, $año)
+    {
+        $datos = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $reservas = $apartamento->reservas()
+                ->whereYear('fecha_entrada', $año)
+                ->whereMonth('fecha_entrada', $i)
+                ->get();
+            
+            $datos[] = [
+                'mes' => \Carbon\Carbon::create($año, $i, 1)->format('M'),
+                'reservas' => $reservas->count(),
+                'ingresos' => $reservas->sum('precio')
+            ];
+        }
+        return $datos;
     }
 
     /**

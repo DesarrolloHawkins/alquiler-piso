@@ -183,6 +183,28 @@
                                 <th class="border-0">
                                     <i class="fas fa-globe me-1 text-primary"></i>ID Web
                                 </th>
+                                <th class="border-0">
+                                    <a href="{{ route('apartamentos.admin.index', array_merge(request()->query(), ['sort' => 'ingresos', 'order' => request('sort') == 'ingresos' && request('order') == 'asc' ? 'desc' : 'asc'])) }}" 
+                                       class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="fas fa-euro-sign me-1 text-success"></i>Ingresos {{ $añoActual }}
+                                        @if(request('sort') == 'ingresos')
+                                            <i class="fas fa-sort-{{ request('order') == 'asc' ? 'up' : 'down' }} ms-auto"></i>
+                                        @else
+                                            <i class="fas fa-sort ms-auto text-muted"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="border-0">
+                                    <a href="{{ route('apartamentos.admin.index', array_merge(request()->query(), ['sort' => 'ocupaciones', 'order' => request('sort') == 'ocupaciones' && request('order') == 'asc' ? 'desc' : 'asc'])) }}" 
+                                       class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="fas fa-calendar-check me-1 text-info"></i>Ocupaciones {{ $añoActual }}
+                                        @if(request('sort') == 'ocupaciones')
+                                            <i class="fas fa-sort-{{ request('order') == 'asc' ? 'up' : 'down' }} ms-auto"></i>
+                                        @else
+                                            <i class="fas fa-sort ms-auto text-muted"></i>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="border-0 text-center">
                                     <i class="fas fa-cogs me-1 text-primary"></i>Acciones
                                 </th>
@@ -238,6 +260,35 @@
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        @php
+                                            $estadisticas = $estadisticasApartamentos[$apartamento->id] ?? ['ingresos_año' => 0, 'ocupaciones_año' => 0];
+                                        @endphp
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold text-success">
+                                                €{{ number_format($estadisticas['ingresos_año'], 2, ',', '.') }}
+                                            </span>
+                                            @if($estadisticas['ingresos_netos'] > 0)
+                                                <small class="text-muted">
+                                                    Neto: €{{ number_format($estadisticas['ingresos_netos'], 2, ',', '.') }}
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-info-subtle text-info px-2 py-1 me-2">
+                                                {{ $estadisticas['ocupaciones_año'] }}
+                                            </span>
+                                            @if($estadisticas['ocupaciones_año'] > 0)
+                                                <small class="text-muted">
+                                                    reservas
+                                                </small>
+                                            @else
+                                                <small class="text-muted">Sin ocupaciones</small>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">

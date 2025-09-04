@@ -32,6 +32,112 @@
         </div>
     </div>
 
+    <!-- Estadísticas con filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold text-dark">
+                            <i class="fas fa-chart-line me-2 text-primary"></i>
+                            Estadísticas del Apartamento
+                        </h5>
+                        <form method="GET" class="d-flex gap-2">
+                            <select name="año" class="form-select form-select-sm" style="width: auto;">
+                                @for($i = date('Y'); $i >= 2020; $i--)
+                                    <option value="{{ $i }}" {{ $año == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                @endfor
+                            </select>
+                            <select name="mes" class="form-select form-select-sm" style="width: auto;">
+                                <option value="">Todo el año</option>
+                                @for($i = 1; $i <= 12; $i++)
+                                    <option value="{{ $i }}" {{ $mes == $i ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create($año, $i, 1)->format('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Total Reservas -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-primary-subtle rounded-3">
+                                <i class="fas fa-calendar-check text-primary fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-primary">{{ $estadisticas['total_reservas'] }}</h4>
+                                <small class="text-muted">Total Reservas</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Ingresos -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-success-subtle rounded-3">
+                                <i class="fas fa-euro-sign text-success fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-success">€{{ number_format($estadisticas['total_ingresos'], 2, ',', '.') }}</h4>
+                                <small class="text-muted">Total Ingresos</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Ingresos Netos -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-info-subtle rounded-3">
+                                <i class="fas fa-chart-bar text-info fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-info">€{{ number_format($estadisticas['ingresos_netos'], 2, ',', '.') }}</h4>
+                                <small class="text-muted">Ingresos Netos</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Días de Ocupación -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-warning-subtle rounded-3">
+                                <i class="fas fa-bed text-warning fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-warning">{{ $estadisticas['ocupacion_dias'] }}</h4>
+                                <small class="text-muted">Días Ocupados</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Promedio por Reserva -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-secondary-subtle rounded-3">
+                                <i class="fas fa-calculator text-secondary fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-secondary">€{{ number_format($estadisticas['promedio_por_reserva'], 2, ',', '.') }}</h4>
+                                <small class="text-muted">Promedio/Reserva</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Mes Más Ocupado -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-danger-subtle rounded-3">
+                                <i class="fas fa-star text-danger fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-danger">{{ $estadisticas['mes_mas_ocupado']['reservas'] }}</h4>
+                                <small class="text-muted">{{ $estadisticas['mes_mas_ocupado']['nombre'] }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráfico de reservas por mes -->
+                    @if($estadisticas['total_reservas'] > 0)
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="fw-semibold text-dark mb-3">
+                                <i class="fas fa-chart-area me-2 text-primary"></i>
+                                Evolución de Reservas por Mes - {{ $año }}
+                            </h6>
+                            <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="reservasPorMes"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Columna principal -->
         <div class="col-lg-8">
@@ -493,7 +599,122 @@ code {
         font-size: 1.5rem !important;
     }
 }
+
+/* Gráfico responsive */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+}
 </style>
+
+<script>
+// Gráfico de reservas por mes
+@if($estadisticas['total_reservas'] > 0)
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('reservasPorMes');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const datos = @json($estadisticas['reservas_por_mes']);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: datos.map(d => d.mes),
+            datasets: [{
+                label: 'Reservas',
+                data: datos.map(d => d.reservas),
+                borderColor: '#36a2eb',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#36a2eb',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }, {
+                label: 'Ingresos (€)',
+                data: datos.map(d => d.ingresos),
+                borderColor: '#4bc0c0',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.4,
+                pointBackgroundColor: '#4bc0c0',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#36a2eb',
+                    borderWidth: 1,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '€' + value.toFixed(0);
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+});
+@endif
+</script>
 @endsection
 
 @section('scriptHead')

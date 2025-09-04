@@ -402,6 +402,12 @@ class ReservasController extends Controller
         $num_adultos;
         // Convertimos las Request en la data
         $data = $request->all();
+        
+        // Validamos que los campos obligatorios existan
+        if (!isset($data['codigo_reserva'])) {
+            return response()->json(['error' => 'Código de reserva requerido'], 400);
+        }
+        
         // Almacenamos la peticion en un archivo
         Storage::disk('local')->put($data['codigo_reserva'].'-' . $hoy .'.txt', json_encode($request->all()));
 
@@ -410,7 +416,7 @@ class ReservasController extends Controller
         // Si la reserva no existe procedemos al registro
         if ($comprobarReserva == null) {
             // Obtenemos el Cliente si existe por el numero de telefono
-            $verificarCliente = Cliente::where('telefono', $data['telefono'] )->first();
+            $verificarCliente = Cliente::where('telefono', $data['telefono'] ?? null)->first();
             // Validamos si existe el cliente
             if ($verificarCliente == null) {
                 // Si no existe separamos el nombre y el numero de personas para el apartamento
@@ -422,7 +428,7 @@ class ReservasController extends Controller
                     // Creamos el cliente
 					$crearCliente = Cliente::create([
 						'alias' => $nombre,
-						'idiomas' => $data['idiomas'],
+						'idiomas' => $data['idiomas'] ?? null,
 						'telefono' => $data['telefono'],
 						'email_secundario' => $data['email'],
 					]);
@@ -432,7 +438,7 @@ class ReservasController extends Controller
                     // Si existe creamos al cliente
 					$crearCliente = Cliente::create([
 						'alias' => $data['alias'],
-						'idiomas' => $data['idiomas'],
+						'idiomas' => $data['idiomas'] ?? null,
 						'telefono' => $data['telefono'],
 						'email_secundario' => $data['email'],
 					]);
