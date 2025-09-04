@@ -274,7 +274,6 @@
 <!-- Formulario oculto para eliminar -->
 <form id="delete-form" method="POST" style="display: none;">
     @csrf
-    @method('DELETE')
 </form>
 @endsection
 
@@ -285,10 +284,13 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Botones de eliminar
     const deleteButtons = document.querySelectorAll('.delete-btn');
+    console.log('Delete buttons found:', deleteButtons.length);
     deleteButtons.forEach(button => {
         button.addEventListener('click', function () {
+            console.log('Delete button clicked');
             const checklistId = this.dataset.id;
             const checklistName = this.dataset.name;
+            console.log('Checklist ID:', checklistId, 'Name:', checklistName);
             
             Swal.fire({
                 title: '¿Eliminar checklist?',
@@ -304,7 +306,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('delete-form');
-                    form.action = `{{ route('admin.checklists.destroy', '') }}/${checklistId}`;
+                    form.action = `{{ route('admin.checklists.destroy', ':id') }}`.replace(':id', checklistId);
+                    console.log('Form action:', form.action);
+                    console.log('Checklist ID:', checklistId);
                     form.submit();
                 }
             });

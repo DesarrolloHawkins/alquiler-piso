@@ -110,10 +110,18 @@ class ZonaComunController extends Controller
     {
         try {
             $zonaComun = ZonaComun::findOrFail($id);
+            
+            // Verificar si tiene limpiezas asociadas
+            $limpiezasCount = $zonaComun->limpiezas()->count();
+            
+            if ($limpiezasCount > 0) {
+                Alert::warning('Advertencia', "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminará de forma lógica (soft delete) y las limpiezas se mantendrán.");
+            }
+            
             $zonaComun->delete();
             Alert::success('Éxito', 'Zona común eliminada correctamente.');
         } catch (\Exception $e) {
-            Alert::error('Error', 'No se pudo eliminar la zona común.');
+            Alert::error('Error', 'No se pudo eliminar la zona común: ' . $e->getMessage());
         }
 
         return redirect()->route('admin.zonas-comunes.index');

@@ -243,7 +243,7 @@
                         // Crear formulario temporal para enviar la petición DELETE
                         const form = document.createElement('form');
                         form.method = 'POST';
-                        form.action = `{{ route('admin.zonas-comunes.destroy', '') }}/${zonaId}`;
+                        form.action = `{{ route('admin.zonas-comunes.destroy', ':id') }}`.replace(':id', zonaId);
                         
                         const csrfToken = document.createElement('input');
                         csrfToken.type = 'hidden';
