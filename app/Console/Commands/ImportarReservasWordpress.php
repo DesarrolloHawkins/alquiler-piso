@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\ReservasController;
+use Illuminate\Http\Request;
 
 class ImportarReservasWordpress extends Command
 {
@@ -32,10 +34,13 @@ class ImportarReservasWordpress extends Command
 
         foreach ($data['reservas'] as $reserva) {
             try {
-                // ENVÍA LA RESERVA A TU BACKEND PARA GUARDARLA
-                $envio = Http::post(url('/api/agregar-reserva'), $reserva);
+                // LLAMA DIRECTAMENTE AL MÉTODO DEL CONTROLADOR
+                $request = new Request($reserva);
+                $controller = app(ReservasController::class);
+                $response = $controller->agregarReserva($request);
 
-                if ($envio->successful()) {
+                // Verificar si la respuesta es exitosa (código 200)
+                if ($response->getStatusCode() == 200) {
                     Log::info("✅ Reserva añadida correctamente: " . $reserva['codigo_reserva']);
 
                     // MARCA COMO ENVIADA EN WORDPRESS
@@ -50,10 +55,10 @@ class ImportarReservasWordpress extends Command
                     }
 
                 } else {
-                    Log::warning("⚠️ Error al guardar la reserva " . $reserva['codigo_reserva'] . ": " . $envio->status());
+                    Log::warning("⚠️ Error al guardar la reserva " . $reserva['codigo_reserva'] . ": " . $response->getStatusCode());
                 }
             } catch (\Throwable $e) {
-                Log::error("❌ Excepción al enviar reserva " . $reserva['codigo_reserva'] . ": " . $e->getMessage());
+                Log::error("❌ Excepción al procesar reserva " . $reserva['codigo_reserva'] . ": " . $e->getMessage());
             }
         }
     }
