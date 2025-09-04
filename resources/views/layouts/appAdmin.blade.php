@@ -42,6 +42,9 @@
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="{{ asset('js/alerts.js') }}"></script>
+        <!-- Fancybox para lightbox de imágenes -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+        <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
         @yield('styles')
         <script>
             document.addEventListener("DOMContentLoaded", function () {

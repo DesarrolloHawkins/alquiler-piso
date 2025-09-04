@@ -836,10 +836,12 @@
                                 <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                                     <div class="photo-item text-center">
                                         <div class="photo-thumbnail mb-2">
-                                            <img src="{{ asset($photo->url) }}" 
-                                                 alt="Foto del cliente" 
-                                                 class="img-fluid rounded"
-                                                 style="max-width: 100px; height: 100px; object-fit: cover;">
+                                            <a href="{{ asset($photo->url) }}" data-fancybox="gallery" data-caption="Foto del cliente - {{ $photo->created_at->format('d/m/Y H:i') }}">
+                                                <img src="{{ asset($photo->url) }}" 
+                                                     alt="Foto del cliente" 
+                                                     class="img-fluid rounded"
+                                                     style="max-width: 100px; height: 100px; object-fit: cover; cursor: pointer;">
+                                            </a>
                                         </div>
                                         <small class="text-muted d-block">
                                             {{ $photo->created_at->format('d/m/Y') }}
@@ -1003,6 +1005,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 @endif
+
+// Inicializar Fancybox para el lightbox de fotos
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si Fancybox está disponible
+    if (typeof Fancybox !== 'undefined') {
+        Fancybox.bind("[data-fancybox]", {
+            // Configuración personalizada
+            Toolbar: {
+                display: {
+                    left: ["infobar"],
+                    middle: ["zoomIn", "zoomOut", "toggle1to1", "rotateCCW", "rotateCW", "flipX", "flipY"],
+                    right: ["slideshow", "thumbs", "close"]
+                }
+            },
+            Thumbs: {
+                autoStart: false,
+                hideOnClose: true
+            },
+            Images: {
+                zoom: true
+            },
+            // Traducción al español
+            l10n: {
+                CLOSE: "Cerrar",
+                NEXT: "Siguiente",
+                PREV: "Anterior",
+                MODAL: "Puedes cerrar esta ventana con la tecla ESC",
+                ERROR: "Algo salió mal. Por favor, inténtalo de nuevo más tarde.",
+                IMAGE_ERROR: "Imagen no encontrada",
+                ELEMENT_NOT_FOUND: "Elemento HTML no encontrado",
+                AJAX_NOT_FOUND: "Error al cargar AJAX: No encontrado",
+                AJAX_FORBIDDEN: "Error al cargar AJAX: Prohibido",
+                IFRAME_ERROR: "Error al cargar la página",
+                TOGGLE_ZOOM: "Alternar zoom",
+                TOGGLE_THUMBS: "Alternar miniaturas",
+                TOGGLE_SLIDESHOW: "Alternar presentación",
+                TOGGLE_FULLSCREEN: "Alternar pantalla completa",
+                DOWNLOAD: "Descargar"
+            }
+        });
+    } else {
+        console.warn('Fancybox no está cargado. Asegúrate de incluir la librería Fancybox.');
+    }
+});
 </script>
 
 <style>
@@ -1077,6 +1123,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .photo-thumbnail:hover {
     transform: scale(1.05);
+}
+
+.photo-thumbnail a {
+    display: block;
+    transition: all 0.3s ease;
+}
+
+.photo-thumbnail a:hover {
+    opacity: 0.8;
 }
 
 /* Animaciones */
