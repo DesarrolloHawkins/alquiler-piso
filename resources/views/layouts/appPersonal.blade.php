@@ -1209,12 +1209,20 @@
         </main>
         <footer class="apple-tab-bar">
             <div class="apple-tab-bar-content">
-                <a href="{{ Auth::user()->role === 'LIMPIEZA' ? route('limpiadora.dashboard') : route('gestion.index') }}" class="apple-tab-item {{ request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
+                {{-- <a href="{{ Auth::user()->role === 'LIMPIEZA' ? route('limpiadora.dashboard') : route('gestion.index') }}" class="apple-tab-item {{ request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
                     <div class="apple-tab-icon">
                         <i class="fa-solid fa-house"></i>
                     </div>
                     <span class="apple-tab-label">Inicio</span>
-                </a>
+                </a> --}}
+                <a href="{{ in_array(Auth::user()->role, ['LIMPIEZA', 'USER']) ? route('dashboard') : route('gestion.index') }}"
+                    class="apple-tab-item {{ request()->routeIs('dashboard') || request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
+                     <div class="apple-tab-icon">
+                         <i class="fa-solid fa-house"></i>
+                     </div>
+                     <span class="apple-tab-label">Inicio</span>
+                 </a>
+                 
                 
                 <a href="{{route('gestion.index')}}" class="apple-tab-item {{ request()->routeIs('gestion.index') ? 'active' : '' }}">
                     <div class="apple-tab-icon">
