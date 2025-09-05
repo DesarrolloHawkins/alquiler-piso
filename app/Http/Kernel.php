@@ -37,12 +37,14 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\Idioma::class,
+            \App\Http\Middleware\LogUserActivity::class,
         ],
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\LogUserActivity::class,
         ],
     ];
 
@@ -67,6 +69,8 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'redirect.after.login' => \App\Http\Middleware\RedirectAfterLogin::class,
         'mobile.redirect' => \App\Http\Middleware\MobileRedirect::class,
+        'log.activity' => \App\Http\Middleware\LogUserActivity::class,
+        'log.auth' => \App\Http\Middleware\LogAuthentication::class,
     ];
 
     /**

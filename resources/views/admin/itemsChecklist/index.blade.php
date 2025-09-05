@@ -127,6 +127,12 @@
                                 <th class="border-0 py-3 px-4">
                                     <span class="fw-semibold">Obligatorio</span>
                                 </th>
+                                <th class="border-0 py-3 px-4">
+                                    <span class="fw-semibold">Artículo Asociado</span>
+                                </th>
+                                <th class="border-0 py-3 px-4">
+                                    <span class="fw-semibold">Cantidad Requerida</span>
+                                </th>
                                 <th class="border-0 py-3 px-4 text-center" style="width: 200px;">
                                     <span class="fw-semibold">Acciones</span>
                                 </th>
@@ -200,6 +206,37 @@
                                                 <i class="fas fa-minus-circle me-1"></i>
                                                 Opcional
                                             </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($item->tiene_stock && $item->articulo)
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="fas fa-box text-success"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-semibold text-success">{{ $item->articulo->nombre }}</span>
+                                                    <br>
+                                                    <small class="text-muted">Stock: {{ $item->articulo->stock_actual }}</small>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="badge bg-secondary-subtle text-secondary">
+                                                <i class="fas fa-minus-circle me-1"></i>
+                                                Sin artículo
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($item->tiene_stock && $item->cantidad_requerida)
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="fas fa-hashtag text-info"></i>
+                                                </div>
+                                                <span class="fw-semibold text-info">{{ $item->cantidad_requerida }}</span>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-center">

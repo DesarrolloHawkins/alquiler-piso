@@ -166,32 +166,51 @@
 
                                 <!-- Limpieza y Mantenimiento -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('limpiezas*') || request()->is('limpieza*') || request()->is('zonas-comunes*') || request()->is('checklists-zonas-comunes*') || request()->is('amenities*') || request()->is('admin/incidencias*') || request()->is('admin/proveedores*') || request()->is('admin/articulos*') || request()->is('admin/movimientos-stock*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('limpiezas*') || request()->is('limpieza*') || request()->is('zonas-comunes*') || request()->is('checklists-zonas-comunes*') || request()->is('amenities*') || request()->is('admin/incidencias*') || request()->is('admin/proveedores*') || request()->is('admin/articulos*') || request()->is('admin/movimientos-stock*') || request()->is('admin/tipos-tareas*') || request()->is('admin/empleada-horarios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-broom me-1"></i>Limpieza
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <!-- Operaciones de Limpieza -->
+                                        <li><h6 class="dropdown-header"><i class="fas fa-tasks me-1"></i>Operaciones</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">
-                                            <i class="fas fa-tasks me-2"></i>Limpieza
+                                            <i class="fas fa-clipboard-list me-2"></i>Panel de Limpieza
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.limpiezas.index') }}">
                                             <i class="fas fa-microscope me-2"></i>Gestión de Limpiezas
                                         </a></li>
-                                        <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.incidencias.index') }}">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Gestión de Incidencias
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Incidencias
                                         </a></li>
+                                        
+                                        <!-- Gestión de Turnos -->
                                         <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-calendar-alt me-1"></i>Turnos y Tareas</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('gestion.turnos.index') }}">
+                                            <i class="fas fa-calendar-check me-2"></i>Turnos de Trabajo
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.tipos-tareas.index') }}">
+                                            <i class="fas fa-list-ul me-2"></i>Tipos de Tareas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.empleada-horarios.index') }}">
+                                            <i class="fas fa-clock me-2"></i>Horarios de Empleadas
+                                        </a></li>
+                                        
+                                        <!-- Configuración de Limpieza -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-cog me-1"></i>Configuración</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.zonas-comunes.index') }}">
                                             <i class="fas fa-building me-2"></i>Zonas Comunes
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.checklists-zonas-comunes.index') }}">
                                             <i class="fas fa-list-check me-2"></i>Checklists Zonas Comunes
                                         </a></li>
-                                        <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.amenities.index') }}">
-                                            <i class="fas fa-gift me-2"></i>Gestión de Amenities
+                                            <i class="fas fa-gift me-2"></i>Amenities
                                         </a></li>
+                                        
+                                        <!-- Inventario y Stock -->
                                         <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-warehouse me-1"></i>Inventario</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.proveedores.index') }}">
                                             <i class="fas fa-truck me-2"></i>Proveedores
                                         </a></li>
@@ -201,9 +220,12 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.movimientos-stock.index') }}">
                                             <i class="fas fa-exchange-alt me-2"></i>Movimientos de Stock
                                         </a></li>
+                                        
+                                        <!-- Mantenimiento Especial -->
                                         <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-tools me-1"></i>Mantenimiento</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.limpiezaFondo.index') }}">
-                                            <i class="fas fa-water me-2"></i>Limpieza Fondo
+                                            <i class="fas fa-water me-2"></i>Limpieza de Fondo
                                         </a></li>
                                     </ul>
                                 </li>

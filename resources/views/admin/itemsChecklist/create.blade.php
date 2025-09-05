@@ -161,6 +161,125 @@
                             </div>
                         </div>
 
+                        <!-- Gestión de Stock -->
+                        <div class="card border-0 bg-light mb-4">
+                            <div class="card-header bg-transparent border-0 py-3">
+                                <h6 class="mb-0 fw-semibold text-dark">
+                                    <i class="fas fa-boxes me-2 text-primary"></i>
+                                    Gestión de Stock
+                                </h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <!-- Tiene stock -->
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="tiene_stock" 
+                                               name="tiene_stock" 
+                                               value="1" 
+                                               {{ old('tiene_stock') ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-semibold text-dark" for="tiene_stock">
+                                            <i class="fas fa-box me-2 text-success"></i>
+                                            Este item tiene stock asociado
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1 text-muted"></i>
+                                        Marca si este item requiere control de inventario
+                                    </div>
+                                </div>
+
+                                <!-- Artículo asociado -->
+                                <div class="mb-4" id="articulo-field" style="display: none;">
+                                    <label for="articulo_id" class="form-label fw-semibold text-dark">
+                                        <i class="fas fa-tag me-2 text-primary"></i>
+                                        Artículo Asociado
+                                    </label>
+                                    <select name="articulo_id" 
+                                            id="articulo_id" 
+                                            class="form-select @error('articulo_id') is-invalid @enderror">
+                                        <option value="">Seleccionar artículo...</option>
+                                        @foreach(\App\Models\Articulo::where('activo', true)->orderBy('nombre')->get() as $articulo)
+                                            <option value="{{ $articulo->id }}" {{ old('articulo_id') == $articulo->id ? 'selected' : '' }}>
+                                                {{ $articulo->nombre }} (Stock: {{ $articulo->stock_actual }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback" id="articulo_id-error">
+                                        @error('articulo_id') {{ $message }} @enderror
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1 text-muted"></i>
+                                        Selecciona el artículo del inventario que corresponde a este item
+                                    </div>
+                                </div>
+
+                                <!-- Cantidad requerida -->
+                                <div class="mb-4" id="cantidad-field" style="display: none;">
+                                    <label for="cantidad_requerida" class="form-label fw-semibold text-dark">
+                                        <i class="fas fa-hashtag me-2 text-primary"></i>
+                                        Cantidad Requerida
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control @error('cantidad_requerida') is-invalid @enderror" 
+                                           id="cantidad_requerida" 
+                                           name="cantidad_requerida" 
+                                           placeholder="Ej: 4"
+                                           value="{{ old('cantidad_requerida') }}"
+                                           min="0" 
+                                           step="0.01">
+                                    <div class="invalid-feedback" id="cantidad_requerida-error">
+                                        @error('cantidad_requerida') {{ $message }} @enderror
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1 text-muted"></i>
+                                        Cantidad mínima que debe estar disponible para este item
+                                    </div>
+                                </div>
+
+                                <!-- Tiene averías -->
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="tiene_averias" 
+                                               name="tiene_averias" 
+                                               value="1" 
+                                               {{ old('tiene_averias') ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-semibold text-dark" for="tiene_averias">
+                                            <i class="fas fa-tools me-2 text-warning"></i>
+                                            Puede tener averías
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1 text-muted"></i>
+                                        Marca si este item puede reportar averías o daños
+                                    </div>
+                                </div>
+
+                                <!-- Observaciones de stock -->
+                                <div class="mb-0">
+                                    <label for="observaciones_stock" class="form-label fw-semibold text-dark">
+                                        <i class="fas fa-sticky-note me-2 text-primary"></i>
+                                        Observaciones de Stock
+                                    </label>
+                                    <textarea class="form-control @error('observaciones_stock') is-invalid @enderror" 
+                                              id="observaciones_stock" 
+                                              name="observaciones_stock" 
+                                              rows="2" 
+                                              placeholder="Observaciones adicionales sobre el stock...">{{ old('observaciones_stock') }}</textarea>
+                                    <div class="invalid-feedback" id="observaciones_stock-error">
+                                        @error('observaciones_stock') {{ $message }} @enderror
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1 text-muted"></i>
+                                        Notas adicionales sobre la gestión de stock de este item
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Botones de acción -->
                         <div class="d-flex gap-3 pt-3">
                             <button type="submit" class="btn btn-primary btn-lg px-4" id="submit-btn">
@@ -206,147 +325,192 @@
         </div>
     </div>
 </div>
+
+<script>
+    console.log('SCRIPT CARGADO - itemsChecklist create');
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM cargado, inicializando...');
+        
+        // Función para mostrar/ocultar campos de stock
+        function toggleStockFields() {
+            console.log('toggleStockFields ejecutándose...');
+            const tieneStock = document.getElementById('tiene_stock');
+            const articuloField = document.getElementById('articulo-field');
+            const cantidadField = document.getElementById('cantidad-field');
+            
+            if (!tieneStock || !articuloField || !cantidadField) {
+                console.error('Elementos no encontrados:', {
+                    tieneStock: !!tieneStock,
+                    articuloField: !!articuloField,
+                    cantidadField: !!cantidadField
+                });
+                return;
+            }
+            
+            console.log('tieneStock checked:', tieneStock.checked);
+            
+            if (tieneStock.checked) {
+                articuloField.style.display = 'block';
+                cantidadField.style.display = 'block';
+                console.log('Campos mostrados');
+            } else {
+                articuloField.style.display = 'none';
+                cantidadField.style.display = 'none';
+                // Limpiar valores si se oculta
+                document.getElementById('articulo_id').value = '';
+                document.getElementById('cantidad_requerida').value = '';
+                console.log('Campos ocultados');
+            }
+        }
+        
+        // Inicializar campos de stock
+        toggleStockFields();
+        
+        // Agregar event listener al checkbox de stock
+        const stockCheckbox = document.getElementById('tiene_stock');
+        if (stockCheckbox) {
+            console.log('Agregando event listener al checkbox');
+            stockCheckbox.addEventListener('change', toggleStockFields);
+        } else {
+            console.error('Checkbox no encontrado');
+        }
+        
+        const form = document.getElementById('item-form');
+        const nombreInput = document.getElementById('nombre');
+        const descripcionInput = document.getElementById('descripcion');
+        const tipoSelect = document.getElementById('tipo');
+        const ordenInput = document.getElementById('orden');
+        const submitBtn = document.getElementById('submit-btn');
+    
+        // Validación en tiempo real
+        function validateField(input, errorId, validationFn) {
+            const value = input.value.trim();
+            const errorElement = document.getElementById(errorId);
+            
+            if (validationFn(value)) {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+                errorElement.textContent = '';
+                return true;
+            } else {
+                input.classList.remove('is-valid');
+                input.classList.add('is-invalid');
+                return false;
+            }
+        }
+    
+        // Validar nombre
+        nombreInput.addEventListener('input', function() {
+            validateField(this, 'nombre-error', function(value) {
+                return value.length >= 3 && value.length <= 255;
+            });
+        });
+    
+        // Validar descripción
+        descripcionInput.addEventListener('input', function() {
+            validateField(this, 'descripcion-error', function(value) {
+                return value.length === 0 || value.length <= 1000;
+            });
+        });
+    
+        // Validar orden
+        ordenInput.addEventListener('input', function() {
+            validateField(this, 'orden-error', function(value) {
+                const num = parseInt(value);
+                return !isNaN(num) && num >= 1;
+            });
+        });
+    
+        // Validación del formulario
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validar nombre
+            if (!validateField(nombreInput, 'nombre-error', function(value) {
+                return value.length >= 3 && value.length <= 255;
+            })) {
+                isValid = false;
+            }
+            
+            // Validar descripción
+            if (!validateField(descripcionInput, 'descripcion-error', function(value) {
+                return value.length === 0 || value.length <= 1000;
+            })) {
+                isValid = false;
+            }
+            
+            // Validar orden
+            if (!validateField(ordenInput, 'orden-error', function(value) {
+                const num = parseInt(value);
+                return !isNaN(num) && num >= 1;
+            })) {
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formulario incompleto',
+                    text: 'Por favor, completa todos los campos obligatorios correctamente',
+                    confirmButtonColor: '#dc3545'
+                });
+                return false;
+            }
+            
+            // Mostrar confirmación
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
+            
+            Swal.fire({
+                title: 'Creando item...',
+                text: 'Por favor espera mientras se procesa la información',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        });
+    
+        // Mostrar mensajes de SweetAlert
+        @if(session('swal_success'))
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('swal_success') }}',
+                timer: 3000,
+                timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
+        @endif
+    
+        @if(session('swal_error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '{{ session('swal_error') }}',
+                timer: 5000,
+                timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
+        @endif
+    
+        // Mostrar errores de validación del servidor
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Errores de validación',
+                html: `@foreach($errors->all() as $error)<div class="text-start">• {{ $error }}</div>@endforeach`,
+                confirmButtonColor: '#dc3545'
+            });
+        @endif
+    });
+    </script>
 @endsection
 
 @include('sweetalert::alert')
-
-@section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('item-form');
-    const nombreInput = document.getElementById('nombre');
-    const descripcionInput = document.getElementById('descripcion');
-    const tipoSelect = document.getElementById('tipo');
-    const ordenInput = document.getElementById('orden');
-    const submitBtn = document.getElementById('submit-btn');
-
-    // Validación en tiempo real
-    function validateField(input, errorId, validationFn) {
-        const value = input.value.trim();
-        const errorElement = document.getElementById(errorId);
-        
-        if (validationFn(value)) {
-            input.classList.remove('is-invalid');
-            input.classList.add('is-valid');
-            errorElement.textContent = '';
-            return true;
-        } else {
-            input.classList.remove('is-valid');
-            input.classList.add('is-invalid');
-            return false;
-        }
-    }
-
-    // Validar nombre
-    nombreInput.addEventListener('input', function() {
-        validateField(this, 'nombre-error', function(value) {
-            return value.length >= 3 && value.length <= 255;
-        });
-    });
-
-    // Validar descripción
-    descripcionInput.addEventListener('input', function() {
-        validateField(this, 'descripcion-error', function(value) {
-            return value.length === 0 || value.length <= 1000;
-        });
-    });
-
-    // Validar orden
-    ordenInput.addEventListener('input', function() {
-        validateField(this, 'orden-error', function(value) {
-            const num = parseInt(value);
-            return !isNaN(num) && num >= 1;
-        });
-    });
-
-    // Validación del formulario
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        
-        // Validar nombre
-        if (!validateField(nombreInput, 'nombre-error', function(value) {
-            return value.length >= 3 && value.length <= 255;
-        })) {
-            isValid = false;
-        }
-        
-        // Validar descripción
-        if (!validateField(descripcionInput, 'descripcion-error', function(value) {
-            return value.length === 0 || value.length <= 1000;
-        })) {
-            isValid = false;
-        }
-        
-        // Validar orden
-        if (!validateField(ordenInput, 'orden-error', function(value) {
-            const num = parseInt(value);
-            return !isNaN(num) && num >= 1;
-        })) {
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Formulario incompleto',
-                text: 'Por favor, completa todos los campos obligatorios correctamente',
-                confirmButtonColor: '#dc3545'
-            });
-            return false;
-        }
-        
-        // Mostrar confirmación
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
-        
-        Swal.fire({
-            title: 'Creando item...',
-            text: 'Por favor espera mientras se procesa la información',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    });
-
-    // Mostrar mensajes de SweetAlert
-    @if(session('swal_success'))
-        Swal.fire({
-            icon: 'success',
-            title: '¡Éxito!',
-            text: '{{ session('swal_success') }}',
-            timer: 3000,
-            timerProgressBar: true,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false
-        });
-    @endif
-
-    @if(session('swal_error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: '{{ session('swal_error') }}',
-            timer: 5000,
-            timerProgressBar: true,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false
-        });
-    @endif
-
-    // Mostrar errores de validación del servidor
-    @if($errors->any())
-        Swal.fire({
-            icon: 'error',
-            title: 'Errores de validación',
-            html: `@foreach($errors->all() as $error)<div class="text-start">• {{ $error }}</div>@endforeach`,
-            confirmButtonColor: '#dc3545'
-        });
-    @endif
-});
-</script>
-@endsection
 

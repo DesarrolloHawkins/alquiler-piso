@@ -36,6 +36,9 @@ class Kernel extends ConsoleKernel
         // \App\Console\Commands\FetchEmails::class,
         // \App\Console\Commands\CategorizeEmails::class,
         \App\Console\Commands\CleanExpiredSessions::class,
+        \App\Console\Commands\CleanOldLogs::class,
+        \App\Console\Commands\GenerateLogReport::class,
+        \App\Console\Commands\CleanOldNotifications::class,
     ];
 
 
@@ -130,6 +133,12 @@ class Kernel extends ConsoleKernel
 
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
+
+        // Limpiar logs antiguos cada día a las 2:00 AM
+        $schedule->command('logs:clean --days=30')->dailyAt('02:00');
+        
+        // Limpiar notificaciones antiguas cada día a las 3:00 AM
+        $schedule->command('notifications:clean --days=30')->dailyAt('03:00');
 
         // Tarea de Generacion de Factura
         $schedule->call(function () {

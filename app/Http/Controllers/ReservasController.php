@@ -15,11 +15,13 @@ use App\Models\RatePlan;
 use App\Models\Reserva;
 use App\Models\RoomType;
 use App\Services\ChatGptService;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ReservasController extends Controller
 {
@@ -44,6 +46,17 @@ class ReservasController extends Controller
     // Obtener fechas del request, usando null como predeterminado si no se especifican
     $fechaEntrada = $request->get('fecha_entrada');
     $fechaSalida = $request->get('fecha_salida');
+    
+    // Log the search operation
+    $this->logRead('RESERVAS', null, [
+        'order_by' => $orderBy,
+        'direction' => $direction,
+        'per_page' => $perPage,
+        'search' => $searchTerm,
+        'fecha_entrada' => $fechaEntrada,
+        'fecha_salida' => $fechaSalida
+    ]);
+    
     $query = Reserva::with('cliente');
     
     // Aplicar filtro de estado de reservas
@@ -189,6 +202,11 @@ class ReservasController extends Controller
         $reserva = new Reserva($input);
         $reserva->save();
 
+        // Log the creation
+        $this->logCreate('RESERVA', $reserva->id, $reserva->toArray());
+
+        // Crear notificación de nueva reserva
+        NotificationService::notifyNewReservation($reserva);
 
         // Llamar a la función para actualizar la disponibilidad en Channex
         $response = $this->updateChannexAvailability($reserva);
@@ -226,7 +244,7 @@ class ReservasController extends Controller
     ])->post("{$this->apiUrl}/availability", ['values' => [$update]]);
 
     if (!$response->successful()) {
-        \Log::error('Error al actualizar disponibilidad en Channex', [
+        Log::error('Error al actualizar disponibilidad en Channex', [
             'error' => $response->body(),
             'data' => $update
         ]);
@@ -278,6 +296,7 @@ class ReservasController extends Controller
 
     // Buscar la reserva
     $reserva = Reserva::findOrFail($id);
+    $oldData = $reserva->toArray();
     $validated['precio'] = floatval(str_replace(',', '.', $validated['precio']));
 
     // Actualizar los campos
@@ -288,6 +307,12 @@ class ReservasController extends Controller
         'fecha_salida' => $validated['fecha_salida'],
         'precio' => $validated['precio'],
     ]);
+
+    // Log the update
+    $this->logUpdate('RESERVA', $reserva->id, $oldData, $reserva->toArray());
+
+    // Crear notificación de actualización de reserva
+    NotificationService::notifyReservationUpdate($reserva, $oldData);
 
     // Redirigir con mensaje
     return redirect()->route('reservas.index')->with('success', 'Reserva actualizada correctamente.');
@@ -349,6 +374,12 @@ class ReservasController extends Controller
     {
         $reserva = Reserva::find($id);
         if ($reserva) {
+            // Log the deletion
+            $this->logDelete('RESERVA', $reserva->id, $reserva->toArray());
+            
+            // Crear notificación de cancelación de reserva
+            NotificationService::notifyReservationCancellation($reserva, 'Eliminada por administrador');
+            
             $reserva->delete(); // Esto ahora usa soft delete
             return redirect()->route('reservas.index')->with('success', 'Reserva eliminada correctamente.');
         } else {
@@ -397,9 +428,9 @@ class ReservasController extends Controller
         // Obtenemos la Fecha de Hoy
         $hoy = Carbon::now();
         // Declaramos Variables
-        $cliente;
-        $reserva;
-        $num_adultos;
+        $cliente = null;
+        $reserva = null;
+        $num_adultos = null;
         // Convertimos las Request en la data
         $data = $request->all();
         
@@ -420,7 +451,7 @@ class ReservasController extends Controller
             // Validamos si existe el cliente
             if ($verificarCliente == null) {
                 // Si no existe separamos el nombre y el numero de personas para el apartamento
-				if (preg_match('/^(.*?)\n(\d+)\s*adulto(?:s)?/', $data['alias'], $matches)) {
+				if (isset($data['alias']) && preg_match('/^(.*?)\n(\d+)\s*adulto(?:s)?/', $data['alias'], $matches)) {
                     // Establecemos el nombre y numero de adultos
 					$nombre = trim($matches[1]);
 					$num_adultos = $matches[2];
@@ -429,18 +460,18 @@ class ReservasController extends Controller
 					$crearCliente = Cliente::create([
 						'alias' => $nombre,
 						'idiomas' => $data['idiomas'] ?? null,
-						'telefono' => $data['telefono'],
-						'email_secundario' => $data['email'],
+						'telefono' => $data['telefono'] ?? null,
+						'email_secundario' => $data['email'] ?? null,
 					]);
 					$cliente = $crearCliente;
 
 				}else {
                     // Si existe creamos al cliente
 					$crearCliente = Cliente::create([
-						'alias' => $data['alias'],
+						'alias' => $data['alias'] ?? 'Cliente',
 						'idiomas' => $data['idiomas'] ?? null,
-						'telefono' => $data['telefono'],
-						'email_secundario' => $data['email'],
+						'telefono' => $data['telefono'] ?? null,
+						'email_secundario' => $data['email'] ?? null,
 					]);
 					$cliente = $crearCliente;
 				}
@@ -454,19 +485,20 @@ class ReservasController extends Controller
             $locale = 'es';
 			Carbon::setLocale($locale);
             // Parseamos las Fechas
-           	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada']);
-			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida']);
+           	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada'] ?? date('Y-m-d'));
+			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida'] ?? date('Y-m-d', strtotime('+1 day')));
 
             // Verificamos si la reserva existe por el codigo de reserva
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
             // Si la reserva no existe
             if ($verificarReserva == null) {
                 // Comprobamos el origen para obtener el ID del apartamento
-                if ($data['origen'] == 'Booking') {
+                $origen = $data['origen'] ?? 'Web';
+                if ($origen == 'Booking') {
                     // Si es booking lo obtenemos por el id del apartamento en booking
-                    $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
+                    $apartamento = Apartamento::where('id_booking', $data['apartamento'] ?? null)->first();
                 }
-                else if($data['origen'] == 'Airbnb'){
+                else if($origen == 'Airbnb'){
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
                     $searchQuery = $request->input('apartamento');
                     $bestMatch = $this->findClosestMatch($searchQuery);
@@ -476,11 +508,11 @@ class ReservasController extends Controller
                     }
 
                 } else {
-                    $apartamento = Apartamento::where('id_web', $data['apartamento'])->first();
+                    $apartamento = Apartamento::where('id_web', $data['apartamento'] ?? null)->first();
 
                 }
                 // Formateamos el precio
-                $precioOriginal = $data['precio'];
+                $precioOriginal = $data['precio'] ?? '0';
                 $precioSinSimbolo = preg_replace('/[€\s]/', '', $precioOriginal);
                 $precio = floatval($precioSinSimbolo);
                 $roomType = RoomType::where('property_id', $apartamento->id)->first();
@@ -488,7 +520,7 @@ class ReservasController extends Controller
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
                     'room_type_id' => $roomType->id,
-                    'origen' => $data['origen'],
+                    'origen' => $origen,
                     'fecha_entrada' =>  $fecha_entrada,
                     'fecha_salida' => $fecha_salida,
                     'precio' => $precio,

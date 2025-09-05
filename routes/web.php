@@ -27,6 +27,7 @@ use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\ConfiguracionDescuentoController;
 use App\Http\Controllers\ComandoDescuentoController;
 use App\Http\Controllers\HistorialDescuentoController;
+use App\Http\Controllers\NotificationController;
 use App\Models\Cliente;
 use App\Models\InvoicesStatus;
 use App\Models\Reserva;
@@ -475,9 +476,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/pisos',[App\Http\Controllers\ApartamentosController::class, 'index'])->name('apartamentos.index');
     
-    // Dashboard de Limpiadoras - Solo limpiadoras pueden acceder
-    Route::get('/limpiadora/dashboard', [App\Http\Controllers\LimpiadoraDashboardController::class, 'index'])->name('limpiadora.dashboard')->middleware('role:LIMPIEZA');
-    Route::get('/limpiadora/estadisticas', [App\Http\Controllers\LimpiadoraDashboardController::class, 'estadisticas'])->name('limpiadora.estadisticas')->middleware('role:LIMPIEZA');
 
     Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
 
@@ -494,6 +492,7 @@ Route::middleware('auth')->group(function () {
     
     // Gestion del Apartamento
     Route::get('/gestion', [App\Http\Controllers\GestionApartamentoController::class, 'index'])->name('gestion.index');
+    Route::get('/gestion/estadisticas', [App\Http\Controllers\GestionApartamentoController::class, 'estadisticas'])->name('gestion.estadisticas');
     Route::get('/gestion/reserva/{id}/info', [App\Http\Controllers\GestionApartamentoController::class, 'mostrarInfoReserva'])->name('gestion.reserva.info');
     Route::get('/gestion-create/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create'])->name('gestion.create');
     Route::post('/gestion-store', [App\Http\Controllers\GestionApartamentoController::class, 'store'])->name('gestion.store');
@@ -526,6 +525,38 @@ Route::middleware('auth')->group(function () {
     Route::get('gestion/reservas/apartamentos', [App\Http\Controllers\GestionReservasController::class, 'obtenerApartamentos'])->name('gestion.reservas.apartamentos');
     Route::get('gestion/reservas/estadisticas', [App\Http\Controllers\GestionReservasController::class, 'estadisticas'])->name('gestion.reservas.estadisticas');
     Route::get('gestion/reservas/{id}', [App\Http\Controllers\GestionReservasController::class, 'show'])->name('gestion.reservas.show');
+    
+    // Rutas de acciones de limpieza (reponer stock y reportar averías)
+    Route::post('gestion/limpieza/reponer-stock', [App\Http\Controllers\LimpiezaAccionesController::class, 'reponerStock'])->name('gestion.limpieza.reponer-stock');
+    Route::post('gestion/limpieza/reportar-averia', [App\Http\Controllers\LimpiezaAccionesController::class, 'reportarAveria'])->name('gestion.limpieza.reportar-averia');
+    Route::get('gestion/limpieza/item-info', [App\Http\Controllers\LimpiezaAccionesController::class, 'getItemInfo'])->name('gestion.limpieza.item-info');
+    
+    // Rutas de gestión de turnos y tareas
+    Route::resource('gestion/turnos', App\Http\Controllers\Admin\TurnosTrabajoController::class)->names('gestion.turnos');
+    Route::post('gestion/turnos/generar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'generarTurnos'])->name('gestion.turnos.generar');
+    Route::post('gestion/turnos/{turno}/iniciar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'iniciarTurno'])->name('gestion.turnos.iniciar');
+    Route::post('gestion/turnos/{turno}/finalizar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'finalizarTurno'])->name('gestion.turnos.finalizar');
+    Route::get('gestion/turnos/estadisticas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'estadisticas'])->name('gestion.turnos.estadisticas');
+});
+
+// Rutas de administración para turnos y tareas
+Route::middleware(['auth', 'role:ADMIN'])->group(function () {
+    // Tipos de tareas
+    Route::resource('admin/tipos-tareas', App\Http\Controllers\Admin\TiposTareasController::class)->names('admin.tipos-tareas');
+    Route::post('admin/tipos-tareas/{tiposTarea}/toggle-active', [App\Http\Controllers\Admin\TiposTareasController::class, 'toggleActive'])->name('admin.tipos-tareas.toggle-active');
+    Route::post('admin/tipos-tareas/{tiposTarea}/duplicar', [App\Http\Controllers\Admin\TiposTareasController::class, 'duplicar'])->name('admin.tipos-tareas.duplicar');
+    
+    // Horarios de empleadas
+    Route::resource('admin/empleada-horarios', App\Http\Controllers\Admin\EmpleadaHorariosController::class)->names('admin.empleada-horarios');
+    Route::post('admin/empleada-horarios/{empleadaHorario}/toggle-active', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'toggleActive'])->name('admin.empleada-horarios.toggle-active');
+    Route::get('admin/empleada-horarios/empleadas-sin-horario', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'empleadasSinHorario'])->name('admin.empleada-horarios.empleadas-sin-horario');
+    Route::post('admin/empleada-horarios/crear-horario-rapido', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'crearHorarioRapido'])->name('admin.empleada-horarios.crear-horario-rapido');
+    
+    // Rutas para gestión de días libres por semana
+    Route::get('admin/empleada-horarios/{empleadaHorario}/dias-libres', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'index'])->name('admin.empleada-dias-libres.index');
+    Route::get('admin/empleada-horarios/{empleadaHorario}/dias-libres/create', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'create'])->name('admin.empleada-dias-libres.create');
+    Route::post('admin/empleada-horarios/{empleadaHorario}/dias-libres', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'store'])->name('admin.empleada-dias-libres.store');
+    Route::delete('admin/empleada-horarios/{empleadaHorario}/dias-libres/{semanaInicio}', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'destroy'])->name('admin.empleada-dias-libres.destroy');
     
     // RUTA DE TEST TEMPORAL - Eliminar después de debuggear
     Route::get('/test-fichaje', function() {
@@ -602,6 +633,15 @@ Route::post('/actualizar-fotos-cajon_de_cama/{id}/{cat}', [App\Http\Controllers\
 Route::get('/fotos-banio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.bano');
 Route::post('/fotos-banio-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.bano-store');
 Route::post('/actualizar-fotos-banio/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.bano');
+
+// Ruta genérica para fotos de checklists
+Route::get('/fotos-checklist/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'index'])->name('fotos.checklist');
+Route::post('/fotos-checklist-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.checklist-store');
+Route::post('/actualizar-fotos-checklist/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'actualizar'])->name('actualizar.fotos.checklist');
+
+// Rutas para reposición de artículos
+Route::post('/reposicion-articulo', [App\Http\Controllers\ReposicionArticuloController::class, 'store'])->name('reposicion.store');
+Route::get('/reposiciones/{apartamentoLimpiezaId}', [App\Http\Controllers\ReposicionArticuloController::class, 'getReposiciones'])->name('reposicion.get');
 
 
 // Obtener DNI
@@ -783,6 +823,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     // Gestión de Checklists de Zonas Comunes
     Route::resource('checklists-zonas-comunes', App\Http\Controllers\Admin\ChecklistZonaComunController::class);
     Route::post('/checklists-zonas-comunes/{id}/toggle-status', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'toggleStatus'])->name('checklists-zonas-comunes.toggle-status');
+    
+    // Sistema de Logs
+    Route::prefix('logs')->name('logs.')->group(function () {
+        Route::get('/', [App\Http\Controllers\LogsController::class, 'index'])->name('index');
+        Route::get('/files', [App\Http\Controllers\LogsController::class, 'files'])->name('files');
+        Route::get('/view/{filename}', [App\Http\Controllers\LogsController::class, 'view'])->name('view');
+        Route::get('/download/{filename}', [App\Http\Controllers\LogsController::class, 'download'])->name('download');
+        Route::get('/search', [App\Http\Controllers\LogsController::class, 'search'])->name('search');
+        Route::post('/clear', [App\Http\Controllers\LogsController::class, 'clear'])->name('clear');
+    });
     Route::get('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'manageItems'])->name('checklists-zonas-comunes.items');
     Route::post('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'storeItem'])->name('checklists-zonas-comunes.store-item');
     
@@ -838,5 +888,31 @@ Route::post('/user/profile/avatar', [App\Http\Controllers\UserProfileController:
 
 // Ruta de prueba para debuggear estadísticas
 Route::get('/user/profile/test-stats', [App\Http\Controllers\UserProfileController::class, 'testStats'])->name('user.profile.test-stats')->middleware('auth');
+
+// Rutas de notificaciones
+Route::prefix('api')->middleware('auth')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{id}/unread', [NotificationController::class, 'markAsUnread'])->name('notifications.mark-unread');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications/delete-read', [NotificationController::class, 'destroyRead'])->name('notifications.delete-read');
+    Route::get('/notifications/stats', [NotificationController::class, 'stats'])->name('notifications.stats');
+    Route::get('/notifications/type/{type}', [NotificationController::class, 'byType'])->name('notifications.by-type');
+    Route::get('/notifications/priority/{priority}', [NotificationController::class, 'byPriority'])->name('notifications.by-priority');
+    Route::get('/notifications/search', [NotificationController::class, 'search'])->name('notifications.search');
+    Route::get('/notifications/critical', [NotificationController::class, 'critical'])->name('notifications.critical');
+    Route::get('/notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+    Route::get('/notifications/expired', [NotificationController::class, 'expired'])->name('notifications.expired');
+    Route::delete('/notifications/clean-expired', [NotificationController::class, 'cleanExpired'])->name('notifications.clean-expired');
+    Route::get('/notifications/settings', [NotificationController::class, 'settings'])->name('notifications.settings');
+    Route::post('/notifications/settings', [NotificationController::class, 'updateSettings'])->name('notifications.update-settings');
+});
+
+// Rutas web de notificaciones
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:ADMIN'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+});
 
 

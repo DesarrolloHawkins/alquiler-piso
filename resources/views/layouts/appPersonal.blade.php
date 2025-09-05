@@ -1216,7 +1216,7 @@
                     <span class="apple-tab-label">Inicio</span>
                 </a> --}}
                 <a href="{{ in_array(Auth::user()->role, ['LIMPIEZA', 'USER']) ? route('inicio') : route('gestion.index') }}"
-                    class="apple-tab-item {{ request()->routeIs('inicio') || request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
+                    class="apple-tab-item {{ request()->routeIs('inicio') ? 'active' : '' }}">
                      <div class="apple-tab-icon">
                          <i class="fa-solid fa-house"></i>
                      </div>

@@ -14,6 +14,7 @@ class Articulo extends Model
         'nombre',
         'descripcion',
         'categoria',
+        'tipo_descuento',
         'unidad_medida',
         'stock_actual',
         'stock_minimo',
@@ -129,5 +130,39 @@ class Articulo extends Model
     public function verificarStockBajo()
     {
         return $this->stock_actual <= $this->stock_minimo;
+    }
+
+    // Métodos para reposición
+    public function esTipoReposicion()
+    {
+        return $this->tipo_descuento === 'reposicion';
+    }
+
+    public function esTipoConsumo()
+    {
+        return $this->tipo_descuento === 'consumo';
+    }
+
+    public function descontarStockPorReposicion($cantidad)
+    {
+        // Solo se descuenta del stock si es tipo 'consumo'
+        if ($this->esTipoConsumo()) {
+            return $this->descontarStock($cantidad);
+        }
+        
+        // Para tipo 'reposicion', solo se registra el movimiento pero no se descuenta stock
+        return $this->stock_actual;
+    }
+
+    public function getDescripcionTipoDescuentoAttribute()
+    {
+        switch ($this->tipo_descuento) {
+            case 'reposicion':
+                return 'Solo reposición física (toallas, sábanas, etc.)';
+            case 'consumo':
+                return 'Descuenta del stock general (cubiertos, vajilla, etc.)';
+            default:
+                return 'No definido';
+        }
     }
 }

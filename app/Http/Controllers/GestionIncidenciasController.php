@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Services\AlertService;
+use App\Services\NotificationService;
 
 class GestionIncidenciasController extends Controller
 {
@@ -145,6 +146,12 @@ class GestionIncidenciasController extends Controller
                 $request->prioridad,
                 $empleada->name
             );
+
+            // Log the creation
+            $this->logCreate('INCIDENCIA', $incidencia->id, $incidencia->toArray());
+
+            // Crear notificación de nueva incidencia
+            NotificationService::notifyNewIncident($incidencia);
 
             return redirect()->route('gestion.incidencias.index')
                 ->with('success', 'Incidencia creada correctamente. Los administradores han sido notificados.');

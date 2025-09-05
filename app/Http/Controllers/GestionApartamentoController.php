@@ -239,6 +239,9 @@ class GestionApartamentoController extends Controller
             ->get()
             ->groupBy('limpieza_id');
 
+        // Obtener estadísticas del dashboard de limpieza
+        $dashboardStats = $this->getDashboardStats();
+
         return view('gestion.index', compact(
             'reservasPendientes',
             'reservasOcupados',
@@ -249,7 +252,8 @@ class GestionApartamentoController extends Controller
             'zonasComunes', 
             'reservasManana',
             'amenities',
-            'consumosExistentes'
+            'consumosExistentes',
+            'dashboardStats'
         ));
     }
 
@@ -529,7 +533,7 @@ class GestionApartamentoController extends Controller
             }
             
             // Obtener checklists específicos para zonas comunes
-            $checklists = \App\Models\ChecklistZonaComun::activos()->ordenados()->with('items')->get();
+            $checklists = \App\Models\ChecklistZonaComun::activos()->ordenados()->with(['items.articulo'])->get();
             
             // Obtener items marcados para esta limpieza
             $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
@@ -565,7 +569,7 @@ class GestionApartamentoController extends Controller
                 abort(404, 'Edificio no encontrado para este apartamento');
             }
 
-            $checklists = Checklist::with('items')->where('edificio_id', $edificioId)->get();
+            $checklists = Checklist::with(['items.articulo'])->where('edificio_id', $edificioId)->get();
             $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
             $itemsExistentes = $item_check->pluck('estado', 'item_id')->toArray();
             $checklist_check = $item_check->whereNotNull('checklist_id')->filter(function ($item) {
@@ -1488,5 +1492,189 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             \Log::error('Error al descontar amenities de limpieza: ' . $e->getMessage());
             \Alert::error('Error', 'Error al procesar amenities de limpieza: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Obtener estadísticas del dashboard de limpieza
+     */
+    private function getDashboardStats()
+    {
+        $user = Auth::user();
+        $hoy = Carbon::today();
+        
+        try {
+            // Obtener apartamentos que SALEN hoy (necesitan limpieza) - misma lógica que /gestion
+            $apartamentosPendientesHoy = \DB::table('reservas')
+                ->whereNull('fecha_limpieza')
+                ->where('estado_id', '!=', 4)
+                ->whereDate('fecha_salida', $hoy)
+                ->pluck('apartamento_id')
+                ->toArray();
+            
+            // Obtener limpiezas de fondo programadas para hoy
+            $limpiezasFondoHoy = \DB::table('limpieza_fondo')
+                ->whereDate('fecha', $hoy)
+                ->pluck('apartamento_id')
+                ->toArray();
+            
+            // Combinar todos los apartamentos que necesitan limpieza hoy
+            $apartamentosNecesitanLimpieza = array_merge($apartamentosPendientesHoy, $limpiezasFondoHoy);
+            $apartamentosNecesitanLimpieza = array_unique($apartamentosNecesitanLimpieza);
+            
+            // Obtener limpiezas ya asignadas a esta empleada para hoy
+            $limpiezasAsignadasHoy = \DB::table('apartamento_limpieza')
+                ->where('empleada_id', $user->id)
+                ->whereDate('fecha_comienzo', $hoy)
+                ->pluck('apartamento_id')
+                ->toArray();
+            
+            // Apartamentos pendientes de limpieza (necesitan limpieza pero no están asignados)
+            $apartamentosPendientes = array_diff($apartamentosNecesitanLimpieza, $limpiezasAsignadasHoy);
+            
+            // Estadísticas del día
+            $limpiezasHoy = count($apartamentosNecesitanLimpieza); // Total de apartamentos que necesitan limpieza
+            $limpiezasAsignadas = count($limpiezasAsignadasHoy); // Total de limpiezas asignadas a esta empleada
+            
+            // Obtener limpiezas completadas hoy por esta empleada
+            $limpiezasCompletadasHoy = \DB::table('apartamento_limpieza')
+                ->where('empleada_id', $user->id)
+                ->whereDate('fecha_comienzo', $hoy)
+                ->where('status_id', 2) // Completada
+                ->count();
+                
+            // Obtener limpiezas en proceso hoy por esta empleada
+            $limpiezasPendientesHoy = \DB::table('apartamento_limpieza')
+                ->where('empleada_id', $user->id)
+                ->whereDate('fecha_comienzo', $hoy)
+                ->where('status_id', 1) // En proceso
+                ->count();
+                
+            // Obtener incidencias pendientes del usuario
+            $incidenciasPendientes = \DB::table('incidencias')
+                ->where('empleada_id', $user->id)
+                ->where('estado', 'pendiente')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+                
+            // Obtener estadísticas de la semana
+            $inicioSemana = $hoy->copy()->startOfWeek();
+            $finSemana = $hoy->copy()->endOfWeek();
+            
+            // Limpiezas asignadas a esta empleada en la semana
+            $limpiezasSemana = \DB::table('apartamento_limpieza')
+                ->where('empleada_id', $user->id)
+                ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
+                ->count();
+                
+            $limpiezasCompletadasSemana = \DB::table('apartamento_limpieza')
+                ->where('empleada_id', $user->id)
+                ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
+                ->where('status_id', 2)
+                ->count();
+                
+            // Calcular porcentaje de completado de la semana
+            $porcentajeSemana = $limpiezasSemana > 0 ? round(($limpiezasCompletadasSemana / $limpiezasSemana) * 100) : 0;
+                
+            // Obtener estado del fichaje actual
+            $fichajeActual = \DB::table('fichajes')
+                ->where('user_id', $user->id)
+                ->whereDate('hora_entrada', $hoy)
+                ->whereNull('hora_salida')
+                ->first();
+                
+            // Obtener estadísticas de calidad de limpieza (si existen análisis)
+            $analisisRecientes = [];
+            try {
+                $analisisRecientes = \DB::table('photo_analyses')
+                    ->where('empleada_id', $user->id)
+                    ->whereDate('fecha_analisis', '>=', $hoy->copy()->subDays(7))
+                    ->select('calidad_general', \DB::raw('count(*) as total'))
+                    ->groupBy('calidad_general')
+                    ->get()
+                    ->pluck('total', 'calidad_general')
+                    ->toArray();
+            } catch (\Exception $e) {
+                // Si hay error, usar array vacío
+                $analisisRecientes = [];
+            }
+            
+            return [
+                'limpiezasHoy' => $limpiezasHoy,
+                'limpiezasAsignadas' => $limpiezasAsignadas,
+                'limpiezasCompletadasHoy' => $limpiezasCompletadasHoy,
+                'limpiezasPendientesHoy' => $limpiezasPendientesHoy,
+                'apartamentosPendientes' => count($apartamentosPendientes),
+                'incidenciasPendientes' => $incidenciasPendientes,
+                'limpiezasSemana' => $limpiezasSemana,
+                'limpiezasCompletadasSemana' => $limpiezasCompletadasSemana,
+                'porcentajeSemana' => $porcentajeSemana,
+                'fichajeActual' => $fichajeActual,
+                'analisisRecientes' => $analisisRecientes,
+                'hoy' => $hoy->format('d/m/Y'),
+                'diaSemana' => $hoy->locale('es')->dayName
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('Error obteniendo estadísticas del dashboard: ' . $e->getMessage());
+            
+            return [
+                'limpiezasHoy' => 0,
+                'limpiezasAsignadas' => 0,
+                'limpiezasCompletadasHoy' => 0,
+                'limpiezasPendientesHoy' => 0,
+                'apartamentosPendientes' => 0,
+                'incidenciasPendientes' => collect(),
+                'limpiezasSemana' => 0,
+                'limpiezasCompletadasSemana' => 0,
+                'porcentajeSemana' => 0,
+                'fichajeActual' => null,
+                'analisisRecientes' => [],
+                'hoy' => $hoy->format('d/m/Y'),
+                'diaSemana' => $hoy->locale('es')->dayName,
+                'error' => 'Error al cargar datos: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtener estadísticas del dashboard via AJAX
+     */
+    public function estadisticas()
+    {
+        $user = Auth::user();
+        $hoy = Carbon::today();
+        $inicioMes = $hoy->copy()->startOfMonth();
+        
+        // Estadísticas del mes
+        $limpiezasMes = ApartamentoLimpieza::where('empleada_id', $user->id)
+            ->whereBetween('fecha_comienzo', [$inicioMes, $hoy])
+            ->count();
+            
+        $limpiezasCompletadasMes = ApartamentoLimpieza::where('empleada_id', $user->id)
+            ->whereBetween('fecha_comienzo', [$inicioMes, $hoy])
+            ->where('status_id', 2)
+            ->count();
+            
+        // Calcular horas trabajadas del mes
+        $horasTrabajadasMes = Fichaje::where('user_id', $user->id)
+            ->whereBetween('fecha', [$inicioMes, $hoy])
+            ->whereNotNull('hora_fin')
+            ->get()
+            ->sum(function($fichaje) {
+                if ($fichaje->hora_inicio && $fichaje->hora_fin) {
+                    $inicio = Carbon::parse($fichaje->hora_inicio);
+                    $fin = Carbon::parse($fichaje->hora_fin);
+                    return $inicio->diffInHours($fin, false);
+                }
+                return 0;
+            });
+            
+        return response()->json([
+            'limpiezas_mes' => $limpiezasMes,
+            'limpiezas_completadas_mes' => $limpiezasCompletadasMes,
+            'porcentaje_mes' => $limpiezasMes > 0 ? round(($limpiezasCompletadasMes / $limpiezasMes) * 100) : 0,
+            'horas_trabajadas_mes' => round($horasTrabajadasMes, 1)
+        ]);
     }
 }

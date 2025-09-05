@@ -30,6 +30,15 @@ class ApartamentosController extends Controller
         $edificioId = $request->get('edificio_id');
         $apartamentoId = $request->get('apartamento_id');
         
+        // Log the search operation
+        $this->logRead('APARTAMENTOS', null, [
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
+            'edificio_id' => $edificioId,
+            'apartamento_id' => $apartamentoId
+        ]);
+        
         $apartamentoslist = Apartamento::all();
         $apartamentos = Apartamento::when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -82,6 +91,9 @@ class ApartamentosController extends Controller
     public function updateAdmin(Request $request, $id)
     {
         $apartamento = Apartamento::findOrFail($id);
+        
+        // Log the update attempt
+        $this->logUpdate('APARTAMENTO', $id, $apartamento->toArray(), $request->all());
 
         // Reglas de validación completas para Channex
         $rules = [
@@ -634,11 +646,21 @@ class ApartamentosController extends Controller
     {
         try {
             $apartamento = Apartamento::findOrFail($id);
+            
+            // Log the deletion
+            $this->logDelete('APARTAMENTO', $id, $apartamento->toArray());
+            
             $apartamento->delete();
 
             return redirect()->route('apartamentos.admin.index')
                 ->with('swal_success', '¡Apartamento eliminado exitosamente!');
         } catch (\Exception $e) {
+            // Log the error
+            $this->logError('Error al eliminar apartamento', [
+                'apartamento_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
             return redirect()->back()
                 ->with('swal_error', 'Error al eliminar el apartamento: ' . $e->getMessage());
         }

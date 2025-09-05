@@ -608,7 +608,7 @@
                         <tbody>
                             @foreach($apartamentosLibresHoy as $apartamento)
                                 <tr>
-                                    <td>{{ $apartamento->nombre }}</td>
+                                    <td>{{ $apartamento->titulo }}</td>
                                     <td>
                                         <span class="badge bg-success">Libre</span>
                                     </td>
@@ -647,7 +647,7 @@
                         <select id="filtroApartamento" class="form-select">
                             <option value="">Todos los apartamentos</option>
                             @foreach($apartamentos as $apartamento)
-                                <option value="{{ $apartamento->nombre }}">{{ $apartamento->nombre }}</option>
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -684,7 +684,7 @@
                             @foreach($reservas as $reserva)
                                 <tr data-id="{{ $reserva->id }}" style="cursor: pointer;">
                                     <td>{{ $reserva->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>{{ $reserva->apartamento->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ number_format($reserva->precio, 2, ',', '.') }} €</td>
@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <select id="filtroApartamentoFacturacion" class="form-select">
                             <option value="">Todos los apartamentos</option>
                             @foreach($apartamentos as $apartamento)
-                                <option value="{{ $apartamento->nombre }}">{{ $apartamento->nombre }}</option>
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <!-- Total -->
                 <div class="alert alert-info mb-4">
-                    <strong>Total Facturación Filtrada: <span id="totalFacturacion">{{ number_format($totalFacturacion, 2, ',', '.') }} €</span></strong>
+                    <strong>Total Facturación Filtrada: <span id="totalFiltradoFacturacion">0,00 €</span></strong>
                 </div>
 
                 <!-- Tabla -->
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             @foreach($reservas as $reserva)
                                 <tr data-id="{{ $reserva->id }}" style="cursor: pointer;">
                                     <td>{{ $reserva->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>{{ $reserva->apartamento->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ number_format($reserva->precio, 2, ',', '.') }} €</td>

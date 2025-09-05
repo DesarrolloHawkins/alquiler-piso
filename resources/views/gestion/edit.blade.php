@@ -302,10 +302,19 @@
                                             >
                                             @if (!$excluirCamara)
                                             @php
-                                                $fotoRuta = route('fotos.' . $nombreHabitacion, [
-                                                    'id' => $apartamentoLimpieza->id,
-                                                    'cat' => $checklist->id,
-                                                ]);
+                                                // Intentar usar ruta específica, si no existe usar ruta genérica
+                                                try {
+                                                    $fotoRuta = route('fotos.' . $nombreHabitacion, [
+                                                        'id' => $apartamentoLimpieza->id,
+                                                        'cat' => $checklist->id,
+                                                    ]);
+                                                } catch (Exception $e) {
+                                                    // Si no existe la ruta específica, usar la genérica
+                                                    $fotoRuta = route('fotos.checklist', [
+                                                        'id' => $apartamentoLimpieza->id,
+                                                        'cat' => $checklist->id,
+                                                    ]);
+                                                }
                                             @endphp
                                                 <a id="camara{{ $checklist->id }}" href="{{ $fotoRuta }}" class="camera-button" style="display: none">
                                                     <i class="fa-solid fa-camera"></i>
@@ -331,6 +340,24 @@
                                                 {{ $isChecked ? 'checked' : '' }}>
 
                                             <label class="item-label" for="item_{{ $item->id }}">{{ $item->nombre }}</label>
+                                            
+                                            @if($item->tiene_stock && $item->articulo)
+                                                <div class="item-actions">
+                                                    <button type="button" 
+                                                            class="btn-reponer"
+                                                            data-item-id="{{ $item->id }}"
+                                                            data-articulo-id="{{ $item->articulo->id }}"
+                                                            data-articulo-nombre="{{ $item->articulo->nombre }}"
+                                                            data-tipo-descuento="{{ $item->articulo->tipo_descuento }}"
+                                                            data-stock-actual="{{ $item->articulo->stock_actual }}"
+                                                            data-cantidad-requerida="{{ $item->cantidad_requerida }}"
+                                                            data-apartamento-limpieza-id="{{ $apartamentoLimpieza->id }}"
+                                                            title="Reponer {{ $item->articulo->nombre }}">
+                                                        <i class="fas fa-plus-circle"></i>
+                                                        <span>Reponer</span>
+                                                    </button>
+                                                </div>
+                                            @endif
                                         </div>
                                     @endforeach
                                 </div>
@@ -1899,6 +1926,162 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         }, 500);
     }
+
+    // ===== SISTEMA DE REPOSICIÓN DE ARTÍCULOS =====
+    
+    // Variables globales para reposición
+    let reposicionData = {};
+    
+    // Inicializar sistema de reposición
+    function inicializarSistemaReposicion() {
+        // Event listeners para botones de reposición
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-reponer')) {
+                e.preventDefault();
+                const button = e.target.closest('.btn-reponer');
+                abrirModalReposicion(button);
+            }
+        });
+        
+        // Event listener para confirmar reposición
+        document.getElementById('btnConfirmarReposicion').addEventListener('click', confirmarReposicion);
+        
+        // Event listener para validar cantidad
+        document.getElementById('cantidad_reponer').addEventListener('input', validarCantidadReposicion);
+    }
+    
+    // Abrir modal de reposición
+    function abrirModalReposicion(button) {
+        // Recopilar datos del botón
+        reposicionData = {
+            itemId: button.dataset.itemId,
+            articuloId: button.dataset.articuloId,
+            articuloNombre: button.dataset.articuloNombre,
+            tipoDescuento: button.dataset.tipoDescuento,
+            stockActual: parseFloat(button.dataset.stockActual),
+            cantidadRequerida: parseFloat(button.dataset.cantidadRequerida),
+            apartamentoLimpiezaId: button.dataset.apartamentoLimpiezaId
+        };
+        
+        // Llenar el modal
+        document.getElementById('articulo_nombre_display').textContent = reposicionData.articuloNombre;
+        document.getElementById('cantidad_recomendada').textContent = reposicionData.cantidadRequerida;
+        document.getElementById('cantidad_reponer').value = reposicionData.cantidadRequerida;
+        document.getElementById('reposicion_item_id').value = reposicionData.itemId;
+        document.getElementById('reposicion_apartamento_id').value = reposicionData.apartamentoLimpiezaId;
+        
+        // Configurar tipo de descuento
+        const tipoInfo = document.getElementById('tipo_descuento_info');
+        const tipoText = document.getElementById('tipo_descuento_text');
+        
+        if (reposicionData.tipoDescuento === 'reposicion') {
+            tipoInfo.className = 'alert alert-info';
+            tipoText.textContent = 'Solo reposición física (toallas, sábanas, etc.) - NO se descuenta del stock general';
+        } else if (reposicionData.tipoDescuento === 'consumo') {
+            tipoInfo.className = 'alert alert-warning';
+            tipoText.textContent = 'Descuenta del stock general (cubiertos, vajilla, etc.) - Se registra como consumo';
+        }
+        
+        // Validar stock inicial
+        validarCantidadReposicion();
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('reposicionModal'));
+        modal.show();
+    }
+    
+    // Validar cantidad de reposición
+    function validarCantidadReposicion() {
+        const cantidad = parseFloat(document.getElementById('cantidad_reponer').value) || 0;
+        const stockActual = reposicionData.stockActual;
+        const warningDiv = document.getElementById('stock_warning');
+        const warningText = document.getElementById('stock_warning_text');
+        
+        if (reposicionData.tipoDescuento === 'consumo' && cantidad > stockActual) {
+            warningDiv.style.display = 'block';
+            warningText.textContent = `No hay suficiente stock. Stock disponible: ${stockActual}. Se intentará reponer ${cantidad}.`;
+            warningDiv.className = 'alert alert-danger';
+        } else if (reposicionData.tipoDescuento === 'consumo' && stockActual < reposicionData.cantidadRequerida) {
+            warningDiv.style.display = 'block';
+            warningText.textContent = `Stock bajo. Stock actual: ${stockActual}, cantidad recomendada: ${reposicionData.cantidadRequerida}.`;
+            warningDiv.className = 'alert alert-warning';
+        } else {
+            warningDiv.style.display = 'none';
+        }
+    }
+    
+    // Confirmar reposición
+    function confirmarReposicion() {
+        const cantidad = parseFloat(document.getElementById('cantidad_reponer').value);
+        const observaciones = document.getElementById('observaciones_reposicion').value;
+        
+        if (!cantidad || cantidad <= 0) {
+            mostrarModalError('Debe especificar una cantidad válida para reponer.');
+            return;
+        }
+        
+        // Mostrar overlay de carga
+        showLoadingOverlay('Registrando reposición...');
+        
+        // Preparar datos para envío
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('apartamento_limpieza_id', reposicionData.apartamentoLimpiezaId);
+        formData.append('item_checklist_id', reposicionData.itemId);
+        formData.append('cantidad_reponer', cantidad);
+        formData.append('observaciones', observaciones);
+        
+        // Enviar petición
+        fetch('{{ route("reposicion.store") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingOverlay();
+            
+            if (data.success) {
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('reposicionModal'));
+                modal.hide();
+                
+                // Mostrar notificación de éxito
+                mostrarNotificacionReposicion(data);
+                
+                // Limpiar formulario
+                document.getElementById('reposicionForm').reset();
+            } else {
+                mostrarModalError(data.message || 'Error al registrar la reposición.');
+            }
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error('Error:', error);
+            mostrarModalError('Error de conexión al registrar la reposición.');
+        });
+    }
+    
+    // Mostrar notificación de reposición exitosa
+    function mostrarNotificacionReposicion(data) {
+        const tipoDescuento = data.data.tipo_descuento;
+        const stockDescontado = data.data.stock_descontado;
+        const articulo = data.data.articulo;
+        
+        let mensaje = `Reposición registrada correctamente.`;
+        
+        if (tipoDescuento === 'consumo' && stockDescontado) {
+            mensaje += ` Stock descontado: ${articulo.stock_actual} unidades disponibles.`;
+        } else if (tipoDescuento === 'reposicion') {
+            mensaje += ` Solo reposición física (no se descuenta del stock general).`;
+        }
+        
+        mostrarNotificacion(mensaje, 'success');
+    }
+    
+    // Inicializar sistema de reposición cuando se carga la página
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarSistemaReposicion();
+    });
 </script>
 
 <style>
@@ -2249,6 +2432,49 @@ document.addEventListener('DOMContentLoaded', function() {
     flex: 1;
     line-height: 1.3;
     cursor: pointer;
+}
+
+/* Acciones de Items */
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.btn-reponer {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.btn-reponer:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    color: #FFFFFF;
+}
+
+.btn-reponer:active {
+    transform: translateY(0);
+}
+
+.btn-reponer i {
+    font-size: 11px;
+}
+
+.btn-reponer span {
+    font-size: 11px;
+    font-weight: 600;
 }
 
 /* Botón de Cámara */
@@ -3785,6 +4011,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
                     <i class="fas fa-check me-2"></i>
                     Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Reposición de Artículos -->
+<div class="modal fade" id="reposicionModal" tabindex="-1" aria-labelledby="reposicionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="reposicionModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Reponer Artículo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reposicionForm">
+                    @csrf
+                    <input type="hidden" id="reposicion_item_id" name="item_checklist_id">
+                    <input type="hidden" id="reposicion_apartamento_id" name="apartamento_limpieza_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-tag me-2 text-primary"></i>
+                            Artículo
+                        </label>
+                        <div class="form-control-plaintext" id="articulo_nombre_display"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>
+                            Tipo de Descuento
+                        </label>
+                        <div class="alert alert-info" id="tipo_descuento_info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="tipo_descuento_text"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-hashtag me-2 text-primary"></i>
+                            Cantidad a Reponer
+                        </label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="cantidad_reponer" 
+                               name="cantidad_reponer" 
+                               min="0.01" 
+                               step="0.01" 
+                               required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Cantidad recomendada: <span id="cantidad_recomendada"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-sticky-note me-2 text-primary"></i>
+                            Observaciones
+                        </label>
+                        <textarea class="form-control" 
+                                  id="observaciones_reposicion" 
+                                  name="observaciones" 
+                                  rows="3" 
+                                  placeholder="Motivo de la reposición..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="stock_warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atención:</strong> <span id="stock_warning_text"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarReposicion">
+                    <i class="fas fa-check me-2"></i>
+                    Confirmar Reposición
                 </button>
             </div>
         </div>

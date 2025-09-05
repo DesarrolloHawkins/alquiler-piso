@@ -18,18 +18,32 @@ class ItemChecklistZonaComun extends Model
         'descripcion',
         'categoria',
         'activo',
-        'orden'
+        'orden',
+        'tiene_stock',
+        'articulo_id',
+        'cantidad_requerida',
+        'tiene_averias',
+        'observaciones_stock'
     ];
 
     protected $casts = [
         'activo' => 'boolean',
-        'orden' => 'integer'
+        'orden' => 'integer',
+        'tiene_stock' => 'boolean',
+        'cantidad_requerida' => 'decimal:2',
+        'tiene_averias' => 'boolean'
     ];
 
     // Relación con el checklist padre
     public function checklist()
     {
         return $this->belongsTo(ChecklistZonaComun::class, 'checklist_id');
+    }
+
+    // Relación con el artículo
+    public function articulo()
+    {
+        return $this->belongsTo(Articulo::class);
     }
 
     // Scope para items activos
@@ -42,5 +56,35 @@ class ItemChecklistZonaComun extends Model
     public function scopeOrdenados($query)
     {
         return $query->orderBy('orden', 'asc')->orderBy('nombre', 'asc');
+    }
+
+    // Scopes para stock y averías
+    public function scopeConStock($query)
+    {
+        return $query->where('tiene_stock', true);
+    }
+
+    public function scopeConAverias($query)
+    {
+        return $query->where('tiene_averias', true);
+    }
+
+    // Métodos
+    public function necesitaReposicion()
+    {
+        if (!$this->tiene_stock || !$this->articulo) {
+            return false;
+        }
+
+        return $this->articulo->verificarStockBajo();
+    }
+
+    public function getEstadoStockAttribute()
+    {
+        if (!$this->tiene_stock || !$this->articulo) {
+            return 'sin_stock';
+        }
+
+        return $this->articulo->estado_stock;
     }
 }

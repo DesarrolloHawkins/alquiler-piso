@@ -21,7 +21,8 @@ class ItemChecklistController extends Controller
         $sort = $request->get('sort', 'id');
         $order = $request->get('order', 'asc');
 
-        $items = ItemChecklist::where('checklist_id', $request->id)
+        $items = ItemChecklist::with('articulo')
+            ->where('checklist_id', $request->id)
             ->when($search, function ($query, $search) {
                 $query->where('nombre', 'like', '%' . $search . '%');
             })
@@ -50,7 +51,12 @@ class ItemChecklistController extends Controller
             'tipo' => 'nullable|string|in:simple,multiple,texto,foto',
             'obligatorio' => 'boolean',
             'orden' => 'nullable|integer|min:1',
-            'checklistId' => 'required|exists:checklists,id'
+            'checklistId' => 'required|exists:checklists,id',
+            'tiene_stock' => 'boolean',
+            'articulo_id' => 'nullable|exists:articulos,id',
+            'cantidad_requerida' => 'nullable|numeric|min:0',
+            'tiene_averias' => 'boolean',
+            'observaciones_stock' => 'nullable|string|max:500'
         ];
 
         $messages = [
@@ -69,6 +75,8 @@ class ItemChecklistController extends Controller
             
             // Establecer valores por defecto
             $validatedData['obligatorio'] = $request->has('obligatorio');
+            $validatedData['tiene_stock'] = $request->has('tiene_stock');
+            $validatedData['tiene_averias'] = $request->has('tiene_averias');
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
 
@@ -78,7 +86,12 @@ class ItemChecklistController extends Controller
                 'tipo' => $validatedData['tipo'],
                 'obligatorio' => $validatedData['obligatorio'],
                 'orden' => $validatedData['orden'],
-                'checklist_id' => $validatedData['checklistId']
+                'checklist_id' => $validatedData['checklistId'],
+                'tiene_stock' => $validatedData['tiene_stock'],
+                'articulo_id' => $validatedData['articulo_id'] ?? null,
+                'cantidad_requerida' => $validatedData['cantidad_requerida'] ?? null,
+                'tiene_averias' => $validatedData['tiene_averias'],
+                'observaciones_stock' => $validatedData['observaciones_stock'] ?? null
             ]);
 
             return redirect()->route('admin.itemsChecklist.index', ['id' => $validatedData['checklistId']])
@@ -124,7 +137,12 @@ class ItemChecklistController extends Controller
             'descripcion' => 'nullable|string|max:1000',
             'tipo' => 'nullable|string|in:simple,multiple,texto,foto',
             'obligatorio' => 'boolean',
-            'orden' => 'nullable|integer|min:1'
+            'orden' => 'nullable|integer|min:1',
+            'tiene_stock' => 'boolean',
+            'articulo_id' => 'nullable|exists:articulos,id',
+            'cantidad_requerida' => 'nullable|numeric|min:0',
+            'tiene_averias' => 'boolean',
+            'observaciones_stock' => 'nullable|string|max:500'
         ];
 
         $messages = [
@@ -141,6 +159,8 @@ class ItemChecklistController extends Controller
             
             // Establecer valores por defecto
             $validatedData['obligatorio'] = $request->has('obligatorio');
+            $validatedData['tiene_stock'] = $request->has('tiene_stock');
+            $validatedData['tiene_averias'] = $request->has('tiene_averias');
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
 

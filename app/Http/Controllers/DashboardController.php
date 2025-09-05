@@ -15,11 +15,11 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
     public function index(Request $request) {
-
         // **Obtenemos la fecha actual**
         $now = Carbon::now();
 
@@ -27,8 +27,31 @@ class DashboardController extends Controller
         $fechaInicio = Carbon::parse($request->input('fecha_inicio', $now->startOfMonth()->toDateString()));
         $fechaFin = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
 
-        // **Filtrar reservas por rango de fechas**
-        $reservas = Reserva::with(['cliente', 'apartamento', 'estado'])
+        // **Crear clave de caché única para este rango de fechas**
+        $cacheKey = 'dashboard_' . $fechaInicio->format('Y-m-d') . '_' . $fechaFin->format('Y-m-d');
+        
+        // **Intentar obtener datos del caché primero (válido por 5 minutos)**
+        $cachedData = Cache::remember($cacheKey, 300, function () use ($fechaInicio, $fechaFin) {
+            return $this->calculateDashboardData($fechaInicio, $fechaFin);
+        });
+
+        // **Si hay datos en caché, usarlos**
+        if ($cachedData) {
+            return view('admin.dashboard', $cachedData);
+        }
+
+        // **Si no hay caché, calcular los datos**
+        $data = $this->calculateDashboardData($fechaInicio, $fechaFin);
+        
+        // **Guardar en caché**
+        Cache::put($cacheKey, $data, 300);
+
+        return view('admin.dashboard', $data);
+    }
+
+    private function calculateDashboardData($fechaInicio, $fechaFin) {
+        // **Optimización: Una sola consulta para obtener todas las reservas con relaciones**
+        $reservas = Reserva::with(['cliente:id,nacionalidad,sexo,fecha_nacimiento', 'apartamento:id,titulo', 'estado:id'])
             ->where('estado_id', '!=', 4)
             ->where(function ($query) use ($fechaInicio, $fechaFin) {
                 $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
@@ -37,118 +60,175 @@ class DashboardController extends Controller
                         $subQuery->where('fecha_entrada', '<=', $fechaInicio)
                                 ->where('fecha_salida', '>=', $fechaFin);
                     });
-            })->get();
+            })
+            ->get();
 
-        // Debug para el filtro principal si es junio 2025
-        if ($fechaInicio->format('Y-m') == '2025-06' && $fechaFin->format('Y-m') == '2025-06') {
-                        Log::info('=== DEBUG FILTRO PRINCIPAL JUNIO 2025 ===');
-            Log::info('Fechas del filtro principal: ' . $fechaInicio->format('Y-m-d') . ' a ' . $fechaFin->format('Y-m-d'));
-            Log::info('Total reservas filtro principal: ' . $reservas->count());
+        // **Optimización: Obtener apartamentos una sola vez**
+        $apartamentosDisponibles = Apartamento::whereNotNull('id_channex')->count();
+        $apartamentos = Apartamento::whereNotNull('id_channex')->get(['id', 'titulo']);
 
-            // Contar por fecha_entrada solo en el filtro
-            $soloEntradaFiltro = Reserva::where('estado_id', '!=', 4)
-                ->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-                ->count();
-            Log::info('Solo fecha_entrada en filtro: ' . $soloEntradaFiltro);
+        // **Optimización: Calcular ocupación de forma más eficiente**
+        $ocupacionData = $this->calculateOcupacionOptimizada($reservas, $apartamentos, $fechaInicio, $fechaFin);
 
-            // Contar por fecha_salida solo en el filtro
-            $soloSalidaFiltro = Reserva::where('estado_id', '!=', 4)
-                ->whereBetween('fecha_salida', [$fechaInicio, $fechaFin])
-                ->count();
-            Log::info('Solo fecha_salida en filtro: ' . $soloSalidaFiltro);
+        // **Optimización: Usar consultas agregadas para estadísticas**
+        $estadisticas = $this->calculateEstadisticasOptimizadas($reservas, $fechaInicio, $fechaFin);
 
-            // Contar por reservas activas durante todo el período del filtro
-            $activasTodoFiltro = Reserva::where('estado_id', '!=', 4)
-                ->where('fecha_entrada', '<=', $fechaInicio)
-                ->where('fecha_salida', '>=', $fechaFin)
-                ->count();
-            Log::info('Activas durante todo el período del filtro: ' . $activasTodoFiltro);
-        }
+        // **Optimización: Calcular gráficos de forma más eficiente**
+        $graficos = $this->calculateGraficosOptimizados($reservas, $fechaInicio, $fechaFin);
 
+        // **Optimización: Calcular estadísticas anuales de forma más eficiente**
+        $estadisticasAnuales = $this->calculateEstadisticasAnualesOptimizadas($fechaInicio, $fechaFin);
 
+        // **Optimización: Obtener datos para filtros de forma más eficiente**
+        $datosFiltros = $this->getDatosFiltrosOptimizados();
 
-        $fechaFin2 = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
+        // **Combinar todos los datos**
+        return array_merge(
+            $ocupacionData,
+            $estadisticas,
+            $graficos,
+            $estadisticasAnuales,
+            $datosFiltros,
+            [
+                'fechaInicio' => $fechaInicio,
+                'fechaFin' => $fechaFin,
+                'reservas' => $reservas,
+            ]
+        );
+    }
 
-        // **Calcular ocupación diaria**
-        $apartamentosDisponibles = Apartamento::whereNotNull('id_channex')->count(); // Total apartamentos disponibles
-        $apartamentos = Apartamento::whereNotNull('id_channex')->get(); // Total apartamentos disponibles
-        //$totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin) + 1); // Capacidad máxima
-        // $totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin2) + 1);
+    private function calculateOcupacionOptimizada($reservas, $apartamentos, $fechaInicio, $fechaFin) {
+        // **Optimización: Calcular ocupación de forma más simple y eficiente**
         $nochesOcupadas = 0;
+        $totalNochesPosibles = $apartamentos->count() * ($fechaInicio->diffInDays($fechaFin) + 1);
 
-        foreach (CarbonPeriod::create($fechaInicio, $fechaFin) as $dia) {
-            // Recorrer todos los apartamentos disponibles
-            $apartamentos->each(function ($apartamento) use ($reservas, $dia, &$nochesOcupadas) {
-                $estaOcupado = $reservas->filter(function ($reserva) use ($apartamento, $dia) {
-                    $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
-                    $fechaSalida = isset($reserva->fecha_salida)
-                        ? Carbon::parse($reserva->fecha_salida)
-                        : $fechaEntrada->copy()->addDay(); // Suponemos 1 noche si no hay fecha_salida
+        // **Optimización: Usar consulta SQL directa para calcular ocupación**
+        $result = DB::select("
+            SELECT COUNT(*) as noches_ocupadas
+            FROM (
+                SELECT DISTINCT 
+                    r.apartamento_id,
+                    d.dia
+                FROM reservas r
+                CROSS JOIN (
+                    SELECT DATE_ADD(?, INTERVAL seq.seq DAY) as dia
+                    FROM (
+                        SELECT 0 as seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION
+                        SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION
+                        SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION
+                        SELECT 30 UNION SELECT 31 UNION SELECT 32 UNION SELECT 33 UNION SELECT 34 UNION SELECT 35 UNION SELECT 36 UNION SELECT 37 UNION SELECT 38 UNION SELECT 39 UNION
+                        SELECT 40 UNION SELECT 41 UNION SELECT 42 UNION SELECT 43 UNION SELECT 44 UNION SELECT 45 UNION SELECT 46 UNION SELECT 47 UNION SELECT 48 UNION SELECT 49 UNION
+                        SELECT 50 UNION SELECT 51 UNION SELECT 52 UNION SELECT 53 UNION SELECT 54 UNION SELECT 55 UNION SELECT 56 UNION SELECT 57 UNION SELECT 58 UNION SELECT 59 UNION
+                        SELECT 60 UNION SELECT 61 UNION SELECT 62 UNION SELECT 63 UNION SELECT 64 UNION SELECT 65 UNION SELECT 66 UNION SELECT 67 UNION SELECT 68 UNION SELECT 69 UNION
+                        SELECT 70 UNION SELECT 71 UNION SELECT 72 UNION SELECT 73 UNION SELECT 74 UNION SELECT 75 UNION SELECT 76 UNION SELECT 77 UNION SELECT 78 UNION SELECT 79 UNION
+                        SELECT 80 UNION SELECT 81 UNION SELECT 82 UNION SELECT 83 UNION SELECT 84 UNION SELECT 85 UNION SELECT 86 UNION SELECT 87 UNION SELECT 88 UNION SELECT 89 UNION
+                        SELECT 90 UNION SELECT 91 UNION SELECT 92 UNION SELECT 93 UNION SELECT 94 UNION SELECT 95 UNION SELECT 96 UNION SELECT 97 UNION SELECT 98 UNION SELECT 99
+                    ) seq
+                    WHERE DATE_ADD(?, INTERVAL seq.seq DAY) <= ?
+                ) d
+                WHERE r.estado_id != 4
+                AND r.apartamento_id IN (SELECT id FROM apartamentos WHERE id_channex IS NOT NULL)
+                AND d.dia >= r.fecha_entrada
+                AND d.dia < r.fecha_salida
+            ) as ocupacion
+        ", [$fechaInicio->toDateString(), $fechaInicio->toDateString(), $fechaFin->toDateString()]);
 
-                    return $reserva->apartamento_id === $apartamento->id && $dia->between($fechaEntrada, $fechaSalida);
-                })->isNotEmpty();
+        $nochesOcupadas = $result[0]->noches_ocupadas ?? 0;
+        $porcentajeOcupacion = ($totalNochesPosibles > 0) ? round(($nochesOcupadas / $totalNochesPosibles) * 100, 2) : 0;
 
-                // Incrementar si el apartamento está ocupado ese día
-                if ($estaOcupado) {
-                    $nochesOcupadas++;
-                }
+        // **Apartamentos libres hoy**
+        $hoy = Carbon::today();
+        $apartamentosOcupadosHoy = Reserva::where('estado_id', '!=', 4)
+            ->where('fecha_entrada', '<=', $hoy)
+            ->where('fecha_salida', '>', $hoy)
+            ->pluck('apartamento_id');
+
+        $apartamentosLibresHoy = Apartamento::whereNotIn('id', $apartamentosOcupadosHoy)
+            ->whereNotNull('edificio_id')
+            ->whereNotNull('id_channex')
+            ->with(['reservas' => function($query) {
+                $query->where('estado_id', '!=', 4)
+                      ->orderBy('fecha_entrada', 'desc');
+            }])
+            ->get()
+            ->map(function($apartamento) {
+                $ultimaReserva = $apartamento->reservas->where('fecha_salida', '<=', Carbon::today())->first();
+                $proximaReserva = $apartamento->reservas->where('fecha_entrada', '>', Carbon::today())->first();
+                
+                $apartamento->ultima_reserva = $ultimaReserva ? Carbon::parse($ultimaReserva->fecha_salida)->format('d/m/Y') : null;
+                $apartamento->proxima_reserva = $proximaReserva ? Carbon::parse($proximaReserva->fecha_entrada)->format('d/m/Y') : null;
+                
+                return $apartamento;
             });
-        }
-        // dd($apartamentos);
-        // **Calcular noches totales posibles basado en días y apartamentos disponibles**
-        $totalNochesPosibles = $apartamentosDisponibles * ($fechaInicio->diffInDays($fechaFin) + 1);
-        // **Calcular porcentaje de ocupación**
-        $porcentajeOcupacion = ($totalNochesPosibles > 0)
-        ? round(($nochesOcupadas / $totalNochesPosibles) * 100, 2)
-        : 0;
 
-        // **Otros cálculos (ingresos, gráficos, etc.)**
+        return [
+            'porcentajeOcupacion' => $porcentajeOcupacion,
+            'nochesOcupadas' => $nochesOcupadas,
+            'totalNochesPosibles' => $totalNochesPosibles,
+            'apartamentosLibresHoy' => $apartamentosLibresHoy,
+        ];
+    }
+
+    private function calculateEstadisticasOptimizadas($reservas, $fechaInicio, $fechaFin) {
+        // **Optimización: Calcular estadísticas básicas de forma más eficiente**
         $countReservas = $reservas->count();
         $sumPrecio = $reservas->sum(function ($reserva) {
-            // Verificar que precio sea un string o número válido
             $precio = $reserva->precio;
-
-            // Si es un closure, retornar 0
-            if ($precio instanceof \Closure) {
-                return 0;
-            }
-
             if (is_string($precio)) {
                 $precio = str_replace(',', '.', $precio);
                 return is_numeric($precio) ? floatval($precio) : 0;
-            } elseif (is_numeric($precio)) {
-                return floatval($precio);
-            } else {
-                return 0;
             }
+            return is_numeric($precio) ? floatval($precio) : 0;
         });
-        // **Ingresos y gastos**
+
+        // **Optimización: Usar consultas agregadas para ingresos y gastos**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
         $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
 
-        // **Ingresos para beneficio (excluyendo categoría 12)**
         $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
             ->where('categoria_id', '!=', 12)
             ->sum('quantity');
 
-        // **Gastos para beneficio (excluyendo categorías 53 y 45)**
         $gastosBeneficio = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
             ->whereNotIn('categoria_id', [53, 45])
             ->sum('quantity'));
 
-        // **Gráfico de Nacionalidades**
-        $nacionalidades = Reserva::select('clientes.nacionalidad', DB::raw('COUNT(reservas.id) as total'))
-            ->join('clientes', 'reservas.cliente_id', '=', 'clientes.id')
-            ->whereBetween('reservas.fecha_entrada', [$fechaInicio, $fechaFin])
-            ->groupBy('clientes.nacionalidad')
-            ->get();
+        // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
+        $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
+        $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
+        $categoriasGastos = CategoriaGastos::all();
 
-        $nacionalidadesConPorcentaje = $nacionalidades->map(function ($nacionalidad) use ($countReservas) {
-            $nacionalidad->porcentaje = $countReservas > 0 ? round(($nacionalidad->total / $countReservas) * 100, 2) : 0;
-            return $nacionalidad;
+        return [
+            'countReservas' => $countReservas,
+            'sumPrecio' => $sumPrecio,
+            'ingresos' => $ingresos,
+            'gastos' => $gastos,
+            'ingresosBeneficio' => $ingresosBeneficio,
+            'gastosBeneficio' => $gastosBeneficio,
+            'ingresosLista' => $ingresosLista,
+            'gastosLista' => $gastosLista,
+            'categoriasGastos' => $categoriasGastos,
+        ];
+    }
+
+    private function calculateGraficosOptimizados($reservas, $fechaInicio, $fechaFin) {
+        // **Optimización: Calcular gráficos usando las reservas ya cargadas**
+        $countReservas = $reservas->count();
+
+        // **Gráfico de Nacionalidades**
+        $nacionalidades = $reservas->groupBy('cliente.nacionalidad')
+            ->map(function ($group) {
+                return $group->count();
+            });
+
+        $nacionalidadesConPorcentaje = $nacionalidades->map(function ($total) use ($countReservas) {
+            return [
+                'total' => $total,
+                'porcentaje' => $countReservas > 0 ? round(($total / $countReservas) * 100, 2) : 0
+            ];
         });
 
-        $labels = $nacionalidadesConPorcentaje->pluck('nacionalidad')->map(fn($nacionalidad) => $nacionalidad ?? 'Sin especificar')->toArray();
+        $labels = $nacionalidadesConPorcentaje->keys()->map(fn($nacionalidad) => $nacionalidad ?? 'Sin especificar')->toArray();
         $data = $nacionalidadesConPorcentaje->pluck('porcentaje')->toArray();
 
         // **Gráfico de Rangos de Edad**
@@ -160,24 +240,20 @@ class DashboardController extends Controller
             '60+' => 0,
         ];
 
-        $clientes = Cliente::select(DB::raw("
-            CASE
-                WHEN fecha_nacimiento IS NULL THEN 'Ns-nc'
-                WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 18 AND 30 THEN '18-30'
-                WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 31 AND 45 THEN '31-45'
-                WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 46 AND 60 THEN '46-60'
-                WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) > 60 THEN '60+'
-            END as rango_edad,
-            COUNT(*) as total
-        "))
-        ->join('reservas', 'clientes.id', '=', 'reservas.cliente_id')
-        ->whereBetween('reservas.fecha_entrada', [$fechaInicio, $fechaFin])
-        ->groupBy('rango_edad')
-        ->pluck('total', 'rango_edad');
-
-        foreach ($clientes as $rango => $total) {
-            if (array_key_exists($rango, $rangoDefinido)) {
-                $rangoDefinido[$rango] = $total;
+        foreach ($reservas as $reserva) {
+            if ($reserva->cliente && $reserva->cliente->fecha_nacimiento) {
+                $edad = Carbon::parse($reserva->cliente->fecha_nacimiento)->age;
+                if ($edad >= 18 && $edad <= 30) {
+                    $rangoDefinido['18-30']++;
+                } elseif ($edad >= 31 && $edad <= 45) {
+                    $rangoDefinido['31-45']++;
+                } elseif ($edad >= 46 && $edad <= 60) {
+                    $rangoDefinido['46-60']++;
+                } elseif ($edad > 60) {
+                    $rangoDefinido['60+']++;
+                }
+            } else {
+                $rangoDefinido['Ns-nc']++;
             }
         }
 
@@ -189,27 +265,20 @@ class DashboardController extends Controller
         $rangoEdades = array_keys($rangoDefinido);
         $totalesEdades = array_values($edadesPorcentaje);
 
-        // **Gráfico de Disponibilidad Mensual**
-        $disponibilidadMensual = $this->calcularDisponibilidadMensual();
-
         // **Gráfico de Ocupantes**
         $ocupantesDefinidos = [
-            '01' => 0,
-            '02' => 0,
-            '03' => 0,
-            '04' => 0,
-            '05' => 0,
-            '06' => 0,
+            '01' => 0, '02' => 0, '03' => 0, '04' => 0, '05' => 0, '06' => 0,
         ];
 
-        $ocupantes = Reserva::select('numero_personas', DB::raw('COUNT(*) as total'))
-            ->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-            ->groupBy('numero_personas')
-            ->pluck('total', 'numero_personas');
+        $ocupantes = $reservas->groupBy('numero_personas')
+            ->map(function ($group) {
+                return $group->count();
+            });
 
         foreach ($ocupantes as $numero => $total) {
-            if (array_key_exists(str_pad($numero, 2, '0', STR_PAD_LEFT), $ocupantesDefinidos)) {
-                $ocupantesDefinidos[str_pad($numero, 2, '0', STR_PAD_LEFT)] = $total;
+            $key = str_pad($numero, 2, '0', STR_PAD_LEFT);
+            if (array_key_exists($key, $ocupantesDefinidos)) {
+                $ocupantesDefinidos[$key] = $total;
             }
         }
 
@@ -228,22 +297,18 @@ class DashboardController extends Controller
             'Sin definir' => 0,
         ];
 
-        $clientesSexo = Cliente::select(DB::raw("
-            CASE
-                WHEN sexo IS NULL THEN 'Sin definir'
-                WHEN sexo = 'Masculino' THEN 'Hombre'
-                WHEN sexo = 'Femenino' THEN 'Mujer'
-            END as genero,
-            COUNT(*) as total
-        "))
-        ->join('reservas', 'clientes.id', '=', 'reservas.cliente_id')
-        ->whereBetween('reservas.fecha_entrada', [$fechaInicio, $fechaFin])
-        ->groupBy('genero')
-        ->pluck('total', 'genero');
-
-        foreach ($clientesSexo as $genero => $total) {
-            if (array_key_exists($genero, $sexoDefinido)) {
-                $sexoDefinido[$genero] = $total;
+        foreach ($reservas as $reserva) {
+            if ($reserva->cliente) {
+                $sexo = $reserva->cliente->sexo;
+                if ($sexo === 'Masculino') {
+                    $sexoDefinido['Hombre']++;
+                } elseif ($sexo === 'Femenino') {
+                    $sexoDefinido['Mujer']++;
+                } else {
+                    $sexoDefinido['Sin definir']++;
+                }
+            } else {
+                $sexoDefinido['Sin definir']++;
             }
         }
 
@@ -262,28 +327,21 @@ class DashboardController extends Controller
             'Externo' => 0,
         ];
 
-        // Función para normalizar el origen
         $normalizarOrigen = function($origen) {
             $origenLower = strtolower(trim($origen));
-
-            // Normalizar Booking
             if (str_contains($origenLower, 'booking') || str_contains($origenLower, 'bookingcom')) {
                 return 'Booking';
             }
-
-            // Normalizar Airbnb
             if (str_contains($origenLower, 'airbnb') || str_contains($origenLower, 'airbn')) {
                 return 'Airbnb';
             }
-
-            // Si no coincide con ninguno, es externo
             return 'Externo';
         };
 
-        $prescriptores = Reserva::select('origen', DB::raw('COUNT(*) as total'))
-            ->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-            ->groupBy('origen')
-            ->pluck('total', 'origen');
+        $prescriptores = $reservas->groupBy('origen')
+            ->map(function ($group) {
+                return $group->count();
+            });
 
         foreach ($prescriptores as $origen => $total) {
             $origenNormalizado = $normalizarOrigen($origen);
@@ -301,16 +359,16 @@ class DashboardController extends Controller
         $prescriptoresData = array_values($porcentajesPrescriptores);
 
         // **Gráfico de Apartamentos**
-        $apartamentos = Apartamento::select('titulo')->get();
+        $apartamentos = Apartamento::select('id', 'titulo')->get();
         $apartamentosDefinidos = $apartamentos->pluck('titulo')->mapWithKeys(fn($titulo) => [$titulo => 0])->toArray();
 
-        $reservasPorApartamento = Reserva::select('apartamento_id', DB::raw('COUNT(*) as total'))
-            ->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-            ->groupBy('apartamento_id')
-            ->pluck('total', 'apartamento_id');
+        $reservasPorApartamento = $reservas->groupBy('apartamento_id')
+            ->map(function ($group) {
+                return $group->count();
+            });
 
         foreach ($reservasPorApartamento as $apartamentoId => $total) {
-            $apartamento = Apartamento::find($apartamentoId);
+            $apartamento = $apartamentos->find($apartamentoId);
             if ($apartamento && array_key_exists($apartamento->titulo, $apartamentosDefinidos)) {
                 $apartamentosDefinidos[$apartamento->titulo] = $total;
             }
@@ -338,103 +396,44 @@ class DashboardController extends Controller
 
         $categoriasLabels = $porcentajesGastos->keys()->toArray();
         $categoriasData = $porcentajesGastos->values()->toArray();
-        $hoy = Carbon::today();
 
-        // Obtener apartamentos ocupados hoy
-        $apartamentosOcupadosHoy = Reserva::where('estado_id', '!=', 4)
-        ->where(function ($query) use ($hoy) {
-            $query->where('fecha_entrada', '<=', $hoy)
-                  ->where('fecha_salida', '>', $hoy); // importante el '>'
-        })
-        ->pluck('apartamento_id');
+        return [
+            'labels' => $labels,
+            'data' => $data,
+            'rangoEdades' => $rangoEdades,
+            'totalesEdades' => $totalesEdades,
+            'ocupantesLabels' => $ocupantesLabels,
+            'ocupantesData' => $ocupantesData,
+            'sexoLabels' => $sexoLabels,
+            'sexoData' => $sexoData,
+            'prescriptoresLabels' => $prescriptoresLabels,
+            'prescriptoresData' => $prescriptoresData,
+            'apartamentosLabels' => $apartamentosLabels,
+            'apartamentosData' => $apartamentosData,
+            'categoriasLabels' => $categoriasLabels,
+            'categoriasData' => $categoriasData,
+        ];
+    }
 
-
-        // dd($apartamentosOcupadosHoy);
-        // Obtener apartamentos libres hoy
-        $apartamentosLibresHoy = Apartamento::whereNotIn('id', $apartamentosOcupadosHoy)
-            ->whereNotNull('edificio_id')
-            ->whereNotNull('id_channex')
-            ->get();
-
-
-        $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
-        $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
-        $categoriasGastos = CategoriaGastos::all();
-
-        // **Estadísticas por meses - Comparativa año actual vs año anterior**
+    private function calculateEstadisticasAnualesOptimizadas($fechaInicio, $fechaFin) {
+        // **Optimización: Calcular estadísticas anuales de forma más eficiente**
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $anioActual = Carbon::now()->year;
+        $anioAnterior = $anioActual - 1;
+
+        // **Optimización: Usar consultas agregadas para estadísticas mensuales**
         $reservasAnioActual = [];
         $reservasAnioAnterior = [];
         $beneficiosAnioActual = [];
         $beneficiosAnioAnterior = [];
-
-        $anioActual = Carbon::now()->year;
-        $anioAnterior = $anioActual - 1;
-
-        // Arrays para noches reservadas por mes
         $nochesReservadasAnioActual = [];
         $nochesReservadasAnioAnterior = [];
 
         for ($mes = 1; $mes <= 12; $mes++) {
-            // Calcular fechas de inicio y fin del mes
             $fechaInicioMes = Carbon::create($anioActual, $mes, 1)->startOfMonth();
             $fechaFinMes = Carbon::create($anioActual, $mes, 1)->endOfMonth();
 
-            // Debug específico para junio 2025
-            if ($mes == 6 && $anioActual == 2025) {
-                                Log::info('=== DEBUG DETALLADO JUNIO 2025 ===');
-                Log::info('Fechas del gráfico: ' . $fechaInicioMes->format('Y-m-d') . ' a ' . $fechaFinMes->format('Y-m-d'));
-
-                // Contar por fecha_entrada solo
-                $soloEntrada = Reserva::where('estado_id', '!=', 4)
-                    ->whereYear('fecha_entrada', $anioActual)
-                    ->whereMonth('fecha_entrada', $mes)
-                    ->count();
-                Log::info('Solo fecha_entrada: ' . $soloEntrada);
-
-                // Contar por fecha_salida solo
-                $soloSalida = Reserva::where('estado_id', '!=', 4)
-                    ->whereYear('fecha_salida', $anioActual)
-                    ->whereMonth('fecha_salida', $mes)
-                    ->count();
-                Log::info('Solo fecha_salida: ' . $soloSalida);
-
-                // Contar por reservas activas durante todo el mes
-                $activasTodoMes = Reserva::where('estado_id', '!=', 4)
-                    ->where('fecha_entrada', '<=', $fechaInicioMes)
-                    ->where('fecha_salida', '>=', $fechaFinMes)
-                    ->count();
-                Log::info('Activas durante todo el mes: ' . $activasTodoMes);
-
-                // Contar con lógica completa del gráfico
-                $conLogicaCompleta = Reserva::where('estado_id', '!=', 4)
-                    ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
-                        $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
-                            ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
-                            ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
-                                $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
-                                        ->where('fecha_salida', '>=', $fechaFinMes);
-                            });
-                    })
-                    ->count();
-                Log::info('Con lógica completa del gráfico: ' . $conLogicaCompleta);
-
-                // Verificar si hay duplicados
-                $reservasDetalladas = Reserva::where('estado_id', '!=', 4)
-                    ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
-                        $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
-                            ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
-                            ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
-                                $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
-                                        ->where('fecha_salida', '>=', $fechaFinMes);
-                            });
-                    })
-                    ->get();
-                Log::info('Total reservas únicas: ' . $reservasDetalladas->count());
-                Log::info('IDs de reservas: ' . $reservasDetalladas->pluck('id')->implode(', '));
-            }
-
-            // Reservas año actual - usando exactamente la misma lógica que el filtro principal
+            // **Optimización: Usar consultas más eficientes para estadísticas mensuales**
             $reservasMesActual = Reserva::where('estado_id', '!=', 4)
                 ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
                     $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
@@ -445,13 +444,13 @@ class DashboardController extends Controller
                         });
                 })
                 ->count();
+
             $reservasAnioActual[] = $reservasMesActual;
 
-            // Calcular fechas de inicio y fin del mes para año anterior
+            // **Año anterior**
             $fechaInicioMesAnterior = Carbon::create($anioAnterior, $mes, 1)->startOfMonth();
             $fechaFinMesAnterior = Carbon::create($anioAnterior, $mes, 1)->endOfMonth();
 
-            // Reservas año anterior - usando la misma lógica que el filtro principal
             $reservasMesAnterior = Reserva::where('estado_id', '!=', 4)
                 ->where(function ($query) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
                     $query->whereBetween('fecha_entrada', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
@@ -462,69 +461,17 @@ class DashboardController extends Controller
                         });
                 })
                 ->count();
+
             $reservasAnioAnterior[] = $reservasMesAnterior;
 
-            // Calcular noches reservadas año actual
-            $nochesMesActual = 0;
-            $reservasMesActualDetalladas = Reserva::where('estado_id', '!=', 4)
-                ->where(function ($query) use ($fechaInicioMes, $fechaFinMes) {
-                    $query->whereBetween('fecha_entrada', [$fechaInicioMes, $fechaFinMes])
-                        ->orWhereBetween('fecha_salida', [$fechaInicioMes, $fechaFinMes])
-                        ->orWhere(function ($subQuery) use ($fechaInicioMes, $fechaFinMes) {
-                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMes)
-                                    ->where('fecha_salida', '>=', $fechaFinMes);
-                        });
-                })
-                ->get();
-
-            foreach ($reservasMesActualDetalladas as $reserva) {
-                $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
-                $fechaSalida = Carbon::parse($reserva->fecha_salida);
-
-                // Calcular noches que caen dentro del mes
-                $inicioMes = $fechaInicioMes->copy();
-                $finMes = $fechaFinMes->copy();
-
-                $inicioReserva = $fechaEntrada->gt($inicioMes) ? $fechaEntrada : $inicioMes;
-                $finReserva = $fechaSalida->lt($finMes) ? $fechaSalida : $finMes;
-
-                if ($inicioReserva->lte($finReserva)) {
-                    $nochesMesActual += $inicioReserva->diffInDays($finReserva);
-                }
-            }
+            // **Optimización: Calcular noches reservadas de forma más eficiente**
+            $nochesMesActual = $this->calculateNochesReservadas($fechaInicioMes, $fechaFinMes);
             $nochesReservadasAnioActual[] = $nochesMesActual;
 
-            // Calcular noches reservadas año anterior
-            $nochesMesAnterior = 0;
-            $reservasMesAnteriorDetalladas = Reserva::where('estado_id', '!=', 4)
-                ->where(function ($query) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
-                    $query->whereBetween('fecha_entrada', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
-                        ->orWhereBetween('fecha_salida', [$fechaInicioMesAnterior, $fechaFinMesAnterior])
-                        ->orWhere(function ($subQuery) use ($fechaInicioMesAnterior, $fechaFinMesAnterior) {
-                            $subQuery->where('fecha_entrada', '<=', $fechaInicioMesAnterior)
-                                    ->where('fecha_salida', '>=', $fechaFinMesAnterior);
-                        });
-                })
-                ->get();
-
-            foreach ($reservasMesAnteriorDetalladas as $reserva) {
-                $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
-                $fechaSalida = Carbon::parse($reserva->fecha_salida);
-
-                // Calcular noches que caen dentro del mes
-                $inicioMes = $fechaInicioMesAnterior->copy();
-                $finMes = $fechaFinMesAnterior->copy();
-
-                $inicioReserva = $fechaEntrada->gt($inicioMes) ? $fechaEntrada : $inicioMes;
-                $finReserva = $fechaSalida->lt($finMes) ? $fechaSalida : $finMes;
-
-                if ($inicioReserva->lte($finReserva)) {
-                    $nochesMesAnterior += $inicioReserva->diffInDays($finReserva);
-                }
-            }
+            $nochesMesAnterior = $this->calculateNochesReservadas($fechaInicioMesAnterior, $fechaFinMesAnterior);
             $nochesReservadasAnioAnterior[] = $nochesMesAnterior;
 
-            // Beneficio año actual
+            // **Beneficios**
             $ingresosMesActual = Ingresos::whereYear('date', $anioActual)
                 ->whereMonth('date', $mes)
                 ->where('categoria_id', '!=', 12)
@@ -535,7 +482,6 @@ class DashboardController extends Controller
                 ->sum('quantity'));
             $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
-            // Beneficio año anterior
             $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)
                 ->whereMonth('date', $mes)
                 ->where('categoria_id', '!=', 12)
@@ -547,342 +493,63 @@ class DashboardController extends Controller
             $beneficiosAnioAnterior[] = $ingresosMesAnterior - $gastosMesAnterior;
         }
 
-        // Variables para los filtros del modal de facturación
-        $apartamentos = Apartamento::whereNotNull('id_channex')->get();
+        // **Optimización: Calcular disponibilidad mensual de forma más eficiente**
+        $disponibilidadMensual = $this->calcularDisponibilidadMensualOptimizada();
+
+        return [
+            'meses' => $meses,
+            'reservasAnioActual' => $reservasAnioActual,
+            'reservasAnioAnterior' => $reservasAnioAnterior,
+            'nochesReservadasAnioActual' => $nochesReservadasAnioActual,
+            'nochesReservadasAnioAnterior' => $nochesReservadasAnioAnterior,
+            'beneficiosAnioActual' => $beneficiosAnioActual,
+            'beneficiosAnioAnterior' => $beneficiosAnioAnterior,
+            'anioActual' => $anioActual,
+            'anioAnterior' => $anioAnterior,
+            'disponibilidadMensual' => $disponibilidadMensual,
+        ];
+    }
+
+    private function calculateNochesReservadas($fechaInicio, $fechaFin) {
+        // **Optimización: Calcular noches reservadas usando consulta SQL directa**
+        $result = DB::select("
+            SELECT SUM(
+                GREATEST(0, 
+                    LEAST(DATEDIFF(?, fecha_salida), DATEDIFF(fecha_salida, ?)) + 1
+                )
+            ) as noches
+            FROM reservas 
+            WHERE estado_id != 4
+            AND fecha_entrada <= ?
+            AND fecha_salida >= ?
+        ", [$fechaFin->toDateString(), $fechaInicio->toDateString(), $fechaFin->toDateString(), $fechaInicio->toDateString()]);
+
+        return $result[0]->noches ?? 0;
+    }
+
+    private function getDatosFiltrosOptimizados() {
+        // **Optimización: Obtener datos para filtros de forma más eficiente**
+        $apartamentos = Apartamento::whereNotNull('id_channex')->get(['id', 'titulo']);
         
-        // Obtener orígenes únicos de las reservas
         $origenes = Reserva::whereNotNull('origen')
             ->distinct()
             ->pluck('origen')
             ->filter()
             ->values();
         
-        // Obtener estados de reserva
-        $estados = Estado::all();
-        
-        // Calcular total de facturación (suma de precios de reservas)
-        $totalFacturacion = $reservas->sum('precio');
+        $estados = Estado::all(['id', 'nombre']);
 
-        return view('admin.dashboard', compact(
-            'countReservas',
-            'sumPrecio',
-            'fechaInicio',
-            'fechaFin',
-            'ingresos',
-            'gastos',
-            'ingresosBeneficio',
-            'gastosBeneficio',
-            'labels',
-            'data',
-            'rangoEdades',
-            'totalesEdades',
-            'ocupantesLabels',
-            'ocupantesData',
-            'sexoLabels',
-            'sexoData',
-            'prescriptoresLabels',
-            'prescriptoresData',
-            'apartamentosLabels',
-            'apartamentosData',
-            'categoriasLabels',
-            'categoriasData',
-            'porcentajeOcupacion',
-            'nochesOcupadas',
-            'totalNochesPosibles',
-            'apartamentosLibresHoy',
-            'ingresosLista',
-            'gastosLista',
-            'categoriasGastos',
-            'reservas',
-            'meses',
-            'reservasAnioActual',
-            'reservasAnioAnterior',
-            'nochesReservadasAnioActual',
-            'nochesReservadasAnioAnterior',
-            'beneficiosAnioActual',
-            'beneficiosAnioAnterior',
-            'anioActual',
-            'anioAnterior',
-            // Variables para los filtros del modal
-            'apartamentos',
-            'origenes',
-            'estados',
-            'totalFacturacion',
-            'disponibilidadMensual'
-        ));
+        return [
+            'apartamentos' => $apartamentos,
+            'origenes' => $origenes,
+            'estados' => $estados,
+        ];
     }
 
-    // public function index(Request $request) {
-    //     $fechaInicio = $request->input('fecha_inicio');
-    //     $fechaFin = $request->input('fecha_fin');
-
-    //     $now = Carbon::now();
-    //     $anioActual = $now->format('Y');
-    //     $mesActual = $now->format('m');
-    //     $anioAnterior = date('Y', strtotime('-1 year'));
-    //     $anioReturn = $anioActual;
-    //     $mesReturn = $mesActual;
-
-    //     // Fechas por defecto si no se proporcionan
-    //     $fechaInicio = $fechaInicio ?? $now->startOfMonth()->toDateString();
-    //     $fechaFin = $fechaFin ?? $now->endOfMonth()->toDateString();
-
-    //     $anio = $request->input('anio', $anioActual);
-    //     $mes = $request->input('mes', null);
-
-    //     // Inicia la consulta para las reservas
-    //     $reservas = Reserva::whereYear('fecha_entrada', $anio);
-    //     if ($mes) {
-    //         $reservas->whereMonth('fecha_entrada', $mes);
-    //     }
-
-    //     $countReservas = $reservas->count();
-    //     $sumPrecio = $reservas->sum('precio');
-    //     $reservas = $reservas->get();
-    //     $mesNombre = $mes ? Carbon::create()->month($mes)->locale('es')->monthName : null;
-
-    //     // Obtener datos de ingresos y gastos
-    //     $ingresos = Ingresos::whereYear('date', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('date', $mes))
-    //         ->sum('quantity');
-
-    //     $gastos = abs(Gastos::whereYear('date', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('date', $mes))
-    //         ->sum('quantity'));
-
-    //     // Gráfico de nacionalidades
-    //     $nacionalidades = Reserva::select('clientes.nacionalidad', DB::raw('COUNT(reservas.id) as total'))
-    //         ->join('clientes', 'reservas.cliente_id', '=', 'clientes.id')
-    //         ->whereYear('reservas.fecha_entrada', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('reservas.fecha_entrada', $mes))
-    //         ->groupBy('clientes.nacionalidad')
-    //         ->get();
-
-    //     $nacionalidadesConPorcentaje = $nacionalidades->map(function ($nacionalidad) use ($countReservas) {
-    //         $nacionalidad->porcentaje = $countReservas > 0 ? round(($nacionalidad->total / $countReservas) * 100, 2) : 0;
-    //         return $nacionalidad;
-    //     });
-
-    //     $labels = $nacionalidadesConPorcentaje->pluck('nacionalidad')->map(fn($nacionalidad) => $nacionalidad ?? 'Sin especificar')->toArray();
-    //     $data = $nacionalidadesConPorcentaje->pluck('porcentaje')->toArray();
-
-    //     // Gráfico de rangos de edad
-    //     $rangoDefinido = [
-    //         'Ns-nc' => 0,
-    //         '18-30' => 0,
-    //         '31-45' => 0,
-    //         '46-60' => 0,
-    //         '60+' => 0,
-    //     ];
-
-    //     $clientes = Cliente::select(DB::raw("
-    //         CASE
-    //             WHEN fecha_nacimiento IS NULL THEN 'Ns-nc'
-    //             WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 18 AND 30 THEN '18-30'
-    //             WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 31 AND 45 THEN '31-45'
-    //             WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 46 AND 60 THEN '46-60'
-    //             WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) > 60 THEN '60+'
-    //         END as rango_edad,
-    //         COUNT(*) as total
-    //     "))
-    //     ->join('reservas', 'clientes.id', '=', 'reservas.cliente_id')
-    //     ->whereYear('reservas.fecha_entrada', $anio)
-    //     ->when($mes, fn($query) => $query->whereMonth('reservas.fecha_entrada', $mes))
-    //     ->groupBy('rango_edad')
-    //     ->pluck('total', 'rango_edad');
-
-    //     foreach ($clientes as $rango => $total) {
-    //         if (array_key_exists($rango, $rangoDefinido)) {
-    //             $rangoDefinido[$rango] = $total;
-    //         }
-    //     }
-
-    //     $totalClientes = array_sum($rangoDefinido);
-    //     $edadesPorcentaje = array_map(function ($total) use ($totalClientes) {
-    //         return $totalClientes > 0 ? round(($total / $totalClientes) * 100, 2) : 0;
-    //     }, $rangoDefinido);
-
-    //     $rangoEdades = array_keys($rangoDefinido);
-    //     $totalesEdades = array_values($edadesPorcentaje);
-
-    //     // **Estadísticas de Ocupantes**
-    //     $ocupantesDefinidos = [
-    //         '01' => 0,
-    //         '02' => 0,
-    //         '03' => 0,
-    //         '04' => 0,
-    //         '05' => 0,
-    //         '06' => 0,
-    //     ];
-
-    //     $ocupantes = Reserva::select('numero_personas', DB::raw('COUNT(*) as total'))
-    //         ->whereYear('fecha_entrada', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('fecha_entrada', $mes))
-    //         ->groupBy('numero_personas')
-    //         ->pluck('total', 'numero_personas');
-
-    //     foreach ($ocupantes as $numero => $total) {
-    //         if (array_key_exists(str_pad($numero, 2, '0', STR_PAD_LEFT), $ocupantesDefinidos)) {
-    //             $ocupantesDefinidos[str_pad($numero, 2, '0', STR_PAD_LEFT)] = $total;
-    //         }
-    //     }
-
-    //     $totalOcupantes = array_sum($ocupantesDefinidos);
-    //     $porcentajesOcupantes = array_map(function ($total) use ($totalOcupantes) {
-    //         return $totalOcupantes > 0 ? round(($total / $totalOcupantes) * 100, 2) : 0;
-    //     }, $ocupantesDefinidos);
-
-    //     $ocupantesLabels = array_keys($ocupantesDefinidos);
-    //     $ocupantesData = array_values($porcentajesOcupantes);
-
-    //     // **Gráfico de Sexo**
-    //     $sexoDefinido = [
-    //         'Hombre' => 0,
-    //         'Mujer' => 0,
-    //         'Sin definir' => 0,
-    //     ];
-
-    //     $clientesSexo = Cliente::select(DB::raw("
-    //         CASE
-    //             WHEN sexo IS NULL THEN 'Sin definir'
-    //             WHEN sexo = 'Masculino' THEN 'Hombre'
-    //             WHEN sexo = 'Femenino' THEN 'Mujer'
-    //         END as genero,
-    //         COUNT(*) as total
-    //     "))
-    //     ->join('reservas', 'clientes.id', '=', 'reservas.cliente_id')
-    //     ->whereYear('reservas.fecha_entrada', $anio)
-    //     ->when($mes, fn($query) => $query->whereMonth('reservas.fecha_entrada', $mes))
-    //     ->groupBy('genero')
-    //     ->pluck('total', 'genero');
-
-    //     foreach ($clientesSexo as $genero => $total) {
-    //         if (array_key_exists($genero, $sexoDefinido)) {
-    //             $sexoDefinido[$genero] = $total;
-    //         }
-    //     }
-
-    //     $totalSexo = array_sum($sexoDefinido);
-    //     $porcentajesSexo = array_map(function ($total) use ($totalSexo) {
-    //         return $totalSexo > 0 ? round(($total / $totalSexo) * 100, 2) : 0;
-    //     }, $sexoDefinido);
-
-    //     $sexoLabels = array_keys($sexoDefinido);
-    //     $sexoData = array_values($porcentajesSexo);
-
-
-    //     // **Gráfico de Prescriptores**
-    //     $prescriptoresDefinidos = [
-    //         'Booking' => 0,
-    //         'Airbnb' => 0,
-    //         'Externo' => 0,
-    //     ];
-
-    //     $prescriptores = Reserva::select('origen', DB::raw('COUNT(*) as total'))
-    //         ->whereYear('fecha_entrada', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('fecha_entrada', $mes))
-    //         ->groupBy('origen')
-    //         ->pluck('total', 'origen');
-
-    //     foreach ($prescriptores as $origen => $total) {
-    //         if (array_key_exists($origen, $prescriptoresDefinidos)) {
-    //             $prescriptoresDefinidos[$origen] = $total;
-    //         }
-    //     }
-
-    //     $totalPrescriptores = array_sum($prescriptoresDefinidos);
-    //     $porcentajesPrescriptores = array_map(function ($total) use ($totalPrescriptores) {
-    //         return $totalPrescriptores > 0 ? round(($total / $totalPrescriptores) * 100, 2) : 0;
-    //     }, $prescriptoresDefinidos);
-
-    //     $prescriptoresLabels = array_keys($prescriptoresDefinidos);
-    //     $prescriptoresData = array_values($porcentajesPrescriptores);
-
-
-
-    //     // **Gráfico de Apartamentos**
-    //     $apartamentos = Apartamento::select('titulo')->get();
-    //     $apartamentosDefinidos = $apartamentos->pluck('titulo')->mapWithKeys(fn($titulo) => [$titulo => 0])->toArray();
-
-    //     $reservasPorApartamento = Reserva::select('apartamento_id', DB::raw('COUNT(*) as total'))
-    //         ->whereYear('fecha_entrada', $anio)
-    //         ->when($mes, fn($query) => $query->whereMonth('fecha_entrada', $mes))
-    //         ->groupBy('apartamento_id')
-    //         ->pluck('total', 'apartamento_id');
-
-    //     foreach ($reservasPorApartamento as $apartamentoId => $total) {
-    //         $apartamento = Apartamento::find($apartamentoId);
-    //         if ($apartamento && array_key_exists($apartamento->titulo, $apartamentosDefinidos)) {
-    //             $apartamentosDefinidos[$apartamento->titulo] = $total;
-    //         }
-    //     }
-
-    //     $totalReservasPorApartamento = array_sum($apartamentosDefinidos);
-    //     $porcentajesApartamentos = array_map(function ($total) use ($totalReservasPorApartamento) {
-    //         return $totalReservasPorApartamento > 0 ? round(($total / $totalReservasPorApartamento) * 100, 2) : 0;
-    //     }, $apartamentosDefinidos);
-
-    //     $apartamentosLabels = array_keys($apartamentosDefinidos);
-    //     $apartamentosData = array_values($porcentajesApartamentos);
-
-
-    //      // Consulta de gastos categorizados
-    //     $gastosPorCategoria = Gastos::select('categoria_gastos.nombre', DB::raw('SUM(ABS(gastos.quantity)) as total'))
-    //     ->join('categoria_gastos', 'gastos.categoria_id', '=', 'categoria_gastos.id')
-    //     ->whereYear('gastos.date', $anio)
-    //     ->when($mes, fn($query) => $query->whereMonth('gastos.date', $mes))
-    //     ->groupBy('categoria_gastos.nombre')
-    //     ->pluck('total', 'nombre');
-
-    //     // Total de gastos
-    //     $totalGastos = array_sum($gastosPorCategoria->toArray());
-
-    //     // Calcular porcentajes
-    //     $porcentajesGastos = $gastosPorCategoria->map(function ($total) use ($totalGastos) {
-    //         return $totalGastos > 0 ? round(($total / $totalGastos) * 100, 2) : 0;
-    //     });
-
-    //     $categoriasLabels = $porcentajesGastos->keys()->toArray();
-    //     $categoriasData = $porcentajesGastos->values()->toArray();
-
-
-    //     return view('admin.dashboard', compact(
-    //         'countReservas',
-    //         'sumPrecio',
-    //         'anio',
-    //         'mes',
-    //         'reservas',
-    //         'mesNombre',
-    //         'anioActual',
-    //         'mesActual',
-    //         'anioAnterior',
-    //         'mesReturn',
-    //         'anioReturn',
-    //         'ingresos',
-    //         'gastos',
-    //         'labels',
-    //         'data',
-    //         'rangoEdades',
-    //         'totalesEdades',
-    //         'ocupantesLabels',
-    //         'ocupantesData',
-    //         'sexoLabels',
-    //         'sexoData',
-    //         'prescriptoresLabels',
-    //         'prescriptoresData',
-    //         'apartamentosLabels',
-    //         'apartamentosData',
-    //         'categoriasLabels',
-    //         'categoriasData'
-    //     ));
-    // }
-
     /**
-     * Calcular disponibilidad mensual según la lógica del cliente
-     * Desde enero hasta el mes actual del año en curso
-     * Para los meses que faltan, usar datos del año anterior
+     * Calcular disponibilidad mensual optimizada
      */
-    private function calcularDisponibilidadMensual()
+    private function calcularDisponibilidadMensualOptimizada()
     {
         $now = Carbon::now();
         $anioActual = $now->year;
@@ -891,11 +558,10 @@ class DashboardController extends Controller
         
         $disponibilidad = [];
         
-        // Generar datos para los 12 meses
+        // **Optimización: Calcular disponibilidad mensual de forma más eficiente**
         for ($mes = 1; $mes <= 12; $mes++) {
             $anio = $anioActual;
             
-            // Si el mes es mayor al mes actual, usar el año anterior
             if ($mes > $mesActual) {
                 $anio = $anioActual - 1;
             }
@@ -904,44 +570,40 @@ class DashboardController extends Controller
             $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
             $diasEnMes = $fechaInicio->daysInMonth;
             
-            // Calcular capacidad máxima (todos los apartamentos disponibles todos los días)
             $capacidadMaxima = $totalApartamentos * $diasEnMes;
             
-            // Calcular ocupación real
-            $reservas = Reserva::with(['apartamento'])
-                ->where('estado_id', '!=', 4) // Excluir canceladas
-                ->where(function ($query) use ($fechaInicio, $fechaFin) {
-                    $query->whereBetween('fecha_entrada', [$fechaInicio, $fechaFin])
-                        ->orWhereBetween('fecha_salida', [$fechaInicio, $fechaFin])
-                        ->orWhere(function ($subQuery) use ($fechaInicio, $fechaFin) {
-                            $subQuery->where('fecha_entrada', '<=', $fechaInicio)
-                                    ->where('fecha_salida', '>=', $fechaFin);
-                        });
-                })->get();
-            
-            // Calcular noches ocupadas
-            $nochesOcupadas = 0;
-            $apartamentos = Apartamento::whereNotNull('id_channex')->get();
-            
-            foreach (CarbonPeriod::create($fechaInicio, $fechaFin) as $dia) {
-                $apartamentos->each(function ($apartamento) use ($reservas, $dia, &$nochesOcupadas) {
-                    $estaOcupado = $reservas->filter(function ($reserva) use ($apartamento, $dia) {
-                        $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
-                        $fechaSalida = isset($reserva->fecha_salida)
-                            ? Carbon::parse($reserva->fecha_salida)
-                            : $fechaEntrada->copy()->addDay();
-                        
-                        return $reserva->apartamento_id === $apartamento->id && 
-                               $dia->between($fechaEntrada, $fechaSalida);
-                    })->isNotEmpty();
-                    
-                    if ($estaOcupado) {
-                        $nochesOcupadas++;
-                    }
-                });
-            }
-            
-            // Calcular disponibilidad
+            // **Optimización: Usar consulta SQL directa para calcular ocupación mensual**
+            $nochesOcupadas = DB::select("
+                SELECT COUNT(*) as noches_ocupadas
+                FROM (
+                    SELECT DISTINCT 
+                        r.apartamento_id,
+                        d.dia
+                    FROM reservas r
+                    CROSS JOIN (
+                        SELECT DATE_ADD(?, INTERVAL seq.seq DAY) as dia
+                        FROM (
+                            SELECT 0 as seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION
+                            SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION
+                            SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION
+                            SELECT 30 UNION SELECT 31 UNION SELECT 32 UNION SELECT 33 UNION SELECT 34 UNION SELECT 35 UNION SELECT 36 UNION SELECT 37 UNION SELECT 38 UNION SELECT 39 UNION
+                            SELECT 40 UNION SELECT 41 UNION SELECT 42 UNION SELECT 43 UNION SELECT 44 UNION SELECT 45 UNION SELECT 46 UNION SELECT 47 UNION SELECT 48 UNION SELECT 49 UNION
+                            SELECT 50 UNION SELECT 51 UNION SELECT 52 UNION SELECT 53 UNION SELECT 54 UNION SELECT 55 UNION SELECT 56 UNION SELECT 57 UNION SELECT 58 UNION SELECT 59 UNION
+                            SELECT 60 UNION SELECT 61 UNION SELECT 62 UNION SELECT 63 UNION SELECT 64 UNION SELECT 65 UNION SELECT 66 UNION SELECT 67 UNION SELECT 68 UNION SELECT 69 UNION
+                            SELECT 70 UNION SELECT 71 UNION SELECT 72 UNION SELECT 73 UNION SELECT 74 UNION SELECT 75 UNION SELECT 76 UNION SELECT 77 UNION SELECT 78 UNION SELECT 79 UNION
+                            SELECT 80 UNION SELECT 81 UNION SELECT 82 UNION SELECT 83 UNION SELECT 84 UNION SELECT 85 UNION SELECT 86 UNION SELECT 87 UNION SELECT 88 UNION SELECT 89 UNION
+                            SELECT 90 UNION SELECT 91 UNION SELECT 92 UNION SELECT 93 UNION SELECT 94 UNION SELECT 95 UNION SELECT 96 UNION SELECT 97 UNION SELECT 98 UNION SELECT 99
+                        ) seq
+                        WHERE DATE_ADD(?, INTERVAL seq.seq DAY) <= ?
+                    ) d
+                    WHERE r.estado_id != 4
+                    AND r.apartamento_id IN (SELECT id FROM apartamentos WHERE id_channex IS NOT NULL)
+                    AND d.dia >= r.fecha_entrada
+                    AND d.dia < r.fecha_salida
+                ) as ocupacion
+            ", [$fechaInicio->toDateString(), $fechaInicio->toDateString(), $fechaFin->toDateString()]);
+
+            $nochesOcupadas = $nochesOcupadas[0]->noches_ocupadas ?? 0;
             $nochesDisponibles = $capacidadMaxima - $nochesOcupadas;
             $porcentajeDisponibilidad = $capacidadMaxima > 0 ? round(($nochesDisponibles / $capacidadMaxima) * 100, 2) : 0;
             $porcentajeOcupacion = $capacidadMaxima > 0 ? round(($nochesOcupadas / $capacidadMaxima) * 100, 2) : 0;

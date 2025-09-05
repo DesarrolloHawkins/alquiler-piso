@@ -1554,6 +1554,138 @@
         
         content.innerHTML = html;
     }
+
+    // Función para controlar la jornada (fichaje/desfichaje)
+    function controlarJornada(event) {
+        // Prevenir que el evento se propague
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Verificar si hay un fichaje activo
+        fetch('/fichajes/estado')
+            .then(response => response.json())
+            .then(data => {
+                if (data.fichaje_activo) {
+                    // Si hay fichaje activo, mostrar opciones de pausa o finalizar
+                    mostrarOpcionesJornada(data);
+                } else {
+                    // Si no hay fichaje activo, iniciar jornada
+                    iniciarJornada();
+                }
+            })
+            .catch(error => {
+                console.error('Error al verificar estado del fichaje:', error);
+                // En caso de error, intentar iniciar jornada
+                iniciarJornada();
+            });
+    }
+
+    // Función para iniciar jornada
+    function iniciarJornada() {
+        fetch('/fichajes/iniciar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Jornada iniciada correctamente', 'success');
+                // Actualizar el botón para mostrar opciones de pausa/finalizar
+                actualizarBotónJornada(true);
+            } else {
+                mostrarNotificacion(data.message || 'Error al iniciar la jornada', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarNotificacion('Error de conexión al iniciar jornada', 'error');
+        });
+    }
+
+    // Función para mostrar opciones de jornada activa
+    function mostrarOpcionesJornada(data) {
+        const opciones = `
+            <div class="modal fade" id="jornadaModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-clock me-2"></i>
+                                Control de Jornada
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-clock fa-3x text-success mb-3"></i>
+                                <h6>Jornada Activa</h6>
+                                <p class="text-muted">Iniciada: ${data.hora_inicio}</p>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-warning" onclick="iniciarPausa()">
+                                    <i class="fas fa-pause me-2"></i>
+                                    Iniciar Pausa
+                                </button>
+                                <button class="btn btn-danger" onclick="finalizarJornada()">
+                                    <i class="fas fa-stop me-2"></i>
+                                    Finalizar Jornada
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover modal existente si existe
+        const modalExistente = document.getElementById('jornadaModal');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+        
+        // Agregar nuevo modal
+        document.body.insertAdjacentHTML('beforeend', opciones);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('jornadaModal'));
+        modal.show();
+    }
+
+    // Función para actualizar el botón de jornada
+    function actualizarBotónJornada(jornadaActiva) {
+        const botonJornada = document.querySelector('.apple-btn[onclick="controlarJornada()"]');
+        if (jornadaActiva) {
+            botonJornada.innerHTML = '<i class="fa-solid fa-clock"></i><span>Jornada Activa</span>';
+            botonJornada.classList.remove('apple-btn-primary');
+            botonJornada.classList.add('apple-btn-success');
+        } else {
+            botonJornada.innerHTML = '<i class="fa-solid fa-clock"></i><span>Jornada</span>';
+            botonJornada.classList.remove('apple-btn-success');
+            botonJornada.classList.add('apple-btn-primary');
+        }
+    }
+
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo) {
+        // Usar SweetAlert2 si está disponible
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: tipo === 'success' ? 'Éxito' : 'Error',
+                text: mensaje,
+                icon: tipo,
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } else {
+            // Fallback a alert nativo
+            alert(mensaje);
+        }
+    }
 </script>
 @endsection
 
@@ -1568,20 +1700,29 @@
             </div>
         @endif
 
-        <!-- Botón de Incidencias -->
+        <!-- Botón de Jornada - Control de horas de trabajo -->
         <div class="apple-action-section">
+            <a href="#" class="apple-btn apple-btn-primary apple-btn-full" onclick="controlarJornada()">
+                <i class="fa-solid fa-clock"></i>
+                <span>Jornada</span>
+            </a>
+        </div>
+
+        <!-- Botón de Gestionar Incidencias - Debajo del botón Jornada -->
+        <div class="apple-action-section" style="margin-top: 16px;">
             <a href="{{ route('gestion.incidencias.index') }}" class="apple-btn apple-btn-info apple-btn-full">
                 <i class="fa-solid fa-exclamation-triangle"></i>
                 <span>Gestionar Incidencias</span>
             </a>
         </div>
 
+        <!-- Jornada para hoy - Sección siempre visible -->
         <div class="apple-content" id="accordionExample">
-            <div class="apple-card">
+            <div class="apple-card" id="jornadaCard">
                 <div class="apple-card-header" data-bs-toggle="collapse" data-bs-target="#collapsePendientes" aria-expanded="false" aria-controls="collapsePendientes">
                     <div class="apple-card-title">
                         <i class="fa-solid fa-broom"></i>
-                        <span>{{ __('Apartamentos para limpiar HOY') }}</span>
+                        <span>Jornada para hoy</span>
                         @if ($reservasPendientes != null)
                             <div class="apple-card-counter">{{ count($reservasPendientes) }}</div>
                         @endif
@@ -1654,72 +1795,63 @@
                             <span>No hay apartamentos pendientes</span>
                         </div>
                     @endif
+
+                    <!-- Zonas Comunes dentro de Jornada para hoy -->
+                    @if($zonasComunes && $zonasComunes->count() > 0)
+                    <div style="margin-top: 20px;">
+                        <div class="alert alert-info mb-3" style="border-radius: 12px; border: none; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Información:</strong> Las zonas comunes aparecen siempre disponibles. 
+                            Si ya limpiaste una zona hoy, puedes limpiarla de nuevo si es necesario.
+                        </div>
+                        <div class="apple-list">
+                            @foreach ($zonasComunes as $zonaComun)
+                                @php
+                                    // Verificar si esta zona ya fue limpiada hoy
+                                    $zonaLimpiezaHoy = $reservasLimpieza->where('zona_comun_id', $zonaComun->id)->first();
+                                    $ultimaLimpieza = $zonaLimpiezaHoy ? $zonaLimpiezaHoy->fecha_fin : null;
+                                @endphp
+                                
+                                <a class="apple-list-item @if($zonaLimpiezaHoy) apple-list-item-success @else apple-list-item-info @endif" 
+                                   href="{{ route('gestion.createZonaComun', $zonaComun->id) }}"
+                                   onclick="console.log('Click en zona común: {{ $zonaComun->nombre }}')">
+                                    <div class="apple-list-content">
+                                        <div class="apple-list-title">
+                                            {{ $zonaComun->nombre }}
+                                            @if($zonaLimpiezaHoy)
+                                                <span class="badge bg-success ms-2">
+                                                    <i class="fas fa-check"></i> Limpiada hoy
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="apple-list-subtitle">
+                                            {{ ucfirst(str_replace('_', ' ', $zonaComun->tipo)) }}
+                                            @if($zonaComun->ubicacion)
+                                                - {{ $zonaComun->ubicacion }}
+                                            @endif
+                                            @if($ultimaLimpieza)
+                                                <br><small class="text-muted">
+                                                    Última limpieza: {{ \Carbon\Carbon::parse($ultimaLimpieza)->format('H:i') }}
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="apple-list-action">
+                                        @if($zonaLimpiezaHoy)
+                                            <i class="fa-solid fa-redo text-success"></i>
+                                        @else
+                                            <i class="fa-solid fa-arrow-right"></i>
+                                        @endif
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
-            <!-- Zonas Comunes Section - Después de Apartamentos para limpiar HOY -->
-            @if($zonasComunes && $zonasComunes->count() > 0)
-            <div class="apple-card" style="margin-top: 16px;">
-                <div class="apple-card-header" data-bs-toggle="collapse" data-bs-target="#collapseZonasComunes" aria-expanded="false" aria-controls="collapseZonasComunes">
-                    <div class="apple-card-title">
-                        <i class="fa-solid fa-building"></i>
-                        <span>{{ __('Zonas Comunes Disponibles') }}</span>
-                        <div class="apple-card-counter">{{ count($zonasComunes) }}</div>
-                    </div>
-                    <div class="apple-card-toggle">
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                </div>
-                <div id="collapseZonasComunes" class="apple-card-body collapse" aria-labelledby="headingZonasComunes" data-bs-parent="#accordionExample">
-                    <div class="alert alert-info mb-3" style="border-radius: 12px; border: none; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Información:</strong> Las zonas comunes aparecen siempre disponibles. 
-                        Si ya limpiaste una zona hoy, puedes limpiarla de nuevo si es necesario.
-                    </div>
-                    <div class="apple-list">
-                        @foreach ($zonasComunes as $zonaComun)
-                            @php
-                                // Verificar si esta zona ya fue limpiada hoy
-                                $zonaLimpiezaHoy = $reservasLimpieza->where('zona_comun_id', $zonaComun->id)->first();
-                                $ultimaLimpieza = $zonaLimpiezaHoy ? $zonaLimpiezaHoy->fecha_fin : null;
-                            @endphp
-                            
-                            <a class="apple-list-item @if($zonaLimpiezaHoy) apple-list-item-success @else apple-list-item-info @endif" 
-                               href="{{ route('gestion.createZonaComun', $zonaComun->id) }}">
-                                <div class="apple-list-content">
-                                    <div class="apple-list-title">
-                                        {{ $zonaComun->nombre }}
-                                        @if($zonaLimpiezaHoy)
-                                            <span class="badge bg-success ms-2">
-                                                <i class="fas fa-check"></i> Limpiada hoy
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <div class="apple-list-subtitle">
-                                        {{ ucfirst(str_replace('_', ' ', $zonaComun->tipo)) }}
-                                        @if($zonaComun->ubicacion)
-                                            - {{ $zonaComun->ubicacion }}
-                                        @endif
-                                        @if($ultimaLimpieza)
-                                            <br><small class="text-muted">
-                                                Última limpieza: {{ \Carbon\Carbon::parse($ultimaLimpieza)->format('H:i') }}
-                                            </small>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="apple-list-action">
-                                    @if($zonaLimpiezaHoy)
-                                        <i class="fa-solid fa-redo text-success"></i>
-                                    @else
-                                        <i class="fa-solid fa-arrow-right"></i>
-                                    @endif
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-            @endif
+
 
             <div class="apple-card">
                 <div class="apple-card-header" data-bs-toggle="collapse" data-bs-target="#collapseTerminar" aria-expanded="@if(count($reservasEnLimpieza) > 0) true @else false @endif" aria-controls="collapseTerminar">
