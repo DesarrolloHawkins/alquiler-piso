@@ -102,7 +102,7 @@ class GenerarTurnosTrabajo extends Command
                 $turnosGenerados = $this->crearTurnosDesdeIA($asignacionIA, $empleadasDisponibles, $fecha);
             } else {
                 // Usar sistema tradicional
-                $turnosGenerados = $this->distribuirTareasEntreEmpleadas($empleadasDisponibles, $tareasPendientes, $fecha);
+            $turnosGenerados = $this->distribuirTareasEntreEmpleadas($empleadasDisponibles, $tareasPendientes, $fecha);
             }
             
             $this->info("✅ Turnos generados exitosamente: {$turnosGenerados}");
@@ -213,28 +213,28 @@ class GenerarTurnosTrabajo extends Command
             }
         }
         
-        // 3. Tareas de mantenimiento por edificio
-        $edificiosConApartamentos = $apartamentosPendientesHoy->groupBy('edificio_id');
+        // 3. Tareas de limpieza común por TODOS los edificios (siempre se generan)
+        $todosLosEdificios = \App\Models\Edificio::all();
         
-        foreach ($edificiosConApartamentos as $edificioId => $apartamentosEdificio) {
-            $tipoTareaMantenimiento = TipoTarea::activos()
-                ->where('categoria', 'mantenimiento')
+        foreach ($todosLosEdificios as $edificio) {
+            $tipoTareaLimpiezaComun = TipoTarea::activos()
+                ->limpiezaZonasComunes()
                 ->first();
                 
-            if ($tipoTareaMantenimiento) {
+            if ($tipoTareaLimpiezaComun) {
                 $tareas->push([
-                    'tipo_tarea' => $tipoTareaMantenimiento,
+                    'tipo_tarea' => $tipoTareaLimpiezaComun,
                     'apartamento_id' => null,
                     'zona_comun_id' => null,
-                    'edificio_id' => $edificioId,
-                    'prioridad' => $tipoTareaMantenimiento->prioridad_base,
-                    'tiempo_estimado' => $tipoTareaMantenimiento->tiempo_estimado_minutos,
-                    'motivo_prioridad' => "Mantenimiento edificio {$edificioId}"
+                    'edificio_id' => $edificio->id,
+                    'prioridad' => $tipoTareaLimpiezaComun->prioridad_base,
+                    'tiempo_estimado' => $tipoTareaLimpiezaComun->tiempo_estimado_minutos,
+                    'motivo_prioridad' => "Limpieza común edificio {$edificio->nombre} (ID: {$edificio->id}) - SIEMPRE OBLIGATORIA"
                 ]);
             }
         }
         
-        // 4. Tareas generales (oficinas, amenities, etc.) - excluyendo mantenimiento
+        // 4. Tareas generales (oficinas, amenities, etc.) - excluyendo limpieza y mantenimiento
         $tareasGenerales = TipoTarea::activos()
             ->whereNotIn('categoria', ['limpieza_apartamento', 'limpieza_zona_comun', 'mantenimiento'])
             ->get();
@@ -436,7 +436,7 @@ class GenerarTurnosTrabajo extends Command
                 'turno_id' => $turnoSeleccionado['turno']->id,
                 'tipo_tarea_id' => $tarea['tipo_tarea']->id,
                 'apartamento_id' => $tarea['apartamento_id'],
-                'zona_comun_id' => $tarea['zona_comun_id'],
+                'zona_comun_id' => $tarea['zona_comun_id'] ?? null,
                 'prioridad_calculada' => $tarea['prioridad'],
                 'orden_ejecucion' => $ordenEjecucion,
                 'estado' => 'pendiente',
@@ -571,7 +571,7 @@ class GenerarTurnosTrabajo extends Command
                     'turno_id' => $mejorOpcion['turno']->id,
                     'tipo_tarea_id' => $tarea['tipo_tarea']->id,
                     'apartamento_id' => $tarea['apartamento_id'],
-                    'zona_comun_id' => $tarea['zona_comun_id'],
+                    'zona_comun_id' => $tarea['zona_comun_id'] ?? null,
                     'prioridad_calculada' => $tarea['prioridad'],
                     'orden_ejecucion' => $ordenEjecucion,
                     'estado' => 'pendiente',
@@ -620,7 +620,7 @@ class GenerarTurnosTrabajo extends Command
             'turno_id' => $turnoSeleccionado['turno']->id,
             'tipo_tarea_id' => $tarea['tipo_tarea']->id,
             'apartamento_id' => $tarea['apartamento_id'],
-            'zona_comun_id' => $tarea['zona_comun_id'],
+            'zona_comun_id' => $tarea['zona_comun_id'] ?? null,
             'prioridad_calculada' => $tarea['prioridad'],
             'orden_ejecucion' => $ordenEjecucion,
             'estado' => 'pendiente',
@@ -681,15 +681,16 @@ class GenerarTurnosTrabajo extends Command
         });
         
         $tareasZonasComunes = $tareas->filter(function($tarea) {
-            return $tarea['zona_comun_id'] !== null;
+            return isset($tarea['zona_comun_id']) && $tarea['zona_comun_id'] !== null;
         });
         
+        // Las tareas de mantenimiento ahora están integradas en limpieza de zonas comunes por edificio
         $tareasMantenimiento = $tareas->filter(function($tarea) {
-            return $tarea['apartamento_id'] === null && $tarea['zona_comun_id'] === null && isset($tarea['edificio_id']);
+            return $tarea['apartamento_id'] === null && (!isset($tarea['zona_comun_id']) || $tarea['zona_comun_id'] === null) && isset($tarea['edificio_id']);
         });
         
         $tareasGenerales = $tareas->filter(function($tarea) {
-            return $tarea['apartamento_id'] === null && $tarea['zona_comun_id'] === null && !isset($tarea['edificio_id']);
+            return $tarea['apartamento_id'] === null && (!isset($tarea['zona_comun_id']) || $tarea['zona_comun_id'] === null) && !isset($tarea['edificio_id']);
         });
         
         // Agrupar apartamentos por edificio
@@ -752,7 +753,7 @@ class GenerarTurnosTrabajo extends Command
             $zonasComunesProcesadas[] = [
                 'id' => $tarea['tipo_tarea']->id,
                 'tipo' => $tarea['tipo_tarea']->nombre,
-                'zona_comun_id' => $tarea['zona_comun_id'],
+                'zona_comun_id' => $tarea['zona_comun_id'] ?? null,
                 'zona_nombre' => $zonaComun ? $zonaComun->nombre : 'Sin nombre',
                 'tiempo_estimado' => $tarea['tiempo_estimado'],
                 'prioridad' => $tarea['prioridad'],
@@ -760,16 +761,16 @@ class GenerarTurnosTrabajo extends Command
             ];
         }
         
-        // Procesar tareas de mantenimiento por edificio
-        $mantenimientoProcesadas = [];
+        // Procesar tareas de limpieza común por edificio (SIEMPRE OBLIGATORIAS)
+        $limpiezaComunProcesadas = [];
         foreach ($tareasMantenimiento as $tarea) {
-            $mantenimientoProcesadas[] = [
+            $limpiezaComunProcesadas[] = [
                 'id' => $tarea['tipo_tarea']->id,
                 'tipo' => $tarea['tipo_tarea']->nombre,
                 'edificio_id' => $tarea['edificio_id'],
                 'tiempo_estimado' => $tarea['tiempo_estimado'],
                 'prioridad' => $tarea['prioridad'],
-                'motivo_prioridad' => $tarea['motivo_prioridad'] ?? 'Mantenimiento de edificio'
+                'motivo_prioridad' => $tarea['motivo_prioridad'] ?? 'Limpieza común edificio - SIEMPRE OBLIGATORIA'
             ];
         }
         
@@ -789,11 +790,11 @@ class GenerarTurnosTrabajo extends Command
             })->toArray(),
             'edificios' => array_values($apartamentosPorEdificio),
             'zonas_comunes' => $zonasComunesProcesadas,
-            'mantenimiento_edificios' => $mantenimientoProcesadas,
+            'limpieza_comun_edificios' => $limpiezaComunProcesadas,
             'tareas_generales' => $tareasGeneralesProcesadas,
             'reglas_priorizacion' => [
                 'prioridad_maxima' => 'Apartamentos y zonas comunes (prioridad 10)',
-                'prioridad_alta' => 'Mantenimiento de edificios y tareas urgentes',
+                'prioridad_alta' => 'Limpieza común de edificios (SIEMPRE OBLIGATORIA) y tareas urgentes',
                 'prioridad_media' => 'Tareas con prioridad base normal',
                 'prioridad_baja' => 'Tareas recientemente ejecutadas (< 7 días)',
                 'relleno_jornada' => 'Usar tareas de menor prioridad para completar jornadas'
@@ -945,8 +946,8 @@ DATOS DE ENTRADA:
 " . json_encode($datos, JSON_PRETTY_PRINT) . "
 
 INSTRUCCIONES DETALLADAS:
-1. PRIMERO: Asignar TODOS los apartamentos y zonas comunes (prioridad máxima)
-2. SEGUNDO: Asignar mantenimiento de edificios (una tarea por edificio con apartamentos)
+1. PRIMERO: Asignar TODOS los apartamentos (prioridad máxima)
+2. SEGUNDO: Asignar limpieza de zonas comunes por edificio (incluye mantenimiento)
 3. TERCERO: Asignar tareas urgentes por tiempo sin ejecutar
 4. CUARTO: Asignar tareas de prioridad media
 5. QUINTO: Usar tareas de baja prioridad para rellenar jornadas
@@ -978,14 +979,14 @@ FORMATO DE RESPUESTA (JSON):
           \"orden_ejecucion\": 2
         }
       ],
-      \"tareas_mantenimiento\": [
+      \"tareas_zonas_comunes\": [
         {
-          \"tarea_id\": 6,
-          \"tipo\": \"Mantenimiento Básico\",
+          \"tarea_id\": 3,
+          \"tipo\": \"Limpieza Zona Común\",
           \"edificio_id\": 1,
-          \"tiempo_estimado\": 60,
-          \"prioridad\": 7,
-          \"orden_ejecucion\": 3
+          \"tiempo_estimado\": 45,
+          \"prioridad\": 10,
+          \"orden_ejecucion\": 2
         }
       ],
       \"tareas_generales\": [
@@ -1062,7 +1063,6 @@ Responde SOLO con el JSON, sin texto adicional.";
                 'edificios_asignados' => [],
                 'tareas_apartamentos' => [],
                 'tareas_zonas_comunes' => [],
-                'tareas_mantenimiento' => [],
                 'tareas_generales' => [],
                 'tiempo_total_asignado' => 0,
                 'tiempo_disponible' => $empleadas->count() === 1 ? 8 * 60 : $empleada['horas_contratadas_dia'] * 60, // 8 horas si es la única
@@ -1099,27 +1099,27 @@ Responde SOLO con el JSON, sin texto adicional.";
                 }
             }
             
-            // Asignar tarea de mantenimiento del edificio asignado
+            // Asignar tarea de limpieza común del edificio asignado (SIEMPRE OBLIGATORIA)
             if ($edificioIndex > 0 && $edificioIndex <= count($apartamentosPorEdificio)) {
                 $edificios = array_keys($apartamentosPorEdificio);
                 $edificioId = $edificios[$edificioIndex - 1];
                 
-                // Buscar tarea de mantenimiento para este edificio
-                $tareaMantenimiento = $tareasMantenimiento->first(function($tarea) use ($edificioId) {
+                // Buscar tarea de limpieza común para este edificio
+                $tareaLimpiezaComun = $tareasMantenimiento->first(function($tarea) use ($edificioId) {
                     return $tarea['edificio_id'] == $edificioId;
                 });
                 
-                if ($tareaMantenimiento && $tareaMantenimiento['tiempo_estimado'] <= $asignacion['tiempo_disponible'] - $asignacion['tiempo_total_asignado']) {
-                    $asignacion['tareas_mantenimiento'][] = [
-                        'tarea_id' => $tareaMantenimiento['tipo_tarea']->id,
-                        'tipo' => $tareaMantenimiento['tipo_tarea']->nombre,
+                if ($tareaLimpiezaComun && $tareaLimpiezaComun['tiempo_estimado'] <= $asignacion['tiempo_disponible'] - $asignacion['tiempo_total_asignado']) {
+                    $asignacion['tareas_zonas_comunes'][] = [
+                        'tarea_id' => $tareaLimpiezaComun['tipo_tarea']->id,
+                        'tipo' => $tareaLimpiezaComun['tipo_tarea']->nombre,
                         'edificio_id' => $edificioId,
-                        'tiempo_estimado' => $tareaMantenimiento['tiempo_estimado'],
-                        'prioridad' => $tareaMantenimiento['prioridad'],
+                        'tiempo_estimado' => $tareaLimpiezaComun['tiempo_estimado'],
+                        'prioridad' => $tareaLimpiezaComun['prioridad'],
                         'orden_ejecucion' => count($asignacion['tareas_apartamentos']) + 1
                     ];
                     
-                    $asignacion['tiempo_total_asignado'] += $tareaMantenimiento['tiempo_estimado'];
+                    $asignacion['tiempo_total_asignado'] += $tareaLimpiezaComun['tiempo_estimado'];
                 }
             }
             
@@ -1230,7 +1230,7 @@ Responde SOLO con el JSON, sin texto adicional.";
                                 'turno_id' => $turno->id,
                                 'tipo_tarea_id' => $tipoTarea->id,
                                 'apartamento_id' => null,
-                                'zona_comun_id' => $tareaZona['zona_comun_id'],
+                                'zona_comun_id' => $tareaZona['zona_comun_id'] ?? null,
                                 'prioridad_calculada' => $tareaZona['prioridad'] ?? 10,
                                 'orden_ejecucion' => $tareaZona['orden_ejecucion'] ?? $ordenEjecucion,
                                 'estado' => 'pendiente',
@@ -1243,10 +1243,10 @@ Responde SOLO con el JSON, sin texto adicional.";
                     }
                 }
                 
-                // Asignar tareas de mantenimiento de edificios
-                if (isset($asignacion['tareas_mantenimiento'])) {
-                    foreach ($asignacion['tareas_mantenimiento'] as $tareaMantenimiento) {
-                        $tipoTarea = TipoTarea::find($tareaMantenimiento['tarea_id']);
+                // Asignar tareas de limpieza común de edificios (SIEMPRE OBLIGATORIAS)
+                if (isset($asignacion['tareas_zonas_comunes'])) {
+                    foreach ($asignacion['tareas_zonas_comunes'] as $tareaLimpiezaComun) {
+                        $tipoTarea = TipoTarea::find($tareaLimpiezaComun['tarea_id']);
                         
                         if ($tipoTarea) {
                             TareaAsignada::create([
@@ -1254,13 +1254,13 @@ Responde SOLO con el JSON, sin texto adicional.";
                                 'tipo_tarea_id' => $tipoTarea->id,
                                 'apartamento_id' => null,
                                 'zona_comun_id' => null,
-                                'prioridad_calculada' => $tareaMantenimiento['prioridad'] ?? $tipoTarea->prioridad_base,
-                                'orden_ejecucion' => $tareaMantenimiento['orden_ejecucion'] ?? $ordenEjecucion,
+                                'prioridad_calculada' => $tareaLimpiezaComun['prioridad'] ?? $tipoTarea->prioridad_base,
+                                'orden_ejecucion' => $tareaLimpiezaComun['orden_ejecucion'] ?? $ordenEjecucion,
                                 'estado' => 'pendiente',
                                 'dias_sin_limpiar' => 0
                             ]);
                             
-                            $tiempoTotalAsignado += $tareaMantenimiento['tiempo_estimado'];
+                            $tiempoTotalAsignado += $tareaLimpiezaComun['tiempo_estimado'];
                             $ordenEjecucion++;
                         }
                     }
