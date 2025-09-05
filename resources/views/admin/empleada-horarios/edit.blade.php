@@ -168,7 +168,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Lunes</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="lunes" name="lunes" 
+                                                    <input class="form-check-input" type="checkbox" id="lunes" name="lunes" value="1"
                                                            {{ $empleadaHorario->lunes ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -180,7 +180,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Martes</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="martes" name="martes" 
+                                                    <input class="form-check-input" type="checkbox" id="martes" name="martes" value="1"
                                                            {{ $empleadaHorario->martes ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -192,7 +192,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Miércoles</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="miercoles" name="miercoles" 
+                                                    <input class="form-check-input" type="checkbox" id="miercoles" name="miercoles" value="1"
                                                            {{ $empleadaHorario->miercoles ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -204,7 +204,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Jueves</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="jueves" name="jueves" 
+                                                    <input class="form-check-input" type="checkbox" id="jueves" name="jueves" value="1"
                                                            {{ $empleadaHorario->jueves ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -216,7 +216,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Viernes</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="viernes" name="viernes" 
+                                                    <input class="form-check-input" type="checkbox" id="viernes" name="viernes" value="1"
                                                            {{ $empleadaHorario->viernes ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -228,7 +228,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Sábado</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="sabado" name="sabado" 
+                                                    <input class="form-check-input" type="checkbox" id="sabado" name="sabado" value="1"
                                                            {{ $empleadaHorario->sabado ? 'checked' : '' }}>
                                                 </div>
                                             </div>
@@ -240,7 +240,7 @@
                                                 <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
                                                 <h6>Domingo</h6>
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="domingo" name="domingo" 
+                                                    <input class="form-check-input" type="checkbox" id="domingo" name="domingo" value="1"
                                                            {{ $empleadaHorario->domingo ? 'checked' : '' }}>
                                                 </div>
                                             </div>

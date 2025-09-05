@@ -101,7 +101,7 @@
                                     @foreach(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as $dia)
                                         <div class="col-6 mb-2">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="{{ $dia }}" name="{{ $dia }}" 
+                                                <input class="form-check-input" type="checkbox" id="{{ $dia }}" name="{{ $dia }}" value="1"
                                                        {{ old($dia, in_array($dia, ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="{{ $dia }}">
                                                     {{ ucfirst($dia) }}
