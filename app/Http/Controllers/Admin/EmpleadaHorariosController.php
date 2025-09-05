@@ -153,7 +153,6 @@ class EmpleadaHorariosController extends Controller
     {
         $request->validate([
             'horas_contratadas_dia' => 'required|integer|min:1|max:12',
-            'dias_libres_semana' => 'required|integer|min:0|max:7',
             'hora_inicio_atencion' => 'required|date_format:H:i',
             'hora_fin_atencion' => 'required|date_format:H:i|after:hora_inicio_atencion',
             'lunes' => 'boolean',
@@ -170,23 +169,10 @@ class EmpleadaHorariosController extends Controller
         ]);
 
         try {
-            // Log temporal para debug
-            Log::info('Datos recibidos en update:', [
-                'horas_contratadas_dia' => $request->horas_contratadas_dia,
-                'dias_libres_semana' => $request->dias_libres_semana,
-                'lunes' => $request->boolean('lunes'),
-                'martes' => $request->boolean('martes'),
-                'miercoles' => $request->boolean('miercoles'),
-                'jueves' => $request->boolean('jueves'),
-                'viernes' => $request->boolean('viernes'),
-                'sabado' => $request->boolean('sabado'),
-                'domingo' => $request->boolean('domingo'),
-            ]);
-            
             // Actualizar el horario básico
+            // NO incluir dias_libres_semana porque se calcula automáticamente con el mutator
             $empleadaHorario->update([
                 'horas_contratadas_dia' => $request->horas_contratadas_dia,
-                'dias_libres_semana' => $request->dias_libres_semana,
                 'hora_inicio_atencion' => $request->hora_inicio_atencion,
                 'hora_fin_atencion' => $request->hora_fin_atencion,
                 'lunes' => $request->boolean('lunes'),
@@ -198,20 +184,6 @@ class EmpleadaHorariosController extends Controller
                 'domingo' => $request->boolean('domingo'),
                 'activo' => $request->boolean('activo'),
                 'observaciones' => $request->observaciones
-            ]);
-            
-            // Log temporal para debug - después de actualizar
-            $empleadaHorario->refresh();
-            Log::info('Datos guardados en BD:', [
-                'horas_contratadas_dia' => $empleadaHorario->horas_contratadas_dia,
-                'dias_libres_semana' => $empleadaHorario->dias_libres_semana,
-                'lunes' => $empleadaHorario->lunes,
-                'martes' => $empleadaHorario->martes,
-                'miercoles' => $empleadaHorario->miercoles,
-                'jueves' => $empleadaHorario->jueves,
-                'viernes' => $empleadaHorario->viernes,
-                'sabado' => $empleadaHorario->sabado,
-                'domingo' => $empleadaHorario->domingo,
             ]);
 
             // Actualizar días libres para la semana actual

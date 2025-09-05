@@ -73,6 +73,12 @@ class User extends Authenticatable
     // /**
     //  * The roles that belong to the user.
     //  */
+    // Relaciones
+    public function empleadaHorario()
+    {
+        return $this->hasOne(EmpleadaHorario::class);
+    }
+    
     // public function roles()
     // {
     //     // Asumiendo que existe una tabla 'roles' y la relación es muchos-a-muchos
