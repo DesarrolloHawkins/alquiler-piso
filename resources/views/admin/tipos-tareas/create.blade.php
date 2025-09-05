@@ -136,7 +136,7 @@
                                 <div class="row">
                                     <div class="col-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="requiere_apartamento" name="requiere_apartamento" 
+                                            <input class="form-check-input" type="checkbox" id="requiere_apartamento" name="requiere_apartamento" value="1"
                                                    {{ old('requiere_apartamento') ? 'checked' : '' }}>
                                             <label class="form-check-label" for="requiere_apartamento">
                                                 Requiere Apartamento
@@ -145,7 +145,7 @@
                                     </div>
                                     <div class="col-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="requiere_zona_comun" name="requiere_zona_comun" 
+                                            <input class="form-check-input" type="checkbox" id="requiere_zona_comun" name="requiere_zona_comun" value="1"
                                                    {{ old('requiere_zona_comun') ? 'checked' : '' }}>
                                             <label class="form-check-label" for="requiere_zona_comun">
                                                 Requiere Zona Común
@@ -172,4 +172,52 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar errores de validación si existen
+    @if($errors->any())
+        console.log('Errores de validación:', @json($errors->all()));
+        
+        // Mostrar alerta con errores
+        Swal.fire({
+            title: 'Error de Validación',
+            html: `
+                <div class="text-start">
+                    <p>Por favor corrige los siguientes errores:</p>
+                    <ul class="list-unstyled">
+                        @foreach($errors->all() as $error)
+                            <li class="text-danger">• {{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            `,
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
+    
+    // Validación de prioridad máxima
+    const prioridadBase = document.getElementById('prioridad_base');
+    const prioridadMaxima = document.getElementById('prioridad_maxima');
+    
+    function validarPrioridades() {
+        if (prioridadBase.value && prioridadMaxima.value) {
+            if (parseInt(prioridadMaxima.value) < parseInt(prioridadBase.value)) {
+                prioridadMaxima.setCustomValidity('La prioridad máxima debe ser mayor o igual a la prioridad base');
+            } else {
+                prioridadMaxima.setCustomValidity('');
+            }
+        }
+    }
+    
+    prioridadBase.addEventListener('change', validarPrioridades);
+    prioridadMaxima.addEventListener('change', validarPrioridades);
+    
+    // Validación inicial
+    validarPrioridades();
+});
+</script>
 @endsection

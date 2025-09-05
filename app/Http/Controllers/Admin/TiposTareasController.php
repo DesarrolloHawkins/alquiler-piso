@@ -86,8 +86,8 @@ class TiposTareasController extends Controller
             'dias_max_sin_limpiar' => 'nullable|integer|min:1',
             'incremento_prioridad_por_dia' => 'required|integer|min:0',
             'prioridad_maxima' => 'required|integer|min:1|max:10',
-            'requiere_apartamento' => 'boolean',
-            'requiere_zona_comun' => 'boolean',
+            'requiere_apartamento' => 'nullable|boolean',
+            'requiere_zona_comun' => 'nullable|boolean',
             'instrucciones' => 'nullable|string|max:2000'
         ], [
             'nombre.required' => 'El nombre de la tarea es obligatorio',
@@ -167,8 +167,8 @@ class TiposTareasController extends Controller
             'dias_max_sin_limpiar' => 'nullable|integer|min:1',
             'incremento_prioridad_por_dia' => 'required|integer|min:0',
             'prioridad_maxima' => 'required|integer|min:1|max:10',
-            'requiere_apartamento' => 'boolean',
-            'requiere_zona_comun' => 'boolean',
+            'requiere_apartamento' => 'nullable|boolean',
+            'requiere_zona_comun' => 'nullable|boolean',
             'activo' => 'boolean',
             'instrucciones' => 'nullable|string|max:2000'
         ]);
