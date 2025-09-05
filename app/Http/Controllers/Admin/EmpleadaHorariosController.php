@@ -74,7 +74,7 @@ class EmpleadaHorariosController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id|unique:empleada_horarios,user_id',
             'horas_contratadas_dia' => 'required|integer|min:1|max:12',
-            'dias_libres_mes' => 'required|integer|min:0|max:31',
+            'dias_libres_semana' => 'required|integer|min:0|max:7',
             'hora_inicio_atencion' => 'required|date_format:H:i',
             'hora_fin_atencion' => 'required|date_format:H:i|after:hora_inicio_atencion',
             'lunes' => 'boolean',
@@ -89,7 +89,7 @@ class EmpleadaHorariosController extends Controller
             'user_id.required' => 'Debe seleccionar una empleada',
             'user_id.unique' => 'Esta empleada ya tiene un horario configurado',
             'horas_contratadas_dia.required' => 'Las horas contratadas por día son obligatorias',
-            'dias_libres_mes.required' => 'Los días libres por mes son obligatorios',
+            'dias_libres_semana.required' => 'Los días libres por semana son obligatorios',
             'hora_inicio_atencion.required' => 'La hora de inicio de atención es obligatoria',
             'hora_fin_atencion.required' => 'La hora de fin de atención es obligatoria',
             'hora_fin_atencion.after' => 'La hora de fin debe ser posterior a la hora de inicio'
@@ -99,7 +99,7 @@ class EmpleadaHorariosController extends Controller
             EmpleadaHorario::create([
                 'user_id' => $request->user_id,
                 'horas_contratadas_dia' => $request->horas_contratadas_dia,
-                'dias_libres_mes' => $request->dias_libres_mes,
+                'dias_libres_semana' => $request->dias_libres_semana,
                 'hora_inicio_atencion' => $request->hora_inicio_atencion,
                 'hora_fin_atencion' => $request->hora_fin_atencion,
                 'lunes' => $request->boolean('lunes'),
@@ -285,7 +285,7 @@ class EmpleadaHorariosController extends Controller
             EmpleadaHorario::create([
                 'user_id' => $request->user_id,
                 'horas_contratadas_dia' => $request->horas_contratadas_dia,
-                'dias_libres_mes' => 2,
+                'dias_libres_semana' => 2,
                 'hora_inicio_atencion' => '08:00:00',
                 'hora_fin_atencion' => '17:00:00',
                 'lunes' => true,

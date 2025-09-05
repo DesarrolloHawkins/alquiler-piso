@@ -387,6 +387,28 @@ document.addEventListener('DOMContentLoaded', function() {
     validarHorarios();
     validarDiasTrabajo();
     calcularDiasLibres();
+    
+    // Mostrar errores de validación si existen
+    @if($errors->any())
+        console.log('Errores de validación:', @json($errors->all()));
+        
+        // Mostrar alerta con errores
+        Swal.fire({
+            title: 'Error de Validación',
+            html: `
+                <div class="text-start">
+                    <p>Por favor corrige los siguientes errores:</p>
+                    <ul class="list-unstyled">
+                        @foreach($errors->all() as $error)
+                            <li class="text-danger">• {{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            `,
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
 });
 </script>
 @endsection

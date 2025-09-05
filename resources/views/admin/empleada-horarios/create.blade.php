@@ -49,11 +49,11 @@
                                     </div>
                                     <div class="col-6">
                                         <div class="mb-3">
-                                            <label for="dias_libres_mes" class="form-label">Días Libres/Mes <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control @error('dias_libres_mes') is-invalid @enderror" 
-                                                   id="dias_libres_mes" name="dias_libres_mes" 
-                                                   value="{{ old('dias_libres_mes', 2) }}" min="0" max="31" required>
-                                            @error('dias_libres_mes')
+                                            <label for="dias_libres_semana" class="form-label">Días Libres/Semana <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control @error('dias_libres_semana') is-invalid @enderror" 
+                                                   id="dias_libres_semana" name="dias_libres_semana" 
+                                                   value="{{ old('dias_libres_semana', 2) }}" min="0" max="7" required>
+                                            @error('dias_libres_semana')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                         </div>
@@ -138,4 +138,91 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar errores de validación si existen
+    @if($errors->any())
+        console.log('Errores de validación:', @json($errors->all()));
+        
+        // Mostrar alerta con errores
+        Swal.fire({
+            title: 'Error de Validación',
+            html: `
+                <div class="text-start">
+                    <p>Por favor corrige los siguientes errores:</p>
+                    <ul class="list-unstyled">
+                        @foreach($errors->all() as $error)
+                            <li class="text-danger">• {{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            `,
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
+    
+    // Validación de horarios
+    const horaInicio = document.getElementById('hora_inicio_atencion');
+    const horaFin = document.getElementById('hora_fin_atencion');
+    
+    function validarHorarios() {
+        if (horaInicio.value && horaFin.value) {
+            if (horaInicio.value >= horaFin.value) {
+                horaFin.setCustomValidity('La hora de fin debe ser posterior a la hora de inicio');
+            } else {
+                horaFin.setCustomValidity('');
+            }
+        }
+    }
+    
+    horaInicio.addEventListener('change', validarHorarios);
+    horaFin.addEventListener('change', validarHorarios);
+    
+    // Validación inicial
+    validarHorarios();
+    
+    // Función para calcular días libres por semana
+    function calcularDiasLibres() {
+        const diasTrabajo = [
+            document.getElementById('lunes'),
+            document.getElementById('martes'),
+            document.getElementById('miercoles'),
+            document.getElementById('jueves'),
+            document.getElementById('viernes'),
+            document.getElementById('sabado'),
+            document.getElementById('domingo')
+        ];
+        
+        let diasTrabajados = 0;
+        diasTrabajo.forEach(dia => {
+            if (dia && dia.checked) {
+                diasTrabajados++;
+            }
+        });
+        
+        const diasLibres = 7 - diasTrabajados;
+        const campoDiasLibres = document.getElementById('dias_libres_semana');
+        
+        if (campoDiasLibres) {
+            campoDiasLibres.value = diasLibres;
+        }
+    }
+    
+    // Agregar event listeners a todos los toggles de días de trabajo
+    const diasTrabajo = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    diasTrabajo.forEach(dia => {
+        const toggle = document.getElementById(dia);
+        if (toggle) {
+            toggle.addEventListener('change', calcularDiasLibres);
+        }
+    });
+    
+    // Calcular inicialmente
+    calcularDiasLibres();
+});
+</script>
 @endsection
