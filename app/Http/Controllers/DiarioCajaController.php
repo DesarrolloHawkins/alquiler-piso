@@ -154,37 +154,34 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Obtener todas las entradas en orden cronológico (más antiguas primero) para calcular el saldo
-    $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    // Obtener TODAS las transacciones en orden cronológico para calcular el saldo correctamente
+    $todasLasTransacciones = DiarioCaja::orderBy('date', 'asc')->orderBy('id', 'asc')->get();
     
-    // Para cada transacción, calcular el saldo considerando TODAS las transacciones hasta esa fecha
-    foreach ($entries as $linea) {
-        // Obtener todas las transacciones hasta esta fecha (incluyendo esta)
-        $transaccionesHastaEstaFecha = DiarioCaja::where(function($q) use ($linea) {
-            $q->where('date', '<', $linea->date)
-              ->orWhere(function($q2) use ($linea) {
-                  $q2->where('date', $linea->date)
-                     ->where('id', '<=', $linea->id);
-              });
-        })->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    // Calcular el saldo acumulado para todas las transacciones
+    $saldoAcumulado = $saldoInicial;
+    $saldoMap = [];
+    
+    foreach ($todasLasTransacciones as $transaccion) {
+        $debe = $transaccion->debe ?? 0;
+        $haber = $transaccion->haber ?? 0;
         
-        // Calcular el saldo desde el inicio
-        $saldoCalculado = $saldoInicial;
-        
-        foreach ($transaccionesHastaEstaFecha as $transaccion) {
-            $debe = $transaccion->debe ?? 0;
-            $haber = $transaccion->haber ?? 0;
-            
-            if ($debe != 0) {
-                $saldoCalculado -= abs($debe);
-            }
-            if ($haber != 0) {
-                $saldoCalculado += abs($haber);
-            }
+        if ($debe != 0) {
+            $saldoAcumulado -= abs($debe);
+        }
+        if ($haber != 0) {
+            $saldoAcumulado += abs($haber);
         }
         
-        // Asignar el saldo calculado
-        $linea->saldo = $saldoCalculado;
+        // Guardar el saldo para esta transacción
+        $saldoMap[$transaccion->id] = $saldoAcumulado;
+    }
+    
+    // Obtener solo las entradas filtradas para mostrar
+    $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    
+    // Asignar los saldos calculados
+    foreach ($entries as $linea) {
+        $linea->saldo = $saldoMap[$linea->id] ?? 0;
     }
 
     // Reordenar para visualización (más recientes primero)
