@@ -124,10 +124,7 @@
                         </tr>
                         
                         @if (count($response) > 0)
-                            @foreach ($response->sortBy([
-                                ['date', 'desc'],
-                                ['id', 'desc']
-                            ]) as $linea)
+                            @foreach ($response as $linea)
                             <tr>
                                 <td class="align-middle">
                                     <span class="badge bg-primary-subtle text-primary">

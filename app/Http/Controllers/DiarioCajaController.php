@@ -155,7 +155,7 @@ class DiarioCajaController extends Controller
     }
 
     // Obtener todas las entradas del diario de caja filtradas en orden cronológico para calcular el saldo
-    $entriesForCalculation = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    $entriesForCalculation = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
 
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
