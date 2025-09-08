@@ -169,18 +169,19 @@ class DiarioCajaController extends Controller
 
     // Recorrer todas las líneas del diario en orden cronológico para calcular el saldo
     foreach ($entriesForCalculation as $linea) {
-        // Usar los valores directamente sin abs() para mantener el signo correcto
+        // Usar los valores directamente
         $debe = $linea->debe ?? 0;
         $haber = $linea->haber ?? 0;
 
-        // Si hay debe (gasto), restar del saldo (los gastos son negativos)
+        // Aplicar la operación según el tipo de movimiento
         if ($debe != 0) {
-            $saldoAcumulado += $debe;  // Si debe es -4,000, sumar -4,000 = restar 4,000
+            // Si hay debe (gasto), restar del saldo
+            $saldoAcumulado -= abs($debe);
         }
 
-        // Si hay haber (ingreso), sumar al saldo (los ingresos son positivos)
         if ($haber != 0) {
-            $saldoAcumulado += $haber;  // Si haber es 1,000, sumar 1,000
+            // Si hay haber (ingreso), sumar al saldo
+            $saldoAcumulado += abs($haber);
         }
 
         // Guardar el saldo calculado en el mapa
