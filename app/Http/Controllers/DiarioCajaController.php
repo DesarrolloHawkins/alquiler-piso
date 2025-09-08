@@ -174,6 +174,11 @@ class DiarioCajaController extends Controller
         
         // Guardar el saldo para esta transacción
         $saldoMap[$transaccion->id] = $saldoAcumulado;
+        
+        // DEBUG: Mostrar información de transacciones específicas
+        if (in_array($transaccion->id, [2080, 2081, 2082])) {
+            \Log::info("DEBUG Calculo - ID: {$transaccion->id}, Fecha: {$transaccion->date}, Debe: {$debe}, Haber: {$haber}, Saldo: {$saldoAcumulado}");
+        }
     }
     
     // Obtener solo las entradas filtradas para mostrar
@@ -182,6 +187,11 @@ class DiarioCajaController extends Controller
     // Asignar los saldos calculados
     foreach ($entries as $linea) {
         $linea->saldo = $saldoMap[$linea->id] ?? 0;
+        
+        // DEBUG: Mostrar información de las primeras 3 transacciones
+        if ($linea->id <= 2082) {
+            \Log::info("DEBUG Saldo - ID: {$linea->id}, Fecha: {$linea->date}, Debe: {$linea->debe}, Haber: {$linea->haber}, Saldo: {$linea->saldo}");
+        }
     }
 
     // Reordenar para visualización (más recientes primero)
