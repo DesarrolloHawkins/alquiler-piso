@@ -154,14 +154,14 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Obtener todas las entradas del diario de caja filtradas en orden cronológico para calcular el saldo
+    // Obtener todas las entradas del diario de caja filtradas en orden de visualización para calcular el saldo
     $entriesForCalculation = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
 
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
     $saldoMap = [];
 
-    // Recorrer todas las líneas del diario en orden cronológico para calcular el saldo
+    // Recorrer todas las líneas del diario en orden descendente para calcular el saldo
     foreach ($entriesForCalculation as $linea) {
         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
         $debe = abs($linea->debe);
