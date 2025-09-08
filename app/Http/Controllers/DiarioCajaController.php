@@ -154,14 +154,21 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Ordenar los resultados por fecha ascendente para calcular el saldo inicial correctamente
-    $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    // Obtener todas las entradas ordenadas por fecha descendente (más recientes primero)
+    $entries = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
 
+    // Para calcular el saldo correctamente, necesitamos procesar en orden cronológico
+    // Primero obtenemos todas las entradas en orden ascendente para el cálculo
+    $entriesForCalculation = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
+    
+    // Crear un mapa de saldos por ID para asignar después
+    $saldoMap = [];
 
-    // Recorrer todas las líneas del diario y calcular el saldo
-    foreach ($entries as $linea) {
+    // Recorrer todas las líneas del diario en orden cronológico para calcular el saldo
+    foreach ($entriesForCalculation as $linea) {
         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
         $debe = abs($linea->debe);
         $haber = abs($linea->haber);
@@ -174,12 +181,16 @@ class DiarioCajaController extends Controller
             $saldoAcumulado += $haber;
         }
 
-        // Añadir el saldo acumulado a cada línea
-        $linea->saldo = $saldoAcumulado;
+        // Guardar el saldo calculado en el mapa
+        $saldoMap[$linea->id] = $saldoAcumulado;
     }
 
-    // Reordenar los resultados en orden descendente por fecha (más recientes primero)
-    $response = $entries->sortByDesc('date');
+    // Asignar los saldos calculados a las entradas en orden de visualización
+    foreach ($entries as $linea) {
+        $linea->saldo = $saldoMap[$linea->id];
+    }
+
+    $response = $entries;
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
