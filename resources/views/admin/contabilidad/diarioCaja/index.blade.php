@@ -151,7 +151,7 @@
                                     </span>
                                 </td>
                                 <td class="text-end align-middle">
-                                    @if($linea->debe > 0)
+                                    @if($linea->debe !== null)
                                         <span class="text-danger fw-semibold">
                                             {{ number_format($linea->debe, 2) }} €
                                         </span>
