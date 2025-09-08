@@ -148,6 +148,9 @@
           html += `<li><strong>Gastos creados:</strong> ${data.resumen.gastos_creados}</li>`;
           html += `<li><strong>Duplicados:</strong> ${data.resumen.duplicados}</li>`;
           html += `<li><strong>Errores:</strong> ${data.resumen.errores}</li>`;
+          if (data.resumen.hashes_huérfanos_eliminados > 0) {
+              html += `<li style="color: #ffc107;"><strong>🔧 Hashes huérfanos eliminados:</strong> ${data.resumen.hashes_huérfanos_eliminados}</li>`;
+          }
           html += '</ul>';
       }
 

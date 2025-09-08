@@ -155,6 +155,7 @@ class MovimientosController extends Controller
         $errores = [];
         $ingresosCreados = 0;
         $gastosCreados = 0;
+        $hashesHuérfanosEliminados = 0;
 
         // Procesar cada fila
         foreach ($filteredRows as $index => $row) {
@@ -231,21 +232,28 @@ class MovimientosController extends Controller
                     }
                 }
 
-                // Si ya existe el hash, agregar a duplicados
-                $duplicados[] = [
-                    'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
-                    'fecha' => $fecha_contable->format('Y-m-d'),
-                    'descripcion' => $descripcion,
-                    'debe' => $debe,
-                    'haber' => $haber,
-                    'saldo' => $saldo,
-                    'hash' => $hash,
-                    'hash_id' => $existingHash->id,
-                    'hash_created_at' => $existingHash->created_at,
-                    'registro_original' => $registroOriginal,
-                    'razon' => 'Registro duplicado (ya existe en la base de datos)'
-                ];
-                continue; // Saltar esta fila para evitar duplicados
+                // Si encontramos el registro original, es un duplicado real
+                if ($registroOriginal) {
+                    $duplicados[] = [
+                        'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
+                        'fecha' => $fecha_contable->format('Y-m-d'),
+                        'descripcion' => $descripcion,
+                        'debe' => $debe,
+                        'haber' => $haber,
+                        'saldo' => $saldo,
+                        'hash' => $hash,
+                        'hash_id' => $existingHash->id,
+                        'hash_created_at' => $existingHash->created_at,
+                        'registro_original' => $registroOriginal,
+                        'razon' => 'Registro duplicado (ya existe en la base de datos)'
+                    ];
+                    continue; // Saltar esta fila para evitar duplicados
+                } else {
+                    // Hash huérfano: eliminar el hash y continuar con el procesamiento
+                    DB::table('hash_movimientos')->where('id', $existingHash->id)->delete();
+                    $hashesHuérfanosEliminados++;
+                    // Continuar con el procesamiento normal (no hacer continue)
+                }
             }
 
             // Obtener una categoría por defecto (ajustar según tu lógica)
@@ -347,7 +355,8 @@ class MovimientosController extends Controller
                 'duplicados' => count($duplicados),
                 'errores' => count($errores),
                 'ingresos_creados' => $ingresosCreados,
-                'gastos_creados' => $gastosCreados
+                'gastos_creados' => $gastosCreados,
+                'hashes_huérfanos_eliminados' => $hashesHuérfanosEliminados
             ]
         ];
 
