@@ -178,8 +178,8 @@ class DiarioCajaController extends Controller
         $linea->saldo = $saldoAcumulado;
     }
 
-    // Reordenar los resultados en orden ascendente por fecha para que coincida con el banco
-    $response = $entries->sortBy('date')->sortBy('id');
+    // Reordenar los resultados en orden descendente por fecha (más recientes primero)
+    $response = $entries->sortByDesc('date')->sortByDesc('id');
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
