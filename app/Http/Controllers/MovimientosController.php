@@ -149,13 +149,30 @@ class MovimientosController extends Controller
             return (float)$a[0] <=> (float)$b[0];
         });
 
+        // Contadores para el reporte
+        $procesados = 0;
+        $duplicados = [];
+        $errores = [];
+        $ingresosCreados = 0;
+        $gastosCreados = 0;
+
         // Procesar cada fila
-        foreach ($filteredRows as $row) {
+        foreach ($filteredRows as $index => $row) {
             try {
                 // Convertir el número de fecha de Excel en una fecha válida de Carbon
                 $fecha_contable = Carbon::createFromFormat('Y-m-d', \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[0])->format('Y-m-d'));
             } catch (\Exception $e) {
-                // Si no se puede convertir a fecha, saltar esta fila
+                // Si no se puede convertir a fecha, agregar a errores
+                $errores[] = [
+                    'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
+                    'error' => 'Error al convertir fecha: ' . $e->getMessage(),
+                    'datos' => [
+                        'fecha' => $row[0] ?? 'N/A',
+                        'descripcion' => $row[5] ?? 'N/A',
+                        'debe' => $row[7] ?? 'N/A',
+                        'haber' => $row[8] ?? 'N/A'
+                    ]
+                ];
                 continue;
             }
 
@@ -171,14 +188,27 @@ class MovimientosController extends Controller
             $existingHash = DB::table('hash_movimientos')
                 ->where('hash', $hash)
                 ->first();
-            // dd($existingHash, $hash);
+
             if ($existingHash) {
-                continue; // Si ya existe el hash, saltar esta fila para evitar duplicados
+                // Si ya existe el hash, agregar a duplicados
+                $duplicados[] = [
+                    'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
+                    'fecha' => $fecha_contable->format('Y-m-d'),
+                    'descripcion' => $descripcion,
+                    'debe' => $debe,
+                    'haber' => $haber,
+                    'saldo' => $saldo,
+                    'hash' => $hash,
+                    'razon' => 'Registro duplicado (ya existe en la base de datos)'
+                ];
+                continue; // Saltar esta fila para evitar duplicados
             }
 
             // Obtener una categoría por defecto (ajustar según tu lógica)
             $categoria_ingreso = CategoriaIngresos::first();
             $categoria_gasto = CategoriaGastos::first();
+
+            $registroProcesado = false;
 
             // Si es un ingreso (HABER)
             if (!empty($haber) && $haber > 0) {
@@ -210,6 +240,9 @@ class MovimientosController extends Controller
                         'tipo' => 'ingreso',
                         'estado_id' => 1
                     ]);
+
+                    $ingresosCreados++;
+                    $registroProcesado = true;
                 }
             }
 
@@ -243,18 +276,47 @@ class MovimientosController extends Controller
                         'tipo' => 'gasto',
                         'estado_id' => 1
                     ]);
+
+                    $gastosCreados++;
+                    $registroProcesado = true;
                 }
             }
 
-            // Guardar el hash en la tabla de hash_movimientos para evitar duplicados futuros
-            DB::table('hash_movimientos')->insert([
-                'hash' => $hash,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // Solo guardar el hash si se procesó algún registro
+            if ($registroProcesado) {
+                // Guardar el hash en la tabla de hash_movimientos para evitar duplicados futuros
+                DB::table('hash_movimientos')->insert([
+                    'hash' => $hash,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                $procesados++;
+            }
         }
 
-        return response()->json(['message' => 'Archivo procesado correctamente.']);
+        // Preparar respuesta detallada
+        $response = [
+            'message' => 'Archivo procesado correctamente.',
+            'resumen' => [
+                'total_filas' => count($filteredRows),
+                'procesados' => $procesados,
+                'duplicados' => count($duplicados),
+                'errores' => count($errores),
+                'ingresos_creados' => $ingresosCreados,
+                'gastos_creados' => $gastosCreados
+            ]
+        ];
+
+        // Agregar detalles si hay duplicados o errores
+        if (!empty($duplicados)) {
+            $response['duplicados_detalle'] = $duplicados;
+        }
+
+        if (!empty($errores)) {
+            $response['errores_detalle'] = $errores;
+        }
+
+        return response()->json($response);
     }
 
 
