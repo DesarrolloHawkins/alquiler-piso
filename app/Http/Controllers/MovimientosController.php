@@ -195,37 +195,37 @@ class MovimientosController extends Controller
                 
                 // Buscar en ingresos
                 $ingresoOriginal = DB::table('ingresos')
-                    ->where('fecha', $fecha_contable->format('Y-m-d'))
-                    ->where('concepto', $descripcion)
-                    ->where('importe', $haber > 0 ? $haber : $debe)
+                    ->where('date', $fecha_contable->format('Y-m-d'))
+                    ->where('title', $descripcion)
+                    ->where('quantity', $haber > 0 ? $haber : $debe)
                     ->first();
                 
                 if ($ingresoOriginal) {
                     $registroOriginal = [
                         'tipo' => 'ingreso',
                         'id' => $ingresoOriginal->id,
-                        'fecha' => $ingresoOriginal->fecha,
-                        'concepto' => $ingresoOriginal->concepto,
-                        'importe' => $ingresoOriginal->importe,
-                        'categoria_id' => $ingresoOriginal->categoria_ingresos_id,
+                        'fecha' => $ingresoOriginal->date,
+                        'concepto' => $ingresoOriginal->title,
+                        'importe' => $ingresoOriginal->quantity,
+                        'categoria_id' => $ingresoOriginal->categoria_id,
                         'created_at' => $ingresoOriginal->created_at
                     ];
                 } else {
                     // Buscar en gastos
                     $gastoOriginal = DB::table('gastos')
-                        ->where('fecha', $fecha_contable->format('Y-m-d'))
-                        ->where('concepto', $descripcion)
-                        ->where('importe', $debe > 0 ? $debe : $haber)
+                        ->where('date', $fecha_contable->format('Y-m-d'))
+                        ->where('title', $descripcion)
+                        ->where('quantity', $debe > 0 ? $debe : $haber)
                         ->first();
                     
                     if ($gastoOriginal) {
                         $registroOriginal = [
                             'tipo' => 'gasto',
                             'id' => $gastoOriginal->id,
-                            'fecha' => $gastoOriginal->fecha,
-                            'concepto' => $gastoOriginal->concepto,
-                            'importe' => $gastoOriginal->importe,
-                            'categoria_id' => $gastoOriginal->categoria_gastos_id,
+                            'fecha' => $gastoOriginal->date,
+                            'concepto' => $gastoOriginal->title,
+                            'importe' => $gastoOriginal->quantity,
+                            'categoria_id' => $gastoOriginal->categoria_id,
                             'created_at' => $gastoOriginal->created_at
                         ];
                     }
