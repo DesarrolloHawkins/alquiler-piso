@@ -154,48 +154,32 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Obtener TODAS las transacciones en orden cronológico para calcular el saldo correctamente
-    $todasLasTransacciones = DiarioCaja::orderBy('date', 'asc')->orderBy('id', 'asc')->get();
-    
-    // Calcular el saldo acumulado para todas las transacciones
+    // Obtener todas las entradas del diario de caja filtradas en orden cronológico
+    $response = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+
+    // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
-    $saldoMap = [];
-    
-    foreach ($todasLasTransacciones as $transaccion) {
-        $debe = $transaccion->debe ?? 0;
-        $haber = $transaccion->haber ?? 0;
-        
-        if ($debe != 0) {
-            $saldoAcumulado -= abs($debe);
+
+    // Recorrer todas las líneas del diario y calcular el saldo
+    foreach ($response as $linea) {
+        // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
+        $debe = abs($linea->debe);
+        $haber = abs($linea->haber);
+
+        if ($debe > 0) {
+            $saldoAcumulado -= $debe;
         }
-        if ($haber != 0) {
-            $saldoAcumulado += abs($haber);
+
+        if ($haber > 0) {
+            $saldoAcumulado += $haber;
         }
-        
-        // Guardar el saldo para esta transacción
-        $saldoMap[$transaccion->id] = $saldoAcumulado;
-        
-        // DEBUG: Mostrar información de transacciones específicas
-        if (in_array($transaccion->id, [2080, 2081, 2082])) {
-            \Log::info("DEBUG Calculo - ID: {$transaccion->id}, Fecha: {$transaccion->date}, Debe: {$debe}, Haber: {$haber}, Saldo: {$saldoAcumulado}");
-        }
-    }
-    
-    // Obtener solo las entradas filtradas para mostrar
-    $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
-    
-    // Asignar los saldos calculados
-    foreach ($entries as $linea) {
-        $linea->saldo = $saldoMap[$linea->id] ?? 0;
-        
-        // DEBUG: Mostrar información de las primeras 3 transacciones
-        if ($linea->id <= 2082) {
-            \Log::info("DEBUG Saldo - ID: {$linea->id}, Fecha: {$linea->date}, Debe: {$linea->debe}, Haber: {$linea->haber}, Saldo: {$linea->saldo}");
-        }
+
+        // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
+        $linea->saldo = $saldoAcumulado;
     }
 
     // Reordenar para visualización (más recientes primero)
-    $response = $entries->sortByDesc('date')->sortByDesc('id');
+    $response = $response->sortByDesc('date')->sortByDesc('id');
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
