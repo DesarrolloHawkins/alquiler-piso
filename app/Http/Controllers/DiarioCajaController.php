@@ -124,7 +124,7 @@ class DiarioCajaController extends Controller
     //     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
     // }
 
-    public function index(Request $request)
+   /*  public function index(Request $request)
 {
     // Recuperar el saldo inicial de la base de datos
     $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
@@ -192,6 +192,72 @@ class DiarioCajaController extends Controller
     $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
 
     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
+}
+ */
+
+ public function index(Request $request)
+{
+    // 1) Saldo inicial
+    $anio = Anio::first();
+    $saldoInicial = $anio->saldo_inicial ?? 0;
+
+    // 2) Base de consulta con filtros (SIN orden todavía)
+    $baseQuery = DiarioCaja::query();
+
+    if ($request->filled('start_date')) {
+        $baseQuery->where('date', '>=', $request->start_date);
+    }
+    if ($request->filled('end_date')) {
+        $baseQuery->where('date', '<=', $request->end_date);
+    }
+    if ($request->filled('estado_id')) {
+        $baseQuery->where('estado_id', $request->estado_id);
+    }
+    if ($request->filled('cuenta_id')) {
+        $baseQuery->where('cuenta_id', $request->cuenta_id);
+    }
+    if ($request->filled('concepto')) {
+        $baseQuery->where('concepto', 'like', '%'.$request->concepto.'%');
+    }
+
+    // 3) Cálculo del saldo recorriendo de la más vieja a la más nueva
+    $calcQuery = (clone $baseQuery)
+        ->orderBy('date', 'asc')
+        ->orderBy('id', 'asc');
+
+    $entriesForCalculation = $calcQuery->get();
+
+    $saldoAcumulado = $saldoInicial;
+    $saldoMap = [];
+
+    foreach ($entriesForCalculation as $linea) {
+        $debe  = abs($linea->debe ?? 0);   // salida
+        $haber = abs($linea->haber ?? 0);  // entrada
+
+        // primero aplicamos el movimiento y luego guardamos el saldo resultante
+        if ($debe > 0)  $saldoAcumulado -= $debe;
+        if ($haber > 0) $saldoAcumulado += $haber;
+
+        $saldoMap[$linea->id] = $saldoAcumulado;
+    }
+
+    // 4) Recuperar para mostrar (más recientes arriba)
+    $viewQuery = (clone $baseQuery)
+        ->orderBy('date', 'desc')
+        ->orderBy('id', 'desc');
+
+    $response = $viewQuery->get();
+
+    // 5) Inyectar el saldo calculado a cada línea
+    foreach ($response as $linea) {
+        $linea->saldo = $saldoMap[$linea->id] ?? $saldoInicial;
+    }
+
+    // 6) Datos auxiliares
+    $estados = EstadosDiario::all();
+    $cuentas = CuentasContable::all();
+
+    return view('admin.contabilidad.diarioCaja.index', compact('response','saldoInicial','estados','cuentas'));
 }
 
 
