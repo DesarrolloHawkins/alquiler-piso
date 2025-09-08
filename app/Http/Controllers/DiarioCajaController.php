@@ -157,28 +157,34 @@ class DiarioCajaController extends Controller
     // Obtener todas las entradas en orden cronológico (más antiguas primero) para calcular el saldo
     $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
     
-    // Inicializar el saldo acumulado con el saldo inicial
-    $saldoAcumulado = $saldoInicial;
-
-    // Recorrer todas las líneas del diario en orden cronológico para calcular el saldo
+    // Para cada transacción, calcular el saldo considerando TODAS las transacciones hasta esa fecha
     foreach ($entries as $linea) {
-        // Usar los valores directamente
-        $debe = $linea->debe ?? 0;
-        $haber = $linea->haber ?? 0;
-
-        // Aplicar la operación según el tipo de movimiento
-        if ($debe != 0) {
-            // Si hay debe (gasto), restar del saldo
-            $saldoAcumulado -= abs($debe);
+        // Obtener todas las transacciones hasta esta fecha (incluyendo esta)
+        $transaccionesHastaEstaFecha = DiarioCaja::where(function($q) use ($linea) {
+            $q->where('date', '<', $linea->date)
+              ->orWhere(function($q2) use ($linea) {
+                  $q2->where('date', $linea->date)
+                     ->where('id', '<=', $linea->id);
+              });
+        })->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+        
+        // Calcular el saldo desde el inicio
+        $saldoCalculado = $saldoInicial;
+        
+        foreach ($transaccionesHastaEstaFecha as $transaccion) {
+            $debe = $transaccion->debe ?? 0;
+            $haber = $transaccion->haber ?? 0;
+            
+            if ($debe != 0) {
+                $saldoCalculado -= abs($debe);
+            }
+            if ($haber != 0) {
+                $saldoCalculado += abs($haber);
+            }
         }
-
-        if ($haber != 0) {
-            // Si hay haber (ingreso), sumar al saldo
-            $saldoAcumulado += abs($haber);
-        }
-
-        // Asignar el saldo calculado directamente
-        $linea->saldo = $saldoAcumulado;
+        
+        // Asignar el saldo calculado
+        $linea->saldo = $saldoCalculado;
     }
 
     // Reordenar para visualización (más recientes primero)
