@@ -193,14 +193,27 @@ class ReservasController extends Controller
             'precio' => 'required|string',
             'verificado' => 'nullable|integer',
             'dni_entregado' => 'nullable|integer',
-            'enviado_webpol' => 'nullable|integer',
-            'fecha_limpieza' => 'nullable|date'
+            'enviado_webpol' => 'nullable|integer'
         ]);
 
         $input = $request->all();
         $input['precio'] = floatval(str_replace(',', '.', preg_replace('/[^\d,\.]/', '', $input['precio'])));
-        $reserva = new Reserva($input);
-        $reserva->save();
+        
+        // Crear la reserva con los datos validados
+        $reserva = Reserva::create([
+            'cliente_id' => $input['cliente_id'],
+            'apartamento_id' => $input['apartamento_id'],
+            'room_type_id' => $input['room_type_id'],
+            'estado_id' => $input['estado_id'],
+            'origen' => $input['origen'],
+            'fecha_entrada' => $input['fecha_entrada'],
+            'fecha_salida' => $input['fecha_salida'],
+            'codigo_reserva' => $input['codigo_reserva'],
+            'precio' => $input['precio'],
+            'verificado' => $input['verificado'] ?? null,
+            'dni_entregado' => $input['dni_entregado'] ?? null,
+            'enviado_webpol' => $input['enviado_webpol'] ?? null
+        ]);
 
         // Log the creation
         $this->logCreate('RESERVA', $reserva->id, $reserva->toArray());
