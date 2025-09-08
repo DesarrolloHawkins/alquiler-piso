@@ -191,6 +191,32 @@ class MovimientosController extends Controller
                 ->first();
 
             if ($existingHash) {
+                // DEBUG: Mostrar valores cuando encuentra hash coincidente
+                return response()->json([
+                    'debug' => 'Hash coincidente encontrado',
+                    'valores_usados' => [
+                        'fecha' => $fecha_contable->format('Y-m-d'),
+                        'descripcion' => $descripcion,
+                        'debe' => $debe,
+                        'haber' => $haber,
+                        'saldo' => $saldo,
+                        'hash_generado' => $hash,
+                        'hash_existente_id' => $existingHash->id,
+                        'hash_existente_created_at' => $existingHash->created_at
+                    ],
+                    'tipos_datos' => [
+                        'fecha_tipo' => gettype($fecha_contable->format('Y-m-d')),
+                        'descripcion_tipo' => gettype($descripcion),
+                        'debe_tipo' => gettype($debe),
+                        'haber_tipo' => gettype($haber),
+                        'saldo_tipo' => gettype($saldo)
+                    ],
+                    'valores_float' => [
+                        'debe_float' => (float)$debe,
+                        'haber_float' => (float)$haber,
+                        'saldo_float' => (float)$saldo
+                    ]
+                ]);
                 // Buscar el registro original que generó este hash
                 $registroOriginal = null;
                 

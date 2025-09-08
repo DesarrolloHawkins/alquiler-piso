@@ -155,7 +155,7 @@ class DiarioCajaController extends Controller
     }
 
     // Ordenar los resultados por fecha ascendente para calcular el saldo inicial correctamente
-    $entries = $query->orderBy('id', 'asc')->get();
+    $entries = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
 
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
@@ -179,7 +179,7 @@ class DiarioCajaController extends Controller
     }
 
     // Reordenar los resultados en orden descendente por fecha para la vista
-    $response = $entries->sortByDesc('id');
+    $response = $entries->sortByDesc('date')->sortByDesc('id');
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
