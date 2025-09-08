@@ -88,7 +88,7 @@
                             <th class="fw-semibold text-dark">
                                 <i class="fas fa-hashtag me-2 text-primary"></i>Asiento
                             </th>
-                            <th class="fw-semibold text-dark" style="min-width: 150px;">
+                            <th class="fw-semibold text-dark" style="min-width: 180px;">
                                 <i class="fas fa-calendar me-2 text-info"></i>Fecha
                             </th>
                             <th class="fw-semibold text-dark">

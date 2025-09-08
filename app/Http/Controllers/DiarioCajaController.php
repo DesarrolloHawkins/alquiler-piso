@@ -179,7 +179,7 @@ class DiarioCajaController extends Controller
     }
 
     // Reordenar los resultados en orden descendente por fecha (más recientes primero)
-    $response = $entries->sortByDesc('date')->sortByDesc('id');
+    $response = $entries->sortByDesc('date');
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
