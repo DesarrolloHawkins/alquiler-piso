@@ -154,14 +154,15 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Obtener todas las entradas del diario de caja filtradas en orden cronológico
-    $response = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
+    // Obtener todas las entradas del diario de caja filtradas en orden cronológico para calcular el saldo
+    $entriesForCalculation = $query->orderBy('date', 'asc')->orderBy('id', 'asc')->get();
 
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
+    $saldoMap = [];
 
-    // Recorrer todas las líneas del diario y calcular el saldo
-    foreach ($response as $linea) {
+    // Recorrer todas las líneas del diario en orden cronológico para calcular el saldo
+    foreach ($entriesForCalculation as $linea) {
         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
         $debe = abs($linea->debe);
         $haber = abs($linea->haber);
@@ -174,12 +175,17 @@ class DiarioCajaController extends Controller
             $saldoAcumulado += $haber;
         }
 
-        // Añadir el saldo acumulado a cada línea para mostrarlo en la vista
-        $linea->saldo = $saldoAcumulado;
+        // Guardar el saldo calculado en el mapa
+        $saldoMap[$linea->id] = $saldoAcumulado;
     }
 
-    // Reordenar para visualización (más recientes primero)
-    $response = $response->sortByDesc('date')->sortByDesc('id');
+    // Obtener las entradas en orden de visualización (más recientes primero)
+    $response = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
+
+    // Asignar los saldos calculados a las entradas en orden de visualización
+    foreach ($response as $linea) {
+        $linea->saldo = $saldoMap[$linea->id] ?? 0;
+    }
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
