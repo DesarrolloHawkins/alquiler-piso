@@ -7,6 +7,10 @@ use App\Models\ApartamentoLimpieza;
 use App\Models\Fichaje;
 use App\Models\User;
 use App\Models\Incidencia;
+use App\Models\TurnoTrabajo;
+use App\Models\TareaAsignada;
+use App\Models\Apartamento;
+use App\Models\ZonaComun;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,126 +37,82 @@ class LimpiadoraDashboardController extends Controller
         Log::info('LimpiadoraDashboardController - Usuario autenticado: ' . $user->id . ' - Email: ' . $user->email . ' - Rol: ' . $user->role);
         
         try {
-            // Obtener apartamentos que SALEN hoy (necesitan limpieza) - misma lógica que /gestion
-            $apartamentosPendientesHoy = DB::table('reservas')
-                ->whereNull('fecha_limpieza')
-                ->where('estado_id', '!=', 4)
-                ->whereDate('fecha_salida', $hoy)
-                ->pluck('apartamento_id')
-                ->toArray();
-            
-            // Obtener limpiezas de fondo programadas para hoy
-            $limpiezasFondoHoy = DB::table('limpieza_fondo')
+            // Obtener turno de trabajo de hoy para esta empleada
+            $turnoHoy = TurnoTrabajo::where('user_id', $user->id)
                 ->whereDate('fecha', $hoy)
-                ->pluck('apartamento_id')
-                ->toArray();
+                ->with(['tareasAsignadas.tipoTarea', 'tareasAsignadas.apartamento', 'tareasAsignadas.zonaComun'])
+                ->first();
             
-            // Combinar todos los apartamentos que necesitan limpieza hoy
-            $apartamentosNecesitanLimpieza = array_merge($apartamentosPendientesHoy, $limpiezasFondoHoy);
-            $apartamentosNecesitanLimpieza = array_unique($apartamentosNecesitanLimpieza);
+            // Si no hay turno generado, mostrar mensaje
+            if (!$turnoHoy) {
+                return view('limpiadora.dashboard', [
+                    'datos' => [
+                        'turnoHoy' => null,
+                        'tareasAsignadas' => collect(),
+                        'limpiezasHoy' => 0,
+                        'limpiezasAsignadas' => 0,
+                        'limpiezasCompletadasHoy' => 0,
+                        'limpiezasPendientesHoy' => 0,
+                        'apartamentosPendientes' => 0,
+                        'incidenciasPendientes' => collect(),
+                        'limpiezasSemana' => 0,
+                        'limpiezasCompletadasSemana' => 0,
+                        'porcentajeSemana' => 0,
+                        'fichajeActual' => null,
+                        'estadisticasCalidad' => []
+                    ]
+                ]);
+            }
             
-            // Obtener limpiezas ya asignadas a esta empleada para hoy
-            $limpiezasAsignadasHoy = DB::table('apartamento_limpieza')
-                ->where('empleada_id', $user->id)
-                ->whereDate('fecha_comienzo', $hoy)
-                ->pluck('apartamento_id')
-                ->toArray();
-            
-            // Apartamentos pendientes de limpieza (necesitan limpieza pero no están asignados)
-            $apartamentosPendientes = array_diff($apartamentosNecesitanLimpieza, $limpiezasAsignadasHoy);
+            // Obtener tareas asignadas ordenadas por prioridad y orden de ejecución
+            $tareasAsignadas = $turnoHoy->tareasAsignadas()
+                ->with(['tipoTarea', 'apartamento', 'zonaComun'])
+                ->orderBy('prioridad_calculada', 'desc')
+                ->orderBy('orden_ejecucion', 'asc')
+                ->get();
             
             // Estadísticas del día
-            $limpiezasHoy = count($apartamentosNecesitanLimpieza); // Total de apartamentos que necesitan limpieza
-            $limpiezasAsignadas = count($limpiezasAsignadasHoy); // Total de limpiezas asignadas a esta empleada
+            $limpiezasHoy = $tareasAsignadas->count(); // Total de tareas asignadas
+            $limpiezasAsignadas = $tareasAsignadas->count(); // Total de tareas asignadas
             
-            // Obtener limpiezas completadas hoy por esta empleada
-            $limpiezasCompletadasHoy = DB::table('apartamento_limpieza')
-                ->where('empleada_id', $user->id)
-                ->whereDate('fecha_comienzo', $hoy)
-                ->where('status_id', 2) // Completada
-                ->count();
+            // Obtener tareas completadas hoy
+            $limpiezasCompletadasHoy = $tareasAsignadas->where('estado', 'completada')->count();
                 
-            // Obtener limpiezas en proceso hoy por esta empleada
-            $limpiezasPendientesHoy = DB::table('apartamento_limpieza')
-                ->where('empleada_id', $user->id)
-                ->whereDate('fecha_comienzo', $hoy)
-                ->where('status_id', 1) // En proceso
-                ->count();
+            // Obtener tareas en progreso hoy
+            $limpiezasPendientesHoy = $tareasAsignadas->where('estado', 'en_progreso')->count();
                 
-            // Obtener próximas limpiezas - SOLO las de HOY (reservas que salen hoy)
-            $proximasLimpiezas = collect();
-            
-            // Debug: Ver qué fecha estamos usando
-            Log::info('Dashboard Limpiadora - Fecha de hoy: ' . $hoy->toDateString());
-            
-            try {
-                // Apartamentos que salen HOY (necesitan limpieza hoy) - CONSULTA SIMPLIFICADA
-                $reservasSalidaHoy = DB::table('reservas')
-                    ->whereNull('fecha_limpieza')
-                    ->where('estado_id', '!=', 4)
-                    ->whereDate('fecha_salida', $hoy)
-                    ->select('id', 'apartamento_id', 'fecha_salida')
-                    ->get();
+            // Preparar tareas para mostrar en el dashboard
+            $proximasLimpiezas = $tareasAsignadas->map(function($tarea) use ($hoy) {
+                $elemento = null;
+                $tipoElemento = 'general';
+                $nombreElemento = 'Tarea General';
                 
-                Log::info('Dashboard Limpiadora - Reservas que salen hoy: ' . $reservasSalidaHoy->count());
-                Log::info('Dashboard Limpiadora - Detalles reservas: ' . $reservasSalidaHoy->toJson());
-                
-                foreach ($reservasSalidaHoy as $reserva) {
-                    // Obtener nombre del apartamento por separado
-                    $apartamento = DB::table('apartamentos')
-                        ->where('id', $reserva->apartamento_id)
-                        ->select('nombre')
-                        ->first();
-                    
-                    $proximasLimpiezas->push([
-                        'id' => $reserva->id,
-                        'apartamento_id' => $reserva->apartamento_id,
-                        'nombre_apartamento' => $apartamento->nombre ?? 'Apartamento #' . $reserva->apartamento_id,
-                        'numero_apartamento' => null, // No existe la columna numero
-                        'fecha_salida' => $reserva->fecha_salida,
-                        'hora_salida' => '00:00', // Hora por defecto ya que no existe la columna
-                        'status_id' => null, // Pendiente de asignar
-                        'tipo' => 'reserva'
-                    ]);
+                if ($tarea->apartamento_id) {
+                    $elemento = $tarea->apartamento;
+                    $tipoElemento = 'apartamento';
+                    $nombreElemento = $elemento ? $elemento->titulo : 'Apartamento #' . $tarea->apartamento_id;
+                } elseif ($tarea->zona_comun_id) {
+                    $elemento = $tarea->zonaComun;
+                    $tipoElemento = 'zona_comun';
+                    $nombreElemento = $elemento ? $elemento->nombre : 'Zona Común #' . $tarea->zona_comun_id;
                 }
                 
-                // Limpiezas de fondo programadas para HOY
-                $limpiezasFondoHoy = DB::table('limpieza_fondo')
-                    ->whereDate('fecha', $hoy)
-                    ->select('id', 'apartamento_id', 'fecha')
-                    ->get();
-                
-                Log::info('Dashboard Limpiadora - Limpiezas de fondo hoy: ' . $limpiezasFondoHoy->count());
-                
-                foreach ($limpiezasFondoHoy as $limpieza) {
-                    // Obtener nombre del apartamento por separado
-                    $apartamento = DB::table('apartamentos')
-                        ->where('id', $limpieza->apartamento_id)
-                        ->select('nombre')
-                        ->first();
-                    
-                    $proximasLimpiezas->push([
-                        'id' => 'fondo_' . $limpieza->id,
-                        'apartamento_id' => $limpieza->apartamento_id,
-                        'nombre_apartamento' => $apartamento->nombre ?? 'Apartamento #' . $limpieza->apartamento_id,
-                        'numero_apartamento' => null, // No existe la columna numero
-                        'fecha_salida' => $limpieza->fecha,
-                        'hora_salida' => '00:00',
-                        'status_id' => null, // Pendiente de asignar
-                        'tipo' => 'fondo'
-                    ]);
-                }
-                
-                Log::info('Dashboard Limpiadora - Total próximas limpiezas: ' . $proximasLimpiezas->count());
-                
-                // Ordenar por fecha de salida (más temprano primero)
-                $proximasLimpiezas = $proximasLimpiezas->sortBy('fecha_salida')->values();
-                
-            } catch (\Exception $e) {
-                Log::error('Dashboard Limpiadora - Error obteniendo próximas limpiezas: ' . $e->getMessage());
-                Log::error('Dashboard Limpiadora - Stack trace: ' . $e->getTraceAsString());
-                $proximasLimpiezas = collect(); // En caso de error, usar colección vacía
-            }
+                return [
+                    'id' => $tarea->id,
+                    'tipo_tarea' => $tarea->tipoTarea->nombre,
+                    'elemento' => $elemento,
+                    'tipo_elemento' => $tipoElemento,
+                    'nombre_elemento' => $nombreElemento,
+                    'prioridad' => $tarea->prioridad_calculada,
+                    'orden_ejecucion' => $tarea->orden_ejecucion,
+                    'estado' => $tarea->estado,
+                    'tiempo_estimado' => $tarea->tipoTarea->tiempo_estimado_minutos,
+                    'observaciones' => $tarea->observaciones,
+                    'fecha_salida' => $hoy->toDateString(), // Para compatibilidad con la vista
+                    'hora_salida' => '00:00', // Para compatibilidad con la vista
+                    'status_id' => $tarea->estado === 'completada' ? 2 : ($tarea->estado === 'en_progreso' ? 1 : 0)
+                ];
+            });
             
             // Obtener incidencias pendientes del usuario
             $incidenciasPendientes = DB::table('incidencias')
@@ -166,16 +126,18 @@ class LimpiadoraDashboardController extends Controller
             $inicioSemana = $hoy->copy()->startOfWeek();
             $finSemana = $hoy->copy()->endOfWeek();
             
-            // Limpiezas asignadas a esta empleada en la semana
-            $limpiezasSemana = DB::table('apartamento_limpieza')
-                ->where('empleada_id', $user->id)
-                ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
-                ->count();
+            // Tareas asignadas a esta empleada en la semana
+            $limpiezasSemana = TurnoTrabajo::where('user_id', $user->id)
+                ->whereBetween('fecha', [$inicioSemana, $finSemana])
+                ->withCount('tareasAsignadas')
+                ->get()
+                ->sum('tareas_asignadas_count');
                 
-            $limpiezasCompletadasSemana = DB::table('apartamento_limpieza')
-                ->where('empleada_id', $user->id)
-                ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
-                ->where('status_id', 2)
+            $limpiezasCompletadasSemana = TareaAsignada::whereHas('turno', function($query) use ($user, $inicioSemana, $finSemana) {
+                    $query->where('user_id', $user->id)
+                          ->whereBetween('fecha', [$inicioSemana, $finSemana]);
+                })
+                ->where('estado', 'completada')
                 ->count();
                 
             // Calcular porcentaje de completado de la semana
@@ -211,18 +173,20 @@ class LimpiadoraDashboardController extends Controller
             
             // Preparar datos para la vista
             $datos = [
+                'turnoHoy' => $turnoHoy,
+                'tareasAsignadas' => $tareasAsignadas,
                 'limpiezasHoy' => $limpiezasHoy,
                 'limpiezasAsignadas' => $limpiezasAsignadas,
                 'limpiezasCompletadasHoy' => $limpiezasCompletadasHoy,
                 'limpiezasPendientesHoy' => $limpiezasPendientesHoy,
-                'apartamentosPendientes' => count($apartamentosPendientes),
+                'apartamentosPendientes' => $tareasAsignadas->where('apartamento_id', '!=', null)->count(),
                 'proximasLimpiezas' => $proximasLimpiezas,
                 'incidenciasPendientes' => $incidenciasPendientes,
                 'limpiezasSemana' => $limpiezasSemana,
                 'limpiezasCompletadasSemana' => $limpiezasCompletadasSemana,
                 'porcentajeSemana' => $porcentajeSemana,
                 'fichajeActual' => $fichajeActual,
-                'analisisRecientes' => $analisisRecientes,
+                'estadisticasCalidad' => $analisisRecientes,
                 'hoy' => $hoy->format('d/m/Y'),
                 'diaSemana' => $hoy->locale('es')->dayName
             ];

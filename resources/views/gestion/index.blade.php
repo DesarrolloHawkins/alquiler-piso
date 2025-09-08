@@ -1738,10 +1738,32 @@
                             <div class="apple-list-item @if(isset($reserva->limpieza_fondo)) apple-list-item-info @else apple-list-item-warning @endif">
                                 <div class="apple-list-content">
                                     <div class="apple-list-title" data-id="{{$reserva->id}}">
-                                        {{$reserva->apartamento->titulo}}
+                                        @if(isset($reserva->tarea_asignada))
+                                            <!-- Nuevo sistema de turnos -->
+                                            @if($reserva->apartamento_id)
+                                                {{$reserva->apartamento->titulo}}
+                                            @elseif($reserva->zona_comun_id)
+                                                {{$reserva->zonaComun->nombre}}
+                                            @else
+                                                {{$reserva->tipo_tarea->nombre}}
+                                            @endif
+                                        @else
+                                            <!-- Sistema antiguo -->
+                                            {{$reserva->apartamento->titulo}}
+                                        @endif
                                     </div>
                                     <div class="apple-list-subtitle">
-                                        @if($reserva->reservaEntraHoy)
+                                        @if(isset($reserva->tarea_asignada))
+                                            <!-- Información del nuevo sistema -->
+                                            <strong>Tipo:</strong> {{$reserva->tipo_tarea->nombre}}<br>
+                                            <strong>Prioridad:</strong> {{$reserva->prioridad}}/10<br>
+                                            <strong>Orden:</strong> {{$reserva->orden_ejecucion}}<br>
+                                            <strong>Tiempo Est.:</strong> {{$reserva->tiempo_estimado}} min<br>
+                                            <strong>Estado:</strong> 
+                                            <span class="badge @if($reserva->estado === 'completada') bg-success @elseif($reserva->estado === 'en_progreso') bg-warning @else bg-primary @endif">
+                                                {{ucfirst($reserva->estado)}}
+                                            </span>
+                                        @elseif($reserva->reservaEntraHoy)
                                             <!-- Si hay reserva que entra hoy, mostrar esa información -->
                                             <strong>Código Reserva:</strong> {{$reserva->reservaEntraHoy->codigo_reserva ?? 'N/A'}}<br>
                                             <strong>Adultos:</strong> {{$reserva->reservaEntraHoy->numero_personas}}
@@ -1769,22 +1791,47 @@
                                     </div>
                                 </div>
                                 <div class="apple-list-actions">
-                                    <button type="button" 
-                                            class="action-button amenities-btn" 
-                                            onclick="mostrarAmenities({{$reserva->apartamento->id}}, null, '{{$reserva->apartamento->titulo}}', 'pendiente')"
-                                            title="Ver amenities">
-                                        <i class="fa fa-gift"></i>
-                                    </button>
-                                    @if($reserva->reservaEntraHoy)
-                                        <a href="{{ route('gestion.reserva.info', $reserva->reservaEntraHoy->id) }}" 
-                                           class="action-button info-btn" 
-                                           title="Ver información de la reserva">
+                                    @if(isset($reserva->tarea_asignada))
+                                        <!-- Botones para el nuevo sistema de turnos -->
+                                        @if($reserva->apartamento_id)
+                                            <button type="button" 
+                                                    class="action-button amenities-btn" 
+                                                    onclick="mostrarAmenities({{$reserva->apartamento->id}}, null, '{{$reserva->apartamento->titulo}}', 'pendiente')"
+                                                    title="Ver amenities">
+                                                <i class="fa fa-gift"></i>
+                                            </button>
+                                        @endif
+                                        <button type="button" 
+                                                class="action-button info-btn" 
+                                                onclick="mostrarInfoTarea({{$reserva->tarea_asignada->id}})"
+                                                title="Ver información de la tarea">
                                             <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="action-button create-btn" 
+                                                onclick="iniciarTarea({{$reserva->tarea_asignada->id}})"
+                                                title="Iniciar tarea">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    @else
+                                        <!-- Botones para el sistema antiguo -->
+                                        <button type="button" 
+                                                class="action-button amenities-btn" 
+                                                onclick="mostrarAmenities({{$reserva->apartamento->id}}, null, '{{$reserva->apartamento->titulo}}', 'pendiente')"
+                                                title="Ver amenities">
+                                            <i class="fa fa-gift"></i>
+                                        </button>
+                                        @if($reserva->reservaEntraHoy)
+                                            <a href="{{ route('gestion.reserva.info', $reserva->reservaEntraHoy->id) }}" 
+                                               class="action-button info-btn" 
+                                               title="Ver información de la reserva">
+                                                <i class="fas fa-info-circle"></i>
+                                            </a>
+                                        @endif
+                                        <a href="{{route('gestion.create', $reserva->id)}}" class="action-button create-btn" title="Iniciar limpieza">
+                                            <i class="fa-solid fa-chevron-right"></i>
                                         </a>
                                     @endif
-                                    <a href="{{route('gestion.create', $reserva->id)}}" class="action-button create-btn" title="Iniciar limpieza">
-                                        <i class="fa-solid fa-chevron-right"></i>
-                                    </a>
                                 </div>
                             </div>
                         @endforeach
@@ -1871,20 +1918,45 @@
                             <div class="apple-list-item apple-list-item-warning">
                                 <div class="apple-list-content">
                                     <div class="apple-list-title" data-id="{{$reservaEnLimpieza->id}}">
-                                        {{$reservaEnLimpieza->id}} - 
-                                        @if($reservaEnLimpieza->apartamento)
-                                            {{$reservaEnLimpieza->apartamento->nombre}}
-                                        @elseif($reservaEnLimpieza->zonaComun)
-                                            {{$reservaEnLimpieza->zonaComun->nombre}}
+                                        @if(isset($reservaEnLimpieza->tarea_asignada))
+                                            <!-- Nuevo sistema de turnos -->
+                                            @if($reservaEnLimpieza->apartamento_id)
+                                                {{$reservaEnLimpieza->apartamento->titulo}}
+                                            @elseif($reservaEnLimpieza->zona_comun_id)
+                                                {{$reservaEnLimpieza->zonaComun->nombre}}
+                                            @else
+                                                {{$reservaEnLimpieza->tipo_tarea->nombre}}
+                                            @endif
                                         @else
-                                            Elemento no encontrado
+                                            <!-- Sistema antiguo -->
+                                            {{$reservaEnLimpieza->id}} - 
+                                            @if($reservaEnLimpieza->apartamento)
+                                                {{$reservaEnLimpieza->apartamento->nombre}}
+                                            @elseif($reservaEnLimpieza->zonaComun)
+                                                {{$reservaEnLimpieza->zonaComun->nombre}}
+                                            @else
+                                                Elemento no encontrado
+                                            @endif
                                         @endif
                                     </div>
                                     <div class="apple-list-subtitle">
-                                        <strong>Fecha Comienzo:</strong> {{ $reservaEnLimpieza->fecha_comienzo }}<br>
+                                        @if(isset($reservaEnLimpieza->tarea_asignada))
+                                            <!-- Información del nuevo sistema -->
+                                            <strong>Tipo:</strong> {{$reservaEnLimpieza->tipo_tarea->nombre}}<br>
+                                            <strong>Prioridad:</strong> {{$reservaEnLimpieza->prioridad}}/10<br>
+                                            <strong>Orden:</strong> {{$reservaEnLimpieza->orden_ejecucion}}<br>
+                                            <strong>Tiempo Est.:</strong> {{$reservaEnLimpieza->tiempo_estimado}} min<br>
+                                            <strong>Estado:</strong> 
+                                            <span class="badge @if($reservaEnLimpieza->estado === 'completada') bg-success @elseif($reservaEnLimpieza->estado === 'en_progreso') bg-warning @else bg-primary @endif">
+                                                {{ucfirst($reservaEnLimpieza->estado)}}
+                                            </span>
+                                        @else
+                                            <!-- Sistema antiguo -->
+                                            <strong>Fecha Comienzo:</strong> {{ $reservaEnLimpieza->fecha_comienzo ?? 'N/A' }}<br>
+                                        @endif
                                         
-                                        @if($reservaEnLimpieza->reserva_entra_hoy)
-                                            <!-- Si hay reserva que entra hoy, mostrar esa información -->
+                                        @if(!isset($reservaEnLimpieza->tarea_asignada) && $reservaEnLimpieza->reserva_entra_hoy)
+                                            <!-- Solo para sistema antiguo: Si hay reserva que entra hoy, mostrar esa información -->
                                             <strong>Código Reserva:</strong> {{$reservaEnLimpieza->reserva_entra_hoy->codigo_reserva ?? 'N/A'}}<br>
                                             <strong>Adultos:</strong> {{$reservaEnLimpieza->reserva_entra_hoy->numero_personas}}
                                             @if($reservaEnLimpieza->reserva_entra_hoy->numero_ninos > 0)
@@ -1904,36 +1976,61 @@
                                                 @endif
                                             @endif
                                             <br><em>🔄 Entra hoy mismo</em>
-                                        @else
-                                            <!-- Si no hay reserva que entre hoy, mostrar mensaje -->
+                                        @elseif(!isset($reservaEnLimpieza->tarea_asignada))
+                                            <!-- Solo para sistema antiguo: Si no hay reserva que entre hoy, mostrar mensaje -->
                                             <em>No hay entradas para este apartamento</em>
                                         @endif
                                     </div>
                                 </div>
                                 <div class="apple-list-actions">
-                                    @if($reservaEnLimpieza->apartamento)
-                                    <button type="button" 
-                                            class="action-button amenities-btn" 
-                                            onclick="mostrarAmenities({{$reservaEnLimpieza->apartamento->id}}, {{$reservaEnLimpieza->id}}, '{{$reservaEnLimpieza->apartamento->nombre}}', 'en_proceso')"
-                                            title="Ver amenities">
-                                        <i class="fa fa-gift"></i>
-                                    </button>
-                                    @endif
-                                    @if($reservaEnLimpieza->reserva_entra_hoy)
-                                        <a href="{{ route('gestion.reserva.info', $reservaEnLimpieza->reserva_entra_hoy->id) }}" 
-                                           class="action-button info-btn" 
-                                           title="Ver información de la reserva">
+                                    @if(isset($reservaEnLimpieza->tarea_asignada))
+                                        <!-- Botones para el nuevo sistema de turnos -->
+                                        @if($reservaEnLimpieza->apartamento_id)
+                                            <button type="button" 
+                                                    class="action-button amenities-btn" 
+                                                    onclick="mostrarAmenities({{$reservaEnLimpieza->apartamento->id}}, null, '{{$reservaEnLimpieza->apartamento->titulo}}', 'en_progreso')"
+                                                    title="Ver amenities">
+                                                <i class="fa fa-gift"></i>
+                                            </button>
+                                        @endif
+                                        <button type="button" 
+                                                class="action-button info-btn" 
+                                                onclick="mostrarInfoTarea({{$reservaEnLimpieza->tarea_asignada->id}})"
+                                                title="Ver información de la tarea">
                                             <i class="fas fa-info-circle"></i>
-                                        </a>
-                                    @endif
-                                    @if($reservaEnLimpieza->apartamento)
-                                        <a href="{{ route('gestion.edit', $reservaEnLimpieza->id) }}" class="action-button edit-btn" title="Editar limpieza">
+                                        </button>
+                                        <button type="button" 
+                                                class="action-button edit-btn" 
+                                                onclick="continuarTarea({{$reservaEnLimpieza->tarea_asignada->id}})"
+                                                title="Continuar tarea">
                                             <i class="fas fa-arrow-right"></i>
-                                        </a>
-                                    @elseif($reservaEnLimpieza->zonaComun)
-                                        <a href="{{ route('gestion.editZonaComun', $reservaEnLimpieza->id) }}" class="action-button edit-btn" title="Editar limpieza zona común">
-                                            <i class="fas fa-arrow-right"></i>
-                                        </a>
+                                        </button>
+                                    @else
+                                        <!-- Botones para el sistema antiguo -->
+                                        @if($reservaEnLimpieza->apartamento)
+                                            <button type="button" 
+                                                    class="action-button amenities-btn" 
+                                                    onclick="mostrarAmenities({{$reservaEnLimpieza->apartamento->id}}, {{$reservaEnLimpieza->id}}, '{{$reservaEnLimpieza->apartamento->nombre}}', 'en_proceso')"
+                                                    title="Ver amenities">
+                                                <i class="fa fa-gift"></i>
+                                            </button>
+                                        @endif
+                                        @if($reservaEnLimpieza->reserva_entra_hoy)
+                                            <a href="{{ route('gestion.reserva.info', $reservaEnLimpieza->reserva_entra_hoy->id) }}" 
+                                               class="action-button info-btn" 
+                                               title="Ver información de la reserva">
+                                                <i class="fas fa-info-circle"></i>
+                                            </a>
+                                        @endif
+                                        @if($reservaEnLimpieza->apartamento)
+                                            <a href="{{ route('gestion.edit', $reservaEnLimpieza->id) }}" class="action-button edit-btn" title="Editar limpieza">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        @elseif($reservaEnLimpieza->zonaComun)
+                                            <a href="{{ route('gestion.editZonaComun', $reservaEnLimpieza->id) }}" class="action-button edit-btn" title="Editar limpieza zona común">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        @endif
                                     @endif
                                 </div>
                             </div>
@@ -2147,6 +2244,344 @@
     </div>
 
     <!-- Modal de Información de Reserva -->
+
+    <!-- Modal para confirmar inicio de tarea -->
+    <div class="modal fade" id="confirmarInicioModal" tabindex="-1" aria-labelledby="confirmarInicioModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmarInicioModalLabel">
+                        <i class="fas fa-play-circle me-2"></i>
+                        Confirmar Inicio de Tarea
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-question-circle text-warning" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h6>¿Desea iniciar esta tarea?</h6>
+                        <p class="text-muted mb-0">Una vez iniciada, la tarea cambiará a estado "En Progreso"</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmarInicioBtn">
+                        <i class="fas fa-play me-1"></i>
+                        Iniciar Tarea
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para información de tarea -->
+    <div class="modal fade" id="infoTareaModal" tabindex="-1" aria-labelledby="infoTareaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="infoTareaModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información de la Tarea
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="infoTareaContent">
+                    <!-- Contenido se carga dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de progreso -->
+    <div class="modal fade" id="progresoModal" tabindex="-1" aria-labelledby="progresoModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="progresoModalLabel">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        Procesando...
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p id="progresoTexto">Iniciando tarea...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Variables globales
+    let tareaActualId = null;
+    
+    // Funciones para el nuevo sistema de turnos
+    function mostrarInfoTarea(tareaId) {
+        tareaActualId = tareaId;
+        
+        // Mostrar modal de progreso
+        const progresoModal = new bootstrap.Modal(document.getElementById('progresoModal'));
+        progresoModal.show();
+        
+        // Realizar llamada AJAX al servidor
+        fetch(`/gestion/tareas/${tareaId}/info`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            progresoModal.hide();
+            
+            if (data.success) {
+                // Cargar información de la tarea
+                cargarInformacionTarea(data.data);
+                
+                // Mostrar modal de información
+                const infoModal = new bootstrap.Modal(document.getElementById('infoTareaModal'));
+                infoModal.show();
+            } else {
+                mostrarError('Error al cargar información de la tarea: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            progresoModal.hide();
+            console.error('Error:', error);
+            mostrarError('Error de conexión al cargar información de la tarea');
+        });
+    }
+    
+    function cargarInformacionTarea(data) {
+        const contenido = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-tag me-2"></i>Información General</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>ID Tarea:</strong></td>
+                            <td>${data.id}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tipo:</strong></td>
+                            <td>${data.tipo_tarea}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Categoría:</strong></td>
+                            <td>${data.categoria}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Prioridad:</strong></td>
+                            <td><span class="badge ${data.prioridad >= 8 ? 'bg-danger' : data.prioridad >= 6 ? 'bg-warning' : 'bg-info'}">${data.prioridad}/10</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Orden:</strong></td>
+                            <td>${data.orden_ejecucion}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tiempo Estimado:</strong></td>
+                            <td>${data.tiempo_estimado} minutos</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estado:</strong></td>
+                            <td><span class="badge ${data.estado === 'completada' ? 'bg-success' : data.estado === 'en_progreso' ? 'bg-warning' : 'bg-primary'}">${data.estado.charAt(0).toUpperCase() + data.estado.slice(1)}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Empleada:</strong></td>
+                            <td>${data.empleada}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha Asignación:</strong></td>
+                            <td>${data.fecha_asignacion}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-map-marker-alt me-2"></i>Elemento</h6>
+                    <div class="alert alert-light">
+                        <strong>Tipo:</strong> ${data.elemento.tipo}<br>
+                        <strong>Nombre:</strong> ${data.elemento.nombre}
+                        ${data.elemento.edificio ? '<br><strong>Edificio:</strong> ' + data.elemento.edificio : ''}
+                        ${data.elemento.descripcion ? '<br><strong>Descripción:</strong> ' + data.elemento.descripcion : ''}
+                    </div>
+                    
+                    ${data.checklist ? `
+                    <h6><i class="fas fa-list-check me-2"></i>Checklist</h6>
+                    <div class="alert alert-info">
+                        <strong>${data.checklist.nombre}</strong><br>
+                        <small>${data.checklist.descripcion}</small>
+                        ${data.items_checklist.length > 0 ? `<br><small class="text-muted">${data.items_checklist.length} items en el checklist</small>` : ''}
+                    </div>
+                    ` : ''}
+                    
+                    ${data.observaciones ? `
+                    <h6><i class="fas fa-sticky-note me-2"></i>Observaciones</h6>
+                    <div class="alert alert-warning">
+                        ${data.observaciones}
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('infoTareaContent').innerHTML = contenido;
+    }
+    
+    function iniciarTarea(tareaId) {
+        tareaActualId = tareaId;
+        
+        // Mostrar modal de confirmación
+        const confirmarModal = new bootstrap.Modal(document.getElementById('confirmarInicioModal'));
+        confirmarModal.show();
+    }
+    
+    // Event listener para confirmar inicio
+    document.getElementById('confirmarInicioBtn').addEventListener('click', function() {
+        // Cerrar modal de confirmación
+        const confirmarModal = bootstrap.Modal.getInstance(document.getElementById('confirmarInicioModal'));
+        confirmarModal.hide();
+        
+        // Mostrar modal de progreso
+        const progresoModal = new bootstrap.Modal(document.getElementById('progresoModal'));
+        progresoModal.show();
+        
+        // Realizar llamada AJAX al servidor
+        fetch(`/gestion/tareas/${tareaActualId}/iniciar`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            progresoModal.hide();
+            
+            if (data.success) {
+                // Mostrar modal de éxito
+                mostrarModalExito(data.data);
+            } else {
+                mostrarError('Error al iniciar la tarea: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            progresoModal.hide();
+            console.error('Error:', error);
+            mostrarError('Error de conexión al iniciar la tarea');
+        });
+    });
+    
+    function mostrarModalExito(data) {
+        // Crear modal de éxito dinámicamente
+        const modalHtml = `
+            <div class="modal fade" id="exitoModal" tabindex="-1" aria-labelledby="exitoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="exitoModalLabel">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Tarea Iniciada
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                            <h5 class="text-success">¡Tarea iniciada correctamente!</h5>
+                            <p class="text-muted">La tarea ID ${data.tarea_id} ha sido iniciada y está ahora en estado "${data.estado}".</p>
+                            <p class="text-muted"><small>Iniciada el: ${data.fecha_inicio}</small></p>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Puede continuar con el checklist de limpieza o iniciar otra tarea.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                                <i class="fas fa-check me-1"></i>
+                                Continuar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const exitoModal = new bootstrap.Modal(document.getElementById('exitoModal'));
+        exitoModal.show();
+        
+        // Limpiar modal del DOM cuando se cierre
+        document.getElementById('exitoModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+        // Recargar la página para actualizar el estado
+        setTimeout(() => {
+            location.reload();
+        }, 3000);
+    }
+    
+    function mostrarError(mensaje) {
+        // Crear modal de error dinámicamente
+        const modalHtml = `
+            <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="errorModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Error
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                            <h5 class="text-danger">¡Error!</h5>
+                            <p class="text-muted">${mensaje}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errorModal.show();
+        
+        // Limpiar modal del DOM cuando se cierre
+        document.getElementById('errorModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+    
+    function continuarTarea(tareaId) {
+        // Abrir el checklist de la tarea
+        window.location.href = `/gestion/tareas/${tareaId}/checklist`;
+    }
+    </script>
 
 @endsection
 

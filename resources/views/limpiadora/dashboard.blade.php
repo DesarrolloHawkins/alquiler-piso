@@ -115,45 +115,75 @@
         </div>
     </div>
 
-    <!-- Próximas Limpiezas -->
+    <!-- Tareas Asignadas para Hoy -->
     <div class="apple-card">
         <div class="apple-card-header">
             <div class="apple-card-title">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Próximas Limpiezas</span>
+                <i class="fas fa-tasks"></i>
+                <span>Mis Tareas de Hoy</span>
             </div>
+            @if($datos['turnoHoy'])
+                <div class="apple-card-subtitle">
+                    <span class="badge bg-primary">{{ $datos['turnoHoy']->estado }}</span>
+                    <small class="text-muted">Ordenadas por prioridad</small>
+                </div>
+            @endif
         </div>
         <div class="apple-card-body">
             @if($datos['proximasLimpiezas']->count() > 0)
-                <div class="limpiezas-list">
-                    @foreach($datos['proximasLimpiezas'] as $limpieza)
-                        <div class="limpieza-item">
-                            <div class="limpieza-info">
-                                <div class="limpieza-apartamento">
-                                    <i class="fas fa-home"></i>
-                                    <span>{{ $limpieza['nombre_apartamento'] ?? 'Apartamento #' . $limpieza['apartamento_id'] }}</span>
-                                    @if($limpieza['numero_apartamento'])
-                                        <small class="numero-apartamento">#{{ $limpieza['numero_apartamento'] }}</small>
-                                    @endif
-                                    <small class="zona-comun-badge">
-                                        {{ $limpieza['tipo'] === 'fondo' ? 'Limpieza Fondo' : 'Reserva' }}
-                                    </small>
+                <div class="tareas-list">
+                    @foreach($datos['proximasLimpiezas'] as $tarea)
+                        <div class="tarea-item {{ $tarea['estado'] === 'completada' ? 'completada' : ($tarea['estado'] === 'en_progreso' ? 'en-progreso' : 'pendiente') }}">
+                            <div class="tarea-header">
+                                <div class="tarea-info">
+                                    <div class="tarea-tipo">
+                                        <i class="fas fa-{{ $tarea['tipo_elemento'] === 'apartamento' ? 'home' : ($tarea['tipo_elemento'] === 'zona_comun' ? 'building' : 'cog') }}"></i>
+                                        <span class="tarea-nombre">{{ $tarea['tipo_tarea'] }}</span>
+                                        @if($tarea['tipo_elemento'] !== 'general')
+                                            <small class="elemento-nombre">{{ $tarea['nombre_elemento'] }}</small>
+                                        @endif
+                                    </div>
+                                    <div class="tarea-prioridad">
+                                        <span class="badge bg-{{ $tarea['prioridad'] >= 8 ? 'danger' : ($tarea['prioridad'] >= 6 ? 'warning' : 'info') }}">
+                                            Prioridad {{ $tarea['prioridad'] }}
+                                        </span>
+                                        <small class="orden-ejecucion">Orden: {{ $tarea['orden_ejecucion'] }}</small>
+                                    </div>
                                 </div>
-                                <div class="limpieza-horario">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Salida: {{ \Carbon\Carbon::parse($limpieza['fecha_salida'])->format('d/m') }} {{ $limpieza['hora_salida'] }}</span>
-                                </div>
-                                <div class="limpieza-status">
-                                    <span class="status-badge status-pending">Pendiente</span>
+                                <div class="tarea-details">
+                                    <div class="tarea-tiempo">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ $tarea['tiempo_estimado'] }} min</span>
+                                    </div>
+                                    <div class="tarea-estado">
+                                        <span class="status-badge status-{{ $tarea['estado'] }}">
+                                            @switch($tarea['estado'])
+                                                @case('completada')
+                                                    Completada
+                                                    @break
+                                                @case('en_progreso')
+                                                    En Progreso
+                                                    @break
+                                                @default
+                                                    Pendiente
+                                            @endswitch
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                            @if($tarea['observaciones'])
+                                <div class="tarea-observaciones">
+                                    <small class="text-muted">{{ $tarea['observaciones'] }}</small>
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>
             @else
                 <div class="empty-state">
                     <i class="fas fa-calendar-times"></i>
-                    <p>No hay limpiezas programadas para hoy</p>
+                    <p>No hay tareas asignadas para hoy</p>
+                    <small class="text-muted">Contacta con tu supervisor si crees que debería haber tareas asignadas</small>
                 </div>
             @endif
         </div>

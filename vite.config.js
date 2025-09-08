@@ -10,7 +10,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     // pon tu IP local aquí:
-    hmr: { host: '192.168.1.2', port: 5173 },
+    hmr: { host: '192.168.1.24', port: 5173 },
   } : undefined,
 
   plugins: [

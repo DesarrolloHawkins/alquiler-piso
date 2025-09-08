@@ -59,6 +59,79 @@ class TareaAsignada extends Model
         return $this->belongsTo(ZonaComun::class);
     }
 
+    public function edificio()
+    {
+        return $this->belongsTo(Edificio::class);
+    }
+
+    // Obtener el checklist apropiado según el tipo de tarea
+    public function checklist()
+    {
+        if ($this->apartamento_id) {
+            // Para apartamentos, obtener el checklist del edificio
+            $apartamento = $this->apartamento;
+            if ($apartamento && $apartamento->edificio) {
+                $edificio = $apartamento->edificio;
+                if (is_object($edificio)) {
+                    return $edificio->checklist;
+                }
+            }
+            return null;
+        } elseif ($this->zona_comun_id) {
+            // Para zonas comunes, obtener checklist específico de zonas comunes
+            return ChecklistZonaComun::activos()->ordenados()->first();
+        } else {
+            // Para tareas generales, obtener checklist por categoría
+            $tipoTarea = $this->tipoTarea;
+            if ($tipoTarea) {
+                return ChecklistTareaGeneral::activos()
+                    ->porCategoria($tipoTarea->categoria)
+                    ->ordenados()
+                    ->first();
+            }
+            return null;
+        }
+    }
+
+    // Obtener los ítems del checklist según el tipo
+    public function itemChecklists()
+    {
+        if ($this->apartamento_id) {
+            // Para apartamentos, obtener items del checklist del edificio
+            $checklist = $this->checklist();
+            return $checklist ? $checklist->items : collect();
+        } elseif ($this->zona_comun_id) {
+            // Para zonas comunes, obtener items de checklists de zonas comunes
+            $checklist = ChecklistZonaComun::activos()->ordenados()->first();
+            return $checklist ? $checklist->items : collect();
+        } else {
+            // Para tareas generales, obtener items del checklist por categoría
+            $tipoTarea = $this->tipoTarea;
+            if ($tipoTarea) {
+                $checklist = ChecklistTareaGeneral::activos()
+                    ->porCategoria($tipoTarea->categoria)
+                    ->ordenados()
+                    ->first();
+                return $checklist ? $checklist->items : collect();
+            }
+            return collect();
+        }
+    }
+
+    // Obtener el nombre del elemento
+    public function getElementoNombre()
+    {
+        if ($this->apartamento_id) {
+            return $this->apartamento->titulo;
+        } elseif ($this->zona_comun_id) {
+            return $this->zonaComun->nombre;
+        } elseif ($this->edificio_id) {
+            return "Edificio " . $this->edificio->nombre;
+        } else {
+            return $this->tipoTarea->nombre;
+        }
+    }
+
     // Scopes
     public function scopePorTurno($query, $turnoId)
     {

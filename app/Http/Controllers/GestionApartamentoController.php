@@ -9,10 +9,13 @@ use App\Models\Pausa;
 use App\Models\GestionApartamento;
 use App\Models\LimpiezaFondo;
 use App\Models\Reserva;
+use App\Models\TurnoTrabajo;
+use App\Models\TareaAsignada;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Auth; // Añade esta línea
 use App\Models\Checklist;
@@ -38,6 +41,21 @@ class GestionApartamentoController extends Controller
 
     public function index()
     {
+        $user = Auth::user();
+        $hoy = Carbon::today();
+        
+        // Verificar si hay turnos generados para hoy
+        $turnoHoy = TurnoTrabajo::where('user_id', $user->id)
+            ->whereDate('fecha', $hoy)
+            ->with(['tareasAsignadas.tipoTarea', 'tareasAsignadas.apartamento', 'tareasAsignadas.zonaComun'])
+            ->first();
+        
+        // Si hay turno generado, usar el nuevo sistema
+        if ($turnoHoy) {
+            return $this->indexConTurnos($turnoHoy, $hoy);
+        }
+        
+        // Si no hay turno, usar el sistema antiguo
         $reservasPendientes = Reserva::apartamentosPendiente();
         
         // Cargar la relación siguienteReserva con campos de niños para cada reserva pendiente
@@ -255,6 +273,1054 @@ class GestionApartamentoController extends Controller
             'consumosExistentes',
             'dashboardStats'
         ));
+    }
+    
+    /**
+     * Mostrar gestión con el nuevo sistema de turnos
+     */
+    private function indexConTurnos($turnoHoy, $hoy)
+    {
+        $user = Auth::user();
+        
+        // Obtener tareas asignadas ordenadas por prioridad y orden de ejecución
+        $tareasAsignadas = $turnoHoy->tareasAsignadas()
+            ->with(['tipoTarea', 'apartamento', 'zonaComun'])
+            ->orderBy('prioridad_calculada', 'desc')
+            ->orderBy('orden_ejecucion', 'asc')
+            ->get();
+        
+        // Preparar datos para la vista usando el formato del sistema antiguo
+        $reservasPendientes = collect();
+        $reservasEnLimpieza = collect();
+        $reservasLimpieza = collect();
+        
+        // Convertir tareas asignadas al formato esperado por la vista
+        foreach ($tareasAsignadas as $tarea) {
+            if ($tarea->apartamento_id) {
+                // Es una tarea de apartamento
+                $apartamento = $tarea->apartamento;
+                if ($apartamento) {
+                    // Crear un objeto similar a Reserva para compatibilidad
+                    $reserva = new \stdClass();
+                    $reserva->id = $tarea->id;
+                    $reserva->apartamento_id = $apartamento->id;
+                    $reserva->apartamento = $apartamento;
+                    $reserva->codigo_reserva = 'TAREA-' . $tarea->id;
+                    $reserva->numero_personas = 0; // No aplicable para tareas
+                    $reserva->fecha_salida = $hoy->toDateString();
+                    $reserva->fecha_entrada = $hoy->toDateString();
+                    $reserva->limpieza_fondo = false;
+                    $reserva->tarea_asignada = $tarea;
+                    $reserva->tipo_tarea = $tarea->tipoTarea;
+                    $reserva->prioridad = $tarea->prioridad_calculada;
+                    $reserva->orden_ejecucion = $tarea->orden_ejecucion;
+                    $reserva->estado = $tarea->estado;
+                    $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                    
+                    // Agregar a la colección apropiada según el estado
+                    if ($tarea->estado === 'pendiente') {
+                        $reservasPendientes->push($reserva);
+                    } elseif ($tarea->estado === 'en_progreso') {
+                        $reservasEnLimpieza->push($reserva);
+                    } elseif ($tarea->estado === 'completada') {
+                        $reservasLimpieza->push($reserva);
+                    }
+                }
+            } elseif ($tarea->zona_comun_id) {
+                // Es una tarea de zona común
+                $zonaComun = $tarea->zonaComun;
+                if ($zonaComun) {
+                    $reserva = new \stdClass();
+                    $reserva->id = $tarea->id;
+                    $reserva->zona_comun_id = $zonaComun->id;
+                    $reserva->zonaComun = $zonaComun;
+                    $reserva->codigo_reserva = 'ZONA-' . $tarea->id;
+                    $reserva->numero_personas = 0;
+                    $reserva->fecha_salida = $hoy->toDateString();
+                    $reserva->fecha_entrada = $hoy->toDateString();
+                    $reserva->limpieza_fondo = false;
+                    $reserva->tarea_asignada = $tarea;
+                    $reserva->tipo_tarea = $tarea->tipoTarea;
+                    $reserva->prioridad = $tarea->prioridad_calculada;
+                    $reserva->orden_ejecucion = $tarea->orden_ejecucion;
+                    $reserva->estado = $tarea->estado;
+                    $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                    
+                    if ($tarea->estado === 'pendiente') {
+                        $reservasPendientes->push($reserva);
+                    } elseif ($tarea->estado === 'en_progreso') {
+                        $reservasEnLimpieza->push($reserva);
+                    } elseif ($tarea->estado === 'completada') {
+                        $reservasLimpieza->push($reserva);
+                    }
+                }
+            } else {
+                // Es una tarea general
+                $reserva = new \stdClass();
+                $reserva->id = $tarea->id;
+                $reserva->apartamento_id = null;
+                $reserva->zona_comun_id = null;
+                $reserva->codigo_reserva = 'GENERAL-' . $tarea->id;
+                $reserva->numero_personas = 0;
+                $reserva->fecha_salida = $hoy->toDateString();
+                $reserva->fecha_entrada = $hoy->toDateString();
+                $reserva->limpieza_fondo = false;
+                $reserva->tarea_asignada = $tarea;
+                $reserva->tipo_tarea = $tarea->tipoTarea;
+                $reserva->prioridad = $tarea->prioridad_calculada;
+                $reserva->orden_ejecucion = $tarea->orden_ejecucion;
+                $reserva->estado = $tarea->estado;
+                $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                
+                if ($tarea->estado === 'pendiente') {
+                    $reservasPendientes->push($reserva);
+                } elseif ($tarea->estado === 'en_progreso') {
+                    $reservasEnLimpieza->push($reserva);
+                } elseif ($tarea->estado === 'completada') {
+                    $reservasLimpieza->push($reserva);
+                }
+            }
+        }
+        
+        // Obtener zonas comunes activas
+        $zonasComunes = \App\Models\ZonaComun::activas()
+            ->ordenadas()
+            ->get();
+        
+        // Obtener amenities
+        $amenities = \App\Models\Amenity::activos()
+            ->orderBy('categoria')
+            ->orderBy('nombre')
+            ->get()
+            ->groupBy('categoria');
+        
+        // Obtener estadísticas del dashboard
+        $dashboardStats = $this->getDashboardStatsConTurnos($turnoHoy, $tareasAsignadas);
+        
+        // Datos adicionales para compatibilidad
+        $reservasOcupados = collect();
+        $reservasSalida = collect();
+        $limpiezaFondo = collect();
+        $reservasManana = collect();
+        $consumosExistentes = collect();
+        
+        return view('gestion.index', compact(
+            'reservasPendientes',
+            'reservasOcupados',
+            'reservasSalida',
+            'reservasLimpieza',
+            'reservasEnLimpieza', 
+            'limpiezaFondo', 
+            'zonasComunes', 
+            'reservasManana',
+            'amenities',
+            'consumosExistentes',
+            'dashboardStats',
+            'turnoHoy'
+        ));
+    }
+    
+    /**
+     * Obtener estadísticas del dashboard con el nuevo sistema de turnos
+     */
+    private function getDashboardStatsConTurnos($turnoHoy, $tareasAsignadas)
+    {
+        $user = Auth::user();
+        $hoy = Carbon::today();
+        
+        // Estadísticas del día
+        $limpiezasHoy = $tareasAsignadas->count();
+        $limpiezasAsignadas = $tareasAsignadas->count();
+        $limpiezasCompletadasHoy = $tareasAsignadas->where('estado', 'completada')->count();
+        $limpiezasPendientesHoy = $tareasAsignadas->where('estado', 'pendiente')->count();
+        
+        // Apartamentos pendientes (tareas de apartamento pendientes)
+        $apartamentosPendientes = $tareasAsignadas->where('apartamento_id', '!=', null)
+            ->where('estado', 'pendiente')
+            ->count();
+        
+        // Obtener incidencias pendientes del usuario
+        $incidenciasPendientes = \DB::table('incidencias')
+            ->where('empleada_id', $user->id)
+            ->where('estado', 'pendiente')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Obtener estadísticas de la semana
+        $inicioSemana = $hoy->copy()->startOfWeek();
+        $finSemana = $hoy->copy()->endOfWeek();
+        
+        $limpiezasSemana = TurnoTrabajo::where('user_id', $user->id)
+            ->whereBetween('fecha', [$inicioSemana, $finSemana])
+            ->withCount('tareasAsignadas')
+            ->get()
+            ->sum('tareas_asignadas_count');
+        
+        $limpiezasCompletadasSemana = TareaAsignada::whereHas('turno', function($query) use ($user, $inicioSemana, $finSemana) {
+                $query->where('user_id', $user->id)
+                      ->whereBetween('fecha', [$inicioSemana, $finSemana]);
+            })
+            ->where('estado', 'completada')
+            ->count();
+        
+        $porcentajeSemana = $limpiezasSemana > 0 ? round(($limpiezasCompletadasSemana / $limpiezasSemana) * 100, 1) : 0;
+        
+        // Obtener fichaje actual (comentado temporalmente por error de columna)
+        $fichajeActual = null;
+        // $fichajeActual = Fichaje::where('user_id', $user->id)
+        //     ->whereNull('fecha_fin')
+        //     ->first();
+        
+        // Estadísticas de calidad (placeholder)
+        $estadisticasCalidad = [];
+        
+        return [
+            'limpiezasHoy' => $limpiezasHoy,
+            'limpiezasAsignadas' => $limpiezasAsignadas,
+            'limpiezasCompletadasHoy' => $limpiezasCompletadasHoy,
+            'limpiezasPendientesHoy' => $limpiezasPendientesHoy,
+            'apartamentosPendientes' => $apartamentosPendientes,
+            'incidenciasPendientes' => $incidenciasPendientes,
+            'limpiezasSemana' => $limpiezasSemana,
+            'limpiezasCompletadasSemana' => $limpiezasCompletadasSemana,
+            'porcentajeSemana' => $porcentajeSemana,
+            'fichajeActual' => $fichajeActual,
+            'estadisticasCalidad' => $estadisticasCalidad
+        ];
+    }
+    
+    /**
+     * Obtener información de una tarea asignada
+     */
+    public function infoTarea(TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Cargar relaciones necesarias
+            $tarea->load(['tipoTarea', 'apartamento.edificio', 'zonaComun', 'turno.user']);
+            
+            // Obtener checklist si existe
+            $checklist = $tarea->checklist();
+            $itemsChecklist = $tarea->itemChecklists();
+            
+            // Preparar información de la tarea
+            $info = [
+                'id' => $tarea->id,
+                'tipo_tarea' => $tarea->tipoTarea->nombre,
+                'categoria' => $tarea->tipoTarea->categoria,
+                'prioridad' => $tarea->prioridad_calculada,
+                'orden_ejecucion' => $tarea->orden_ejecucion,
+                'tiempo_estimado' => $tarea->tipoTarea->tiempo_estimado_minutos,
+                'estado' => $tarea->estado,
+                'observaciones' => $tarea->observaciones,
+                'fecha_asignacion' => $tarea->created_at->format('d/m/Y H:i'),
+                'empleada' => $tarea->turno->user->name,
+                'elemento' => null,
+                'checklist' => null,
+                'items_checklist' => []
+            ];
+            
+            // Información del elemento (apartamento, zona común, etc.)
+            if ($tarea->apartamento_id) {
+                $info['elemento'] = [
+                    'tipo' => 'apartamento',
+                    'nombre' => $tarea->apartamento->titulo,
+                    'edificio' => $tarea->apartamento->edificio->nombre ?? 'N/A'
+                ];
+            } elseif ($tarea->zona_comun_id) {
+                $info['elemento'] = [
+                    'tipo' => 'zona_comun',
+                    'nombre' => $tarea->zonaComun->nombre,
+                    'descripcion' => $tarea->zonaComun->descripcion ?? 'N/A'
+                ];
+            } else {
+                $info['elemento'] = [
+                    'tipo' => 'general',
+                    'nombre' => $tarea->tipoTarea->nombre
+                ];
+            }
+            
+            // Información del checklist
+            if ($checklist) {
+                $info['checklist'] = [
+                    'id' => $checklist->id,
+                    'nombre' => $checklist->nombre,
+                    'descripcion' => $checklist->descripcion ?? 'N/A'
+                ];
+                
+                $info['items_checklist'] = $itemsChecklist->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'nombre' => $item->nombre,
+                        'descripcion' => $item->descripcion ?? 'N/A',
+                        'categoria' => $item->categoria ?? 'N/A',
+                        'tiene_stock' => $item->tiene_stock,
+                        'tiene_averias' => $item->tiene_averias
+                    ];
+                });
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $info
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo información de tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
+    
+    /**
+     * Iniciar una tarea asignada
+     */
+    public function iniciarTarea(TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Verificar que la tarea está en estado pendiente
+            if ($tarea->estado !== 'pendiente') {
+                return response()->json(['error' => 'La tarea no está en estado pendiente'], 400);
+            }
+            
+            // Actualizar estado de la tarea
+            $tarea->update([
+                'estado' => 'en_progreso',
+                'fecha_inicio' => now()
+            ]);
+            
+            // Si es una tarea de apartamento, crear ApartamentoLimpieza real
+            if ($tarea->apartamento_id) {
+                $this->crearApartamentoLimpiezaParaTarea($tarea);
+            }
+            
+            // Log de la acción
+            Log::info('Tarea iniciada', [
+                'tarea_id' => $tarea->id,
+                'usuario_id' => Auth::id(),
+                'tipo_tarea' => $tarea->tipoTarea->nombre,
+                'fecha_inicio' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Tarea iniciada correctamente',
+                'data' => [
+                    'tarea_id' => $tarea->id,
+                    'estado' => $tarea->estado,
+                    'fecha_inicio' => $tarea->fecha_inicio ? $tarea->fecha_inicio->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error iniciando tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
+    
+    /**
+     * Finalizar una tarea asignada
+     */
+    public function finalizarTarea(TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Verificar que la tarea está en estado en_progreso
+            if ($tarea->estado !== 'en_progreso') {
+                return response()->json(['error' => 'La tarea no está en estado en progreso'], 400);
+            }
+            
+            // Actualizar estado de la tarea
+            $tarea->update([
+                'estado' => 'completada',
+                'fecha_fin_real' => now()
+            ]);
+            
+            // Log de la acción
+            Log::info('Tarea finalizada', [
+                'tarea_id' => $tarea->id,
+                'usuario_id' => Auth::id(),
+                'tipo_tarea' => $tarea->tipoTarea->nombre,
+                'fecha_fin_real' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Tarea finalizada correctamente',
+                'data' => [
+                    'tarea_id' => $tarea->id,
+                    'estado' => $tarea->estado,
+                    'fecha_fin' => $tarea->fecha_fin_real ? $tarea->fecha_fin_real->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error finalizando tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
+    
+    /**
+     * Mostrar checklist de una tarea asignada
+     */
+    public function checklistTarea(TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Cargar relaciones necesarias
+            $tarea->load(['tipoTarea', 'apartamento.edificio', 'zonaComun', 'turno.user']);
+            
+            // Obtener checklists según el tipo de tarea
+            $checklists = collect();
+            $itemsExistentes = [];
+            $checklistsExistentes = [];
+            
+            if ($tarea->apartamento_id) {
+                // Checklist de apartamento - Usar funcionalidad completa de gestion/edit
+                return $this->checklistTareaApartamento($tarea);
+            } elseif ($tarea->zona_comun_id) {
+                // Checklist de zona común
+                $checklists = \App\Models\ChecklistZonaComun::activos()
+                    ->ordenados()
+                    ->with(['items.articulo'])
+                    ->get();
+            } else {
+                // Checklist de tarea general
+                $checklistGeneral = \App\Models\ChecklistTareaGeneral::activos()
+                    ->porCategoria($tarea->tipoTarea->categoria)
+                    ->ordenados()
+                    ->first();
+                if ($checklistGeneral) {
+                    $checklists = collect([$checklistGeneral]);
+                }
+            }
+            
+            // Obtener elementos ya completados
+            $elementosCompletados = \DB::table('tarea_checklist_completados')
+                ->where('tarea_asignada_id', $tarea->id)
+                ->pluck('item_checklist_id')
+                ->toArray();
+            
+            // Obtener amenities si es apartamento
+            $amenities = collect();
+            $amenitiesConRecomendaciones = [];
+            $consumosExistentes = collect();
+            
+            if ($tarea->apartamento_id) {
+                $amenities = \App\Models\Amenity::activos()
+                    ->orderBy('categoria')
+                    ->orderBy('nombre')
+                    ->get()
+                    ->groupBy('categoria');
+                
+                // Obtener consumos existentes (solo si la tabla existe)
+                try {
+                    $consumosExistentes = \DB::table('consumos_amenities')
+                        ->where('tarea_asignada_id', $tarea->id)
+                        ->get()
+                        ->keyBy('amenity_id');
+                } catch (\Exception $e) {
+                    // Si la tabla no existe, usar colección vacía
+                    $consumosExistentes = collect();
+                }
+                
+                // Calcular cantidades recomendadas para cada amenity
+                foreach ($amenities as $categoria => $amenitiesCategoria) {
+                    foreach ($amenitiesCategoria as $amenity) {
+                        $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, null, $tarea->apartamento);
+                        $consumoExistente = $consumosExistentes->get($amenity->id);
+                        
+                        $amenitiesConRecomendaciones[$categoria][] = [
+                            'amenity' => $amenity,
+                            'cantidad_recomendada' => $cantidadRecomendada,
+                            'consumo_existente' => $consumoExistente,
+                            'stock_disponible' => $amenity->stock_actual
+                        ];
+                    }
+                }
+                
+                // Añadir amenities automáticos para niños si la siguiente reserva tiene niños
+                $siguienteReserva = $this->obtenerSiguienteReserva($tarea->apartamento->id);
+                if ($siguienteReserva && $siguienteReserva->numero_ninos > 0) {
+                    $amenitiesNinos = \App\Models\Amenity::paraNinos()->activos()->get();
+                    
+                    foreach ($amenitiesNinos as $amenityNino) {
+                        $cantidadParaNinos = $amenityNino->calcularCantidadParaNinos($siguienteReserva->numero_ninos, $siguienteReserva->edades_ninos ?? []);
+                        
+                        if ($cantidadParaNinos > 0) {
+                            $categoria = $amenityNino->categoria;
+                            if (!isset($amenitiesConRecomendaciones[$categoria])) {
+                                $amenitiesConRecomendaciones[$categoria] = [];
+                            }
+                            
+                            // Verificar si ya existe este amenity
+                            $existe = false;
+                            foreach ($amenitiesConRecomendaciones[$categoria] as $amenityExistente) {
+                                if ($amenityExistente['amenity']->id === $amenityNino->id) {
+                                    $amenityExistente['cantidad_recomendada'] += $cantidadParaNinos;
+                                    $amenityExistente['es_automatico_ninos'] = true;
+                                    $amenityExistente['motivo_ninos'] = "Automático para {$siguienteReserva->numero_ninos} niño(s)";
+                                    $existe = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!$existe) {
+                                $consumoExistente = $consumosExistentes->get($amenityNino->id);
+                                $amenitiesConRecomendaciones[$categoria][] = [
+                                    'amenity' => $amenityNino,
+                                    'cantidad_recomendada' => $cantidadParaNinos,
+                                    'consumo_existente' => $consumoExistente,
+                                    'stock_disponible' => $amenityNino->stock_actual,
+                                    'es_automatico_ninos' => true,
+                                    'motivo_ninos' => "Automático para {$siguienteReserva->numero_ninos} niño(s)"
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Obtener mensaje de amenities del session flash si existe
+            $mensajeAmenities = session('mensajeAmenities');
+            
+            return view('gestion.checklist-tarea', compact(
+                'tarea',
+                'checklists',
+                'itemsExistentes',
+                'checklistsExistentes',
+                'elementosCompletados',
+                'amenities',
+                'amenitiesConRecomendaciones',
+                'consumosExistentes',
+                'siguienteReserva',
+                'mensajeAmenities'
+            ));
+            
+        } catch (\Exception $e) {
+            Log::error('Error mostrando checklist de tarea: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al cargar el checklist de la tarea');
+        }
+    }
+
+    /**
+     * Actualizar tarea asignada (guardar progreso o finalizar)
+     */
+    public function updateTarea(Request $request, TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+
+            $accion = $request->input('accion', 'guardar');
+            
+            if ($accion === 'finalizar') {
+                return $this->finalizarTareaChecklist($request, $tarea);
+            } else {
+                return $this->guardarProgresoTarea($request, $tarea);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error actualizando tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al actualizar la tarea'], 500);
+        }
+    }
+
+    /**
+     * Guardar progreso de la tarea
+     */
+    private function guardarProgresoTarea(Request $request, TareaAsignada $tarea)
+    {
+        try {
+            Log::info('Iniciando guardarProgresoTarea', [
+                'tarea_id' => $tarea->id,
+                'items' => $request->input('items', []),
+                'checklist' => $request->input('checklist', []),
+                'amenities' => $request->input('amenities', [])
+            ]);
+            
+            DB::beginTransaction();
+            
+            // Obtener items completados del formulario
+            $itemsCompletados = $request->input('items', []);
+            $checklistsCompletados = $request->input('checklist', []);
+            
+            // Limpiar elementos completados existentes
+            DB::table('tarea_checklist_completados')
+                ->where('tarea_asignada_id', $tarea->id)
+                ->delete();
+            
+            // Guardar nuevos elementos completados
+            foreach ($itemsCompletados as $itemId => $valor) {
+                if ($valor == '1') {
+                    DB::table('tarea_checklist_completados')->insert([
+                        'tarea_asignada_id' => $tarea->id,
+                        'item_checklist_id' => $itemId,
+                        'completado_por' => Auth::id(),
+                        'fecha_completado' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+            
+            // Los checklists se marcan como completados cuando todos sus items están completados
+            // No se guardan directamente en la tabla tarea_checklist_completados
+            
+            // Guardar amenities si es apartamento (usar sistema original)
+            if ($tarea->apartamento_id) {
+                $amenities = $request->input('amenities', []);
+                
+                // Obtener la limpieza asociada a esta tarea
+                $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+                
+                if ($apartamentoLimpieza) {
+                    // Limpiar consumos existentes
+                    \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->delete();
+                    
+                    // Guardar nuevos consumos
+                    foreach ($amenities as $amenityId => $cantidad) {
+                        if ($cantidad > 0) {
+                            \App\Models\AmenityConsumo::create([
+                                'limpieza_id' => $apartamentoLimpieza->id,
+                                'amenity_id' => $amenityId,
+                                'cantidad' => $cantidad
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Progreso guardado correctamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error guardando progreso de tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al guardar el progreso'], 500);
+        }
+    }
+
+    /**
+     * Finalizar tarea desde checklist
+     */
+    private function finalizarTareaChecklist(Request $request, TareaAsignada $tarea)
+    {
+        try {
+            DB::beginTransaction();
+            
+            // Guardar progreso primero
+            $this->guardarProgresoTarea($request, $tarea);
+            
+            // Verificar si necesita consentimiento
+            $totalItems = 0;
+            $itemsCompletados = 0;
+            
+            if ($tarea->apartamento_id) {
+                $checklists = \App\Models\Checklist::with(['items'])
+                    ->where('edificio_id', $tarea->apartamento->edificio_id)
+                    ->get();
+            } elseif ($tarea->zona_comun_id) {
+                $checklists = \App\Models\ChecklistZonaComun::activos()
+                    ->ordenados()
+                    ->with(['items'])
+                    ->get();
+            } else {
+                $checklistGeneral = \App\Models\ChecklistTareaGeneral::activos()
+                    ->porCategoria($tarea->tipoTarea->categoria)
+                    ->ordenados()
+                    ->first();
+                $checklists = $checklistGeneral ? collect([$checklistGeneral]) : collect();
+            }
+            
+            foreach ($checklists as $checklist) {
+                $totalItems += $checklist->items->count();
+            }
+            
+            $elementosCompletados = DB::table('tarea_checklist_completados')
+                ->where('tarea_asignada_id', $tarea->id)
+                ->pluck('item_checklist_id')
+                ->toArray();
+            
+            $itemsCompletados = count($elementosCompletados);
+            $porcentajeCompletado = $totalItems > 0 ? ($itemsCompletados / $totalItems) * 100 : 100;
+            
+            // Si no está completo, verificar consentimiento
+            if ($porcentajeCompletado < 100) {
+                $consentimiento = $request->input('consentimiento_finalizacion', false);
+                $motivo = $request->input('motivo_consentimiento', '');
+                $fechaConsentimiento = $request->input('fecha_consentimiento', now()->toISOString());
+                
+                if (!$consentimiento || !$motivo) {
+                    return response()->json([
+                        'error' => 'Se requiere consentimiento para finalizar sin completar todos los checklists'
+                    ], 400);
+                }
+                
+                // Guardar consentimiento
+                $tarea->update([
+                    'consentimiento_finalizacion' => true,
+                    'motivo_consentimiento' => $motivo,
+                    'fecha_consentimiento' => $fechaConsentimiento
+                ]);
+            }
+            
+            // Marcar tarea como completada
+            $tarea->update([
+                'estado' => 'completada',
+                'fecha_fin_real' => now(),
+                'porcentaje_completado' => $porcentajeCompletado
+            ]);
+            
+            // Crear nueva tarea si es necesario (para tareas recurrentes)
+            if ($tarea->tipoTarea->es_recurrente) {
+                $this->crearTareaRecurrente($tarea);
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Tarea finalizada correctamente',
+                'porcentaje_completado' => $porcentajeCompletado
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error finalizando tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al finalizar la tarea'], 500);
+        }
+    }
+
+    /**
+     * Crear tarea recurrente
+     */
+    private function crearTareaRecurrente(TareaAsignada $tarea)
+    {
+        try {
+            $fechaSiguiente = $this->calcularFechaSiguienteTarea($tarea);
+            
+            if ($fechaSiguiente) {
+                TareaAsignada::create([
+                    'turno_id' => $tarea->turno_id,
+                    'tipo_tarea_id' => $tarea->tipo_tarea_id,
+                    'apartamento_id' => $tarea->apartamento_id,
+                    'zona_comun_id' => $tarea->zona_comun_id,
+                    'fecha_asignada' => $fechaSiguiente,
+                    'estado' => 'pendiente',
+                    'prioridad_calculada' => $tarea->tipoTarea->prioridad_base,
+                    'orden_ejecucion' => $tarea->orden_ejecucion
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error creando tarea recurrente: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Checklist de tarea para apartamento - Usa funcionalidad completa de gestion/edit
+     */
+    private function checklistTareaApartamento(TareaAsignada $tarea)
+    {
+        $apartamento = $tarea->apartamento;
+        $edificioId = $apartamento->edificio_id;
+        
+        // Obtener checklists con items y artículos (igual que gestion/edit)
+        $checklists = Checklist::with(['items.articulo'])->where('edificio_id', $edificioId)->get();
+        
+        // Obtener o crear ApartamentoLimpieza real para esta tarea
+        $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+        
+        if (!$apartamentoLimpieza) {
+            // Si no existe, crear uno nuevo
+            $apartamentoLimpieza = $this->crearApartamentoLimpiezaParaTarea($tarea);
+        }
+        
+        // Cargar relación apartamento
+        $apartamentoLimpieza->load('apartamento');
+        
+        // Obtener items marcados para esta tarea
+        $item_check = \DB::table('tarea_checklist_completados')
+            ->where('tarea_asignada_id', $tarea->id)
+            ->get();
+        $itemsExistentes = $item_check->pluck('estado', 'item_checklist_id')->toArray();
+        $checklist_check = $item_check->whereNotNull('checklist_id')->filter(function ($item) {
+            return $item->estado == 1;
+        });
+        $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_id')->toArray();
+        
+        // Obtener amenities para esta limpieza (igual que gestion/edit)
+        $amenities = \App\Models\Amenity::activos()
+            ->orderBy('categoria')
+            ->orderBy('nombre')
+            ->get()
+            ->groupBy('categoria');
+        
+        // Obtener consumos existentes para esta limpieza (usar tabla del sistema original)
+        $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
+            ->with('amenity')
+            ->get()
+            ->keyBy('amenity_id');
+        
+        // Calcular cantidades recomendadas para cada amenity (igual que gestion/edit)
+        $amenitiesConRecomendaciones = [];
+        foreach ($amenities as $categoria => $amenitiesCategoria) {
+            foreach ($amenitiesCategoria as $amenity) {
+                $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, null, $apartamento);
+                $consumoExistente = $consumosExistentes->get($amenity->id);
+                
+                $amenitiesConRecomendaciones[$categoria][] = [
+                    'amenity' => $amenity,
+                    'cantidad_recomendada' => $cantidadRecomendada,
+                    'consumo_existente' => $consumoExistente,
+                    'stock_disponible' => $amenity->stock_actual
+                ];
+            }
+        }
+
+        // Añadir amenities automáticos para niños si la siguiente reserva tiene niños
+        $siguienteReserva = $this->obtenerSiguienteReserva($apartamento->id);
+        if ($siguienteReserva && $siguienteReserva->numero_ninos > 0) {
+            $amenitiesNinos = \App\Models\Amenity::paraNinos()->activos()->get();
+            
+            foreach ($amenitiesNinos as $amenityNino) {
+                $cantidadParaNinos = $amenityNino->calcularCantidadParaNinos($siguienteReserva->numero_ninos, $siguienteReserva->edades_ninos ?? []);
+                
+                if ($cantidadParaNinos > 0) {
+                    $categoria = $amenityNino->categoria;
+                    if (!isset($amenitiesConRecomendaciones[$categoria])) {
+                        $amenitiesConRecomendaciones[$categoria] = [];
+                    }
+                    
+                    // Verificar si ya existe este amenity
+                    $existe = false;
+                    foreach ($amenitiesConRecomendaciones[$categoria] as $amenityExistente) {
+                        if ($amenityExistente['amenity']->id === $amenityNino->id) {
+                            $amenityExistente['cantidad_recomendada'] += $cantidadParaNinos;
+                            $amenityExistente['es_automatico_ninos'] = true;
+                            $amenityExistente['motivo_ninos'] = "Automático para {$siguienteReserva->numero_ninos} niño(s)";
+                            $existe = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$existe) {
+                        $consumoExistente = $consumosExistentes->get($amenityNino->id);
+                        $amenitiesConRecomendaciones[$categoria][] = [
+                            'amenity' => $amenityNino,
+                            'cantidad_recomendada' => $cantidadParaNinos,
+                            'consumo_existente' => $consumoExistente,
+                            'stock_disponible' => $amenityNino->stock_actual,
+                            'es_automatico_ninos' => true,
+                            'motivo_ninos' => "Automático para {$siguienteReserva->numero_ninos} niño(s)"
+                        ];
+                    }
+                }
+            }
+        }
+        
+        // Obtener mensaje de amenities del session flash si existe
+        $mensajeAmenities = session('mensajeAmenities');
+        
+        // Usar la vista de gestion/edit pero adaptada para tareas
+        return view('gestion.edit-tarea', compact(
+            'tarea',
+            'apartamentoLimpieza',
+            'apartamento',
+            'checklists',
+            'itemsExistentes',
+            'checklistsExistentes',
+            'amenitiesConRecomendaciones',
+            'siguienteReserva',
+            'mensajeAmenities'
+        ));
+    }
+
+    /**
+     * Crear ApartamentoLimpieza real para una tarea de apartamento
+     */
+    private function crearApartamentoLimpiezaParaTarea(TareaAsignada $tarea)
+    {
+        try {
+            // Verificar si ya existe una limpieza para esta tarea
+            $limpiezaExistente = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+            
+            if ($limpiezaExistente) {
+                return $limpiezaExistente;
+            }
+            
+            // Crear nueva limpieza
+            $limpieza = ApartamentoLimpieza::create([
+                'apartamento_id' => $tarea->apartamento_id,
+                'empleada_id' => $tarea->turno->user_id,
+                'tipo_limpieza' => 'apartamento',
+                'status_id' => 1, // En progreso
+                'fecha_comienzo' => now(),
+                'tarea_asignada_id' => $tarea->id, // Relación con la tarea
+                'origen' => 'tarea_asignada'
+            ]);
+            
+            Log::info('ApartamentoLimpieza creado para tarea', [
+                'tarea_id' => $tarea->id,
+                'limpieza_id' => $limpieza->id,
+                'apartamento_id' => $tarea->apartamento_id,
+                'empleada_id' => $tarea->turno->user_id
+            ]);
+            
+            return $limpieza;
+            
+        } catch (\Exception $e) {
+            Log::error('Error creando ApartamentoLimpieza para tarea: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Actualizar estado de un item del checklist
+     */
+    public function updateChecklistTarea(Request $request, TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            $itemId = $request->input('item_id');
+            $completado = $request->input('completado', false);
+            
+            if ($completado) {
+                // Marcar como completado
+                \DB::table('tarea_checklist_completados')->updateOrInsert(
+                    [
+                        'tarea_asignada_id' => $tarea->id,
+                        'item_checklist_id' => $itemId
+                    ],
+                    [
+                        'completado_por' => Auth::id(),
+                        'fecha_completado' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]
+                );
+            } else {
+                // Marcar como no completado
+                \DB::table('tarea_checklist_completados')
+                    ->where('tarea_asignada_id', $tarea->id)
+                    ->where('item_checklist_id', $itemId)
+                    ->delete();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error actualizando checklist de tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
+    
+    /**
+     * Finalizar checklist y completar tarea
+     */
+    public function finalizarChecklistTarea(Request $request, TareaAsignada $tarea)
+    {
+        try {
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Verificar que la tarea está en progreso
+            if ($tarea->estado !== 'en_progreso') {
+                return response()->json(['error' => 'La tarea no está en estado en progreso'], 400);
+            }
+            
+            // Obtener items completados
+            $itemsCompletados = \DB::table('tarea_checklist_completados')
+                ->where('tarea_asignada_id', $tarea->id)
+                ->count();
+            
+            // Obtener total de items del checklist
+            $totalItems = 0;
+            if ($tarea->apartamento_id) {
+                $apartamento = $tarea->apartamento;
+                if ($apartamento && $apartamento->edificio && is_object($apartamento->edificio) && $apartamento->edificio->checklist) {
+                    $totalItems = $apartamento->edificio->checklist->items()->activos()->count();
+                }
+            } elseif ($tarea->zona_comun_id) {
+                $checklist = \App\Models\ChecklistZonaComun::activos()->ordenados()->first();
+                if ($checklist) {
+                    $totalItems = $checklist->items()->activos()->count();
+                }
+            } else {
+                $checklist = \App\Models\ChecklistTareaGeneral::activos()
+                    ->porCategoria($tarea->tipoTarea->categoria)
+                    ->ordenados()
+                    ->first();
+                if ($checklist) {
+                    $totalItems = $checklist->items()->activos()->count();
+                }
+            }
+            
+            // Actualizar estado de la tarea
+            $tarea->update([
+                'estado' => 'completada',
+                'fecha_fin_real' => now(),
+                'observaciones' => $request->input('observaciones', '')
+            ]);
+            
+            // Log de la acción
+            Log::info('Tarea completada con checklist', [
+                'tarea_id' => $tarea->id,
+                'usuario_id' => Auth::id(),
+                'tipo_tarea' => $tarea->tipoTarea->nombre,
+                'items_completados' => $itemsCompletados,
+                'total_items' => $totalItems,
+                'fecha_fin_real' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Tarea completada correctamente',
+                'data' => [
+                    'tarea_id' => $tarea->id,
+                    'estado' => $tarea->estado,
+                    'fecha_fin' => $tarea->fecha_fin->format('d/m/Y H:i'),
+                    'items_completados' => $itemsCompletados,
+                    'total_items' => $totalItems
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error finalizando checklist de tarea: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
     }
 
     /**
@@ -974,6 +2040,23 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
         
+        // Actualizar tarea asignada si existe
+        if ($apartamentoLimpieza->tarea_asignada_id) {
+            $tarea = TareaAsignada::find($apartamentoLimpieza->tarea_asignada_id);
+            if ($tarea && $tarea->estado === 'en_progreso') {
+                $tarea->update([
+                    'estado' => 'completada',
+                    'fecha_fin_real' => $hoy
+                ]);
+                
+                Log::info('Tarea finalizada desde limpieza', [
+                    'tarea_id' => $tarea->id,
+                    'limpieza_id' => $apartamentoLimpieza->id,
+                    'fecha_fin' => $hoy
+                ]);
+            }
+        }
+        
         $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
         if ($reserva != null) {
             $reserva->fecha_limpieza = $hoy;
@@ -1012,6 +2095,23 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         $apartamentoLimpieza->status_id = 3; // Finalizado
         $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
+        
+        // Actualizar tarea asignada si existe
+        if ($apartamentoLimpieza->tarea_asignada_id) {
+            $tarea = TareaAsignada::find($apartamentoLimpieza->tarea_asignada_id);
+            if ($tarea && $tarea->estado === 'en_progreso') {
+                $tarea->update([
+                    'estado' => 'completada',
+                    'fecha_fin_real' => $hoy
+                ]);
+                
+                Log::info('Tarea finalizada desde limpieza de zona común', [
+                    'tarea_id' => $tarea->id,
+                    'limpieza_id' => $apartamentoLimpieza->id,
+                    'fecha_fin' => $hoy
+                ]);
+            }
+        }
         
         // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
         $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
