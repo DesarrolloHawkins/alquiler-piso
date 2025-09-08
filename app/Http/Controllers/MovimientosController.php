@@ -190,6 +190,47 @@ class MovimientosController extends Controller
                 ->first();
 
             if ($existingHash) {
+                // Buscar el registro original que generó este hash
+                $registroOriginal = null;
+                
+                // Buscar en ingresos
+                $ingresoOriginal = DB::table('ingresos')
+                    ->where('fecha', $fecha_contable->format('Y-m-d'))
+                    ->where('concepto', $descripcion)
+                    ->where('importe', $haber > 0 ? $haber : $debe)
+                    ->first();
+                
+                if ($ingresoOriginal) {
+                    $registroOriginal = [
+                        'tipo' => 'ingreso',
+                        'id' => $ingresoOriginal->id,
+                        'fecha' => $ingresoOriginal->fecha,
+                        'concepto' => $ingresoOriginal->concepto,
+                        'importe' => $ingresoOriginal->importe,
+                        'categoria_id' => $ingresoOriginal->categoria_ingresos_id,
+                        'created_at' => $ingresoOriginal->created_at
+                    ];
+                } else {
+                    // Buscar en gastos
+                    $gastoOriginal = DB::table('gastos')
+                        ->where('fecha', $fecha_contable->format('Y-m-d'))
+                        ->where('concepto', $descripcion)
+                        ->where('importe', $debe > 0 ? $debe : $haber)
+                        ->first();
+                    
+                    if ($gastoOriginal) {
+                        $registroOriginal = [
+                            'tipo' => 'gasto',
+                            'id' => $gastoOriginal->id,
+                            'fecha' => $gastoOriginal->fecha,
+                            'concepto' => $gastoOriginal->concepto,
+                            'importe' => $gastoOriginal->importe,
+                            'categoria_id' => $gastoOriginal->categoria_gastos_id,
+                            'created_at' => $gastoOriginal->created_at
+                        ];
+                    }
+                }
+
                 // Si ya existe el hash, agregar a duplicados
                 $duplicados[] = [
                     'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
@@ -199,6 +240,9 @@ class MovimientosController extends Controller
                     'haber' => $haber,
                     'saldo' => $saldo,
                     'hash' => $hash,
+                    'hash_id' => $existingHash->id,
+                    'hash_created_at' => $existingHash->created_at,
+                    'registro_original' => $registroOriginal,
                     'razon' => 'Registro duplicado (ya existe en la base de datos)'
                 ];
                 continue; // Saltar esta fila para evitar duplicados

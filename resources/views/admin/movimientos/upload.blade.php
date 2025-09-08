@@ -159,7 +159,30 @@
               html += `<div style="border-bottom: 1px solid #eee; padding: 5px 0;">`;
               html += `<strong>Fila ${dup.fila}:</strong> ${dup.fecha} - ${dup.descripcion}<br>`;
               html += `<small>Debe: ${dup.debe} | Haber: ${dup.haber} | Saldo: ${dup.saldo}</small><br>`;
-              html += `<small style="color: #666;">${dup.razon}</small>`;
+              html += `<small style="color: #666;">${dup.razon}</small><br>`;
+              html += `<small style="color: #007bff;"><strong>Hash ID:</strong> ${dup.hash_id} | <strong>Hash:</strong> ${dup.hash}</small><br>`;
+              if (dup.hash_created_at) {
+                  html += `<small style="color: #28a745;"><strong>Hash Creado:</strong> ${dup.hash_created_at}</small><br>`;
+              }
+              
+              // Mostrar información del registro original
+              if (dup.registro_original) {
+                  const tipo = dup.registro_original.tipo;
+                  const color = tipo === 'ingreso' ? '#28a745' : '#dc3545';
+                  const icon = tipo === 'ingreso' ? '💰' : '💸';
+                  html += `<div style="background: #f8f9fa; padding: 8px; margin: 5px 0; border-left: 3px solid ${color};">`;
+                  html += `<small style="color: ${color};"><strong>${icon} Registro Original (${tipo.toUpperCase()}):</strong></small><br>`;
+                  html += `<small><strong>ID:</strong> ${dup.registro_original.id} | <strong>Fecha:</strong> ${dup.registro_original.fecha}</small><br>`;
+                  html += `<small><strong>Concepto:</strong> ${dup.registro_original.concepto}</small><br>`;
+                  html += `<small><strong>Importe:</strong> ${dup.registro_original.importe} € | <strong>Categoría ID:</strong> ${dup.registro_original.categoria_id}</small><br>`;
+                  if (dup.registro_original.created_at) {
+                      html += `<small><strong>Creado:</strong> ${dup.registro_original.created_at}</small>`;
+                  }
+                  html += `</div>`;
+              } else {
+                  html += `<small style="color: #ffc107;">⚠️ No se encontró el registro original</small><br>`;
+              }
+              
               html += '</div>';
           });
           html += '</div>';
