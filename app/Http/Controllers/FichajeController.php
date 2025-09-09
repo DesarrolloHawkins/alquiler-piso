@@ -25,7 +25,10 @@ class FichajeController extends Controller
             
             if ($jornadaActiva) {
                 Log::warning('FichajeController - Usuario ya tiene jornada activa ID: ' . $jornadaActiva->id);
-                return back()->with('error', 'Ya tienes una jornada activa iniciada a las ' . \Carbon\Carbon::parse($jornadaActiva->hora_entrada)->format('H:i'));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya tienes una jornada activa iniciada a las ' . \Carbon\Carbon::parse($jornadaActiva->hora_entrada)->format('H:i')
+                ], 400);
             }
             
             // CALCULAR tiempo total trabajado hoy (antes de iniciar nueva)
@@ -54,11 +57,19 @@ class FichajeController extends Controller
                 $mensaje = 'Jornada iniciada exitosamente';
             }
             
-            return back()->with('status', $mensaje)->with('refresh', true);
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'fichaje_id' => $fichaje->id,
+                'hora_inicio' => $fichaje->hora_entrada->format('H:i')
+            ]);
             
         } catch (\Exception $e) {
             Log::error('FichajeController - Error iniciando jornada: ' . $e->getMessage());
-            return back()->with('error', 'Error al iniciar la jornada: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al iniciar la jornada: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -73,7 +84,10 @@ class FichajeController extends Controller
 
             if (!$fichaje) {
                 Log::warning('FichajeController - No se encontró jornada activa para usuario: ' . Auth::id());
-                return back()->with('error', 'No se encontró una jornada activa');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una jornada activa'
+                ], 400);
             }
 
             $pausa = new Pausa([
@@ -83,11 +97,19 @@ class FichajeController extends Controller
             $pausa->save();
             
             Log::info('FichajeController - Pausa iniciada con ID: ' . $pausa->id);
-            return back()->with('status', 'Pausa iniciada')->with('refresh', true);
+            return response()->json([
+                'success' => true,
+                'message' => 'Pausa iniciada',
+                'pausa_id' => $pausa->id,
+                'hora_inicio' => $pausa->inicio_pausa->format('H:i')
+            ]);
             
         } catch (\Exception $e) {
             Log::error('FichajeController - Error iniciando pausa: ' . $e->getMessage());
-            return back()->with('error', 'Error al iniciar la pausa: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al iniciar la pausa: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -102,25 +124,39 @@ class FichajeController extends Controller
                 
             if (!$fichaje) {
                 Log::warning('FichajeController - No se encontró jornada activa para usuario: ' . Auth::id());
-                return back()->with('error', 'No se encontró una jornada activa');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una jornada activa'
+                ], 400);
             }
             
             $pausa = $fichaje->pausas()->whereNull('fin_pausa')->first();
             
             if (!$pausa) {
                 Log::warning('FichajeController - No se encontró pausa activa para fichaje ID: ' . $fichaje->id);
-                return back()->with('error', 'No hay pausa activa para finalizar');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay pausa activa para finalizar'
+                ], 400);
             }
             
             $pausa->fin_pausa = now();
             $pausa->save();
             
             Log::info('FichajeController - Pausa finalizada para fichaje ID: ' . $fichaje->id);
-            return back()->with('status', 'Pausa finalizada')->with('refresh', true);
+            return response()->json([
+                'success' => true,
+                'message' => 'Pausa finalizada',
+                'pausa_id' => $pausa->id,
+                'hora_fin' => $pausa->fin_pausa->format('H:i')
+            ]);
             
         } catch (\Exception $e) {
             Log::error('FichajeController - Error finalizando pausa: ' . $e->getMessage());
-            return back()->with('error', 'Error al finalizar la pausa: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al finalizar la pausa: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -145,7 +181,10 @@ class FichajeController extends Controller
             
             if ($jornadasHoy->isEmpty()) {
                 Log::warning('FichajeController - No se encontraron jornadas para hoy para usuario: ' . $userId);
-                return back()->with('error', 'No se encontró una jornada para finalizar hoy');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una jornada para finalizar hoy'
+                ], 400);
             }
             
             // CALCULAR tiempo total trabajado hoy
@@ -193,12 +232,22 @@ class FichajeController extends Controller
                 $mensaje = "Jornada finalizada. Tiempo total trabajado hoy: {$minutos} minutos";
             }
             
-            return back()->with('status', $mensaje)->with('refresh', true);
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'tiempo_trabajado' => $tiempoTotalTrabajado,
+                'horas' => $horas,
+                'minutos' => $minutos,
+                'jornadas_finalizadas' => $jornadasFinalizadas
+            ]);
             
         } catch (\Exception $e) {
             Log::error('FichajeController - Error finalizando jornada: ' . $e->getMessage());
             Log::error('FichajeController - Stack trace: ' . $e->getTraceAsString());
-            return back()->with('error', 'Error al finalizar la jornada: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al finalizar la jornada: ' . $e->getMessage()
+            ], 500);
         }
     }
 
