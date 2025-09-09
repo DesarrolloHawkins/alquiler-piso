@@ -167,7 +167,7 @@
                                         </button>
                                       </form>
                                     </div>
-                                </td>                                  
+                                </td>                       
                             </tr>
                         @endforeach
                     </tbody>
@@ -182,58 +182,38 @@
         @endif
     </div>
 </div>
+
+<script>
+    window.handleDelete = function(form, titulo){
+      // Si existe SweetAlert2, úsalo
+      if (typeof Swal !== 'undefined' && Swal.fire) {
+        Swal.fire({
+          title: '¿Eliminar Metálico?',
+          html: `
+            <div class="text-start">
+              <p><strong>Metálico:</strong> ${titulo || ''}</p>
+              <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+          cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+          customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
+          buttonsStyling: false
+        }).then(res => { if (res.isConfirmed) form.submit(); });
+        return false; // siempre cancelamos el submit inicial para esperar la respuesta
+      }
+  
+      // Fallback 100% fiable
+      return confirm(`¿Estás seguro de que quieres eliminar el metálico "${titulo || ''}"?\n\nEsta acción no se puede deshacer.`);
+    }
+  </script>
+  
 @endsection
 
 @include('sweetalert::alert')
 
 
-@section('scripts')
-<script>
-(function () {
-  function init() {
-    console.log('[Metálicos] init (submit interceptor)');
-
-    // Tooltips
-    if (typeof bootstrap !== 'undefined') {
-      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
-    }
-
-    // Delegación de SUBMIT para formularios de borrado
-    document.addEventListener('submit', function(e){
-      const form = e.target.closest('.form-delete');
-      if (!form) return;
-
-      // Si no hay SweetAlert, deja pasar (submit normal)
-      if (!(typeof Swal !== 'undefined' && Swal.fire)) return;
-
-      e.preventDefault(); // detenemos para confirmar
-      const titulo = form.getAttribute('data-title') || '';
-
-      Swal.fire({
-        title: '¿Eliminar Metálico?',
-        html: `
-          <div class="text-start">
-            <p><strong>Metálico:</strong> ${titulo}</p>
-            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
-          </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
-        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-        customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
-        buttonsStyling: false
-      }).then(res => { if (res.isConfirmed) form.submit(); });
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
-})();
-</script>
-@endsection
