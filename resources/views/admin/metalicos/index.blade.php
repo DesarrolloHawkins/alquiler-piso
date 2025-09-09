@@ -187,77 +187,72 @@
 @endsection
 
 @include('sweetalert::alert')
-@push('scripts')
+@section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('[Metálicos] JS listo');
+(function () {
+  function initMetalicos() {
+    console.log('[Metálicos] init');
 
     // Tooltips (si está Bootstrap)
     if (typeof bootstrap !== 'undefined') {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-            new bootstrap.Tooltip(el);
-        });
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
     }
 
-    // Delegación de eventos para clicks en .delete-btn
+    // Delegación de click para .delete-btn
     document.addEventListener('click', function (e) {
-        const button = e.target.closest('.delete-btn');
-        if (!button) return;
+      const btn = e.target.closest('.delete-btn');
+      if (!btn) return;
 
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-        const metalicoId = button.getAttribute('data-metalico-id');
-        const metalicoTitulo = button.getAttribute('data-metalico-titulo');
+      const metalicoId = btn.getAttribute('data-metalico-id');
+      const metalicoTitulo = btn.getAttribute('data-metalico-titulo');
 
-        function eliminarMetalico() {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `{{ url('metalicos') }}/${metalicoId}`;
+      function eliminarMetalico() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url('metalicos') }}/${metalicoId}`;
 
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
+        form.innerHTML = `
+          <input type="hidden" name="_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="_method" value="DELETE">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+      }
 
-            const methodField = document.createElement('input');
-            methodField.type = 'hidden';
-            methodField.name = '_method';
-            methodField.value = 'DELETE';
-
-            form.appendChild(csrfToken);
-            form.appendChild(methodField);
-            document.body.appendChild(form);
-            form.submit();
-        }
-
-        if (typeof Swal !== 'undefined' && Swal.fire) {
-            Swal.fire({
-                title: '¿Eliminar Metálico?',
-                html: `
-                    <div class="text-start">
-                        <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
-                        <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
-                    </div>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
-                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) eliminarMetalico();
-            });
-        } else {
-            if (confirm(`¿Estás seguro de que quieres eliminar el metálico "${metalicoTitulo}"?\n\nEsta acción no se puede deshacer.`)) {
-                eliminarMetalico();
-            }
-        }
+      if (typeof Swal !== 'undefined' && Swal.fire) {
+        Swal.fire({
+          title: '¿Eliminar Metálico?',
+          html: `
+            <div class="text-start">
+              <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
+              <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+          cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+          customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
+          buttonsStyling: false
+        }).then(res => { if (res.isConfirmed) eliminarMetalico(); });
+      } else {
+        if (confirm(`¿Eliminar "${metalicoTitulo}"?\n\nEsta acción no se puede deshacer.`)) eliminarMetalico();
+      }
     });
-});
+  }
+
+  // Si el DOM ya está listo, ejecuta; si no, espera.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMetalicos, { once: true });
+  } else {
+    initMetalicos();
+  }
+})();
 </script>
-@endpush
+@endsection
 
