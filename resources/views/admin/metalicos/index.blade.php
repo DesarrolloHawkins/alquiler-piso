@@ -229,7 +229,7 @@
                         // Crear formulario temporal para enviar la petición DELETE
                         const form = document.createElement('form');
                         form.method = 'POST';
-                        form.action = `{{ route('metalicos.destroy', '') }}/${metalicoId}`;
+                        form.action = `{{ url('metalicos') }}/${metalicoId}`;
                         
                         const csrfToken = document.createElement('input');
                         csrfToken.type = 'hidden';

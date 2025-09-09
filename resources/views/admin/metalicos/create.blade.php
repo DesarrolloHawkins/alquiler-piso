@@ -164,9 +164,13 @@
                             <i class="fas fa-arrow-left me-2"></i>
                             Volver al Listado
                         </a>
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                             <i class="fas fa-save me-2"></i>
-                            Crear Metálico
+                            <span class="btn-text">Crear Metálico</span>
+                            <span class="btn-loading d-none">
+                                <i class="fas fa-spinner fa-spin me-2"></i>
+                                Creando...
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -185,6 +189,33 @@
         const fechaInput = document.getElementById('fecha_ingreso');
         if (!fechaInput.value) {
             fechaInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Prevenir múltiples clics en el botón de envío
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoading = submitBtn.querySelector('.btn-loading');
+        let isSubmitting = false;
+
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            btnText.classList.add('d-none');
+            btnLoading.classList.remove('d-none');
+        });
+
+        // Si hay errores de validación, restaurar el botón
+        if (document.querySelector('.is-invalid')) {
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            btnText.classList.remove('d-none');
+            btnLoading.classList.add('d-none');
         }
     });
 </script>

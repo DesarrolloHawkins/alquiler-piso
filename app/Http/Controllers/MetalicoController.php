@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Anio;
 use App\Models\Metalico;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MetalicoController extends Controller
 {
@@ -68,6 +69,20 @@ class MetalicoController extends Controller
             'observaciones' => 'nullable|string|max:500'
         ]);
 
+        // Verificar duplicados (mismo título, importe y fecha en los últimos 5 minutos)
+        $duplicado = Metalico::where('titulo', $request->titulo)
+            ->where('importe', $request->importe)
+            ->where('fecha_ingreso', $request->fecha_ingreso)
+            ->where('tipo', $request->tipo)
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->first();
+
+        if ($duplicado) {
+            return redirect()->route('metalicos.create')
+                ->withInput()
+                ->with('error', 'Ya existe un movimiento idéntico creado recientemente. Por favor, verifica los datos.');
+        }
+
         Metalico::create($request->all());
 
         return redirect()->route('metalicos.index')->with('success', 'Registro creado correctamente.');
@@ -121,9 +136,26 @@ class MetalicoController extends Controller
 
     public function destroy(Metalico $metalico)
     {
-        $metalico->delete();
+        try {
+            $titulo = $metalico->titulo;
+            $metalico->delete();
 
-        return redirect()->route('metalicos.index')->with('success', 'Registro eliminado correctamente.');
+            Log::info("Movimiento metálico eliminado", [
+                'id' => $metalico->id,
+                'titulo' => $titulo,
+                'user_id' => auth()->id()
+            ]);
+
+            return redirect()->route('metalicos.index')->with('success', 'Registro eliminado correctamente.');
+        } catch (\Exception $e) {
+            Log::error("Error al eliminar movimiento metálico", [
+                'id' => $metalico->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return redirect()->route('metalicos.index')->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
+        }
     }
 }
 
