@@ -300,9 +300,9 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($limpieza->empleada)
+                                                @if($limpieza->user)
                                                     <span class="badge bg-success">
-                                                        {{ $limpieza->empleada->name }}
+                                                        {{ $limpieza->user->name }}
                                                     </span>
                                                 @else
                                                     <span class="badge bg-secondary">No asignada</span>

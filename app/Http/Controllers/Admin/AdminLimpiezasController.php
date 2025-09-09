@@ -17,7 +17,7 @@ class AdminLimpiezasController extends Controller
     public function index(Request $request)
     {
         // Obtener datos para filtros
-        $empleadas = User::whereIn('role', ['empleada', 'limpiadora', 'admin'])
+        $empleadas = User::whereIn('role', ['USER', 'LIMPIEZA', 'ADMIN'])
             ->orderBy('name')
             ->get();
         
@@ -30,7 +30,7 @@ class AdminLimpiezasController extends Controller
         $query = ApartamentoLimpieza::with([
             'apartamento', 
             'zonaComun',
-            'empleada', 
+            'user', 
             'estado',
             'itemsMarcados.item',
             'fotos'
@@ -47,7 +47,7 @@ class AdminLimpiezasController extends Controller
         }
 
         if ($request->filled('empleada')) {
-            $query->where('empleada_id', $request->empleada);
+            $query->where('user_id', $request->empleada);
         }
 
         if ($request->filled('apartamento')) {

@@ -188,6 +188,12 @@ class ApartamentoLimpieza extends Model
     {
         return $this->belongsTo(User::class, 'empleada_id');
     }
+
+    // Relación con usuario (usuario que realiza la limpieza) - usando user_id
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
     public function itemsMarcados()
     {
         return $this->hasMany(\App\Models\ApartamentoLimpiezaItem::class, 'id_limpieza', 'id');
