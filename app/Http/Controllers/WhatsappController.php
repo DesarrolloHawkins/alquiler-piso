@@ -174,7 +174,7 @@ class WhatsappController extends Controller
             ]);
 
             // 2. Clasificar el mensaje y notificar si procede
-            try {
+           /*  try {
                 Log::info("🔍 Iniciando clasificación del mensaje: {$contenido}");
                 $categoria = $this->clasificarMensaje($contenido);
                 Log::info("📋 Mensaje clasificado como: {$categoria}");
@@ -191,7 +191,7 @@ class WhatsappController extends Controller
             } catch (\Throwable $e) {
                 Log::error('❌ Error en clasificación o notificación: ' . $e->getMessage());
                 Log::error('Stack trace: ' . $e->getTraceAsString());
-            }
+            } */
 
             // 3. Intentar obtener respuesta de ChatGPT
             $respuestaTexto = $this->enviarMensajeOpenAiChatCompletions($contenido, $waId);
@@ -243,6 +243,49 @@ class WhatsappController extends Controller
                     ]
                 ]
             ],
+            [
+                "type" => "function",
+                "function" => [
+                    "name" => "notificar_tecnico",
+                    "description" => "Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general o cuando despues de intentar resolver el problema con la información general no se ha resuelto el problema.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "descripcion_problema" => [
+                                "type" => "string",
+                                "description" => "Descripción detallada del problema reportado por el cliente"
+                            ],
+                            "urgencia" => [
+                                "type" => "string",
+                                "enum" => ["baja", "media", "alta"],
+                                "description" => "Nivel de urgencia del problema"
+                            ]
+                        ],
+                        "required" => ["descripcion_problema", "urgencia"]
+                    ]
+                ]
+            ],
+            [
+                "type" => "function",
+                "function" => [
+                    "name" => "notificar_limpieza",
+                    "description" => "Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica o cuando despues de intentar resolver el problema con la información general no se ha resuelto el problema.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "tipo_limpieza" => [
+                                "type" => "string",
+                                "description" => "Tipo de limpieza solicitada (ej: limpieza general, cambio de ropa, etc.)"
+                            ],
+                            "observaciones" => [
+                                "type" => "string",
+                                "description" => "Observaciones adicionales del cliente"
+                            ]
+                        ],
+                        "required" => ["tipo_limpieza"]
+                    ]
+                ]
+            ]
            
         ];
 
@@ -384,6 +427,55 @@ class WhatsappController extends Controller
                     return $responseFinal->json('choices.0.message.content');
                     //return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
                 } 
+            } elseif ($toolCall['function']['name'] === 'notificar_tecnico') {
+                $args = json_decode($toolCall['function']['arguments'], true);
+                $descripcion = $args['descripcion_problema'] ?? '';
+                $urgencia = $args['urgencia'] ?? 'media';
+                
+                // Ejecutar la notificación al técnico
+                $this->gestionarAveria($remitente, $descripcion);
+                
+                // Respuesta a ChatGPT confirmando la notificación
+                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                    'model' => $modelo,
+                    'messages' => [
+                        $promptSystem,
+                        ...$historial,
+                        ["role" => "assistant", "tool_calls" => [$toolCall]],
+                        [
+                            "role" => "tool",
+                            "tool_call_id" => $toolCall['id'],
+                            "content" => "He notificado al técnico sobre el problema reportado. Te contactarán pronto para resolver la situación."
+                        ]
+                    ]
+                ]);
+                
+                return $responseFinal->json('choices.0.message.content');
+                
+            } elseif ($toolCall['function']['name'] === 'notificar_limpieza') {
+                $args = json_decode($toolCall['function']['arguments'], true);
+                $tipoLimpieza = $args['tipo_limpieza'] ?? '';
+                $observaciones = $args['observaciones'] ?? '';
+                
+                // Ejecutar la notificación a limpieza
+                $this->gestionarLimpieza($remitente, $tipoLimpieza . ($observaciones ? " - " . $observaciones : ""));
+                
+                // Respuesta a ChatGPT confirmando la notificación
+                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
+                    'model' => $modelo,
+                    'messages' => [
+                        $promptSystem,
+                        ...$historial,
+                        ["role" => "assistant", "tool_calls" => [$toolCall]],
+                        [
+                            "role" => "tool",
+                            "tool_call_id" => $toolCall['id'],
+                            "content" => "He notificado al equipo de limpieza sobre tu solicitud. Te avisaremos cuando esté confirmado."
+                        ]
+                    ]
+                ]);
+                
+                return $responseFinal->json('choices.0.message.content');
             }
         }
 
