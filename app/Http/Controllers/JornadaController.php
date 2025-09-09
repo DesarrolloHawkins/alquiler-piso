@@ -13,8 +13,8 @@ class JornadaController extends Controller
     public function index(Request $request) {
         $anio = app('anio'); // Obtiene el año global usando el Service Provider
     
-        // Obtener todos los usuarios activos
-        $users = User::where('role', 'USER')
+        // Obtener todos los usuarios activos (empleados de limpieza)
+        $users = User::whereIn('role', ['USER', 'LIMPIEZA'])
                      ->where(function($query) {
                          $query->where('inactive', '=', 0)
                                ->orWhereNull('inactive');
