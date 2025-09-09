@@ -1609,16 +1609,24 @@
 
     // Función para mostrar opciones de jornada activa
     function mostrarOpcionesJornada(data) {
+        console.log('Mostrando opciones de jornada:', data);
+        
+        // Remover modal existente si existe
+        const modalExistente = document.getElementById('jornadaModal');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+        
         const opciones = `
-            <div class="modal fade" id="jornadaModal" tabindex="-1">
+            <div class="modal fade" id="jornadaModal" tabindex="-1" aria-labelledby="jornadaModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">
+                            <h5 class="modal-title" id="jornadaModalLabel">
                                 <i class="fas fa-clock me-2"></i>
                                 Control de Jornada
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body text-center">
                             <div class="mb-3">
@@ -1642,18 +1650,20 @@
             </div>
         `;
         
-        // Remover modal existente si existe
-        const modalExistente = document.getElementById('jornadaModal');
-        if (modalExistente) {
-            modalExistente.remove();
-        }
-        
         // Agregar nuevo modal
         document.body.insertAdjacentHTML('beforeend', opciones);
         
-        // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('jornadaModal'));
-        modal.show();
+        // Mostrar modal con verificación de Bootstrap
+        const modalElement = document.getElementById('jornadaModal');
+        if (modalElement && typeof bootstrap !== 'undefined') {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('Modal mostrado correctamente');
+        } else {
+            console.error('Error: Bootstrap no está disponible o el modal no se creó');
+            // Fallback: mostrar alert
+            alert(`Jornada activa desde las ${data.hora_inicio}\n\nOpciones:\n- Iniciar Pausa\n- Finalizar Jornada`);
+        }
     }
 
     // Función para actualizar el botón de jornada

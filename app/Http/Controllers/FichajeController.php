@@ -308,6 +308,23 @@ class FichajeController extends Controller
                 ->whereNull('hora_salida')
                 ->first();
             
+            // Si no hay fichaje para hoy, verificar si hay fichajes activos de días anteriores
+            if (!$fichajeActivo) {
+                $fichajeActivo = Fichaje::where('user_id', $userId)
+                    ->whereNull('hora_salida')
+                    ->where('hora_entrada', '<', now()->startOfDay())
+                    ->first();
+                
+                // Si hay fichaje de día anterior, finalizarlo automáticamente
+                if ($fichajeActivo) {
+                    Log::info("FichajeController - Finalizando fichaje antiguo automáticamente ID: {$fichajeActivo->id}");
+                    $horaEntrada = \Carbon\Carbon::parse($fichajeActivo->hora_entrada);
+                    $fichajeActivo->hora_salida = $horaEntrada->copy()->addHours(8); // Asumir 8 horas
+                    $fichajeActivo->save();
+                    $fichajeActivo = null; // Ya no está activo
+                }
+            }
+            
             if ($fichajeActivo) {
                 // Verificar si hay pausa activa
                 $pausaActiva = $fichajeActivo->pausas()

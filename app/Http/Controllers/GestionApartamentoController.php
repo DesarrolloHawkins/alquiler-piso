@@ -2677,8 +2677,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $porcentajeSemana = $limpiezasSemana > 0 ? round(($limpiezasCompletadasSemana / $limpiezasSemana) * 100) : 0;
                 
             // Obtener estado del fichaje actual
-            $fichajeActual = \DB::table('fichajes')
-                ->where('user_id', $user->id)
+            $fichajeActual = Fichaje::where('user_id', $user->id)
                 ->whereDate('hora_entrada', $hoy)
                 ->whereNull('hora_salida')
                 ->first();
@@ -2758,13 +2757,13 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             
         // Calcular horas trabajadas del mes
         $horasTrabajadasMes = Fichaje::where('user_id', $user->id)
-            ->whereBetween('fecha', [$inicioMes, $hoy])
-            ->whereNotNull('hora_fin')
+            ->whereBetween('hora_entrada', [$inicioMes->startOfDay(), $hoy->endOfDay()])
+            ->whereNotNull('hora_salida')
             ->get()
             ->sum(function($fichaje) {
-                if ($fichaje->hora_inicio && $fichaje->hora_fin) {
-                    $inicio = Carbon::parse($fichaje->hora_inicio);
-                    $fin = Carbon::parse($fichaje->hora_fin);
+                if ($fichaje->hora_entrada && $fichaje->hora_salida) {
+                    $inicio = Carbon::parse($fichaje->hora_entrada);
+                    $fin = Carbon::parse($fichaje->hora_salida);
                     return $inicio->diffInHours($fin, false);
                 }
                 return 0;
