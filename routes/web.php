@@ -444,7 +444,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/empleados/store', [App\Http\Controllers\UserController::class, 'store'])->name('admin.empleados.store');
     Route::get('/empleados/{id}', [App\Http\Controllers\UserController::class, 'show'])->name('admin.empleados.show');
     Route::get('/empleados/{id}/edit', [App\Http\Controllers\UserController::class, 'edit'])->name('admin.empleados.edit');
-    Route::post('/empleados/{id}/update', [App\Http\Controllers\UserController::class, 'update'])->name('admin.empleados.update');
+    Route::put('/empleados/{id}', [App\Http\Controllers\UserController::class, 'update'])->name('admin.empleados.update');
     Route::post('/empleados/{id}/destroy', [App\Http\Controllers\UserController::class, 'destroy'])->name('admin.empleados.destroy');
     Route::post('/empleados/{id}/toggle-status', [App\Http\Controllers\UserController::class, 'toggleStatus'])->name('admin.empleados.toggle-status');
     Route::post('/empleados/{id}/reset-password', [App\Http\Controllers\UserController::class, 'resetPassword'])->name('admin.empleados.reset-password');
