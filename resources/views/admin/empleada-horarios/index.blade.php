@@ -112,6 +112,10 @@
                                                         onclick="toggleActive({{ $horario->id }})">
                                                     <i class="fas fa-{{ $horario->activo ? 'pause' : 'play' }}"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="eliminarHorario({{ $horario->id }}, '{{ $horario->user->name }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -492,6 +496,64 @@ function crearHorarioRapido(userId) {
                     confirmButtonText: 'Entendido'
                 });
             });
+        }
+    });
+}
+
+function eliminarHorario(id, nombreEmpleada) {
+    Swal.fire({
+        title: '🗑️ Eliminar Horario',
+        html: `
+            <div class="text-center">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <p><strong>¿Estás seguro de que quieres eliminar el horario de <span class="text-primary">${nombreEmpleada}</span>?</strong></p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Esta acción no se puede deshacer.</strong><br>
+                    Se eliminará toda la configuración de horarios, días libres y turnos asociados.
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        customClass: {
+            popup: 'animate__animated animate__zoomIn'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando horario...',
+                html: '<div class="loading-spinner mx-auto"></div><p class="mt-3">Procesando eliminación...</p>',
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+            
+            // Crear formulario para enviar DELETE request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/empleada-horarios/${id}`;
+            
+            // Agregar token CSRF
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            form.appendChild(csrfToken);
+            
+            // Agregar método DELETE
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+            
+            // Agregar al DOM y enviar
+            document.body.appendChild(form);
+            form.submit();
         }
     });
 }

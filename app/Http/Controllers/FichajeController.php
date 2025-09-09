@@ -243,4 +243,54 @@ class FichajeController extends Controller
 
         return view('fichajes', compact('fichajeHoy', 'pausaActiva'));
     }
+
+    /**
+     * Obtener el estado actual del fichaje del usuario autenticado
+     */
+    public function estado()
+    {
+        try {
+            $userId = Auth::id();
+            $hoy = now()->toDateString();
+            
+            // Buscar fichaje activo (sin hora_salida) para hoy
+            $fichajeActivo = Fichaje::where('user_id', $userId)
+                ->whereDate('hora_entrada', $hoy)
+                ->whereNull('hora_salida')
+                ->first();
+            
+            if ($fichajeActivo) {
+                // Verificar si hay pausa activa
+                $pausaActiva = $fichajeActivo->pausas()
+                    ->whereNull('fin_pausa')
+                    ->latest()
+                    ->first();
+                
+                return response()->json([
+                    'fichaje_activo' => true,
+                    'fichaje_id' => $fichajeActivo->id,
+                    'hora_inicio' => $fichajeActivo->hora_entrada->format('H:i'),
+                    'pausa_activa' => $pausaActiva ? true : false,
+                    'pausa_id' => $pausaActiva ? $pausaActiva->id : null,
+                    'hora_pausa' => $pausaActiva ? $pausaActiva->inicio_pausa->format('H:i') : null
+                ]);
+            } else {
+                return response()->json([
+                    'fichaje_activo' => false,
+                    'fichaje_id' => null,
+                    'hora_inicio' => null,
+                    'pausa_activa' => false,
+                    'pausa_id' => null,
+                    'hora_pausa' => null
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('FichajeController - Error obteniendo estado: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error al obtener el estado del fichaje',
+                'fichaje_activo' => false
+            ], 500);
+        }
+    }
 }
