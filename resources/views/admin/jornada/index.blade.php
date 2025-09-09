@@ -101,7 +101,7 @@
                             @foreach ($user->jornada as $itemJornada)
                                 @php
                                     $entrada = \Carbon\Carbon::parse($itemJornada->hora_entrada);
-                                    $salida = \Carbon\Carbon::parse($itemJornada->hora_salida)->addHours(2);
+                                    $salida = \Carbon\Carbon::parse($itemJornada->hora_salida);
                                     $horasTrabajadas = $salida->diffInHours($entrada, true);
                                     $totalHorasMes += $horasTrabajadas;
                                 @endphp
@@ -121,7 +121,7 @@
                             @foreach ($user->jornada as $itemJornada)
                                 @php
                                     $entrada = \Carbon\Carbon::parse($itemJornada->hora_entrada);
-                                    $salida = \Carbon\Carbon::parse($itemJornada->hora_salida)->addHours(2);
+                                    $salida = \Carbon\Carbon::parse($itemJornada->hora_salida);
                                     $horasTrabajadas = $salida->diffInHours($entrada, true);
                                     $limpiezasDelDia = $itemJornada->limpiezas;
                                 @endphp
@@ -142,7 +142,7 @@
                                                         <div class="d-flex gap-3 text-muted">
                                                             <span>
                                                                 <i class="fas fa-sign-in-alt text-success me-1"></i>
-                                                                {{ $entrada->addHours(2)->format('H:i') }}
+                                                                {{ $entrada->format('H:i') }}
                                                             </span>
                                                             <span>
                                                                 <i class="fas fa-arrow-right me-1"></i>
