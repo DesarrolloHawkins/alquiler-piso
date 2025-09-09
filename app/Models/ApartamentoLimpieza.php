@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ChecklistZonaComun;
+use App\Traits\HasLocalTimezone;
 
 class ApartamentoLimpieza extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasLocalTimezone;
 
     /**
      * El nombre de la tabla asociada con el modelo.
