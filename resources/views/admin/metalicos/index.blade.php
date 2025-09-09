@@ -148,26 +148,21 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('metalicos.show', $metalico) }}" 
-                                           class="btn btn-outline-info btn-sm" 
-                                           data-bs-toggle="tooltip" 
-                                           title="Ver detalles">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{{ route('metalicos.edit', $metalico) }}" 
-                                           class="btn btn-outline-warning btn-sm" 
-                                           data-bs-toggle="tooltip" 
-                                           title="Editar metálico">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" 
-                                                class="btn btn-outline-danger btn-sm delete-btn" 
-                                                data-metalico-id="{{ $metalico->id }}"
-                                                data-metalico-titulo="{{ $metalico->titulo }}"
-                                                data-bs-toggle="tooltip" 
-                                                title="Eliminar metálico">
-                                            <i class="fas fa-trash"></i>
+                                      <a href="{{ route('metalicos.show', $metalico) }}" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                      </a>
+                                      <a href="{{ route('metalicos.edit', $metalico) }}" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" title="Editar metálico">
+                                        <i class="fas fa-edit"></i>
+                                      </a>
+                                  
+                                      {{-- Form de borrado: funciona incluso sin JS --}}
+                                      <form action="{{ route('metalicos.destroy', $metalico) }}" method="POST" class="d-inline form-delete" data-title="{{ $metalico->titulo }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip" title="Eliminar metálico">
+                                          <i class="fas fa-trash"></i>
                                         </button>
+                                      </form>
                                     </div>
                                 </td>
                             </tr>
@@ -187,72 +182,57 @@
 @endsection
 
 @include('sweetalert::alert')
+
+
+
+
 @section('scripts')
 <script>
 (function () {
-  function initMetalicos() {
-    console.log('[Metálicos] init');
+  function init() {
+    console.log('[Metálicos] init (submit interceptor)');
 
-    // Tooltips (si está Bootstrap)
+    // Tooltips
     if (typeof bootstrap !== 'undefined') {
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
     }
 
-    // Delegación de click para .delete-btn
-    document.addEventListener('click', function (e) {
-      const btn = e.target.closest('.delete-btn');
-      if (!btn) return;
+    // Delegación de SUBMIT para formularios de borrado
+    document.addEventListener('submit', function(e){
+      const form = e.target.closest('.form-delete');
+      if (!form) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+      // Si no hay SweetAlert, deja pasar (submit normal)
+      if (!(typeof Swal !== 'undefined' && Swal.fire)) return;
 
-      const metalicoId = btn.getAttribute('data-metalico-id');
-      const metalicoTitulo = btn.getAttribute('data-metalico-titulo');
+      e.preventDefault(); // detenemos para confirmar
+      const titulo = form.getAttribute('data-title') || '';
 
-      function eliminarMetalico() {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `{{ url('metalicos') }}/${metalicoId}`;
-
-        form.innerHTML = `
-          <input type="hidden" name="_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="_method" value="DELETE">
-        `;
-        document.body.appendChild(form);
-        form.submit();
-      }
-
-      if (typeof Swal !== 'undefined' && Swal.fire) {
-        Swal.fire({
-          title: '¿Eliminar Metálico?',
-          html: `
-            <div class="text-start">
-              <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
-              <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
-            </div>
-          `,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#dc3545',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
-          cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-          customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
-          buttonsStyling: false
-        }).then(res => { if (res.isConfirmed) eliminarMetalico(); });
-      } else {
-        if (confirm(`¿Eliminar "${metalicoTitulo}"?\n\nEsta acción no se puede deshacer.`)) eliminarMetalico();
-      }
+      Swal.fire({
+        title: '¿Eliminar Metálico?',
+        html: `
+          <div class="text-start">
+            <p><strong>Metálico:</strong> ${titulo}</p>
+            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+        customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' },
+        buttonsStyling: false
+      }).then(res => { if (res.isConfirmed) form.submit(); });
     });
   }
 
-  // Si el DOM ya está listo, ejecuta; si no, espera.
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMetalicos, { once: true });
+    document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
-    initMetalicos();
+    init();
   }
 })();
 </script>
 @endsection
-
