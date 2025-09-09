@@ -190,7 +190,11 @@
 
 @section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    // Esperar a que todo esté cargado
+    window.addEventListener('load', function () {
+        console.log('Página cargada completamente');
+        console.log('SweetAlert2 disponible:', typeof Swal !== 'undefined');
+        
         // Inicializar tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -199,54 +203,79 @@
 
         // Botones de eliminar
         const deleteButtons = document.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(button => {
+        console.log('Botones de eliminar encontrados:', deleteButtons.length);
+        
+        deleteButtons.forEach((button, index) => {
+            console.log(`Configurando botón ${index + 1}:`, button);
+            
             button.addEventListener('click', function (event) {
                 event.preventDefault();
+                event.stopPropagation();
+                
                 const metalicoId = this.getAttribute('data-metalico-id');
                 const metalicoTitulo = this.getAttribute('data-metalico-titulo');
                 
-                Swal.fire({
-                    title: '¿Eliminar Metálico?',
-                    html: `
-                        <div class="text-start">
-                            <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
-                            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
-                        </div>
-                    `,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
-                    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                    customClass: {
-                        confirmButton: 'btn btn-danger',
-                        cancelButton: 'btn btn-secondary'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Crear formulario temporal para enviar la petición DELETE
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = `{{ url('metalicos') }}/${metalicoId}`;
-                        
-                        const csrfToken = document.createElement('input');
-                        csrfToken.type = 'hidden';
-                        csrfToken.name = '_token';
-                        csrfToken.value = '{{ csrf_token() }}';
-                        
-                        const methodField = document.createElement('input');
-                        methodField.type = 'hidden';
-                        methodField.name = '_method';
-                        methodField.value = 'DELETE';
-                        
-                        form.appendChild(csrfToken);
-                        form.appendChild(methodField);
-                        document.body.appendChild(form);
-                        form.submit();
+                console.log('Botón de eliminar clickeado:', metalicoId, metalicoTitulo);
+                
+                // Función para eliminar
+                function eliminarMetalico() {
+                    console.log('Eliminando metálico:', metalicoId);
+                    
+                    // Crear formulario temporal para enviar la petición DELETE
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `{{ url('metalicos') }}/${metalicoId}`;
+                    
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    
+                    const methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+                    
+                    form.appendChild(csrfToken);
+                    form.appendChild(methodField);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+                
+                // Intentar usar SweetAlert2, si no está disponible usar confirm nativo
+                if (typeof Swal !== 'undefined' && Swal.fire) {
+                    console.log('Usando SweetAlert2');
+                    Swal.fire({
+                        title: '¿Eliminar Metálico?',
+                        html: `
+                            <div class="text-start">
+                                <p><strong>Metálico:</strong> ${metalicoTitulo}</p>
+                                <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+                        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-danger',
+                            cancelButton: 'btn btn-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            eliminarMetalico();
+                        }
+                    });
+                } else {
+                    console.log('Usando confirm nativo');
+                    // Fallback con confirm nativo
+                    if (confirm(`¿Estás seguro de que quieres eliminar el metálico "${metalicoTitulo}"?\n\nEsta acción no se puede deshacer.`)) {
+                        eliminarMetalico();
                     }
-                });
+                }
             });
         });
     });
