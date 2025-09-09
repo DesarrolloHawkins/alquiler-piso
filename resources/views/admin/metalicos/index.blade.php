@@ -148,23 +148,26 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                      <a href="{{ route('metalicos.show', $metalico) }}" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="Ver detalles">
+                                      <a href="{{ route('metalicos.show', $metalico) }}" class="btn btn-outline-info btn-sm" title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                       </a>
-                                      <a href="{{ route('metalicos.edit', $metalico) }}" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" title="Editar metálico">
+                                      <a href="{{ route('metalicos.edit', $metalico) }}" class="btn btn-outline-warning btn-sm" title="Editar metálico">
                                         <i class="fas fa-edit"></i>
                                       </a>
                                   
-                                      {{-- Form de borrado: funciona incluso sin JS --}}
-                                      <form action="{{ route('metalicos.destroy', $metalico) }}" method="POST" class="d-inline form-delete" data-title="{{ $metalico->titulo }}">
+                                      {{-- Borrrado: confirm nativo + upgrade a SweetAlert si está disponible --}}
+                                      <form action="{{ route('metalicos.destroy', $metalico) }}"
+                                            method="POST"
+                                            class="d-inline"
+                                            onsubmit="return window.handleDelete(this, '{{ addslashes($metalico->titulo) }}')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip" title="Eliminar metálico">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar metálico">
                                           <i class="fas fa-trash"></i>
                                         </button>
                                       </form>
                                     </div>
-                                </td>
+                                </td>                                  
                             </tr>
                         @endforeach
                     </tbody>
@@ -182,8 +185,6 @@
 @endsection
 
 @include('sweetalert::alert')
-
-
 
 
 @section('scripts')
