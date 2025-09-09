@@ -1670,6 +1670,159 @@
         }
     }
 
+    // Función para iniciar pausa
+    function iniciarPausa() {
+        fetch('/fichajes/pausa/iniciar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Pausa iniciada correctamente', 'success');
+                // Cerrar modal y actualizar estado
+                const modal = bootstrap.Modal.getInstance(document.getElementById('jornadaModal'));
+                if (modal) modal.hide();
+                // Actualizar el estado de la jornada
+                setTimeout(() => {
+                    controlarJornada();
+                }, 1000);
+            } else {
+                mostrarNotificacion(data.message || 'Error al iniciar la pausa', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarNotificacion('Error de conexión al iniciar pausa', 'error');
+        });
+    }
+
+    // Función para finalizar jornada
+    function finalizarJornada() {
+        // Confirmar antes de finalizar
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¿Finalizar jornada?',
+                text: '¿Estás seguro de que quieres finalizar la jornada?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, finalizar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    ejecutarFinalizarJornada();
+                }
+            });
+        } else {
+            if (confirm('¿Estás seguro de que quieres finalizar la jornada?')) {
+                ejecutarFinalizarJornada();
+            }
+        }
+    }
+
+    // Función auxiliar para ejecutar la finalización de jornada
+    function ejecutarFinalizarJornada() {
+        fetch('/fichajes/finalizar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion(data.message, 'success');
+                // Cerrar modal y actualizar estado
+                const modal = bootstrap.Modal.getInstance(document.getElementById('jornadaModal'));
+                if (modal) modal.hide();
+                // Actualizar el botón de jornada
+                actualizarBotónJornada(false);
+            } else {
+                mostrarNotificacion(data.message || 'Error al finalizar la jornada', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarNotificacion('Error de conexión al finalizar jornada', 'error');
+        });
+    }
+
+    // Función para verificar estado de jornada al cargar la página
+    function verificarEstadoJornada() {
+        fetch('/fichajes/estado')
+            .then(response => response.json())
+            .then(data => {
+                if (data.fichaje_activo) {
+                    // Actualizar botón para mostrar jornada activa
+                    actualizarBotónJornada(true);
+                    // Mostrar información de tiempo transcurrido
+                    mostrarTiempoJornada(data);
+                } else {
+                    actualizarBotónJornada(false);
+                }
+            })
+            .catch(error => {
+                console.error('Error al verificar estado de jornada:', error);
+            });
+    }
+
+    // Función para mostrar tiempo de jornada activa
+    function mostrarTiempoJornada(data) {
+        // Crear o actualizar indicador de tiempo
+        let indicadorTiempo = document.getElementById('indicadorTiempoJornada');
+        if (!indicadorTiempo) {
+            indicadorTiempo = document.createElement('div');
+            indicadorTiempo.id = 'indicadorTiempoJornada';
+            indicadorTiempo.className = 'apple-alert apple-alert-info mt-2';
+            indicadorTiempo.innerHTML = `
+                <i class="fa-solid fa-clock"></i>
+                <span>Jornada activa desde las ${data.hora_inicio}</span>
+                <span id="tiempoTranscurrido" class="ms-2 fw-bold"></span>
+            `;
+            
+            // Insertar después del botón de jornada
+            const botonJornada = document.querySelector('.apple-btn[onclick="controlarJornada()"]');
+            if (botonJornada && botonJornada.parentNode) {
+                botonJornada.parentNode.appendChild(indicadorTiempo);
+            }
+        }
+        
+        // Actualizar tiempo transcurrido cada segundo
+        actualizarTiempoTranscurrido(data.hora_inicio);
+    }
+
+    // Función para actualizar tiempo transcurrido
+    function actualizarTiempoTranscurrido(horaInicio) {
+        const elemento = document.getElementById('tiempoTranscurrido');
+        if (!elemento) return;
+        
+        const inicio = new Date();
+        const [horas, minutos] = horaInicio.split(':');
+        inicio.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+        
+        function actualizar() {
+            const ahora = new Date();
+            const diferencia = ahora - inicio;
+            
+            const horas = Math.floor(diferencia / (1000 * 60 * 60));
+            const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+            
+            elemento.textContent = `(${horas}h ${minutos}m ${segundos}s)`;
+        }
+        
+        // Actualizar inmediatamente
+        actualizar();
+        
+        // Actualizar cada segundo
+        setInterval(actualizar, 1000);
+    }
+
     // Función para mostrar notificaciones
     function mostrarNotificacion(mensaje, tipo) {
         // Usar SweetAlert2 si está disponible
@@ -1686,6 +1839,11 @@
             alert(mensaje);
         }
     }
+
+    // Verificar estado de jornada al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        verificarEstadoJornada();
+    });
 </script>
 @endsection
 

@@ -61,7 +61,7 @@ class FichajeController extends Controller
                 'success' => true,
                 'message' => $mensaje,
                 'fichaje_id' => $fichaje->id,
-                'hora_inicio' => $fichaje->hora_entrada->format('H:i')
+                'hora_inicio' => \Carbon\Carbon::parse($fichaje->hora_entrada)->format('H:i')
             ]);
             
         } catch (\Exception $e) {
@@ -101,7 +101,7 @@ class FichajeController extends Controller
                 'success' => true,
                 'message' => 'Pausa iniciada',
                 'pausa_id' => $pausa->id,
-                'hora_inicio' => $pausa->inicio_pausa->format('H:i')
+                'hora_inicio' => \Carbon\Carbon::parse($pausa->inicio_pausa)->format('H:i')
             ]);
             
         } catch (\Exception $e) {
@@ -148,7 +148,7 @@ class FichajeController extends Controller
                 'success' => true,
                 'message' => 'Pausa finalizada',
                 'pausa_id' => $pausa->id,
-                'hora_fin' => $pausa->fin_pausa->format('H:i')
+                'hora_fin' => \Carbon\Carbon::parse($pausa->fin_pausa)->format('H:i')
             ]);
             
         } catch (\Exception $e) {
@@ -318,10 +318,10 @@ class FichajeController extends Controller
                 return response()->json([
                     'fichaje_activo' => true,
                     'fichaje_id' => $fichajeActivo->id,
-                    'hora_inicio' => $fichajeActivo->hora_entrada->format('H:i'),
+                    'hora_inicio' => \Carbon\Carbon::parse($fichajeActivo->hora_entrada)->format('H:i'),
                     'pausa_activa' => $pausaActiva ? true : false,
                     'pausa_id' => $pausaActiva ? $pausaActiva->id : null,
-                    'hora_pausa' => $pausaActiva ? $pausaActiva->inicio_pausa->format('H:i') : null
+                    'hora_pausa' => $pausaActiva ? \Carbon\Carbon::parse($pausaActiva->inicio_pausa)->format('H:i') : null
                 ]);
             } else {
                 return response()->json([
