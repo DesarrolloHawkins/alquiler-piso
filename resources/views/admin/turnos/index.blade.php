@@ -157,6 +157,9 @@
                                                         <i class="fas fa-stop"></i> Finalizar
                                                     </button>
                                                 @endif
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="eliminarTurno({{ $turno->id }})">
+                                                    <i class="fas fa-trash"></i> Eliminar
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -832,5 +835,70 @@ document.addEventListener('DOMContentLoaded', function() {
         card.classList.add('stat-card');
     });
 });
+
+// Función para eliminar turnos
+function eliminarTurno(turnoId) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                text: 'Por favor espera',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                }
+            });
+            
+            // Realizar petición AJAX
+            fetch(`/gestion/turnos/${turnoId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Eliminado!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recargar la página para actualizar la vista
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message,
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un problema al eliminar el turno',
+                    icon: 'error'
+                });
+            });
+        }
+    });
+}
 </script>
 @endsection

@@ -30,20 +30,83 @@ class LimpiadoraTurnosController extends Controller
      */
     public function index(Request $request)
     {
-        $fecha = $request->get('fecha', today()->format('Y-m-d'));
-        $fechaCarbon = Carbon::parse($fecha);
+        $user = Auth::user();
         
-        // Obtener turnos de la limpiadora logueada
-        $turnos = TurnoTrabajo::porFecha($fechaCarbon)
-            ->where('user_id', Auth::id())
+        // Obtener la semana seleccionada (por defecto la actual)
+        $semanaOffset = $request->get('semana', 0); // 0 = semana actual, -1 = anterior, 1 = siguiente
+        $hoy = Carbon::now();
+        $inicioSemana = $hoy->copy()->startOfWeek()->addWeeks($semanaOffset);
+        $finSemana = $hoy->copy()->endOfWeek()->addWeeks($semanaOffset);
+        
+        // Obtener turnos de la semana seleccionada
+        $turnos = TurnoTrabajo::where('user_id', $user->id)
+            ->whereBetween('fecha', [$inicioSemana, $finSemana])
             ->with(['tareasAsignadas.tipoTarea', 'tareasAsignadas.apartamento', 'tareasAsignadas.zonaComun'])
+            ->orderBy('fecha')
             ->orderBy('hora_inicio')
             ->get();
+        
+        // Obtener horario de trabajo de la empleada
+        $horarioEmpleada = \DB::table('empleada_horarios')
+            ->where('user_id', $user->id)
+            ->first();
+        
+        $horarioPorDefecto = [
+            'hora_inicio' => $horarioEmpleada && isset($horarioEmpleada->hora_inicio) ? $horarioEmpleada->hora_inicio : '09:00:00',
+            'hora_fin' => $horarioEmpleada && isset($horarioEmpleada->hora_fin) ? $horarioEmpleada->hora_fin : '17:00:00'
+        ];
+        
+        // Obtener días libres de la semana desde empleada_dias_libres
+        $diasLibres = [];
+        $empleadaDiasLibres = \DB::table('empleada_dias_libres')
+            ->join('empleada_horarios', 'empleada_dias_libres.empleada_horario_id', '=', 'empleada_horarios.id')
+            ->where('empleada_horarios.user_id', $user->id)
+            ->where('empleada_dias_libres.semana_inicio', '<=', $finSemana)
+            ->where('empleada_dias_libres.semana_inicio', '>=', $inicioSemana->copy()->subDays(7))
+            ->select('empleada_dias_libres.*')
+            ->get();
+        
+        foreach($empleadaDiasLibres as $diaLibre) {
+            $semanaInicio = Carbon::parse($diaLibre->semana_inicio);
+            $diasLibresArray = json_decode($diaLibre->dias_libres, true);
+            
+            if(is_array($diasLibresArray)) {
+                foreach($diasLibresArray as $diaNumero) {
+                    $fecha = $semanaInicio->copy()->addDays($diaNumero);
+                    if($fecha >= $inicioSemana && $fecha <= $finSemana) {
+                        $diasLibres[] = $fecha->format('Y-m-d');
+                    }
+                }
+            }
+        }
+        
+        // Agrupar turnos por día
+        $turnosPorDia = $turnos->groupBy(function($turno) {
+            return Carbon::parse($turno->fecha)->format('Y-m-d');
+        });
+        
+        // Crear estructura de días de la semana
+        $diasSemana = [];
+        for ($i = 0; $i < 7; $i++) {
+            $fecha = $inicioSemana->copy()->addDays($i);
+            $fechaStr = $fecha->format('Y-m-d');
+            
+            $diasSemana[] = [
+                'fecha' => $fecha,
+                'fecha_str' => $fechaStr,
+                'nombre_dia' => $fecha->locale('es')->dayName,
+                'numero_dia' => $fecha->day,
+                'es_hoy' => $fecha->isToday(),
+                'es_libre' => in_array($fechaStr, $diasLibres),
+                'turnos' => $turnosPorDia->get($fechaStr, collect())
+            ];
+        }
 
-        // Estadísticas del día para la limpiadora
+        // Estadísticas de la semana
         $estadisticas = [
             'total_turnos' => $turnos->count(),
             'turnos_completados' => $turnos->where('estado', 'completado')->count(),
+            'turnos_pendientes' => $turnos->where('estado', 'pendiente')->count(),
             'turnos_en_progreso' => $turnos->where('estado', 'en_progreso')->count(),
             'total_tareas' => $turnos->sum(function($turno) {
                 return $turno->tareasAsignadas->count();
@@ -58,10 +121,11 @@ class LimpiadoraTurnosController extends Controller
                 return $turno->tareasAsignadas->sum(function($tarea) {
                     return $tarea->tipoTarea->tiempo_estimado_minutos;
                 });
-            })
+            }),
+            'dias_libres' => count($diasLibres)
         ];
 
-        return view('limpiadora.turnos.index', compact('turnos', 'fecha', 'estadisticas'));
+        return view('limpiadora.turnos.index', compact('diasSemana', 'estadisticas', 'user', 'inicioSemana', 'finSemana', 'semanaOffset', 'horarioPorDefecto'));
     }
 
     /**

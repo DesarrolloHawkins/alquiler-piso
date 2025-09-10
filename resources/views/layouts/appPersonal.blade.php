@@ -1223,7 +1223,14 @@
                     </div>
                     <span class="apple-tab-label">Gestión</span>
                 </a>
-                
+
+                <a href="{{route('gestion.mis-turnos')}}" class="apple-tab-item {{ request()->routeIs('gestion.mis-turnos') ? 'active' : '' }}">
+                    <div class="apple-tab-icon">
+                        <i class="fa-solid fa-calendar-week"></i>
+                    </div>
+                    <span class="apple-tab-label">Mis Turnos</span>
+                </a>
+
                 <a href="{{route('gestion.incidencias.index')}}" class="apple-tab-item {{ request()->routeIs('gestion.incidencias.*') ? 'active' : '' }}">
                     <div class="apple-tab-icon">
                         <i class="fa-solid fa-exclamation-triangle"></i>

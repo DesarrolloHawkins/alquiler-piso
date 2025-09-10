@@ -1,293 +1,405 @@
-@extends('layouts.appAdmin')
+@extends('layouts.appPersonal')
 
 @section('title', 'Mis Turnos')
 
-@section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-calendar-alt me-2"></i>Mis Turnos - {{ $fecha }}
-                    </h3>
-                    <div class="card-tools">
-                        <form method="GET" class="d-inline">
-                            <div class="input-group input-group-sm" style="width: 200px;">
-                                <input type="date" class="form-control" name="fecha" value="{{ $fecha }}">
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-search"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <!-- Estadísticas del día -->
-                    <div class="row mb-4">
-                        <div class="col-md-2">
-                            <div class="card bg-primary text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['total_turnos'] }}</h5>
-                                    <small>Total Turnos</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="card bg-success text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['turnos_completados'] }}</h5>
-                                    <small>Completados</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="card bg-warning text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['turnos_en_progreso'] }}</h5>
-                                    <small>En Progreso</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="card bg-info text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['total_tareas'] }}</h5>
-                                    <small>Total Tareas</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="card bg-success text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['tareas_completadas'] }}</h5>
-                                    <small>Tareas Completadas</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="card bg-warning text-white text-center">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">{{ $estadisticas['tareas_pendientes'] }}</h5>
-                                    <small>Pendientes</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($turnos->count() > 0)
-                        <div class="row">
-                            @foreach($turnos as $turno)
-                                <div class="col-md-6 col-lg-4 mb-4">
-                                    <div class="card h-100 {{ $turno->estado === 'completado' ? 'border-success' : ($turno->estado === 'en_progreso' ? 'border-warning' : 'border-primary') }}">
-                                        <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-clock me-1"></i>
-                                                {{ $turno->hora_inicio->format('H:i') }} - {{ $turno->hora_fin->format('H:i') }}
-                                            </h6>
-                                            <span class="badge badge-{{ $turno->estado === 'completado' ? 'success' : ($turno->estado === 'en_progreso' ? 'warning' : 'primary') }}">
-                                                {{ ucfirst(str_replace('_', ' ', $turno->estado)) }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="card-body">
-                                            <!-- Progreso del turno -->
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between mb-1">
-                                                    <small>Progreso</small>
-                                                    <small>{{ $turno->progreso }}%</small>
-                                                </div>
-                                                <div class="progress" style="height: 8px;">
-                                                    <div class="progress-bar" role="progressbar" style="width: {{ $turno->progreso }}%"></div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Estadísticas del turno -->
-                                            <div class="row text-center mb-3">
-                                                <div class="col-4">
-                                                    <small class="text-muted">Tareas</small>
-                                                    <div class="fw-bold">{{ $turno->total_tareas }}</div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <small class="text-muted">Completadas</small>
-                                                    <div class="fw-bold text-success">{{ $turno->tareas_completadas }}</div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <small class="text-muted">Pendientes</small>
-                                                    <div class="fw-bold text-warning">{{ $turno->tareas_pendientes }}</div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Tiempo estimado -->
-                                            <div class="mb-3">
-                                                <small class="text-muted">Tiempo Estimado:</small>
-                                                <div class="fw-bold">{{ $turno->tiempo_estimado_total_formateado }}</div>
-                                            </div>
-
-                                            <!-- Lista de tareas -->
-                                            @if($turno->tareasAsignadas->count() > 0)
-                                                <div class="mb-3">
-                                                    <small class="text-muted">Tareas:</small>
-                                                    <div class="mt-1">
-                                                        @foreach($turno->tareasAsignadas->take(3) as $tarea)
-                                                            <div class="d-flex align-items-center mb-1">
-                                                                <i class="fas fa-{{ $tarea->estado === 'completada' ? 'check-circle text-success' : 'circle text-muted' }} me-2"></i>
-                                                                <small class="flex-grow-1">{{ $tarea->tipoTarea->nombre }}</small>
-                                                                <small class="text-muted">{{ $tarea->tiempo_estimado_formateado }}</small>
-                                                            </div>
-                                                        @endforeach
-                                                        @if($turno->tareasAsignadas->count() > 3)
-                                                            <small class="text-muted">... y {{ $turno->tareasAsignadas->count() - 3 }} más</small>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endif
-
-                                            <!-- Observaciones -->
-                                            @if($turno->observaciones)
-                                                <div class="mb-3">
-                                                    <small class="text-muted">Observaciones:</small>
-                                                    <div class="small text-muted">{{ Str::limit($turno->observaciones, 100) }}</div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        
-                                        <div class="card-footer">
-                                            <div class="d-flex justify-content-between">
-                                                <a href="{{ route('limpiadora.turnos.show', $turno) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye me-1"></i>Ver Detalles
-                                                </a>
-                                                
-                                                @if($turno->estado === 'programado')
-                                                    <button class="btn btn-sm btn-success" onclick="iniciarTurno({{ $turno->id }})">
-                                                        <i class="fas fa-play me-1"></i>Iniciar
-                                                    </button>
-                                                @elseif($turno->estado === 'en_progreso')
-                                                    <button class="btn btn-sm btn-warning" onclick="finalizarTurno({{ $turno->id }})">
-                                                        <i class="fas fa-stop me-1"></i>Finalizar
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No tienes turnos asignados para esta fecha</h5>
-                            <p class="text-muted">Selecciona otra fecha para ver tus turnos</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para finalizar turno -->
-<div class="modal fade" id="finalizarTurnoModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Finalizar Turno</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="finalizarTurnoForm">
-                <div class="modal-body">
-                    <input type="hidden" id="turnoId" name="turno_id">
-                    
-                    <div class="mb-3">
-                        <label for="horas_trabajadas" class="form-label">Horas Trabajadas</label>
-                        <input type="number" class="form-control" id="horas_trabajadas" name="horas_trabajadas" 
-                               step="0.5" min="0" max="24" placeholder="Ej: 7.5">
-                        <div class="form-text">Deja vacío para calcular automáticamente</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="observaciones" class="form-label">Observaciones</label>
-                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" 
-                                  placeholder="Observaciones sobre el turno..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning">Finalizar Turno</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+@section('bienvenido')
+    <h5 class="navbar-brand mb-0 w-auto text-center text-white">Mis Turnos - {{ $user->name }}</h5>
 @endsection
 
-@push('scripts')
-<script>
-function iniciarTurno(turnoId) {
-    if (confirm('¿Iniciar este turno?')) {
-        $.ajax({
-            url: '/limpiadora/turnos/' + turnoId + '/iniciar',
-            method: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    Swal.fire({
-                        title: '¡Éxito!',
-                        text: response.message,
-                        icon: 'success'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            },
-            error: function() {
-                Swal.fire('Error', 'Error de conexión', 'error');
-            }
-        });
+@section('content')
+<div class="apple-container">
+    <!-- Header con estadísticas -->
+    <div class="apple-card mb-4">
+        <div class="apple-card-header">
+            <h4 class="mb-0">
+                <i class="fas fa-calendar-week"></i> 
+                Resumen de la Semana
+            </h4>
+        </div>
+        <div class="apple-card-body">
+            <div class="row text-center">
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number text-primary">{{ $estadisticas['total_turnos'] }}</div>
+                        <div class="stat-label">Total Turnos</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number text-success">{{ $estadisticas['turnos_completados'] }}</div>
+                        <div class="stat-label">Completados</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number text-warning">{{ $estadisticas['turnos_pendientes'] }}</div>
+                        <div class="stat-label">Pendientes</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number text-info">{{ $estadisticas['dias_libres'] }}</div>
+                        <div class="stat-label">Días Libres</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles de navegación de semana -->
+    <div class="apple-card mb-4">
+        <div class="apple-card-body">
+            <div class="row align-items-center">
+                <div class="col-4">
+                    <a href="{{ route('gestion.mis-turnos', ['semana' => $semanaOffset - 1]) }}" 
+                       class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-chevron-left"></i> Semana Anterior
+                    </a>
+                </div>
+                <div class="col-4 text-center">
+                    <h5 class="mb-0">
+                        {{ $inicioSemana->format('d/m') }} - {{ $finSemana->format('d/m/Y') }}
+                    </h5>
+                    @if($semanaOffset == 0)
+                        <small class="text-muted">Semana Actual</small>
+                    @elseif($semanaOffset > 0)
+                        <small class="text-muted">{{ $semanaOffset }} semana{{ $semanaOffset > 1 ? 's' : '' }} siguiente{{ $semanaOffset > 1 ? 's' : '' }}</small>
+                    @else
+                        <small class="text-muted">{{ abs($semanaOffset) }} semana{{ abs($semanaOffset) > 1 ? 's' : '' }} anterior{{ abs($semanaOffset) > 1 ? 'es' : '' }}</small>
+                    @endif
+                </div>
+                <div class="col-4">
+                    <a href="{{ route('gestion.mis-turnos', ['semana' => $semanaOffset + 1]) }}" 
+                       class="btn btn-outline-primary btn-sm w-100">
+                        Semana Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12 text-center">
+                    <a href="{{ route('gestion.mis-turnos') }}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-calendar-day"></i> Ir a Semana Actual
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario semanal -->
+    <div class="apple-card">
+        <div class="apple-card-header">
+            <h4 class="mb-0">
+                <i class="fas fa-calendar-alt"></i> 
+                Calendario Semanal
+            </h4>
+        </div>
+        <div class="apple-card-body p-0">
+            <div class="week-calendar">
+                @foreach($diasSemana as $dia)
+                    <div class="day-card {{ $dia['es_hoy'] ? 'today' : '' }} {{ $dia['es_libre'] ? 'free-day' : '' }}">
+                        <div class="day-header">
+                            <div class="day-name">{{ $dia['nombre_dia'] }}</div>
+                            <div class="day-number">{{ $dia['numero_dia'] }}</div>
+                            @if($dia['es_hoy'])
+                                <div class="today-badge">HOY</div>
+                            @endif
+                            @if($dia['es_libre'])
+                                <div class="free-badge">
+                                    <i class="fas fa-umbrella-beach"></i>
+                                    LIBRE
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="day-content">
+                            @if($dia['turnos']->count() > 0)
+                                @foreach($dia['turnos'] as $turno)
+                                    <div class="turno-item {{ $turno->estado }}">
+                                        <div class="turno-time">
+                                            <i class="fas fa-clock"></i>
+                                            {{ \Carbon\Carbon::parse($turno->hora_inicio)->format('H:i') }} - 
+                                            {{ \Carbon\Carbon::parse($turno->hora_fin)->format('H:i') }}
+                                        </div>
+                                        <div class="turno-status">
+                                            @switch($turno->estado)
+                                                @case('pendiente')
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-clock"></i> Pendiente
+                                                    </span>
+                                                    @break
+                                                @case('en_progreso')
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-play"></i> En Progreso
+                                                    </span>
+                                                    @break
+                                                @case('completado')
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i> Completado
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="badge bg-secondary">{{ ucfirst($turno->estado) }}</span>
+                                            @endswitch
+                                        </div>
+                                        
+                                        @if($turno->tareasAsignadas->count() > 0)
+                                            <div class="turno-tasks">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-tasks"></i> 
+                                                    {{ $turno->tareasAsignadas->count() }} tarea(s)
+                                                </small>
+                                                <div class="task-list">
+                                                    @foreach($turno->tareasAsignadas as $tarea)
+                                                        <div class="task-item">
+                                                            @if($tarea->apartamento_id)
+                                                                <i class="fas fa-building text-primary"></i>
+                                                                {{ $tarea->apartamento->titulo ?? 'Apartamento' }}
+                                                            @elseif($tarea->zona_comun_id)
+                                                                <i class="fas fa-users text-info"></i>
+                                                                {{ $tarea->zonaComun->nombre ?? 'Zona Común' }}
+                                                            @else
+                                                                <i class="fas fa-tasks text-secondary"></i>
+                                                                {{ $tarea->tipoTarea->nombre ?? 'Tarea' }}
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="no-turnos">
+                                    @if($dia['es_libre'])
+                                        <i class="fas fa-umbrella-beach text-success"></i>
+                                        <small>Día libre</small>
+                                    @else
+                                        <div class="turno-item default-schedule">
+                                            <div class="turno-time">
+                                                <i class="fas fa-clock"></i>
+                                                {{ \Carbon\Carbon::parse($horarioPorDefecto['hora_inicio'])->format('H:i') }} - 
+                                                {{ \Carbon\Carbon::parse($horarioPorDefecto['hora_fin'])->format('H:i') }}
+                                            </div>
+                                            <div class="turno-status">
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="fas fa-calendar-day"></i> Horario habitual
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.apple-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.stat-card {
+    padding: 15px;
+    border-radius: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.week-calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+
+.day-card {
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    background: white;
+    transition: all 0.3s ease;
+    min-height: 200px;
+}
+
+.day-card.today {
+    border-color: #007AFF;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);
+}
+
+.day-card.free-day {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+}
+
+.day-header {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    position: relative;
+}
+
+.day-name {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.day-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007AFF;
+}
+
+.today-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #007AFF;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.free-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.day-content {
+    padding: 15px;
+    min-height: 120px;
+}
+
+.turno-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #007AFF;
+}
+
+.turno-item.default-schedule {
+    background: #f8f9fa;
+    border-left: 4px solid #6c757d;
+    opacity: 0.8;
+}
+
+.turno-item.default-schedule .turno-time {
+    color: #6c757d;
+}
+
+.turno-item.completado {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.turno-item.en_progreso {
+    border-left-color: #17a2b8;
+    background: #f0f9ff;
+}
+
+.turno-item.pendiente {
+    border-left-color: #ffc107;
+    background: #fffdf0;
+}
+
+.turno-time {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.turno-status {
+    margin-bottom: 8px;
+}
+
+.turno-tasks {
+    margin-top: 8px;
+}
+
+.task-list {
+    margin-top: 5px;
+}
+
+.task-item {
+    padding: 3px 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.no-turnos {
+    text-align: center;
+    color: #6c757d;
+    padding: 20px 0;
+}
+
+.no-turnos i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .week-calendar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .day-card {
+        min-height: 150px;
+    }
+    
+    .stat-card {
+        padding: 10px;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
     }
 }
 
-function finalizarTurno(turnoId) {
-    $('#turnoId').val(turnoId);
-    $('#finalizarTurnoModal').modal('show');
+@media (max-width: 576px) {
+    .apple-container {
+        padding: 10px;
+    }
+    
+    .day-header {
+        padding: 10px;
+    }
+    
+    .day-content {
+        padding: 10px;
+    }
 }
-
-$('#finalizarTurnoForm').submit(function(e) {
-    e.preventDefault();
-    
-    const turnoId = $('#turnoId').val();
-    const formData = $(this).serialize();
-    
-    $.ajax({
-        url: '/limpiadora/turnos/' + turnoId + '/finalizar',
-        method: 'POST',
-        data: formData,
-        success: function(response) {
-            if (response.success) {
-                $('#finalizarTurnoModal').modal('hide');
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: response.message,
-                    icon: 'success'
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire('Error', response.message, 'error');
-            }
-        },
-        error: function() {
-            Swal.fire('Error', 'Error de conexión', 'error');
-        }
-    });
-});
-</script>
-@endpush
-
+</style>
+@endsection

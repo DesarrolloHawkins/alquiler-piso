@@ -539,6 +539,9 @@ Route::middleware('auth')->group(function () {
     Route::post('gestion/turnos/{turno}/finalizar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'finalizarTurno'])->name('gestion.turnos.finalizar');
     Route::get('gestion/turnos/estadisticas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'estadisticas'])->name('gestion.turnos.estadisticas');
     
+    // Ruta para que las limpiadoras vean sus turnos
+    Route::get('gestion/mis-turnos', [App\Http\Controllers\LimpiadoraTurnosController::class, 'index'])->name('gestion.mis-turnos');
+    
     // Rutas para gestión de tareas asignadas
     Route::get('gestion/tareas/{tarea}/info', [App\Http\Controllers\GestionApartamentoController::class, 'infoTarea'])->name('gestion.tareas.info');
     Route::post('gestion/tareas/{tarea}/iniciar', [App\Http\Controllers\GestionApartamentoController::class, 'iniciarTarea'])->name('gestion.tareas.iniciar');

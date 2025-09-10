@@ -204,14 +204,28 @@ class TurnosTrabajoController extends Controller
     public function destroy(TurnoTrabajo $turno)
     {
         try {
-            $fecha = $turno->fecha->format('Y-m-d');
             $turno->delete();
 
-            return redirect()->route('admin.turnos.index', ['fecha' => $fecha])
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Turno eliminado exitosamente'
+                ]);
+            }
+
+            return redirect()->route('gestion.turnos.index')
                 ->with('success', 'Turno eliminado exitosamente');
 
         } catch (\Exception $e) {
             Log::error('Error eliminando turno: ' . $e->getMessage());
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar el turno: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->back()
                 ->with('error', 'Error al eliminar el turno: ' . $e->getMessage());
         }
