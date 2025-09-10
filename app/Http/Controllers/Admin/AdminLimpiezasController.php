@@ -342,7 +342,10 @@ class AdminLimpiezasController extends Controller
                     }
                 }
                 
-                $items = $items->groupBy('checklist_nombre');
+                // Agrupar por nombre de checklist con formato más descriptivo
+                $items = $items->groupBy(function($item) {
+                    return $item->checklist_nombre;
+                });
             } else {
                 $items = collect();
             }

@@ -291,7 +291,34 @@
                             @foreach($itemsUnicos['items'] as $categoria => $items)
                                 <div class="mb-4">
                                     <h6 class="text-primary border-bottom pb-2 mb-3">
-                                        <i class="fas fa-layer-group"></i> {{ $categoria ?? 'Sin Categoría' }}
+                                        <!-- DEBUG: Categoria = {{ $categoria }} -->
+                                        @if($categoria == 'COCINA')
+                                            <i class="fas fa-utensils"></i> Cocina
+                                        @elseif($categoria == 'DORMITORIO')
+                                            <i class="fas fa-bed"></i> Dormitorio
+                                        @elseif($categoria == 'SALÓN' || $categoria == 'SALON')
+                                            <i class="fas fa-couch"></i> Salón
+                                        @elseif($categoria == 'BAÑO')
+                                            <i class="fas fa-bath"></i> Baño
+                                        @elseif($categoria == 'AMENITIES')
+                                            <i class="fas fa-gift"></i> Amenities
+                                        @elseif($categoria == 'ESCALERA')
+                                            <i class="fas fa-stairs"></i> Escalera
+                                        @elseif($categoria == 'ASCENSOR')
+                                            <i class="fas fa-elevator"></i> Ascensor
+                                        @elseif($categoria == 'ARMARIO')
+                                            <i class="fas fa-wardrobe"></i> Armario
+                                        @elseif($categoria == 'CANAPE')
+                                            <i class="fas fa-bed"></i> Canapé
+                                        @elseif($categoria == 'CAJON DE CAMA')
+                                            <i class="fas fa-drawer"></i> Cajón de Cama
+                                        @elseif($categoria == 'PERCHERO')
+                                            <i class="fas fa-hanger"></i> Perchero
+                                        @elseif($categoria == 'COCINA COMUN')
+                                            <i class="fas fa-utensils"></i> Cocina Común
+                                        @else
+                                            {{ $categoria ?? 'Sin Categoría' }}
+                                        @endif
                                     </h6>
                                     <div class="row">
                                         @foreach($items as $item)
@@ -305,7 +332,7 @@
                                                         @endif
                                                     </div>
                                                     <div>
-                                                        <strong>{{ $item->item->nombre ?? 'Item N/A' }}</strong>
+                                                        <strong>{{ $item->nombre ?? $item->item->nombre ?? 'Item N/A' }}</strong>
                                                         <br>
                                                         <small class="text-muted">
                                                             {{ $item->estado == 1 ? 'Completado' : 'Pendiente' }}

@@ -823,18 +823,34 @@ class GestionApartamentoController extends Controller
             // Obtener mensaje de amenities del session flash si existe
             $mensajeAmenities = session('mensajeAmenities');
             
-            return view('gestion.checklist-tarea', compact(
-                'tarea',
-                'checklists',
-                'itemsExistentes',
-                'checklistsExistentes',
-                'elementosCompletados',
-                'amenities',
-                'amenitiesConRecomendaciones',
-                'consumosExistentes',
-                'siguienteReserva',
-                'mensajeAmenities'
-            ));
+            // Devolver vista específica según el tipo de tarea
+            if ($tarea->zona_comun_id) {
+                // Para zonas comunes, usar la vista específica
+                $zonaComun = $tarea->zonaComun;
+                $id = $apartamentoLimpieza->id;
+                return view('gestion.edit-zona-comun', compact(
+                    'apartamentoLimpieza',
+                    'zonaComun',
+                    'id',
+                    'checklists',
+                    'itemsExistentes',
+                    'checklistsExistentes'
+                ));
+            } else {
+                // Para apartamentos y tareas generales, usar checklist-tarea
+                return view('gestion.checklist-tarea', compact(
+                    'tarea',
+                    'checklists',
+                    'itemsExistentes',
+                    'checklistsExistentes',
+                    'elementosCompletados',
+                    'amenities',
+                    'amenitiesConRecomendaciones',
+                    'consumosExistentes',
+                    'siguienteReserva',
+                    'mensajeAmenities'
+                ));
+            }
             
         } catch (\Exception $e) {
             Log::error('Error mostrando checklist de tarea: ' . $e->getMessage());

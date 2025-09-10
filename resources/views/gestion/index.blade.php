@@ -2183,7 +2183,7 @@
                                                 <i class="fa fa-gift"></i>
                                             </button>
                                         @endif
-                                        @if($reservaEnLimpieza->reserva_entra_hoy)
+                                        @if(isset($reservaEnLimpieza->reserva_entra_hoy) && $reservaEnLimpieza->reserva_entra_hoy)
                                             <a href="{{ route('gestion.reserva.info', $reservaEnLimpieza->reserva_entra_hoy->id) }}" 
                                                class="action-button info-btn" 
                                                title="Ver información de la reserva">
@@ -2242,7 +2242,7 @@
                                     <div class="apple-list-subtitle">
                                         Fecha Salida: @if(isset($reservaLimpieza->origenReserva->fecha_salida)) {{$reservaLimpieza->origenReserva->fecha_salida}} @endif
                                         
-                                        @if($reservaLimpieza->reserva_entra_hoy)
+                                        @if(isset($reservaLimpieza->reserva_entra_hoy) && $reservaLimpieza->reserva_entra_hoy)
                                             <!-- Si hay reserva que entra hoy, mostrar esa información -->
                                             <br><strong>Código Reserva:</strong> {{$reservaLimpieza->reserva_entra_hoy->codigo_reserva ?? 'N/A'}}<br>
                                             <strong>Adultos:</strong> {{$reservaLimpieza->reserva_entra_hoy->numero_personas}}
@@ -2276,7 +2276,7 @@
                                                 title="Ver amenities">
                                             <i class="fa fa-gift"></i>
                                         </button>
-                                    @if($reservaLimpieza->reserva_entra_hoy)
+                                    @if(isset($reservaLimpieza->reserva_entra_hoy) && $reservaLimpieza->reserva_entra_hoy)
                                         <a href="{{ route('gestion.reserva.info', $reservaLimpieza->reserva_entra_hoy->id) }}" 
                                            class="action-button info-btn" 
                                            title="Ver información de la reserva">

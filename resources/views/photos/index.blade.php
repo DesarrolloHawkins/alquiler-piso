@@ -1681,8 +1681,14 @@ function continuarConResponsabilidad() {
     .then(data => {
         if (data.success) {
             hideLoadingOverlay();
-            // Redirigir a la gestión de limpieza
-            window.location.href = "{{ route('gestion.edit', $id) }}";
+            // Redirigir según el tipo de limpieza (tarea nueva o antigua)
+            @if(isset($limpieza) && $limpieza->tarea_asignada_id)
+                // Es una tarea nueva, redirigir a la vista de tareas
+                window.location.href = "{{ route('gestion.tareas.checklist', $limpieza->tarea_asignada_id) }}";
+            @else
+                // Es una limpieza antigua, redirigir a la vista de gestión
+                window.location.href = "{{ route('gestion.edit', $id) }}";
+            @endif
         } else {
             hideLoadingOverlay();
             alert('Error al guardar la responsabilidad: ' + data.message);
