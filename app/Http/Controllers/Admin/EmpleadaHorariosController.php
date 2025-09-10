@@ -162,7 +162,7 @@ class EmpleadaHorariosController extends Controller
             'viernes' => 'boolean',
             'sabado' => 'boolean',
             'domingo' => 'boolean',
-            'activo' => 'boolean',
+            'activo' => 'required|in:0,1',
             'observaciones' => 'nullable|string|max:1000',
             'dias_libres_semana_actual' => 'nullable|array',
             'dias_libres_semana_actual.*' => 'integer|min:0|max:6'
@@ -182,7 +182,7 @@ class EmpleadaHorariosController extends Controller
                 'viernes' => $request->boolean('viernes'),
                 'sabado' => $request->boolean('sabado'),
                 'domingo' => $request->boolean('domingo'),
-                'activo' => $request->boolean('activo'),
+                'activo' => $request->has('activo') && $request->activo == '1',
                 'observaciones' => $request->observaciones
             ]);
 

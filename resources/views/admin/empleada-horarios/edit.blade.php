@@ -41,8 +41,9 @@
                                 
                                 <div class="mb-3">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="activo" name="activo" 
+                                        <input class="form-check-input" type="checkbox" id="activo" name="activo" value="1"
                                                {{ $empleadaHorario->activo ? 'checked' : '' }}>
+                                        <input type="hidden" name="activo" value="0">
                                         <label class="form-check-label fw-bold" for="activo">
                                             Estado Activo
                                         </label>

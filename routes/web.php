@@ -505,7 +505,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/gestion-edit/{apartamentoLimpieza}/checklist-status', [App\Http\Controllers\GestionApartamentoController::class, 'checklistStatus'])->name('gestion.checklistStatus');
     Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
     Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
-    Route::post('/gestion/update-checkbox/', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
+    Route::post('/gestion/update-checkbox', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
     Route::get('/gestion-create-fondo/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create_fondo'])->name('gestion.create_fondo');
     Route::get('/gestion-edit-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'editZonaComun'])->name('gestion.editZonaComun');
     Route::get('/gestion-create-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'createZonaComun'])->name('gestion.createZonaComun');
@@ -556,10 +556,28 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('admin/tipos-tareas/{tiposTarea}/toggle-active', [App\Http\Controllers\Admin\TiposTareasController::class, 'toggleActive'])->name('admin.tipos-tareas.toggle-active');
     Route::post('admin/tipos-tareas/{tiposTarea}/duplicar', [App\Http\Controllers\Admin\TiposTareasController::class, 'duplicar'])->name('admin.tipos-tareas.duplicar');
     
+    // Horas extras
+    Route::resource('admin/horas-extras', App\Http\Controllers\Admin\HorasExtrasController::class)->names('admin.horas-extras');
+    Route::post('admin/horas-extras/{horasExtras}/aprobar', [App\Http\Controllers\Admin\HorasExtrasController::class, 'aprobar'])->name('admin.horas-extras.aprobar');
+    Route::post('admin/horas-extras/{horasExtras}/rechazar', [App\Http\Controllers\Admin\HorasExtrasController::class, 'rechazar'])->name('admin.horas-extras.rechazar');
+    Route::post('admin/horas-extras/aprobar-multiples', [App\Http\Controllers\Admin\HorasExtrasController::class, 'aprobarMultiples'])->name('admin.horas-extras.aprobar-multiples');
+    Route::post('admin/horas-extras/rechazar-multiples', [App\Http\Controllers\Admin\HorasExtrasController::class, 'rechazarMultiples'])->name('admin.horas-extras.rechazar-multiples');
+    Route::get('admin/horas-extras/exportar', [App\Http\Controllers\Admin\HorasExtrasController::class, 'exportar'])->name('admin.horas-extras.exportar');
+    Route::get('admin/horas-extras/estadisticas', [App\Http\Controllers\Admin\HorasExtrasController::class, 'estadisticas'])->name('admin.horas-extras.estadisticas');
+    
     // Horarios de empleadas
     Route::resource('admin/empleada-horarios', App\Http\Controllers\Admin\EmpleadaHorariosController::class)->names('admin.empleada-horarios');
     Route::post('admin/empleada-horarios/{empleadaHorario}/toggle-active', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'toggleActive'])->name('admin.empleada-horarios.toggle-active');
     Route::get('admin/empleada-horarios/empleadas-sin-horario', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'empleadasSinHorario'])->name('admin.empleada-horarios.empleadas-sin-horario');
+    
+    // Gestión de tareas en turnos
+    Route::post('admin/turnos/tareas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'addTask'])->name('admin.turnos.tareas.store');
+    Route::get('admin/turnos/tareas/{tarea}', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'showTask'])->name('admin.turnos.tareas.show');
+    Route::get('admin/turnos/tareas/{tarea}/edit', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'editTask'])->name('admin.turnos.tareas.edit');
+    Route::put('admin/turnos/tareas/{tarea}', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'updateTask'])->name('admin.turnos.tareas.update');
+    Route::delete('admin/turnos/tareas/{tarea}', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'deleteTask'])->name('admin.turnos.tareas.destroy');
+    Route::post('admin/turnos/tareas/{tarea}/toggle', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'toggleTask'])->name('admin.turnos.tareas.toggle');
+    Route::post('admin/turnos/{turno}/reordenar-tareas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'reordenarTareas'])->name('admin.turnos.reordenar-tareas');
     Route::post('admin/empleada-horarios/crear-horario-rapido', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'crearHorarioRapido'])->name('admin.empleada-horarios.crear-horario-rapido');
     
     // Rutas para gestión de días libres por semana
@@ -864,6 +882,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     // Sistema de Inventario - Gestión de Movimientos de Stock
     Route::resource('movimientos-stock', App\Http\Controllers\Admin\MovimientoStockController::class);
     Route::get('/movimientos-stock/exportar', [App\Http\Controllers\Admin\MovimientoStockController::class, 'exportar'])->name('movimientos-stock.exportar');
+});
+
+// Rutas para panel de limpiadoras
+Route::middleware(['auth'])->prefix('limpiadora')->name('limpiadora.')->group(function () {
+    // Turnos de limpiadoras
+    Route::get('/turnos', [App\Http\Controllers\LimpiadoraTurnosController::class, 'index'])->name('turnos.index');
+    Route::get('/turnos/{turno}', [App\Http\Controllers\LimpiadoraTurnosController::class, 'show'])->name('turnos.show');
+    Route::post('/turnos/{turno}/iniciar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'iniciarTurno'])->name('turnos.iniciar');
+    Route::post('/turnos/{turno}/finalizar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'finalizarTurno'])->name('turnos.finalizar');
+    
+    // Tareas de limpiadoras
+    Route::post('/turnos/tareas/{tarea}/iniciar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'iniciarTarea'])->name('turnos.tareas.iniciar');
+    Route::post('/turnos/tareas/{tarea}/completar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'completarTarea'])->name('turnos.tareas.completar');
+    
+    // Estadísticas de limpiadoras
+    Route::get('/estadisticas', [App\Http\Controllers\LimpiadoraTurnosController::class, 'estadisticas'])->name('estadisticas');
 });
 
 // Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)

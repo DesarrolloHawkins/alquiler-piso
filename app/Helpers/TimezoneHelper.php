@@ -5,12 +5,13 @@ namespace App\Helpers;
 class TimezoneHelper 
 {
     /**
-     * Ajustar datetime a la zona horaria local (sumar 2 horas)
+     * Ajustar datetime a la zona horaria local (ya manejado por Laravel)
      */
     public static function adjustToLocal($datetime)
     {
         if (!$datetime) return null;
-        return \Carbon\Carbon::parse($datetime)->addHours(2);
+        // Laravel ya maneja la zona horaria correctamente, no necesitamos ajuste manual
+        return \Carbon\Carbon::parse($datetime);
     }
     
     /**

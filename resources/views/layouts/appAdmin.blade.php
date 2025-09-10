@@ -175,6 +175,9 @@
                                         <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">
                                             <i class="fas fa-clipboard-list me-2"></i>Panel de Limpieza
                                         </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('limpiadora.turnos.index') }}">
+                                            <i class="fas fa-calendar-alt me-2"></i>Mis Turnos
+                                        </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.limpiezas.index') }}">
                                             <i class="fas fa-microscope me-2"></i>Gestión de Limpiezas
                                         </a></li>
@@ -193,6 +196,9 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.empleada-horarios.index') }}">
                                             <i class="fas fa-clock me-2"></i>Horarios de Empleadas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.horas-extras.index') }}">
+                                            <i class="fas fa-clock-plus me-2"></i>Horas Extras
                                         </a></li>
                                         
                                         <!-- Configuración de Limpieza -->

@@ -7,6 +7,8 @@ use App\Models\TurnoTrabajo;
 use App\Models\EmpleadaHorario;
 use App\Models\TipoTarea;
 use App\Models\User;
+use App\Models\TareaAsignada;
+use App\Services\GeneracionTurnosService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -233,42 +235,46 @@ class TurnosTrabajoController extends Controller
             $usarIA = $request->boolean('usar_ia', false);
             $tipoIA = $request->get('tipo_ia', 'real');
             
-            // Construir comando según opciones
-            $comando = 'turnos:generar';
-            $argumentos = ['fecha' => $fecha];
-            $opciones = [];
+            Log::info("🎯 Parámetros recibidos - Fecha: {$fecha}, Forzar: " . ($forzar ? 'Sí' : 'No') . ", IA: " . ($usarIA ? 'Sí' : 'No'));
             
-            if ($forzar) {
-                $opciones['--force'] = true;
-            }
-            
-            if ($usarIA) {
-                if ($tipoIA === 'simulada') {
-                    $opciones['--test-ia'] = true;
-                } else {
-                    $opciones['--ia'] = true;
+            // Verificar si ya existen turnos para esta fecha (solo si no se fuerza regeneración)
+            if (!$forzar) {
+                $turnosExistentes = TurnoTrabajo::porFecha(Carbon::parse($fecha))->count();
+                
+                if ($turnosExistentes > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Ya existen {$turnosExistentes} turnos para esta fecha. Usa 'Forzar' para regenerar.",
+                        'output' => "Turnos existentes: {$turnosExistentes}"
+                    ]);
                 }
             }
-            
-            // Capturar la salida del comando
-            ob_start();
-            $exitCode = Artisan::call($comando, array_merge($argumentos, $opciones));
-            $output = ob_get_clean();
-            
-            // También obtener la salida de Artisan
-            $artisanOutput = Artisan::output();
 
-            if ($exitCode === 0) {
+            // Usar el nuevo servicio de generación inteligente
+            $generacionService = new GeneracionTurnosService();
+            $resultado = $generacionService->generarTurnosInteligentes($fecha, $forzar);
+
+            if ($resultado['success']) {
+                $turnosGenerados = count($resultado['turnos']);
+                $mensaje = "Se generaron {$turnosGenerados} turnos inteligentes para {$fecha}";
+                
+                // Log detallado de los turnos generados
+                foreach ($resultado['turnos'] as $turnoData) {
+                    Log::info("📋 Turno generado: {$turnoData['empleada']} - {$turnoData['horas']}h - {$turnoData['tipo']} - " . count($turnoData['tareas']) . " tareas");
+                }
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Turnos generados exitosamente',
-                    'output' => $artisanOutput ?: $output
+                    'message' => $mensaje,
+                    'output' => $mensaje,
+                    'turnos_generados' => $turnosGenerados,
+                    'detalles' => $resultado['turnos']
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al generar los turnos',
-                    'output' => $artisanOutput ?: $output
+                    'message' => $resultado['message'],
+                    'output' => $resultado['message']
                 ]);
             }
 
@@ -374,4 +380,196 @@ class TurnosTrabajoController extends Controller
         
         return response()->json($estadisticas);
     }
+
+    /**
+     * Añadir tarea a un turno existente
+     */
+    public function addTask(Request $request)
+    {
+        $request->validate([
+            'turno_id' => 'required|exists:turnos_trabajo,id',
+            'tipo_tarea_id' => 'required|exists:tipos_tareas,id',
+            'apartamento_id' => 'nullable|exists:apartamentos,id',
+            'zona_comun_id' => 'nullable|exists:zona_comuns,id',
+            'prioridad_calculada' => 'required|integer|min:1|max:10',
+            'orden_ejecucion' => 'required|integer|min:1',
+            'observaciones' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            $tarea = TareaAsignada::create([
+                'turno_id' => $request->turno_id,
+                'tipo_tarea_id' => $request->tipo_tarea_id,
+                'apartamento_id' => $request->apartamento_id,
+                'zona_comun_id' => $request->zona_comun_id,
+                'prioridad_calculada' => $request->prioridad_calculada,
+                'orden_ejecucion' => $request->orden_ejecucion,
+                'estado' => 'pendiente',
+                'observaciones' => $request->observaciones
+            ]);
+
+            return response()->json(['success' => true, 'tarea' => $tarea]);
+
+        } catch (\Exception $e) {
+            Log::error('Error añadiendo tarea: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al añadir la tarea']);
+        }
+    }
+
+    /**
+     * Actualizar tarea existente
+     */
+    public function updateTask(Request $request, TareaAsignada $tarea)
+    {
+        $request->validate([
+            'tipo_tarea_id' => 'required|exists:tipos_tareas,id',
+            'apartamento_id' => 'nullable|exists:apartamentos,id',
+            'zona_comun_id' => 'nullable|exists:zona_comuns,id',
+            'prioridad_calculada' => 'required|integer|min:1|max:10',
+            'orden_ejecucion' => 'required|integer|min:1',
+            'observaciones' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            $tarea->update([
+                'tipo_tarea_id' => $request->tipo_tarea_id,
+                'apartamento_id' => $request->apartamento_id,
+                'zona_comun_id' => $request->zona_comun_id,
+                'prioridad_calculada' => $request->prioridad_calculada,
+                'orden_ejecucion' => $request->orden_ejecucion,
+                'observaciones' => $request->observaciones
+            ]);
+
+            return response()->json(['success' => true, 'tarea' => $tarea]);
+
+        } catch (\Exception $e) {
+            Log::error('Error actualizando tarea: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al actualizar la tarea']);
+        }
+    }
+
+    /**
+     * Eliminar tarea
+     */
+    public function deleteTask(TareaAsignada $tarea)
+    {
+        try {
+            $tarea->delete();
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Error eliminando tarea: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la tarea']);
+        }
+    }
+
+    /**
+     * Reordenar tareas de un turno
+     */
+    public function reordenarTareas(Request $request, TurnoTrabajo $turno)
+    {
+        $request->validate([
+            'tareas' => 'required|array',
+            'tareas.*.id' => 'required|exists:tareas_asignadas,id',
+            'tareas.*.orden' => 'required|integer|min:1'
+        ]);
+
+        try {
+            foreach ($request->tareas as $tareaData) {
+                TareaAsignada::where('id', $tareaData['id'])
+                    ->where('turno_id', $turno->id)
+                    ->update(['orden_ejecucion' => $tareaData['orden']]);
+            }
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            Log::error('Error reordenando tareas: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al reordenar las tareas']);
+        }
+    }
+
+    /**
+     * Toggle estado de una tarea
+     */
+    public function toggleTask(Request $request, TareaAsignada $tarea)
+    {
+        $request->validate([
+            'estado' => 'required|in:pendiente,en_progreso,completada'
+        ]);
+
+        try {
+            $tarea->update(['estado' => $request->estado]);
+            
+            // Si se marca como completada, calcular tiempo real
+            if ($request->estado === 'completada' && !$tarea->fecha_inicio_real) {
+                $tarea->update([
+                    'fecha_inicio_real' => now()->subMinutes($tarea->tipoTarea->tiempo_estimado_minutos),
+                    'fecha_fin_real' => now(),
+                    'tiempo_real_minutos' => $tarea->tipoTarea->tiempo_estimado_minutos
+                ]);
+            }
+
+            return response()->json(['success' => true, 'tarea' => $tarea]);
+
+        } catch (\Exception $e) {
+            Log::error('Error cambiando estado de tarea: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al cambiar el estado de la tarea']);
+        }
+    }
+
+    /**
+     * Mostrar detalles de una tarea
+     */
+    public function showTask(TareaAsignada $tarea)
+    {
+        try {
+            $tarea->load(['tipoTarea', 'apartamento', 'zonaComun']);
+            
+            return response()->json([
+                'success' => true,
+                'tarea' => [
+                    'id' => $tarea->id,
+                    'tipo_tarea_nombre' => $tarea->tipoTarea->nombre ?? 'N/A',
+                    'elemento_nombre' => $tarea->apartamento->nombre ?? $tarea->zonaComun->nombre ?? 'N/A',
+                    'tiempo_estimado_formateado' => $tarea->tiempo_estimado_formateado,
+                    'tiempo_real_formateado' => $tarea->tiempo_real_formateado,
+                    'prioridad_calculada' => $tarea->prioridad_calculada,
+                    'completada' => $tarea->estado === 'completada',
+                    'observaciones' => $tarea->observaciones
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo detalles de tarea: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al obtener los detalles de la tarea']);
+        }
+    }
+
+    /**
+     * Obtener datos de una tarea para editar
+     */
+    public function editTask(TareaAsignada $tarea)
+    {
+        try {
+            $tarea->load(['tipoTarea', 'apartamento', 'zonaComun']);
+            
+            return response()->json([
+                'success' => true,
+                'tarea' => [
+                    'id' => $tarea->id,
+                    'tipo_tarea_id' => $tarea->tipo_tarea_id,
+                    'apartamento_id' => $tarea->apartamento_id,
+                    'zona_comun_id' => $tarea->zona_comun_id,
+                    'orden_ejecucion' => $tarea->orden_ejecucion,
+                    'tiempo_estimado_minutos' => $tarea->tiempo_estimado_minutos,
+                    'prioridad_calculada' => $tarea->prioridad_calculada,
+                    'observaciones' => $tarea->observaciones
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo datos de tarea para editar: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al obtener los datos de la tarea']);
+        }
+    }
+
 }
