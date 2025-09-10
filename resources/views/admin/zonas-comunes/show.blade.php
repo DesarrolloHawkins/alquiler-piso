@@ -220,7 +220,11 @@
 
 @section('scripts')
 <script>
+    console.log('Script de show.blade.php cargado');
+    
     function confirmarEliminacion(id, nombre) {
+        console.log('Función confirmarEliminacion llamada con ID:', id, 'Nombre:', nombre);
+        
         Swal.fire({
             title: '¿Eliminar Zona Común?',
             html: `
@@ -240,25 +244,59 @@
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
-                // Crear formulario de eliminación
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/admin/zonas-comunes/${id}`;
+                console.log('Usuario confirmó eliminación');
                 
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
                 
-                const methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                methodField.value = 'DELETE';
-                
-                form.appendChild(csrfToken);
-                form.appendChild(methodField);
-                document.body.appendChild(form);
-                form.submit();
+                // Enviar petición AJAX
+                fetch(`/admin/zonas-comunes/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Respuesta del servidor:', data);
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Eliminada',
+                            text: data.message || 'La zona común ha sido eliminada correctamente',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = '{{ route("admin.zonas-comunes.index") }}';
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Advertencia',
+                            text: data.message || 'No se pudo eliminar la zona común',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo eliminar la zona común',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+            } else {
+                console.log('Usuario canceló eliminación');
             }
         });
     }

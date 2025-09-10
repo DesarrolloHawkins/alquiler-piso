@@ -167,9 +167,8 @@
                                             </button>
                                         </form>
                                         <button type="button" 
-                                                class="btn btn-outline-danger btn-sm delete-btn" 
-                                                data-zona-id="{{ $zona->id }}"
-                                                data-zona-nombre="{{ $zona->nombre }}"
+                                                class="btn btn-outline-danger btn-sm" 
+                                                onclick="eliminarZonaComun({{ $zona->id }}, '{{ $zona->nombre }}')"
                                                 data-bs-toggle="tooltip" 
                                                 title="Eliminar zona común">
                                             <i class="fas fa-trash"></i>
@@ -202,133 +201,95 @@
 
 @include('sweetalert::alert')
 
-@section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Inicializar tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+console.log('Script inline cargado');
 
-        // Botones de eliminar
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-                const zonaId = this.getAttribute('data-zona-id');
-                const zonaNombre = this.getAttribute('data-zona-nombre');
-                
+// Función global para eliminar zona común
+function eliminarZonaComun(zonaId, zonaNombre) {
+    console.log('Función eliminarZonaComun llamada con ID:', zonaId, 'Nombre:', zonaNombre);
+    
+    Swal.fire({
+        title: '¿Eliminar Zona Común?',
+        html: `
+            <div class="text-start">
+                <p><strong>Zona Común:</strong> ${zonaNombre}</p>
+                <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+        customClass: {
+            confirmButton: 'btn btn-danger',
+            cancelButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            console.log('Usuario confirmó eliminación');
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                text: 'Por favor espera',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar petición AJAX
+            fetch(`{{ route('admin.zonas-comunes.destroy', ':id') }}`.replace(':id', zonaId), {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Respuesta del servidor:', data);
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Eliminada',
+                        text: data.message || 'La zona común ha sido eliminada correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Advertencia',
+                        text: data.message || 'No se pudo eliminar la zona común',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
                 Swal.fire({
-                    title: '¿Eliminar Zona Común?',
-                    html: `
-                        <div class="text-start">
-                            <p><strong>Zona Común:</strong> ${zonaNombre}</p>
-                            <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
-                        </div>
-                    `,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
-                    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                    customClass: {
-                        confirmButton: 'btn btn-danger',
-                        cancelButton: 'btn btn-secondary'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Mostrar loading
-                        Swal.fire({
-                            title: 'Eliminando...',
-                            text: 'Por favor espera',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-                        
-                        // Enviar petición AJAX
-                        fetch(`{{ route('admin.zonas-comunes.destroy', ':id') }}`.replace(':id', zonaId), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Eliminada',
-                                    text: data.message || 'La zona común ha sido eliminada correctamente',
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    title: 'Advertencia',
-                                    text: data.message || 'No se pudo eliminar la zona común',
-                                    icon: 'warning',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire({
-                                title: 'Error',
-                                text: 'No se pudo eliminar la zona común',
-                                icon: 'error',
-                                confirmButtonText: 'OK'
-                            });
-                        });
-                    }
+                    title: 'Error',
+                    text: 'No se pudo eliminar la zona común',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
                 });
             });
-        });
+        } else {
+            console.log('Usuario canceló eliminación');
+        }
     });
-    
-    // Inicializar DataTable
-    if (typeof $ !== 'undefined' && $.fn.DataTable) {
-        $('#zonasComunesTable').DataTable({
-            language: {
-                "sProcessing":     "Procesando...",
-                "sLengthMenu":     "Mostrar _MENU_ registros",
-                "sZeroRecords":    "No se encontraron resultados",
-                "sEmptyTable":     "Ningún dato disponible en esta tabla",
-                "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix":    "",
-                "sSearch":         "Buscar:",
-                "sUrl":            "",
-                "sInfoThousands":  ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst":    "Primero",
-                    "sLast":     "Último",
-                    "sNext":     "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending":  ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-            },
-            pageLength: 25,
-            order: [[0, 'desc']]
-        });
-    } else {
-        console.warn('jQuery no está disponible, DataTable no se inicializará');
-    }
-});
+}
+
+// Verificar que la función esté disponible
+console.log('Función eliminarZonaComun definida:', typeof eliminarZonaComun);
 </script>
+
 
 <style>
 /* Estilos de la tabla */
@@ -384,4 +345,3 @@
     margin-right: 0;
 }
 </style>
-@endsection

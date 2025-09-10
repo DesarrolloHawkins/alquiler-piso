@@ -116,10 +116,11 @@ class ZonaComunController extends Controller
             
             if ($limpiezasCount > 0) {
                 if (request()->expectsJson()) {
+                    $zonaComun->delete(); // Realizar soft delete
                     return response()->json([
-                        'success' => false,
-                        'message' => "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminará de forma lógica (soft delete) y las limpiezas se mantendrán."
-                    ], 400);
+                        'success' => true, // Cambiado a true porque la operación fue exitosa
+                        'message' => "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminó de forma lógica (soft delete) y las limpiezas se mantuvieron."
+                    ], 200); // Cambiado a 200 OK
                 }
                 Alert::warning('Advertencia', "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminará de forma lógica (soft delete) y las limpiezas se mantendrán.");
             }
