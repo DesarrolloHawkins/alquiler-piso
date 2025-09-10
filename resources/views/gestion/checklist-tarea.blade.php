@@ -271,109 +271,50 @@
                     </div>
                 @endforeach
 
-                <!-- Sección de Amenities - Solo para apartamentos -->
+                <!-- Sección de Amenities - Solo información -->
                 @if($tarea->apartamento_id && isset($amenitiesConRecomendaciones) && count($amenitiesConRecomendaciones) > 0)
                 <div class="amenities-section">
                     <div class="amenities-header">
                         <div class="amenities-title">
                             <i class="fas fa-gift amenities-icon"></i>
-                            <h3>Gestión de Amenities</h3>
-                        </div>
-                        <div class="amenities-toggle">
-                            <label class="amenities-switch-label">
-                                <input type="checkbox" id="amenitiesToggle" class="amenities-switch">
-                                <span class="amenities-slider"></span>
-                            </label>
+                            <h3>Estado de Amenities</h3>
+                            <small class="text-muted">Información del stock actual</small>
                         </div>
                     </div>
                     
-                    <div class="amenities-content" id="amenitiesContent" style="display: none;">
-                        @if(count($amenitiesConRecomendaciones) > 0)
-                            <!-- Resumen de Amenities -->
-                            <div class="amenities-summary">
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <div class="summary-item">
-                                            <h4>{{ count($amenitiesConRecomendaciones) }}</h4>
-                                            <p>Categorías</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="summary-item">
-                                            @php
-                                                $totalAmenities = collect($amenitiesConRecomendaciones)->flatten(1)->count();
-                                                $amenitiesAnadidos = collect($amenitiesConRecomendaciones)->flatten(1)->filter(function($item) {
-                                                    return $item['consumo_existente'] && $item['consumo_existente']->cantidad > 0;
-                                                })->count();
-                                            @endphp
-                                            <h4>{{ $amenitiesAnadidos }}/{{ $totalAmenities }}</h4>
-                                            <p>Agregados</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            @foreach($amenitiesConRecomendaciones as $categoria => $amenitiesCategoria)
-                                <div class="amenities-category">
-                                    <h4 class="category-title">{{ $categoria }}</h4>
-                                    <div class="amenities-grid">
-                                        @foreach($amenitiesCategoria as $amenityData)
-                                            @php
-                                                $amenity = $amenityData['amenity'];
-                                                $cantidadRecomendada = $amenityData['cantidad_recomendada'];
-                                                $consumoExistente = $amenityData['consumo_existente'];
-                                                $stockDisponible = $amenityData['stock_disponible'];
-                                                $esAutomaticoNinos = $amenityData['es_automatico_ninos'] ?? false;
-                                                $motivoNinos = $amenityData['motivo_ninos'] ?? '';
-                                            @endphp
-                                            
-                                            <div class="amenity-item {{ $esAutomaticoNinos ? 'automatico-ninos' : '' }}">
-                                                <div class="amenity-header">
-                                                    <div class="amenity-info">
-                                                        <h5 class="amenity-name">{{ $amenity->nombre }}</h5>
-                                                        @if($esAutomaticoNinos)
-                                                            <span class="badge badge-info">{{ $motivoNinos }}</span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="amenity-stock">
-                                                        <span class="stock-label">Stock:</span>
-                                                        <span class="stock-value {{ $stockDisponible < $cantidadRecomendada ? 'text-danger' : 'text-success' }}">
-                                                            {{ $stockDisponible }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="amenity-controls">
-                                                    <div class="quantity-control">
-                                                        <label class="quantity-label">Cantidad:</label>
-                                                        <div class="quantity-input-group">
-                                                            <button type="button" class="quantity-btn quantity-minus" data-amenity="{{ $amenity->id }}">-</button>
-                                                            <input type="number" 
-                                                                   class="quantity-input" 
-                                                                   name="amenities[{{ $amenity->id }}]"
-                                                                   value="{{ $consumoExistente ? $consumoExistente->cantidad : 0 }}"
-                                                                   min="0" 
-                                                                   max="{{ $stockDisponible }}"
-                                                                   data-amenity="{{ $amenity->id }}"
-                                                                   data-recommended="{{ $cantidadRecomendada }}">
-                                                            <button type="button" class="quantity-btn quantity-plus" data-amenity="{{ $amenity->id }}">+</button>
-                                                        </div>
-                                                        <span class="recommended-quantity">
-                                                            Recomendado: {{ $cantidadRecomendada }}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                    <div class="amenities-content">
+                        @foreach($amenitiesConRecomendaciones as $categoria => $amenitiesCategoria)
+                            <div class="amenities-category mb-3">
+                                <h5 class="category-title text-primary">{{ $categoria }}</h5>
+                                <div class="amenities-list">
+                                    @foreach($amenitiesCategoria as $amenityData)
+                                        @php
+                                            $amenity = $amenityData['amenity'];
+                                            $cantidadRecomendada = $amenityData['cantidad_recomendada'];
+                                            $consumoExistente = $amenityData['consumo_existente'];
+                                            $stockDisponible = $amenityData['stock_disponible'];
+                                            $esAutomaticoNinos = $amenityData['es_automatico_ninos'] ?? false;
+                                            $motivoNinos = $amenityData['motivo_ninos'] ?? '';
+                                        @endphp
+                                        
+                                        <div class="amenity-item-simple d-flex justify-content-between align-items-center py-2 border-bottom">
+                                            <div class="amenity-info">
+                                                <span class="amenity-name fw-bold">{{ $amenity->nombre }}</span>
+                                                @if($esAutomaticoNinos)
+                                                    <span class="badge bg-info ms-2">{{ $motivoNinos }}</span>
+                                                @endif
                                             </div>
-                                        @endforeach
-                                    </div>
+                                            <div class="amenity-details text-end">
+                                                <small class="text-muted">
+                                                    Recomendado: <strong>{{ $cantidadRecomendada }}</strong> | 
+                                                    Stock: <span class="{{ $stockDisponible < $cantidadRecomendada ? 'text-danger' : 'text-success' }}">{{ $stockDisponible }}</span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
-                            @endforeach
-                        @else
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i>
-                                No hay amenities disponibles para este apartamento.
                             </div>
-                        @endif
+                        @endforeach
                     </div>
                 </div>
                 @endif
@@ -630,44 +571,7 @@
     color: #2196f3;
 }
 
-.amenities-toggle {
-    display: flex;
-    align-items: center;
-}
-
-.amenities-switch {
-    display: none;
-}
-
-.amenities-switch-label {
-    display: block;
-    width: 50px;
-    height: 30px;
-    background: #ccc;
-    border-radius: 15px;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.amenities-switch:checked + .amenities-switch-label {
-    background: #2196f3;
-}
-
-.amenities-slider {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 26px;
-    height: 26px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 0.3s;
-}
-
-.amenities-switch:checked + .amenities-switch-label .amenities-slider {
-    transform: translateX(20px);
-}
+/* Estilos del toggle eliminados - amenities ahora son solo informativos */
 
 .amenities-content {
     padding: 1.5rem;
@@ -757,60 +661,13 @@
     font-size: 1.1rem;
 }
 
-.amenity-controls {
-    margin-top: 1rem;
+/* Estilos de amenities simplificados */
+.amenity-item-simple {
+    transition: background-color 0.2s;
 }
 
-.quantity-control {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.quantity-label {
-    font-weight: 500;
-    color: #333;
-    margin: 0;
-}
-
-.quantity-input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.quantity-btn {
-    width: 35px;
-    height: 35px;
-    border: 1px solid #ddd;
-    background: #f8f9fa;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    transition: all 0.3s;
-}
-
-.quantity-btn:hover {
-    background: #e9ecef;
-    border-color: #007bff;
-}
-
-.quantity-input {
-    width: 80px;
-    height: 35px;
-    text-align: center;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-.recommended-quantity {
-    font-size: 0.8rem;
-    color: #666;
-    font-style: italic;
+.amenity-item-simple:hover {
+    background-color: #f8f9fa;
 }
 
 /* Estilos para el progreso */
@@ -969,6 +826,8 @@ function inicializarSwitchesCategorias() {
             }
             
             actualizarContadores();
+            // Guardar automáticamente el cambio de categoría
+            guardarCheckboxCategoria(this);
         });
         
         // Mostrar items si la categoría ya está marcada
@@ -988,78 +847,18 @@ function inicializarSwitchesCategorias() {
 }
 
 function inicializarAmenities() {
-    const amenitiesToggle = document.getElementById('amenitiesToggle');
     const amenitiesContent = document.getElementById('amenitiesContent');
     
-    if (amenitiesToggle && amenitiesContent) {
-        amenitiesToggle.addEventListener('change', function() {
-            if (this.checked) {
-                amenitiesContent.style.display = 'block';
-            } else {
-                amenitiesContent.style.display = 'none';
-            }
-        });
-        
-        // Inicializar controles de cantidad
-        inicializarControlesCantidad();
+    if (amenitiesContent) {
+        // Mostrar siempre el contenido de amenities (solo informativo)
+        amenitiesContent.style.display = 'block';
+        console.log('✅ Amenities mostrados como información');
+    } else {
+        console.log('X Contenido de amenities no encontrado');
     }
 }
 
-function inicializarControlesCantidad() {
-    const minusButtons = document.querySelectorAll('.quantity-minus');
-    const plusButtons = document.querySelectorAll('.quantity-plus');
-    const quantityInputs = document.querySelectorAll('.quantity-input');
-    
-    minusButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const amenityId = this.dataset.amenity;
-            const input = document.querySelector(`input[data-amenity="${amenityId}"]`);
-            const currentValue = parseInt(input.value) || 0;
-            if (currentValue > 0) {
-                input.value = currentValue - 1;
-                input.dispatchEvent(new Event('change'));
-            }
-        });
-    });
-    
-    plusButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const amenityId = this.dataset.amenity;
-            const input = document.querySelector(`input[data-amenity="${amenityId}"]`);
-            const currentValue = parseInt(input.value) || 0;
-            const maxValue = parseInt(input.dataset.max) || 999;
-            if (currentValue < maxValue) {
-                input.value = currentValue + 1;
-                input.dispatchEvent(new Event('change'));
-            }
-        });
-    });
-    
-    quantityInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const value = parseInt(this.value) || 0;
-            const max = parseInt(this.dataset.max) || 999;
-            const recommended = parseInt(this.dataset.recommended) || 0;
-            
-            if (value > max) {
-                this.value = max;
-                mostrarAlerta('La cantidad no puede ser mayor al stock disponible');
-            }
-            
-            if (value < 0) {
-                this.value = 0;
-            }
-            
-            // Resaltar si está por debajo de la recomendación
-            const amenityItem = this.closest('.amenity-item');
-            if (value < recommended && value > 0) {
-                amenityItem.style.borderColor = '#ffc107';
-            } else {
-                amenityItem.style.borderColor = '#e0e0e0';
-            }
-        });
-    });
-}
+// Función eliminada - amenities ahora son solo informativos
 
 function inicializarConsentimiento() {
     const consentimientoCheckbox = document.getElementById('consentimientoFinalizar');
@@ -1092,11 +891,153 @@ function inicializarConsentimiento() {
 
 function inicializarCheckboxesItems() {
     const checkboxes = document.querySelectorAll('.item-checkbox');
-    checkboxes.forEach(checkbox => {
+    console.log('🔧 Inicializando checkboxes de items:', checkboxes.length, 'encontrados');
+    
+    checkboxes.forEach((checkbox, index) => {
+        console.log(`🔧 Checkbox ${index + 1}:`, {
+            id: checkbox.dataset.itemId,
+            checklistId: checkbox.dataset.checklistId,
+            checked: checkbox.checked
+        });
+        
         checkbox.addEventListener('change', function() {
+            console.log('🔄 Checkbox cambiado:', {
+                id: this.dataset.itemId,
+                checked: this.checked
+            });
             actualizarContadores();
+            // Guardar automáticamente el cambio
+            guardarCheckboxIndividual(this);
         });
     });
+}
+
+function guardarCheckboxIndividual(checkbox) {
+    const itemId = checkbox.dataset.itemId;
+    const checklistId = checkbox.dataset.checklistId;
+    const isChecked = checkbox.checked;
+    
+    console.log('🔧 Guardando checkbox individual:', {
+        itemId: itemId,
+        checklistId: checklistId,
+        isChecked: isChecked,
+        limpiezaId: {{ $apartamentoLimpieza->id ?? 'null' }}
+    });
+    
+    // Mostrar indicador de guardado
+    const originalText = checkbox.parentElement.innerHTML;
+    checkbox.parentElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+    
+    fetch('{{ route("gestion.updateCheckbox") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            type: 'item',
+            id: itemId,
+            checked: isChecked ? 1 : 0,
+            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }}
+        })
+    })
+    .then(response => {
+        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+        return response.json();
+    })
+    .then(data => {
+        console.log('📦 Datos recibidos:', data);
+        if (data.success) {
+            // Restaurar el checkbox
+            checkbox.parentElement.innerHTML = originalText;
+            // Mostrar notificación sutil
+            mostrarNotificacionSutil('Estado actualizado', 'success');
+            console.log('✅ Checkbox guardado correctamente');
+        } else {
+            // Revertir el checkbox si hay error
+            checkbox.checked = !isChecked;
+            checkbox.parentElement.innerHTML = originalText;
+            mostrarAlerta('Error al actualizar el estado', 'error');
+            console.error('❌ Error del servidor:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error de red:', error);
+        // Revertir el checkbox si hay error
+        checkbox.checked = !isChecked;
+        checkbox.parentElement.innerHTML = originalText;
+        mostrarAlerta('Error al actualizar el estado', 'error');
+    });
+}
+
+function guardarCheckboxCategoria(checkbox) {
+    const checklistId = checkbox.dataset.habitacion;
+    const isChecked = checkbox.checked;
+    
+    console.log('🔧 Guardando checkbox de categoría:', {
+        checklistId: checklistId,
+        isChecked: isChecked,
+        limpiezaId: {{ $apartamentoLimpieza->id ?? 'null' }}
+    });
+    
+    // Mostrar indicador de guardado
+    const originalText = checkbox.parentElement.innerHTML;
+    checkbox.parentElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+    
+    fetch('{{ route("gestion.updateCheckbox") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            type: 'checklist',
+            id: checklistId,
+            checked: isChecked ? 1 : 0,
+            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Restaurar el checkbox
+            checkbox.parentElement.innerHTML = originalText;
+            // Mostrar notificación sutil
+            mostrarNotificacionSutil('Categoría actualizada', 'success');
+        } else {
+            // Revertir el checkbox si hay error
+            checkbox.checked = !isChecked;
+            checkbox.parentElement.innerHTML = originalText;
+            mostrarAlerta('Error al actualizar la categoría', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revertir el checkbox si hay error
+        checkbox.checked = !isChecked;
+        checkbox.parentElement.innerHTML = originalText;
+        mostrarAlerta('Error al actualizar la categoría', 'error');
+    });
+}
+
+function mostrarNotificacionSutil(mensaje, tipo = 'info') {
+    // Crear notificación sutil que no interfiera con el trabajo
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 200px;';
+    notification.innerHTML = `
+        <small>${mensaje}</small>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remover después de 2 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 2000);
 }
 
 function guardarProgreso() {
@@ -1209,7 +1150,12 @@ function mostrarAlerta(mensaje, tipo = 'info') {
             title: tipo === 'success' ? 'Éxito' : tipo === 'error' ? 'Error' : tipo === 'warning' ? 'Advertencia' : 'Información',
             text: mensaje,
             icon: tipo,
-            confirmButtonText: 'Aceptar'
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: tipo === 'success' ? '#28a745' : tipo === 'error' ? '#dc3545' : '#007bff',
+            timer: tipo === 'success' ? 3000 : null,
+            timerProgressBar: tipo === 'success' ? true : false,
+            toast: tipo === 'success' ? true : false,
+            position: tipo === 'success' ? 'top-end' : 'center'
         });
     } else {
         alert(mensaje);

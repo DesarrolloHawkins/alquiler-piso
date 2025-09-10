@@ -15,7 +15,7 @@ class PhotoController extends Controller
         $cat = (int) $cat;
 
         // Obtener la limpieza con sus relaciones
-        $limpieza = ApartamentoLimpieza::with(['apartamento'])->findOrFail($id);
+        $limpieza = ApartamentoLimpieza::with(['apartamento', 'tareaAsignada'])->findOrFail($id);
 
         $categorias = PhotoCategoria::whereJsonContains('id_cat', $cat)->get();
 
@@ -80,6 +80,23 @@ class PhotoController extends Controller
                 'id_reserva'   => $idReserva,
                 'estado'       => 0 // Estado por defecto
             ]);
+
+            // Si es una tarea del nuevo sistema, también guardar en tarea_checklist_completados
+            if ($limpieza->tarea_asignada_id) {
+                \App\Models\TareaChecklistCompletado::updateOrInsert(
+                    [
+                        'tarea_asignada_id' => $limpieza->tarea_asignada_id,
+                        'item_checklist_id' => $request->item_id
+                    ],
+                    [
+                        'completado_por' => auth()->id(),
+                        'fecha_completado' => now(),
+                        'estado' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]
+                );
+            }
 
             return response()->json([
                 'status' => 'success',

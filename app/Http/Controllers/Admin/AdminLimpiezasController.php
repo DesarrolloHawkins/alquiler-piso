@@ -137,11 +137,20 @@ class AdminLimpiezasController extends Controller
             ->orderBy('fecha_analisis', 'desc')
             ->get();
 
-        // Obtener fotos de la limpieza (están en ApartamentoLimpiezaItem)
-        $fotos = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $id)
-            ->whereNotNull('photo_url')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Obtener fotos de la limpieza
+        if ($limpieza->tarea_asignada_id) {
+            // Nueva lógica: obtener fotos desde ApartamentoLimpiezaItem (donde se guardan las fotos)
+            $fotos = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $id)
+                ->whereNotNull('photo_url')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            // Lógica antigua
+            $fotos = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $id)
+                ->whereNotNull('photo_url')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         // Obtener estadísticas de la limpieza
         $estadisticas = $this->obtenerEstadisticasLimpieza($id);
@@ -235,22 +244,42 @@ class AdminLimpiezasController extends Controller
     
     public function obtenerEstadisticasLimpieza($limpiezaId)
     {
-        // Obtener items marcados (usando la misma lógica anti-duplicados)
-        $itemsMarcados = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
-            ->where('estado', 1)
-            ->pluck('item_id')
-            ->filter()
-            ->unique()
-            ->count();
+        $limpieza = \App\Models\ApartamentoLimpieza::find($limpiezaId);
+        
+        if ($limpieza && $limpieza->tarea_asignada_id) {
+            // Nueva lógica: usar tarea_checklist_completados
+            $itemsMarcados = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
+                ->whereNotNull('item_checklist_id')
+                ->where('estado', 1)
+                ->count();
+            
+            // Calcular total de items disponibles para esta tarea
+            $tarea = \App\Models\TareaAsignada::find($limpieza->tarea_asignada_id);
+            $totalItems = 0;
+            if ($tarea && $tarea->apartamento_id) {
+                $edificioId = $tarea->apartamento->edificio_id;
+                $checklists = \App\Models\Checklist::where('edificio_id', $edificioId)->with('items')->get();
+                $totalItems = $checklists->sum(function($checklist) {
+                    return $checklist->items->count();
+                });
+            }
+        } else {
+            // Lógica antigua: usar ApartamentoLimpiezaItem
+            $itemsMarcados = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
+                ->where('estado', 1)
+                ->pluck('item_id')
+                ->filter()
+                ->unique()
+                ->count();
 
-        // Obtener total de items únicos (eliminando duplicados)
-        $totalItems = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
-            ->pluck('item_id')
-            ->filter()
-            ->unique()
-            ->count();
+            $totalItems = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
+                ->pluck('item_id')
+                ->filter()
+                ->unique()
+                ->count();
+        }
 
-        // Obtener fotos de la limpieza (están en ApartamentoLimpiezaItem)
+        // Obtener fotos de la limpieza
         $totalFotos = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
             ->whereNotNull('photo_url')
             ->count();
@@ -278,16 +307,30 @@ class AdminLimpiezasController extends Controller
 
     private function obtenerItemsUnicosOrganizados($limpiezaId)
     {
-        // Obtener items únicos organizados por checklist
-        $items = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
-            ->whereNotNull('item_id')
-            ->where('item_id', '!=', '')
-            ->with(['item.checklist'])
-            ->get()
-            ->groupBy('item.checklist.nombre')
-            ->map(function($grupo) {
-                return $grupo->unique('item_id')->values();
-            });
+        $limpieza = \App\Models\ApartamentoLimpieza::find($limpiezaId);
+        
+        if ($limpieza && $limpieza->tarea_asignada_id) {
+            // Nueva lógica: usar tarea_checklist_completados
+            $items = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
+                ->whereNotNull('item_checklist_id')
+                ->with(['itemChecklist.checklist'])
+                ->get()
+                ->groupBy('itemChecklist.checklist.nombre')
+                ->map(function($grupo) {
+                    return $grupo->unique('item_checklist_id')->values();
+                });
+        } else {
+            // Lógica antigua: usar ApartamentoLimpiezaItem
+            $items = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
+                ->whereNotNull('item_id')
+                ->where('item_id', '!=', '')
+                ->with(['item.checklist'])
+                ->get()
+                ->groupBy('item.checklist.nombre')
+                ->map(function($grupo) {
+                    return $grupo->unique('item_id')->values();
+                });
+        }
 
         return [
             'items' => $items,

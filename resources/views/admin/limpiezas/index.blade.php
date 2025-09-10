@@ -330,9 +330,29 @@
                                             </td>
                                             <td>
                                                 @php
-                                                    // Usar la misma lógica anti-duplicados
-                                                    $itemsCompletados = $limpieza->itemsMarcados->where('estado', 1)->pluck('item_id')->filter()->unique()->count();
-                                                    $totalItems = $limpieza->itemsMarcados->pluck('item_id')->filter()->unique()->count();
+                                                    // Calcular items completados desde tarea_checklist_completados
+                                                    if ($limpieza->tarea_asignada_id) {
+                                                        // Nueva lógica: usar tarea_checklist_completados
+                                                        $itemsCompletados = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
+                                                            ->whereNotNull('item_checklist_id')
+                                                            ->where('estado', 1)
+                                                            ->count();
+                                                        
+                                                        // Calcular total de items disponibles para esta tarea
+                                                        $tarea = \App\Models\TareaAsignada::find($limpieza->tarea_asignada_id);
+                                                        $totalItems = 0;
+                                                        if ($tarea && $tarea->apartamento_id) {
+                                                            $edificioId = $tarea->apartamento->edificio_id;
+                                                            $checklists = \App\Models\Checklist::where('edificio_id', $edificioId)->with('items')->get();
+                                                            $totalItems = $checklists->sum(function($checklist) {
+                                                                return $checklist->items->count();
+                                                            });
+                                                        }
+                                                    } else {
+                                                        // Lógica antigua: usar itemsMarcados
+                                                        $itemsCompletados = $limpieza->itemsMarcados->where('estado', 1)->pluck('item_id')->filter()->unique()->count();
+                                                        $totalItems = $limpieza->itemsMarcados->pluck('item_id')->filter()->unique()->count();
+                                                    }
                                                     $porcentaje = $totalItems > 0 ? round(($itemsCompletados / $totalItems) * 100, 1) : 0;
                                                 @endphp
                                                 <div class="d-flex align-items-center">

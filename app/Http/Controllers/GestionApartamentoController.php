@@ -733,10 +733,11 @@ class GestionApartamentoController extends Controller
                 }
             }
             
-            // Obtener elementos ya completados
-            $elementosCompletados = \DB::table('tarea_checklist_completados')
-                ->where('tarea_asignada_id', $tarea->id)
-                ->pluck('item_checklist_id')
+            // Obtener elementos ya completados desde apartamento_limpieza_items
+            $elementosCompletados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
+                ->whereNotNull('item_id')
+                ->where('estado', 1)
+                ->pluck('item_id')
                 ->toArray();
             
             // Obtener amenities si es apartamento
@@ -919,12 +920,20 @@ class GestionApartamentoController extends Controller
                     \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->delete();
                     
                     // Guardar nuevos consumos
-                    foreach ($amenities as $amenityId => $cantidad) {
+                    foreach ($amenities as $amenityId => $amenityData) {
+                        $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
                         if ($cantidad > 0) {
                             \App\Models\AmenityConsumo::create([
                                 'limpieza_id' => $apartamentoLimpieza->id,
                                 'amenity_id' => $amenityId,
-                                'cantidad' => $cantidad
+                                'cantidad_consumida' => $cantidad,
+                                'cantidad_anterior' => 0,
+                                'cantidad_actual' => $cantidad,
+                                'tipo_consumo' => 'limpieza',
+                                'fecha_consumo' => now()->toDateString(),
+                                'user_id' => auth()->id(),
+                                'reserva_id' => $apartamentoLimpieza->reserva_id,
+                                'apartamento_id' => $apartamentoLimpieza->apartamento_id
                             ]);
                         }
                     }
@@ -981,9 +990,10 @@ class GestionApartamentoController extends Controller
                 $totalItems += $checklist->items->count();
             }
             
-            $elementosCompletados = DB::table('tarea_checklist_completados')
-                ->where('tarea_asignada_id', $tarea->id)
-                ->pluck('item_checklist_id')
+            $elementosCompletados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
+                ->whereNotNull('item_id')
+                ->where('estado', 1)
+                ->pluck('item_id')
                 ->toArray();
             
             $itemsCompletados = count($elementosCompletados);
@@ -1075,9 +1085,20 @@ class GestionApartamentoController extends Controller
         // Obtener o crear ApartamentoLimpieza real para esta tarea
         $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
         
+        Log::info('Buscando ApartamentoLimpieza existente', [
+            'tarea_id' => $tarea->id,
+            'limpieza_encontrada' => $apartamentoLimpieza ? $apartamentoLimpieza->id : 'null'
+        ]);
+        
         if (!$apartamentoLimpieza) {
             // Si no existe, crear uno nuevo
+            Log::info('No se encontró ApartamentoLimpieza, creando nuevo');
             $apartamentoLimpieza = $this->crearApartamentoLimpiezaParaTarea($tarea);
+        } else {
+            Log::info('ApartamentoLimpieza existente encontrado', [
+                'limpieza_id' => $apartamentoLimpieza->id,
+                'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
+            ]);
         }
         
         // Cargar relación apartamento
@@ -1088,9 +1109,7 @@ class GestionApartamentoController extends Controller
             ->where('tarea_asignada_id', $tarea->id)
             ->get();
         $itemsExistentes = $item_check->pluck('estado', 'item_checklist_id')->toArray();
-        $checklist_check = $item_check->whereNotNull('checklist_id')->filter(function ($item) {
-            return $item->estado == 1;
-        });
+        $checklist_check = $item_check->whereNotNull('checklist_id');
         $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_id')->toArray();
         
         // Obtener amenities para esta limpieza (igual que gestion/edit)
@@ -2206,56 +2225,81 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $checked = $request->input('checked');
             $limpiezaId = $request->input('limpieza_id');
 
+            Log::info('updateCheckbox llamado', [
+                'type' => $type,
+                'id' => $id,
+                'checked' => $checked,
+                'limpieza_id' => $limpiezaId
+            ]);
+
+            // Obtener la tarea desde la limpieza
             $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
             if (!$apartamentoLimpieza) {
+                Log::error('Limpieza no encontrada', ['limpieza_id' => $limpiezaId]);
                 return response()->json(['success' => false, 'message' => 'Limpieza no encontrada'], 404);
             }
 
-            // Siempre usar el reserva_id del registro padre
-            $idReserva = $apartamentoLimpieza->reserva_id;
+            $tareaId = $apartamentoLimpieza->tarea_asignada_id;
+            if (!$tareaId) {
+                Log::error('Tarea no encontrada', ['limpieza_id' => $limpiezaId, 'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id]);
+                return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+            }
 
-            if ($type === 'checklist') {
-                // Actualizar estado del checklist
-                $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
-                    ->where('checklist_id', $id)
-                    ->first();
-
-                if (!$limpiezaItem) {
-                    // Si no existe, crear nuevo registro
-                    $limpiezaItem = new ApartamentoLimpiezaItem([
-                        'id_limpieza' => $limpiezaId,
-                        'checklist_id' => $id,
-                        'id_reserva' => $idReserva,
-                        'estado' => $checked
-                    ]);
+            if ($type === 'item') {
+                if ($checked == 1) {
+                    // Insertar o actualizar en tarea_checklist_completados
+                    DB::table('tarea_checklist_completados')->updateOrInsert(
+                        [
+                            'tarea_asignada_id' => $tareaId,
+                            'item_checklist_id' => $id
+                        ],
+                        [
+                            'completado_por' => Auth::id(),
+                            'fecha_completado' => now(),
+                            'estado' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                    Log::info('Item marcado como completado', ['tarea_id' => $tareaId, 'item_id' => $id]);
                 } else {
-                    $limpiezaItem->estado = $checked;
+                    // Eliminar de tarea_checklist_completados
+                    DB::table('tarea_checklist_completados')
+                        ->where('tarea_asignada_id', $tareaId)
+                        ->where('item_checklist_id', $id)
+                        ->delete();
+                    Log::info('Item desmarcado', ['tarea_id' => $tareaId, 'item_id' => $id]);
                 }
-
-                $limpiezaItem->save();
-            } else if ($type === 'item') {
-                // Actualizar estado del item
-                $limpiezaItem = ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
-                    ->where('item_id', $id)
-                    ->first();
-
-                if (!$limpiezaItem) {
-                    // Si no existe, crear nuevo registro
-                    $limpiezaItem = new ApartamentoLimpiezaItem([
-                        'id_limpieza' => $limpiezaId,
-                        'item_id' => $id,
-                        'id_reserva' => $idReserva,
-                        'estado' => $checked
-                    ]);
+            } else if ($type === 'checklist') {
+                if ($checked == 1) {
+                    // Marcar checklist como completado
+                    DB::table('tarea_checklist_completados')->updateOrInsert(
+                        [
+                            'tarea_asignada_id' => $tareaId,
+                            'checklist_id' => $id
+                        ],
+                        [
+                            'completado_por' => Auth::id(),
+                            'fecha_completado' => now(),
+                            'estado' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]
+                    );
+                    Log::info('Checklist marcado como completado', ['tarea_id' => $tareaId, 'checklist_id' => $id]);
                 } else {
-                    $limpiezaItem->estado = $checked;
+                    // Desmarcar checklist
+                    DB::table('tarea_checklist_completados')
+                        ->where('tarea_asignada_id', $tareaId)
+                        ->where('checklist_id', $id)
+                        ->delete();
+                    Log::info('Checklist desmarcado', ['tarea_id' => $tareaId, 'checklist_id' => $id]);
                 }
-
-                $limpiezaItem->save();
             }
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
+            Log::error('Error en updateCheckbox: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

@@ -213,6 +213,7 @@
                     <form action="{{ route('gestion.updateTarea', $tarea) }}" method="POST" id="formPrincipalLimpieza">
                         @csrf
                         <input type="hidden" name="id" value="{{ $tarea->id }}">
+                        <input type="hidden" name="limpieza_id" value="{{ $apartamentoLimpieza->id }}">
 
                         @foreach ($checklists as $checklist)
                         @php
@@ -299,6 +300,10 @@
                                         <div class="apple-switch-container">
                                             @php
                                             $isChecklistChecked = isset($checklistsExistentes[$checklist->id]) && $checklistsExistentes[$checklist->id] == 1;
+                                            // Debug temporal
+                                            if ($checklist->id == 16) {
+                                                echo "<!-- DEBUG BAÑO: checklist_id=" . $checklist->id . ", checklistsExistentes=" . json_encode($checklistsExistentes) . ", isChecklistChecked=" . ($isChecklistChecked ? 'true' : 'false') . " -->";
+                                            }
                                             @endphp
                                             <input
                                             {{ isset($checklistsExistentes[$checklist->id]) && $checklistsExistentes[$checklist->id] == 1 ? 'checked' : '' }}
@@ -385,242 +390,62 @@
                                         <i class="fa-solid fa-gift"></i>
                                     </div>
                                     <div class="title-content">
-                                        <h3>Gestión de Amenities</h3>
-                                        <p>Control de productos y suministros</p>
+                                        <h3>Estado de Amenities</h3>
                                     </div>
-                                </div>
-                                <div class="amenities-toggle">
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="amenitiesToggle" class="amenities-switch">
-                                        <span class="toggle-slider"></span>
-                                    </label>
                                 </div>
                             </div>
                             
-                            <div class="amenities-content" id="amenitiesContent" style="display: none;">
-                                <!-- Debug: Verificar si se cargan los amenities -->
+                            <div class="amenities-content" id="amenitiesContent">
                                 @if(isset($amenitiesConRecomendaciones) && count($amenitiesConRecomendaciones) > 0)
-                                    <div class="alert alert-info">
-                                        <strong>Debug:</strong> Amenities cargados: {{ count($amenitiesConRecomendaciones) }} categorías
-                                    </div>
-                                    <form action="{{ route('gestion.update', $apartamentoLimpieza->id) }}" method="POST" id="amenityForm">
+                                    <form id="amenitiesForm" style="display: none;">
                                         @csrf
-                                        
-                                        <!-- Resumen de Amenities -->
-                                        <div class="amenities-summary">
-                                            <div class="summary-item">
-                                                <div class="summary-icon">
-                                                    <i class="fas fa-gift"></i>
+                                    @foreach($amenitiesConRecomendaciones as $categoria => $amenities)
+                                        @foreach($amenities as $item)
+                                            @php
+                                                $amenity = $item['amenity'];
+                                                $cantidadRecomendada = $item['cantidad_recomendada'];
+                                                $consumoExistente = $item['consumo_existente'];
+                                                $cantidadDejada = $consumoExistente ? $consumoExistente->cantidad_consumida : 0;
+                                            @endphp
+                                            <div class="row py-2 border-bottom">
+                                                <div class="col-6">
+                                                    <strong>{{ $amenity->nombre }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ $amenity->descripcion }}</small>
                                                 </div>
-                                                <div class="summary-content">
-                                                    <h4>{{ count($amenitiesConRecomendaciones) }}</h4>
-                                                    <p>Categorías</p>
+                                                <div class="col-3 text-center">
+                                                    <small class="text-muted">Recomendado: <strong>{{ $cantidadRecomendada }}</strong></small>
                                                 </div>
-                                            </div>
-                                            
-                                            <div class="summary-item">
-                                                @php
-                                                    $totalAmenities = collect($amenitiesConRecomendaciones)->flatten(1)->count();
-                                                    $amenitiesAnadidos = collect($amenitiesConRecomendaciones)->flatten(1)->filter(function($item) {
-                                                        return $item['consumo_existente'] && $item['consumo_existente']->cantidad_consumida > 0;
-                                                    })->count();
-                                                @endphp
-                                                <div class="summary-icon">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </div>
-                                                <div class="summary-content">
-                                                    <h4>{{ $amenitiesAnadidos }}/{{ $totalAmenities }}</h4>
-                                                    <p>Amenities Añadidos</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Lista de Amenities por Categoría -->
-                                        @foreach($amenitiesConRecomendaciones as $categoria => $amenities)
-                                        <div class="amenity-category">
-                                            <div class="category-header">
-                                                <div class="category-icon">
-                                                    @php
-                                                        $iconClass = 'fa-tags';
-                                                        $iconColor = 'primary';
-                                                        switch($categoria) {
-                                                            case 'higiene':
-                                                                $iconClass = 'fa-soap';
-                                                                $iconColor = 'success';
-                                                                break;
-                                                            case 'alimentacion':
-                                                                $iconClass = 'fa-utensils';
-                                                                $iconColor = 'warning';
-                                                                break;
-                                                            case 'limpieza':
-                                                                $iconClass = 'fa-broom';
-                                                                $iconColor = 'info';
-                                                                break;
-                                                            default:
-                                                                $iconClass = 'fa-gift';
-                                                                $iconColor = 'primary';
-                                                        }
-                                                    @endphp
-                                                    <i class="fas {{ $iconClass }} text-{{ $iconColor }}"></i>
-                                                </div>
-                                                <div class="category-info">
-                                                    <h4>{{ ucfirst($categoria) }}</h4>
-                                                    <span class="category-count">{{ count($amenities) }} items</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="amenities-grid">
-                                                @foreach($amenities as $item)
-                                                @php
-                                                    $amenity = $item['amenity'];
-                                                    $cantidadRecomendada = $item['cantidad_recomendada'];
-                                                    $consumoExistente = $item['consumo_existente'];
-                                                    $stockDisponible = $item['stock_disponible'];
-                                                    
-                                                    // Si ya se añadió este amenity, mostrar la cantidad puesta
-                                                    // Si no, mostrar la cantidad recomendada
-                                                    $cantidadActual = $consumoExistente ? $consumoExistente->cantidad_consumida : 0;
-                                                    $cantidadMostrar = $cantidadActual > 0 ? $cantidadActual : $cantidadRecomendada;
-                                                    
-                                                    // Determinar si ya se añadió
-                                                    $yaAnadido = $consumoExistente && $consumoExistente->cantidad_consumida > 0;
-                                                @endphp
-                                                <div class="amenity-card">
-                                                    <div class="amenity-header">
-                                                        <div class="amenity-name">
-                                                            <h5>
-                                                                {{ $amenity->nombre }}
-                                                                @if(isset($item['es_automatico_ninos']) && $item['es_automatico_ninos'])
-                                                                    <span class="badge bg-success ms-2">
-                                                                        <i class="fas fa-baby me-1"></i>
-                                                                        Niño
-                                                                    </span>
-                                                                @endif
-                                                            </h5>
-                                                            <p>{{ $amenity->descripcion }}</p>
-                                                            @if(isset($item['es_automatico_ninos']) && $item['es_automatico_ninos'])
-                                                                <div class="amenity-motivo-ninos">
-                                                                    <small class="text-success">
-                                                                        <i class="fas fa-info-circle me-1"></i>
-                                                                        {{ $item['motivo_ninos'] }}
-                                                                    </small>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                        <div class="amenity-type">
-                                                            @php
-                                                                $tipoConsumo = '';
-                                                                $typeColor = 'info';
-                                                                switch($amenity->tipo_consumo) {
-                                                                    case 'por_reserva':
-                                                                        $tipoConsumo = 'Por Reserva';
-                                                                        $typeColor = 'primary';
-                                                                        break;
-                                                                    case 'por_persona':
-                                                                        $tipoConsumo = 'Por Persona';
-                                                                        $typeColor = 'success';
-                                                                        break;
-                                                                    case 'por_tiempo':
-                                                                        $tipoConsumo = 'Por Tiempo';
-                                                                        $typeColor = 'warning';
-                                                                        break;
-                                                                    default:
-                                                                        $tipoConsumo = 'N/A';
-                                                                        $typeColor = 'secondary';
-                                                                }
-                                                            @endphp
-                                                            <span class="type-badge bg-{{ $typeColor }}">{{ $tipoConsumo }}</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="amenity-details">
-                                                        <div class="detail-row">
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">Recomendado</span>
-                                                                <span class="detail-value recommended">{{ $cantidadRecomendada }}</span>
-                                                            </div>
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">Stock</span>
-                                                                <span class="detail-value stock-{{ $stockDisponible > 0 ? 'available' : 'unavailable' }}">
-                                                                    {{ $stockDisponible }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="detail-row">
-                                                            <div class="detail-item full-width">
-                                                                <span class="detail-label">
-                                                                    Cantidad Dejada
-                                                                    @if($yaAnadido)
-                                                                        <span class="badge bg-success ms-2">
-                                                                            <i class="fas fa-check"></i> Ya añadido
-                                                                        </span>
-                                                                        <small class="text-muted d-block mt-1">
-                                                                            <i class="fas fa-info-circle"></i> 
-                                                                            Modificando cantidad existente
-                                                                        </small>
-                                                                    @else
-                                                                        <small class="text-muted d-block mt-1">
-                                                                            <i class="fas fa-plus-circle"></i> 
-                                                                            Añadiendo nuevo amenity
-                                                                        </small>
-                                                                    @endif
-                                                                </span>
-                                                                <div class="quantity-input-container">
-                                                                    <input type="number" 
-                                                                           name="amenities[{{ $amenity->id }}][cantidad_dejada]" 
-                                                                           value="{{ $cantidadMostrar }}"
-                                                                           min="0" 
-                                                                           max="{{ $stockDisponible }}"
-                                                                           class="quantity-input {{ $yaAnadido ? 'input-anadido' : '' }}"
-                                                                           data-amenity-id="{{ $amenity->id }}"
-                                                                           data-stock="{{ $stockDisponible }}"
-                                                                           data-ya-anadido="{{ $yaAnadido ? 'true' : 'false' }}"
-                                                                           required>
-                                                                    <input type="hidden" name="amenities[{{ $amenity->id }}][amenity_id]" value="{{ $amenity->id }}">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="detail-row">
-                                                            <div class="detail-item full-width">
-                                                                <span class="detail-label">Observaciones</span>
-                                                                <textarea name="amenities[{{ $amenity->id }}][observaciones]" 
-                                                                          class="observations-input" 
-                                                                          rows="2" 
-                                                                          placeholder="Notas adicionales...">{{ $consumoExistente ? $consumoExistente->observaciones : '' }}</textarea>
-                                                            </div>
-                                                        </div>
+                                                <div class="col-3 text-end">
+                                                    <div class="d-flex align-items-center justify-content-end">
+                                                        <small class="text-muted me-2">Dejado:</small>
+                                                        <input type="number" 
+                                                               name="amenities[{{ $amenity->id }}][cantidad_dejada]" 
+                                                               value="{{ $cantidadDejada }}" 
+                                                               min="0" 
+                                                               class="form-control form-control-sm" 
+                                                               style="width: 80px;"
+                                                               data-amenity-id="{{ $amenity->id }}">
                                                     </div>
                                                 </div>
-                                                @endforeach
                                             </div>
-                                        </div>
                                         @endforeach
-                                        
-                                        <!-- Botón de Guardado -->
-                                        <div class="amenities-save">
-                                            <button type="submit" class="save-button" id="btnGuardarAmenities">
-                                                <i class="fas fa-save"></i>
-                                                <span>Guardar Amenities</span>
-                                            </button>
-                                        </div>
+                                    @endforeach
                                     </form>
                                 @else
-                                    <div class="amenities-empty">
-                                        <div class="empty-icon">
-                                            <i class="fas fa-box-open"></i>
-                                        </div>
-                                        <h4>No hay amenities configurados</h4>
-                                        <p>Para este edificio no se han configurado amenities de limpieza.</p>
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-box-open fa-2x mb-2"></i>
+                                        <p>No hay amenities configurados</p>
                                     </div>
                                 @endif
                             </div>
                         </div>
                         
+                       
+                        
                         <div class="actions-section">
                             <div class="d-flex gap-3 mb-3">
-                                <button type="button" class="apple-btn apple-btn-primary" onclick="guardarCambios()">Guardar Limpieza</button>
+                                <button type="button" class="apple-btn apple-btn-primary" onclick="guardarProgreso()">Guardar Limpieza</button>
                                 <button type="button" class="apple-btn apple-btn-success" onclick="validarYFinalizar()">Terminar</button>
                             </div>
                             
@@ -1768,6 +1593,75 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnGuardarAmenities) {
         btnGuardarAmenities.addEventListener('click', function() {
             showLoadingOverlay('Guardando amenities...');
+        });
+    }
+});
+
+// Event listener para checkboxes de categoría (checklists)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== INICIALIZANDO CHECKBOXES DE CATEGORÍA ===');
+    
+    // Obtener todos los checkboxes de categoría
+    const categoryCheckboxes = document.querySelectorAll('.category-switch');
+    console.log('Checkboxes de categoría encontrados:', categoryCheckboxes.length);
+    
+    categoryCheckboxes.forEach(checkbox => {
+        console.log('Añadiendo event listener a checkbox:', checkbox.name, 'ID:', checkbox.dataset.habitacion);
+        checkbox.addEventListener('change', function() {
+            console.log('Checkbox de categoría cambiado:', this.name, this.checked, 'ID:', this.dataset.habitacion);
+            guardarCheckboxCategoria(this);
+        });
+    });
+    
+    // Función para guardar checkbox de categoría
+    function guardarCheckboxCategoria(checkbox) {
+        const checklistId = checkbox.dataset.habitacion;
+        const checked = checkbox.checked ? 1 : 0;
+        
+        console.log('Guardando checkbox de categoría:', {
+            checklistId: checklistId,
+            checked: checked
+        });
+        
+        // Obtener el ID de la limpieza desde el formulario
+        const form = document.getElementById('formPrincipalLimpieza');
+        const limpiezaId = form ? form.querySelector('input[name="limpieza_id"]')?.value : null;
+        
+        if (!limpiezaId) {
+            console.error('No se encontró limpieza_id');
+            return;
+        }
+        
+        console.log('Enviando petición AJAX:', {
+            type: 'checklist',
+            id: checklistId,
+            checked: checked,
+            limpieza_id: limpiezaId
+        });
+        
+        fetch('{{ route("gestion.updateCheckbox") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                type: 'checklist',
+                id: checklistId,
+                checked: checked,
+                limpieza_id: limpiezaId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Checkbox de categoría guardado correctamente');
+            } else {
+                console.error('Error al guardar checkbox de categoría:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
         });
     }
 });
@@ -4125,5 +4019,79 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endif
+
+<script>
+function guardarProgreso() {
+    mostrarOverlay();
+    
+    // Preparar datos del formulario
+    const formData = new FormData(document.getElementById('formPrincipalLimpieza'));
+    formData.append('accion', 'guardar');
+    
+    // Añadir datos de amenities si existen
+    const amenitiesForm = document.getElementById('amenitiesForm');
+    if (amenitiesForm) {
+        const amenitiesData = new FormData(amenitiesForm);
+        for (let [key, value] of amenitiesData.entries()) {
+            formData.append(key, value);
+        }
+    }
+    
+    fetch('{{ route("gestion.updateTarea", $tarea) }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        ocultarOverlay();
+        if (data.success) {
+            mostrarAlerta('Progreso guardado correctamente', 'success');
+        } else {
+            mostrarAlerta(data.message || 'Error al guardar el progreso', 'error');
+        }
+    })
+    .catch(error => {
+        ocultarOverlay();
+        console.error('Error:', error);
+        mostrarAlerta('Error al guardar el progreso', 'error');
+    });
+}
+
+function mostrarOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function ocultarOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function mostrarAlerta(mensaje, tipo = 'info') {
+    // Usar SweetAlert si está disponible, sino usar alert nativo
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: tipo === 'success' ? 'Éxito' : tipo === 'error' ? 'Error' : tipo === 'warning' ? 'Advertencia' : 'Información',
+            text: mensaje,
+            icon: tipo,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: tipo === 'success' ? '#28a745' : tipo === 'error' ? '#dc3545' : '#007bff',
+            timer: tipo === 'success' ? 3000 : null,
+            timerProgressBar: tipo === 'success' ? true : false,
+            toast: tipo === 'success' ? true : false,
+            position: tipo === 'success' ? 'top-end' : 'center'
+        });
+    } else {
+        alert(mensaje);
+    }
+}
+</script>
 
 @endsection

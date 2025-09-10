@@ -32,6 +32,8 @@ class ApartamentoLimpieza extends Model
         'status_id',
         'reserva_id',
         'empleada_id',
+        'tarea_asignada_id',
+        'origen',
         'bano',
         'bano_toallas_aseos',
         'bano_toallas_mano',
@@ -198,6 +200,16 @@ class ApartamentoLimpieza extends Model
     public function itemsMarcados()
     {
         return $this->hasMany(\App\Models\ApartamentoLimpiezaItem::class, 'id_limpieza', 'id');
+    }
+
+    public function itemsCompletados()
+    {
+        return $this->hasMany(\App\Models\TareaChecklistCompletado::class, 'tarea_asignada_id', 'tarea_asignada_id');
+    }
+
+    public function tareaAsignada()
+    {
+        return $this->belongsTo(\App\Models\TareaAsignada::class, 'tarea_asignada_id');
     }
 
     public function controles()

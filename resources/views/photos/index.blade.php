@@ -825,6 +825,13 @@ function checkInitialPhotoStatus() {
             containerElement.classList.add('has-image');
             updatePhotoStatus(categoria.id);
             
+            // Marcar el checkbox de la categoría en la vista de checklist
+            const categoryCheckbox = document.querySelector(`input[data-habitacion="${categoria.id}"]`);
+            if (categoryCheckbox) {
+                categoryCheckbox.checked = true;
+                console.log(`Checkbox de categoría ${categoria.nombre} marcado automáticamente`);
+            }
+            
             // Debug: verificar que se marcó como completada
             console.log(`Categoría ${categoria.nombre} marcada como completada (imagen real)`);
         } else {
@@ -1630,13 +1637,24 @@ function modificarFoto(categoriaId) {
 
 // Función para continuar con limpieza
 function continuarConLimpieza() {
-    // Redirigir a gestión de limpieza
-    window.location.href = "{{ route('gestion.edit', $id) }}";
+    @if(isset($limpieza) && $limpieza->tarea_asignada_id)
+        // Nuevo sistema: volver al checklist de la tarea
+        window.location.href = "{{ route('gestion.tareas.checklist', $limpieza->tarea_asignada_id) }}";
+    @else
+        // Sistema antiguo: volver a la edición de limpieza
+        window.location.href = "{{ route('gestion.edit', $id) }}";
+    @endif
 }
 
 // Función para volver a la gestión de limpieza
 function volverALimpieza() {
-    window.location.href = "{{ route('gestion.edit', $id) }}";
+    @if(isset($limpieza) && $limpieza->tarea_asignada_id)
+        // Nuevo sistema: volver al checklist de la tarea
+        window.location.href = "{{ route('gestion.tareas.checklist', $limpieza->tarea_asignada_id) }}";
+    @else
+        // Sistema antiguo: volver a la edición de limpieza
+        window.location.href = "{{ route('gestion.edit', $id) }}";
+    @endif
 }
 
 // Función para continuar con responsabilidad
