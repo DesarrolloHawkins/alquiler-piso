@@ -115,12 +115,33 @@ class ZonaComunController extends Controller
             $limpiezasCount = $zonaComun->limpiezas()->count();
             
             if ($limpiezasCount > 0) {
+                if (request()->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminará de forma lógica (soft delete) y las limpiezas se mantendrán."
+                    ], 400);
+                }
                 Alert::warning('Advertencia', "Esta zona común tiene {$limpiezasCount} limpieza(s) asociada(s). Se eliminará de forma lógica (soft delete) y las limpiezas se mantendrán.");
             }
             
             $zonaComun->delete();
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Zona común eliminada correctamente.'
+                ]);
+            }
+            
             Alert::success('Éxito', 'Zona común eliminada correctamente.');
         } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo eliminar la zona común: ' . $e->getMessage()
+                ], 500);
+            }
+            
             Alert::error('Error', 'No se pudo eliminar la zona común: ' . $e->getMessage());
         }
 
