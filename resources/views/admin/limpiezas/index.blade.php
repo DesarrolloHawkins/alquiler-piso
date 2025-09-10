@@ -338,16 +338,10 @@
                                                             ->where('estado', 1)
                                                             ->count();
                                                         
-                                                        // Calcular total de items disponibles para esta tarea
-                                                        $tarea = \App\Models\TareaAsignada::find($limpieza->tarea_asignada_id);
-                                                        $totalItems = 0;
-                                                        if ($tarea && $tarea->apartamento_id) {
-                                                            $edificioId = $tarea->apartamento->edificio_id;
-                                                            $checklists = \App\Models\Checklist::where('edificio_id', $edificioId)->with('items')->get();
-                                                            $totalItems = $checklists->sum(function($checklist) {
-                                                                return $checklist->items->count();
-                                                            });
-                                                        }
+                                                        // Calcular total de items desde tarea_checklist_completados
+                                                        $totalItems = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
+                                                            ->whereNotNull('item_checklist_id')
+                                                            ->count();
                                                     } else {
                                                         // Lógica antigua: usar itemsMarcados
                                                         $itemsCompletados = $limpieza->itemsMarcados->where('estado', 1)->pluck('item_id')->filter()->unique()->count();

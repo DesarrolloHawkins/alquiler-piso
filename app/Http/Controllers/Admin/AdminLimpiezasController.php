@@ -310,15 +310,42 @@ class AdminLimpiezasController extends Controller
         $limpieza = \App\Models\ApartamentoLimpieza::find($limpiezaId);
         
         if ($limpieza && $limpieza->tarea_asignada_id) {
-            // Nueva lógica: usar tarea_checklist_completados
-            $items = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
-                ->whereNotNull('item_checklist_id')
-                ->with(['itemChecklist.checklist'])
-                ->get()
-                ->groupBy('itemChecklist.checklist.nombre')
-                ->map(function($grupo) {
-                    return $grupo->unique('item_checklist_id')->values();
-                });
+            // Nueva lógica: obtener TODOS los items de los checklists del edificio
+            $tarea = \App\Models\TareaAsignada::find($limpieza->tarea_asignada_id);
+            if ($tarea && $tarea->apartamento_id) {
+                $edificioId = $tarea->apartamento->edificio_id;
+                $checklists = \App\Models\Checklist::where('edificio_id', $edificioId)
+                    ->with(['items'])
+                    ->get();
+                
+                // Obtener items completados para marcar cuáles están hechos
+                $itemsCompletados = \App\Models\TareaChecklistCompletado::where('tarea_asignada_id', $limpieza->tarea_asignada_id)
+                    ->whereNotNull('item_checklist_id')
+                    ->where('estado', 1)
+                    ->pluck('item_checklist_id')
+                    ->toArray();
+                
+                // Crear estructura con todos los items y su estado
+                $items = collect();
+                foreach ($checklists as $checklist) {
+                    foreach ($checklist->items as $item) {
+                        $itemData = (object) [
+                            'id' => $item->id,
+                            'nombre' => $item->nombre,
+                            'checklist_id' => $checklist->id,
+                            'checklist_nombre' => $checklist->nombre,
+                            'estado' => in_array($item->id, $itemsCompletados) ? 1 : 0,
+                            'completado_por' => null,
+                            'fecha_completado' => null
+                        ];
+                        $items->push($itemData);
+                    }
+                }
+                
+                $items = $items->groupBy('checklist_nombre');
+            } else {
+                $items = collect();
+            }
         } else {
             // Lógica antigua: usar ApartamentoLimpiezaItem
             $items = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $limpiezaId)
