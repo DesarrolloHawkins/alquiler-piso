@@ -679,9 +679,30 @@ class GestionApartamentoController extends Controller
     public function checklistTarea(TareaAsignada $tarea)
     {
         try {
+            // Cargar la relación turno explícitamente
+            $tarea->load('turno');
+            
+            // Debug: Log de información de la tarea y usuario
+            Log::info('Acceso a checklist de tarea', [
+                'tarea_id' => $tarea->id,
+                'tarea_turno_user_id' => $tarea->turno->user_id,
+                'auth_user_id' => Auth::id(),
+                'auth_user_role' => Auth::user()->role ?? 'no_role',
+                'comparison' => $tarea->turno->user_id === Auth::id()
+            ]);
+            
             // Verificar que la tarea pertenece al usuario autenticado
             if ($tarea->turno->user_id !== Auth::id()) {
-                return response()->json(['error' => 'No autorizado'], 403);
+                Log::warning('Acceso denegado a tarea', [
+                    'tarea_id' => $tarea->id,
+                    'tarea_turno_user_id' => $tarea->turno->user_id,
+                    'auth_user_id' => Auth::id()
+                ]);
+                
+                if (request()->expectsJson()) {
+                    return response()->json(['error' => 'No autorizado'], 403);
+                }
+                return redirect()->route('gestion.index')->with('error', 'No tienes autorización para acceder a esta tarea');
             }
             
             // Cargar relaciones necesarias

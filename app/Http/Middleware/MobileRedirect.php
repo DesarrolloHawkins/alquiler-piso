@@ -17,6 +17,21 @@ class MobileRedirect
      */
     public function handle(Request $request, Closure $next)
     {
+        // Debug: Log de la petición
+        \Log::info('MobileRedirect middleware ejecutándose', [
+            'url' => $request->url(),
+            'path' => $request->path(),
+            'is_gestion_tareas' => $request->is('gestion/tareas/*'),
+            'auth_check' => Auth::check(),
+            'has_password_confirmed' => $request->session()->has('auth.password_confirmed_at')
+        ]);
+        
+        // No aplicar en rutas de tareas específicas
+        if ($request->is('gestion/tareas/*')) {
+            \Log::info('Saltando MobileRedirect para ruta de tareas');
+            return $next($request);
+        }
+        
         // Solo aplicar después del login exitoso
         if (Auth::check() && $request->session()->has('auth.password_confirmed_at')) {
             $user = Auth::user();
@@ -39,7 +54,7 @@ class MobileRedirect
             // Si es móvil y limpiadora, redirigir a dashboard de limpiadora
             if ($isMobile && $user->role === 'LIMPIEZA') {
                 $request->session()->forget('auth.password_confirmed_at');
-                return redirect('/limpiadora/dashboard');
+                return redirect('/gestion');
             }
         }
 
