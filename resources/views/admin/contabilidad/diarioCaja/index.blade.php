@@ -113,7 +113,7 @@
                     </thead>
                     <tbody>
                         <!-- Saldo Inicial -->
-                        <tr class="table-info">
+                      {{--   <tr class="table-info">
                             <td colspan="4" class="fw-semibold">
                                 <i class="fas fa-coins me-2 text-warning"></i>Saldo Inicial
                             </td>
@@ -121,7 +121,7 @@
                             <td></td>
                             <td class="text-end fw-bold">{{ number_format($saldoInicial, 2) }} €</td>
                             <td></td>
-                        </tr>
+                        </tr> --}}
                         
                         @if (count($response) > 0)
                             @foreach ($response as $linea)

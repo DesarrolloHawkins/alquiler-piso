@@ -59,13 +59,13 @@
             <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
                 <i class="fas fa-wallet text-success"></i>
             </div>
-            <div>
+           {{--  <div>
                 <h5 class="card-title mb-0">
                     <i class="fas fa-coins text-success me-2"></i>
                     Saldo Inicial
                 </h5>
                 <p class="text-muted mb-0">Saldo base de la caja metálica</p>
-            </div>
+            </div> --}}
             <div class="ms-auto">
                 <h3 class="text-success mb-0">{{ number_format($saldoInicial, 2) }} €</h3>
             </div>
