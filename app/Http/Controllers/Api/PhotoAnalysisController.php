@@ -361,15 +361,27 @@ class PhotoAnalysisController extends Controller
             }
         }
         
-        // Validar calidad_general
+        // Validar calidad_general - solo cambiar si no es válida
         $validQualities = ['excelente', 'buena', 'regular', 'mala'];
         if (!in_array($analysis['calidad_general'], $validQualities)) {
             $analysis['calidad_general'] = 'regular';
         }
         
-        // Validar puntuación
+        // Validar puntuación - solo cambiar si no es válida
         if (!is_numeric($analysis['puntuacion']) || $analysis['puntuacion'] < 1 || $analysis['puntuacion'] > 10) {
             $analysis['puntuacion'] = 5;
+        }
+        
+        // Asegurar consistencia entre puntuación y calidad
+        $puntuacion = (int)$analysis['puntuacion'];
+        $calidadCalculada = 'regular';
+        if ($puntuacion >= 8) $calidadCalculada = 'excelente';
+        elseif ($puntuacion >= 6) $calidadCalculada = 'buena';
+        elseif ($puntuacion <= 3) $calidadCalculada = 'mala';
+        
+        // Solo actualizar calidad si hay inconsistencia grave
+        if ($analysis['calidad_general'] === 'regular' && $calidadCalculada !== 'regular') {
+            $analysis['calidad_general'] = $calidadCalculada;
         }
         
         // Asegurar que deficiencias y recomendaciones sean arrays
