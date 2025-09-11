@@ -53,25 +53,25 @@
 </div>
 
 <!-- Tarjeta de Saldo Inicial -->
-<div class="card shadow-sm border-0 mb-4">
+{{-- <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <div class="d-flex align-items-center">
             <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
                 <i class="fas fa-wallet text-success"></i>
             </div>
-           {{--  <div>
+            <div>
                 <h5 class="card-title mb-0">
                     <i class="fas fa-coins text-success me-2"></i>
                     Saldo Inicial
                 </h5>
                 <p class="text-muted mb-0">Saldo base de la caja metálica</p>
-            </div> --}}
+            </div>
             <div class="ms-auto">
                 <h3 class="text-success mb-0">{{ number_format($saldoInicial, 2) }} €</h3>
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Tarjeta Principal -->
 <div class="card shadow-sm border-0">
