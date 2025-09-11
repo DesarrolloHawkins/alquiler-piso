@@ -695,9 +695,11 @@ class GestionApartamentoController extends Controller
             ]);
             
             // Verificar que la tarea pertenece al usuario autenticado
-            if ($tarea->turno->user_id !== Auth::id()) {
+            // Solo verificar si la tarea tiene un turno asociado
+            if ($tarea->turno && $tarea->turno->user_id !== Auth::id()) {
                 Log::warning('Acceso denegado a tarea', [
                     'tarea_id' => $tarea->id,
+                    'tarea_turno_id' => $tarea->turno_id,
                     'tarea_turno_user_id' => $tarea->turno->user_id,
                     'auth_user_id' => Auth::id()
                 ]);
@@ -1130,6 +1132,9 @@ class GestionApartamentoController extends Controller
         $itemsExistentes = $item_check->pluck('estado', 'item_checklist_id')->toArray();
         $checklist_check = $item_check->whereNotNull('checklist_id');
         $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_id')->toArray();
+        
+        // TODO: Verificar fotos cuando la tabla fotos_limpieza esté disponible
+        // Por ahora, no verificamos fotos para evitar errores
         
         // Obtener amenities para esta limpieza (igual que gestion/edit)
         $amenities = \App\Models\Amenity::activos()

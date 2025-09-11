@@ -546,10 +546,11 @@ Route::middleware('auth')->group(function () {
     Route::get('gestion/tareas/{tarea}/info', [App\Http\Controllers\GestionApartamentoController::class, 'infoTarea'])->name('gestion.tareas.info');
     Route::post('gestion/tareas/{tarea}/iniciar', [App\Http\Controllers\GestionApartamentoController::class, 'iniciarTarea'])->name('gestion.tareas.iniciar');
     Route::post('gestion/tareas/{tarea}/finalizar', [App\Http\Controllers\GestionApartamentoController::class, 'finalizarTarea'])->name('gestion.tareas.finalizar');
-    Route::get('gestion/tareas/{tarea}/checklist', [App\Http\Controllers\GestionApartamentoController::class, 'checklistTarea'])->name('gestion.tareas.checklist');
     Route::post('gestion/tareas/{tarea}/update', [App\Http\Controllers\GestionApartamentoController::class, 'updateTarea'])->name('gestion.updateTarea');
     Route::post('gestion/tareas/{tarea}/checklist/update', [App\Http\Controllers\GestionApartamentoController::class, 'updateChecklistTarea'])->name('gestion.tareas.checklist.update');
     Route::post('gestion/tareas/{tarea}/checklist/finalizar', [App\Http\Controllers\GestionApartamentoController::class, 'finalizarChecklistTarea'])->name('gestion.tareas.checklist.finalizar');
+    // Rutas para gestión de tareas asignadas
+    Route::get('gestion/tareas/{tarea}/checklist', [App\Http\Controllers\GestionApartamentoController::class, 'checklistTarea'])->name('gestion.tareas.checklist');
 });
 
 // Rutas de administración para turnos y tareas
