@@ -29,7 +29,23 @@ class GenerarTurnosTrabajo extends Command
      * @var string
      */
     protected $description = 'Genera turnos de trabajo para las empleadas de limpieza basado en horarios y tareas pendientes';
-
+    
+    private function esMustDoTipo(\App\Models\TipoTarea $tipo): bool
+    {
+        return (int)($tipo->prioridad_base ?? 0) === 10;
+    }
+    
+    /** Clave única para deduplicar tareas en memoria */
+    private function hashTarea(array $t): string
+    {
+        return implode('|', [
+            $t['tipo_tarea']->id ?? '0',
+            $t['apartamento_id'] ?? '0',
+            $t['zona_comun_id'] ?? '0',
+            $t['edificio_id'] ?? '0',
+        ]);
+    }
+    
     /**
      * Execute the console command.
      */
@@ -129,13 +145,13 @@ class GenerarTurnosTrabajo extends Command
     {
         $diaSemana = $fecha->dayOfWeek;
         $diasColumnas = [
+            0 => 'domingo',
             1 => 'lunes',
             2 => 'martes', 
             3 => 'miercoles',
             4 => 'jueves',
             5 => 'viernes',
-            6 => 'sabado',
-            0 => 'domingo'
+            6 => 'sabado'
         ];
         
         $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
@@ -167,7 +183,7 @@ class GenerarTurnosTrabajo extends Command
     /**
      * Generar lista de tareas pendientes para la fecha
      */
-    private function generarTareasPendientes($fecha)
+    private function generarTareasPendientes2($fecha)
     {
         $tareas = collect();
         
@@ -253,50 +269,148 @@ class GenerarTurnosTrabajo extends Command
         // Ordenar por prioridad (mayor primero)
         return $tareas->sortByDesc('prioridad')->values();
     }
+    private function obtenerApartamentosPendientesHoy(Carbon $fecha)
+    {
+        $hoy = $fecha->toDateString();
+    
+        // 1) Reservas activas que SALEN hoy y aún no tienen limpieza registrada
+        $reservas = \App\Models\Reserva::query()
+            ->where('estado_id', '!=', 4)       // activas
+            ->whereDate('fecha_salida', $hoy)   // salida hoy
+            ->whereNull('fecha_limpieza')       // aún no limpiado
+            ->with('apartamento')
+            ->get();
+    
+        // 2) Apartamentos que YA tienen tarea de limpieza creada hoy
+        $apartamentosConTareaHoy = \App\Models\TareaAsignada::query()
+            ->whereDate('created_at', $hoy)
+            ->whereHas('tipoTarea', fn($q) => $q->where('categoria','limpieza_apartamento'))
+            ->pluck('apartamento_id')
+            ->filter()
+            ->unique()
+            ->all();
+    
+        // 3) Filtrar reservas para no repetir esas tareas
+        $reservas = $reservas->reject(fn($r) => in_array($r->apartamento_id, $apartamentosConTareaHoy));
+    
+        // Log de control
+        Log::info('[TURNOS] Reservas filtradas', [
+            'fecha'  => $hoy,
+            'ids'    => $reservas->pluck('id')->all(),
+            'apts'   => $reservas->pluck('apartamento_id')->all(),
+            'total'  => $reservas->count(),
+        ]);
+    
+        // 4) Devolver apartamentos únicos de las reservas que quedan
+        return $reservas->pluck('apartamento')
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
     
     /**
      * Obtener apartamentos que necesitan limpieza HOY usando la lógica correcta del sistema
      */
-    private function obtenerApartamentosPendientesHoy($fecha)
-    {
-        $hoy = $fecha->toDateString();
-        
-        // 1. Reservas que SALEN hoy (necesitan limpieza)
-        $reservasSalidaHoy = \App\Models\Reserva::whereNull('fecha_limpieza')
-            ->where('estado_id', '!=', 4)
-            ->whereDate('fecha_salida', $hoy)
-            ->with('apartamento')
-            ->get();
-        
-        // 2. Limpiezas de fondo programadas para hoy
-        $limpiezasFondoHoy = \App\Models\LimpiezaFondo::whereDate('fecha', $hoy)
-            ->with('apartamento')
-            ->get();
-        
-        // 3. Apartamentos que ya tienen limpieza asignada hoy
-        $apartamentosLimpiezaHoy = \App\Models\ApartamentoLimpieza::whereDate('fecha_comienzo', $hoy)
-            ->pluck('apartamento_id')
-            ->toArray();
-        
-        $apartamentos = collect();
-        
-        // Agregar apartamentos de reservas que salen hoy
-        foreach ($reservasSalidaHoy as $reserva) {
-            if (!in_array($reserva->apartamento_id, $apartamentosLimpiezaHoy)) {
-                $apartamentos->push($reserva->apartamento);
-            }
-        }
-        
-        // Agregar apartamentos de limpieza de fondo
-        foreach ($limpiezasFondoHoy as $limpieza) {
-            if (!in_array($limpieza->apartamento_id, $apartamentosLimpiezaHoy) && 
-                !$apartamentos->contains('id', $limpieza->apartamento_id)) {
-                $apartamentos->push($limpieza->apartamento);
-            }
-        }
-        
-        return $apartamentos;
+    private function generarTareasPendientes($fecha)
+{
+    $tareas = collect();
+    $ya = [];
+
+    // 1) APARTAMENTOS (salidas hoy) – igual que tu lógica
+    $apartamentosPendientesHoy = $this->obtenerApartamentosPendientesHoy($fecha);
+
+    foreach ($apartamentosPendientesHoy as $apartamento) {
+        $tipoTarea = TipoTarea::activos()->limpiezaApartamentos()->first();
+        if (!$tipoTarea) continue;
+
+        $t = [
+            'tipo_tarea'      => $tipoTarea,
+            'apartamento_id'  => $apartamento->id,
+            'zona_comun_id'   => null,
+            'edificio_id'     => null,
+            'prioridad'       => $this->calcularPrioridadApartamento($apartamento, $tipoTarea),
+            'tiempo_estimado' => $tipoTarea->tiempo_estimado_minutos
+        ];
+
+        $tareas->push($t);
     }
+
+    // 2) ZONAS COMUNES PROGRAMADAS HOY -> como genéricas (SIN zona_comun_id)
+    $limpiezasZonasComunes = ApartamentoLimpieza::whereDate('fecha_comienzo', $fecha)
+        ->where('tipo_limpieza', 'zona_comun')
+        ->whereIn('status_id', [1, 2])
+        ->with('zonaComun') // solo para log si hace falta
+        ->get();
+
+    $tipoZonaComun = TipoTarea::activos()->limpiezaZonasComunes()->first();
+
+    if ($tipoZonaComun) {
+        // Si hay al menos una programada hoy, empujamos UNA tarea genérica de "Limpieza Zonas Comunes"
+        if ($limpiezasZonasComunes->count() > 0) {
+            $t = [
+                'tipo_tarea'      => $tipoZonaComun,
+                'apartamento_id'  => null,
+                'zona_comun_id'   => null, // <- clave: la tratamos como genérica
+                'edificio_id'     => null,
+                'prioridad'       => $tipoZonaComun->prioridad_base,
+                'tiempo_estimado' => $tipoZonaComun->tiempo_estimado_minutos
+            ];
+            $key = $this->hashTarea($t);
+            if (!isset($ya[$key])) { $ya[$key] = true; $tareas->push($t); }
+        }
+    }
+
+    // 3) OBLIGATORIAS DIARIAS (prioridad 10) – todas las activas, menos "limpieza_apartamento"
+    $mustDoTipos = TipoTarea::activos()
+        ->where('prioridad_base', 10)
+        ->where('categoria', '!=', 'limpieza_apartamento')
+        ->get();
+
+    foreach ($mustDoTipos as $tipo) {
+        $t = [
+            'tipo_tarea'      => $tipo,
+            'apartamento_id'  => null,
+            'zona_comun_id'   => null,
+            'edificio_id'     => null,
+            'prioridad'       => 10,
+            'tiempo_estimado' => $tipo->tiempo_estimado_minutos
+        ];
+        $key = $this->hashTarea($t);
+        if (!isset($ya[$key])) { $ya[$key] = true; $tareas->push($t); }
+    }
+
+    // 4) TAREAS GENERALES (oficinas, amenities, etc.) – igual que tenías
+    $tareasGenerales = TipoTarea::activos()
+        ->whereNotIn('categoria', ['limpieza_apartamento', 'limpieza_zona_comun', 'mantenimiento'])
+        ->get();
+
+    foreach ($tareasGenerales as $tipoTarea) {
+        $t = [
+            'tipo_tarea'      => $tipoTarea,
+            'apartamento_id'  => null,
+            'zona_comun_id'   => null,
+            'edificio_id'     => null,
+            'prioridad'       => $tipoTarea->prioridad_base,
+            'tiempo_estimado' => $tipoTarea->tiempo_estimado_minutos
+        ];
+        $key = $this->hashTarea($t);
+        if (!isset($ya[$key])) { $ya[$key] = true; $tareas->push($t); }
+    }
+
+    // 5) (Opcional) Limpieza común por edificio – si quieres mantenerlo, aquí lo dejaría tal cual,
+    //     pero como pides que zona común "sea como las demás", no meto tareas por edificio.
+
+    // Orden: primero prioridad 10, luego resto por prioridad
+    return $tareas
+        ->sortByDesc(function ($t) {
+            return [
+                (int)($t['prioridad'] === 10), // must primero
+                (int)$t['prioridad'],          // luego prioridad
+            ];
+        })
+        ->values();
+}
+
     
     /**
      * Calcular prioridad de una limpieza
@@ -938,6 +1052,12 @@ REGLAS DE ASIGNACIÓN:
 4. BALANCEAR: Distribuir carga de trabajo equitativamente entre múltiples empleadas
 5. EFICIENCIA: Agrupar tareas por ubicación cuando sea posible
 
+REGLAS ESPECÍFICAS CRÍTICAS:
+1. LAVANDERÍA Y COCINA COMUNITARIA: SIEMPRE asignar a la empleada con MÁS HORAS contratadas
+2. EDIFICIO COSTA: La empleada con más horas debe trabajar preferentemente en Edificio Costa
+3. TAREAS PRIORIDAD 10: Solo la empleada con más horas puede recibir tareas de prioridad 10
+4. ORDEN EMPLEADAS: Procesar empleadas ordenadas por horas contratadas (más horas primero)
+
 LÓGICA ESPECIAL PARA LIMPIEZA DE OFICINA:
 - Si se ejecutó hace menos de 7 días: BAJAR prioridad
 - Si no se ha ejecutado o supera días máximos: SUBIR a urgente
@@ -953,6 +1073,12 @@ INSTRUCCIONES DETALLADAS:
 5. QUINTO: Usar tareas de baja prioridad para rellenar jornadas
 6. RESPETAR: Jornada estricta - nunca sobrepasar tiempo disponible
 7. OPTIMIZAR: Agrupar por edificio cuando sea posible
+
+INSTRUCCIONES CRÍTICAS OBLIGATORIAS:
+- LAVANDERÍA Y COCINA COMUNITARIA: SOLO a la empleada con MÁS HORAS
+- EDIFICIO COSTA: Asignar a la empleada con más horas cuando sea posible
+- TAREAS PRIORIDAD 10: Exclusivas de la empleada con más horas
+- ORDEN: Procesar empleadas por horas contratadas (descendente)
 
 FORMATO DE RESPUESTA (JSON):
 {
@@ -1038,6 +1164,9 @@ Responde SOLO con el JSON, sin texto adicional.";
             return $tarea['apartamento_id'] === null && !isset($tarea['edificio_id']);
         });
         
+        // Ordenar tareas generales por prioridad (mayor primero) para respetar el orden correcto
+        $tareasGenerales = $tareasGenerales->sortByDesc('prioridad')->values();
+        
         // Agrupar apartamentos por edificio
         $apartamentosPorEdificio = [];
         foreach ($tareasApartamentos as $tarea) {
@@ -1052,7 +1181,8 @@ Responde SOLO con el JSON, sin texto adicional.";
         }
         
         $asignaciones = [];
-        $empleadasArray = $empleadas->toArray();
+        // Ordenar empleadas por horas contratadas (más horas primero) para asignar tareas importantes primero
+        $empleadasArray = $empleadas->sortByDesc('horas_contratadas_dia')->values()->toArray();
         
         // Simular asignación optimizada
         $edificioIndex = 0;
@@ -1070,9 +1200,24 @@ Responde SOLO con el JSON, sin texto adicional.";
             ];
             
             // Asignar edificio si hay disponibles
-            if ($edificioIndex < count($apartamentosPorEdificio)) {
+            if (!empty($apartamentosPorEdificio)) {
                 $edificios = array_keys($apartamentosPorEdificio);
-                $edificioId = $edificios[$edificioIndex];
+                
+                // Si es la primera empleada (más horas), priorizar Edificio Costa
+                if ($index === 0) {
+                    $edificioCosta = collect($apartamentosPorEdificio)->keys()->first(function($key) {
+                        return strpos($key, 'Costa') !== false || strpos($key, '2') !== false;
+                    });
+                    
+                    if ($edificioCosta) {
+                        $edificioId = $edificioCosta;
+                    } else {
+                        $edificioId = $edificios[0];
+                    }
+                } else {
+                    $edificioId = $edificios[0];
+                }
+                
                 $tareasEdificio = $apartamentosPorEdificio[$edificioId];
                 
                 $tiempoEdificio = collect($tareasEdificio)->sum('tiempo_estimado');
@@ -1095,7 +1240,8 @@ Responde SOLO con el JSON, sin texto adicional.";
                         $ordenEjecucion++;
                     }
                     
-                    $edificioIndex++;
+                    // Remover el edificio asignado del pool para que no se asigne a otra empleada
+                    unset($apartamentosPorEdificio[$edificioId]);
                 }
             }
             
@@ -1123,12 +1269,20 @@ Responde SOLO con el JSON, sin texto adicional.";
                 }
             }
             
-            // Asignar tareas generales para completar jornada
-            $tiempoRestante = $asignacion['tiempo_disponible'] - $asignacion['tiempo_total_asignado'];
-            $ordenEjecucion = count($asignacion['tareas_apartamentos']) + 1;
-            
-            foreach ($tareasGenerales as $tarea) {
-                if ($tarea['tiempo_estimado'] <= $tiempoRestante) {
+        // Asignar tareas generales para completar jornada
+        $tiempoRestante = $asignacion['tiempo_disponible'] - $asignacion['tiempo_total_asignado'];
+        $ordenEjecucion = count($asignacion['tareas_apartamentos']) + 1;
+        
+        // Lógica inteligente: priorizar tareas de alta prioridad (10) a la empleada con más horas
+        // Iterar sobre una copia para poder remover tareas ya asignadas
+        $tareasGeneralesDisponibles = collect($tareasGenerales);
+        
+        foreach ($tareasGeneralesDisponibles as $key => $tarea) {
+            if ($tarea['tiempo_estimado'] <= $tiempoRestante) {
+                // Solo la primera empleada (más horas) puede recibir tareas de prioridad 10
+                $puedeAsignar = ($index === 0) || ($tarea['prioridad'] < 10);
+                
+                if ($puedeAsignar) {
                     $asignacion['tareas_generales'][] = [
                         'tarea_id' => $tarea['tipo_tarea']->id,
                         'tipo' => $tarea['tipo_tarea']->nombre,
@@ -1140,8 +1294,12 @@ Responde SOLO con el JSON, sin texto adicional.";
                     $asignacion['tiempo_total_asignado'] += $tarea['tiempo_estimado'];
                     $tiempoRestante -= $tarea['tiempo_estimado'];
                     $ordenEjecucion++;
+                    
+                    // Remover la tarea del pool para que no se asigne a otra empleada
+                    unset($tareasGenerales[$key]);
                 }
             }
+        }
             
             $asignaciones[] = $asignacion;
         }

@@ -133,6 +133,10 @@
                                     @enderror
                                 </div>
                                 
+                                <!-- Campos ocultos para asegurar que siempre se envíen -->
+                                <input type="hidden" name="requiere_apartamento" value="0">
+                                <input type="hidden" name="requiere_zona_comun" value="0">
+                                
                                 <div class="row">
                                     <div class="col-6">
                                         <div class="form-check">

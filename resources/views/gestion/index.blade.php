@@ -2011,58 +2011,6 @@
                         </div>
                     @endif
 
-                    <!-- Zonas Comunes dentro de Jornada para hoy -->
-                    @if($zonasComunes && $zonasComunes->count() > 0)
-                    <div style="margin-top: 20px;">
-                        <div class="alert alert-info mb-3" style="border-radius: 12px; border: none; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Información:</strong> Las zonas comunes aparecen siempre disponibles. 
-                            Si ya limpiaste una zona hoy, puedes limpiarla de nuevo si es necesario.
-                        </div>
-                        <div class="apple-list">
-                            @foreach ($zonasComunes as $zonaComun)
-                                @php
-                                    // Verificar si esta zona ya fue limpiada hoy
-                                    $zonaLimpiezaHoy = $reservasLimpieza->where('zona_comun_id', $zonaComun->id)->first();
-                                    $ultimaLimpieza = $zonaLimpiezaHoy ? $zonaLimpiezaHoy->fecha_fin : null;
-                                @endphp
-                                
-                                <a class="apple-list-item @if($zonaLimpiezaHoy) apple-list-item-success @else apple-list-item-info @endif" 
-                                   href="{{ route('gestion.createZonaComun', $zonaComun->id) }}"
-                                   onclick="console.log('Click en zona común: {{ $zonaComun->nombre }}')">
-                                    <div class="apple-list-content">
-                                        <div class="apple-list-title">
-                                            {{ $zonaComun->nombre }}
-                                            @if($zonaLimpiezaHoy)
-                                                <span class="badge bg-success ms-2">
-                                                    <i class="fas fa-check"></i> Limpiada hoy
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="apple-list-subtitle">
-                                            {{ ucfirst(str_replace('_', ' ', $zonaComun->tipo)) }}
-                                            @if($zonaComun->ubicacion)
-                                                - {{ $zonaComun->ubicacion }}
-                                            @endif
-                                            @if($ultimaLimpieza)
-                                                <br><small class="text-muted">
-                                                    Última limpieza: {{ \Carbon\Carbon::parse($ultimaLimpieza)->format('H:i') }}
-                                                </small>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="apple-list-action">
-                                        @if($zonaLimpiezaHoy)
-                                            <i class="fa-solid fa-redo text-success"></i>
-                                        @else
-                                            <i class="fa-solid fa-arrow-right"></i>
-                                        @endif
-                                    </div>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
                 </div>
             </div>
 
@@ -2172,6 +2120,12 @@
                                                 onclick="continuarTarea({{$reservaEnLimpieza->tarea_asignada->id}})"
                                                 title="Continuar tarea">
                                             <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="action-button complete-btn" 
+                                                onclick="finalizarTarea({{$reservaEnLimpieza->tarea_asignada->id}})"
+                                                title="Finalizar tarea">
+                                            <i class="fas fa-check"></i>
                                         </button>
                                     @else
                                         <!-- Botones para el sistema antiguo -->
@@ -2748,6 +2702,50 @@
     function continuarTarea(tareaId) {
         // Abrir el checklist de la tarea
         window.location.href = `/gestion/tareas/${tareaId}/checklist`;
+    }
+    
+    function finalizarTarea(tareaId) {
+        if (confirm('¿Estás seguro de que quieres finalizar esta tarea?')) {
+            fetch(`/gestion/tareas/${tareaId}/finalizar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar mensaje de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tarea finalizada',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Recargar la página para actualizar la vista
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Error al finalizar la tarea'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error de conexión'
+                });
+            });
+        }
     }
     </script>
 

@@ -264,26 +264,115 @@ class TurnosTrabajoController extends Controller
                 }
             }
 
-            // Usar el nuevo servicio de generación inteligente
-            $generacionService = new GeneracionTurnosService();
-            $resultado = $generacionService->generarTurnosInteligentes($fecha, $forzar);
+        // Decidir qué método usar según la opción de IA
+        if ($usarIA) {
+            // Usar comando de consola con IA
+            $comando = 'turnos:generar';
+            $argumentos = ['fecha' => $fecha];
+            $opciones = [];
+            
+            if ($forzar) {
+                $opciones['--force'] = true;
+            }
+            
+            if ($tipoIA === 'real') {
+                $opciones['--ia'] = true;
+            } elseif ($tipoIA === 'simulada') {
+                $opciones['--test-ia'] = true;
+            }
+            
+            try {
+                $exitCode = Artisan::call($comando, array_merge($argumentos, $opciones));
+                $output = Artisan::output();
+                
+                if ($exitCode === 0) {
+                    $resultado = [
+                        'success' => true,
+                        'message' => 'Turnos generados exitosamente con IA',
+                        'output' => $output
+                    ];
+                } else {
+                    $resultado = [
+                        'success' => false,
+                        'message' => 'Error al generar turnos con IA: ' . $output
+                    ];
+                }
+            } catch (\Exception $e) {
+                $resultado = [
+                    'success' => false,
+                    'message' => 'Error al ejecutar comando de IA: ' . $e->getMessage()
+                ];
+            }
+        } else {
+            // Usar comando de consola tradicional (sin IA)
+            $comando = 'turnos:generar';
+            $argumentos = ['fecha' => $fecha];
+            $opciones = [];
+            
+            if ($forzar) {
+                $opciones['--force'] = true;
+            }
+            
+            try {
+                $exitCode = Artisan::call($comando, array_merge($argumentos, $opciones));
+                $output = Artisan::output();
+                
+                if ($exitCode === 0) {
+                    $resultado = [
+                        'success' => true,
+                        'message' => 'Turnos generados exitosamente',
+                        'output' => $output
+                    ];
+                } else {
+                    $resultado = [
+                        'success' => false,
+                        'message' => 'Error al generar turnos: ' . $output
+                    ];
+                }
+            } catch (\Exception $e) {
+                $resultado = [
+                    'success' => false,
+                    'message' => 'Error al ejecutar comando: ' . $e->getMessage()
+                ];
+            }
+        }
 
             if ($resultado['success']) {
-                $turnosGenerados = count($resultado['turnos']);
-                $mensaje = "Se generaron {$turnosGenerados} turnos inteligentes para {$fecha}";
-                
-                // Log detallado de los turnos generados
-                foreach ($resultado['turnos'] as $turnoData) {
-                    Log::info("📋 Turno generado: {$turnoData['empleada']} - {$turnoData['horas']}h - {$turnoData['tipo']} - " . count($turnoData['tareas']) . " tareas");
-                }
+                // Manejar diferentes estructuras de respuesta
+                if (isset($resultado['turnos'])) {
+                    // Respuesta del servicio tradicional
+                    $turnosGenerados = count($resultado['turnos']);
+                    $mensaje = "Se generaron {$turnosGenerados} turnos inteligentes para {$fecha}";
+                    
+                    // Log detallado de los turnos generados
+                    foreach ($resultado['turnos'] as $turnoData) {
+                        Log::info("📋 Turno generado: {$turnoData['empleada']} - {$turnoData['horas']}h - {$turnoData['tipo']} - " . count($turnoData['tareas']) . " tareas");
+                    }
 
-                return response()->json([
-                    'success' => true,
-                    'message' => $mensaje,
-                    'output' => $mensaje,
-                    'turnos_generados' => $turnosGenerados,
-                    'detalles' => $resultado['turnos']
-                ]);
+                    return response()->json([
+                        'success' => true,
+                        'message' => $mensaje,
+                        'output' => $mensaje,
+                        'turnos_generados' => $turnosGenerados,
+                        'detalles' => $resultado['turnos']
+                    ]);
+                } else {
+                    // Respuesta del comando de IA (solo texto)
+                    $mensaje = $resultado['message'];
+                    $output = $resultado['output'] ?? $mensaje;
+                    
+                    // Intentar extraer número de turnos del output si es posible
+                    preg_match('/(\d+)\s*turnos?/i', $output, $matches);
+                    $turnosGenerados = isset($matches[1]) ? (int)$matches[1] : 0;
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => $mensaje,
+                        'output' => $output,
+                        'turnos_generados' => $turnosGenerados,
+                        'detalles' => $output
+                    ]);
+                }
             } else {
                 return response()->json([
                     'success' => false,

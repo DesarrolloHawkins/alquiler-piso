@@ -212,6 +212,19 @@
     background: #546E7A !important;
 }
 
+/* Botón de completar/finalizar tarea */
+.apple-list-actions .complete-btn,
+.apple-list-actions button.complete-btn,
+.apple-list-actions a.complete-btn {
+    background: #28a745 !important;
+}
+
+.apple-list-actions .complete-btn:hover,
+.apple-list-actions button.complete-btn:hover,
+.apple-list-actions a.complete-btn:hover {
+    background: #218838 !important;
+}
+
 /* Responsive para pantallas pequeñas */
 @media (max-width: 768px) {
     .apple-list-actions {

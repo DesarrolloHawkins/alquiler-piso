@@ -141,7 +141,10 @@ class GeneracionTurnosService
         $turnosGenerados = [];
         $hayVacaciones = $empleadasEnVacaciones->isNotEmpty();
 
-        foreach ($empleadasActivas as $empleada) {
+        // Ordenar empleadas por horas contratadas (más horas primero) para asignar tareas importantes primero
+        $empleadasOrdenadas = $empleadasActivas->sortByDesc('horas_contratadas_dia');
+        
+        foreach ($empleadasOrdenadas as $index => $empleada) {
             $horasContratadas = $empleada->horas_contratadas_dia;
             $horasAsignar = $this->calcularHorasAsignar($horasContratadas, $hayVacaciones);
             
@@ -156,7 +159,9 @@ class GeneracionTurnosService
             $turno = $this->crearTurno($empleada, $fecha, $horaInicio, $horaFin);
             
             // Asignar tareas según prioridad y horas disponibles
-            $tareasAsignadas = $this->asignarTareasPorPrioridad($turno, $horasAsignar, $hayVacaciones);
+            // Solo la primera empleada (más horas) recibe tareas de lavandería
+            $esPrimeraEmpleada = $index === 0;
+            $tareasAsignadas = $this->asignarTareasPorPrioridad($turno, $horasAsignar, $hayVacaciones, $esPrimeraEmpleada);
             
             $turnosGenerados[] = [
                 'turno' => $turno,
@@ -286,7 +291,7 @@ class GeneracionTurnosService
     /**
      * Asignar tareas por prioridad (para entre semana)
      */
-    private function asignarTareasPorPrioridad($turno, $horasDisponibles, $hayVacaciones)
+    private function asignarTareasPorPrioridad($turno, $horasDisponibles, $hayVacaciones, $esPrimeraEmpleada = false)
     {
         $tareasAsignadas = [];
         $orden = 1;
@@ -315,13 +320,15 @@ class GeneracionTurnosService
             Log::info("🏢 Zonas comunes asignadas: " . count($tareasZonas['tareas']) . " tareas, tiempo usado: {$tareasZonas['tiempo_usado']}min");
         }
 
-        // 3. PRIORIDAD 3: Lavandería (solo edificio Costa y cocina)
+        // 3. PRIORIDAD 3: Lavandería (solo edificio Costa y cocina) - PRIORIDAD MÁXIMA
+        // Solo se asigna a la primera empleada (con más horas)
         $tiempoRestante = $tiempoDisponible - $tiempoAsignado;
-        if ($tiempoRestante > 0) {
-            $tareasLavanderia = $this->asignarTareasLavanderia($turno, 5, $orden, $tiempoRestante);
+        if ($tiempoRestante > 0 && $esPrimeraEmpleada) {
+            $tareasLavanderia = $this->asignarTareasLavanderia($turno, 10, $orden, $tiempoRestante);
             $tareasAsignadas = array_merge($tareasAsignadas, $tareasLavanderia['tareas']);
+            $tiempoAsignado += $tareasLavanderia['tiempo_usado'];
             
-            Log::info("🧺 Lavandería asignada: " . count($tareasLavanderia['tareas']) . " tareas, tiempo usado: {$tareasLavanderia['tiempo_usado']}min");
+            Log::info("🧺 Lavandería asignada a primera empleada: " . count($tareasLavanderia['tareas']) . " tareas, tiempo usado: {$tareasLavanderia['tiempo_usado']}min");
         }
 
         // 4. VALIDACIÓN: Verificar que no se exceda el tiempo disponible
@@ -450,7 +457,7 @@ class GeneracionTurnosService
         $edificioCosta = Edificio::where('nombre', 'like', '%Costa%')->first();
         
         if ($edificioCosta) {
-            $tipoTarea = TipoTarea::where('categoria', 'lavanderia')
+            $tipoTarea = TipoTarea::where('nombre', 'like', '%Lavandería%')
                 ->where('activo', true)
                 ->first();
 

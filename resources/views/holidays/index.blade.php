@@ -7,122 +7,80 @@
 @endsection
 
 @section('content')
-<div class="limpiadora-vacaciones-container">
-    <!-- Header de la Página -->
-    <div class="apple-card header-card">
-        <div class="apple-card-header">
-            <div class="header-icon">
+<div class="vacations-dashboard">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
                 <i class="fas fa-umbrella-beach"></i>
             </div>
-            <div class="header-content">
-                <h1 class="apple-title">Mis Vacaciones</h1>
-                <p class="apple-subtitle">Gestiona tus solicitudes de vacaciones</p>
+            <div class="hero-text">
+                <h1 class="hero-title">Mis Vacaciones</h1>
+                <p class="hero-subtitle">Gestiona tus solicitudes de vacaciones de forma sencilla</p>
             </div>
+        </div>
+        <div class="hero-actions">
+            <a href="{{ route('holiday.create') }}" class="btn-primary">
+                <i class="fas fa-plus"></i>
+                <span>Nueva Solicitud</span>
+            </a>
         </div>
     </div>
 
-    <!-- Botón de Nueva Petición -->
-    <div class="action-section">
-        <a href="{{ route('holiday.create') }}" class="apple-btn apple-btn-primary">
-            <i class="fas fa-plus me-2"></i>
-            Nueva Petición de Vacaciones
-        </a>
-    </div>
-
-    <!-- Información de Vacaciones -->
-    <div class="stats-section">
-        <div class="apple-list-item">
-            <div class="apple-list-item-icon">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
                 <i class="fas fa-calendar-check"></i>
             </div>
-            <div class="apple-list-item-content">
-                <div class="apple-list-item-title">Días Disponibles</div>
-                <div class="apple-list-item-subtitle">{{ $userHolidaysQuantity ? $userHolidaysQuantity->quantity : 0 }} días restantes</div>
-            </div>
-            <div class="apple-list-item-value">
-                <span class="apple-badge apple-badge-primary">{{ $userHolidaysQuantity ? $userHolidaysQuantity->quantity : 0 }}</span>
+            <div class="stat-content">
+                <div class="stat-number">{{ $userHolidaysQuantity ? $userHolidaysQuantity->quantity : 0 }}</div>
+                <div class="stat-label">Días Disponibles</div>
             </div>
         </div>
-
-        <div class="apple-list-item">
-            <div class="apple-list-item-icon">
+        
+        <div class="stat-card">
+            <div class="stat-icon">
                 <i class="fas fa-clock"></i>
             </div>
-            <div class="apple-list-item-content">
-                <div class="apple-list-item-title">Peticiones Pendientes</div>
-                <div class="apple-list-item-subtitle">Esperando aprobación</div>
-            </div>
-            <div class="apple-list-item-value">
-                <span class="apple-badge apple-badge-warning">{{ $numberOfHolidayPetitions ?? 0 }}</span>
+            <div class="stat-content">
+                <div class="stat-number">{{ $numberOfHolidayPetitions ?? 0 }}</div>
+                <div class="stat-label">Pendientes</div>
             </div>
         </div>
-    </div>
-
-    <!-- Estados de Vacaciones -->
-    <div class="apple-card">
-        <div class="apple-card-header">
-            <h3 class="apple-title">
-                <i class="fas fa-info-circle me-2"></i>
-                Estados de las Peticiones
-            </h3>
-        </div>
-        <div class="apple-card-body">
-            <div class="status-legend">
-                <div class="status-item">
-                    <div class="status-color pending"></div>
-                    <span>Pendiente</span>
-                </div>
-                <div class="status-item">
-                    <div class="status-color approved"></div>
-                    <span>Aceptada</span>
-                </div>
-                <div class="status-item">
-                    <div class="status-color denied"></div>
-                    <span>Denegada</span>
-                </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ $holidays->where('holidays_status_id', 1)->count() }}</div>
+                <div class="stat-label">Aprobadas</div>
             </div>
         </div>
     </div>
 
-    <!-- Filtros y Búsqueda -->
-    <div class="apple-card">
-        <div class="apple-card-header">
-            <h3 class="apple-title">
-                <i class="fas fa-filter me-2"></i>
-                Filtros y Búsqueda
-            </h3>
-        </div>
-        <div class="apple-card-body">
-            <form method="GET" action="{{ route('holiday.index') }}" class="filters-form">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="perPage" class="apple-label">Elementos por página</label>
-                        <select name="perPage" id="perPage" class="apple-input" onchange="this.form.submit()">
-                            <option value="10" {{ request('perPage') == 10 ? 'selected' : '' }}>10</option>
-                            <option value="25" {{ request('perPage') == 25 ? 'selected' : '' }}>25</option>
-                            <option value="50" {{ request('perPage') == 50 ? 'selected' : '' }}>50</option>
-                            <option value="all" {{ request('perPage') == 'all' ? 'selected' : '' }}>Todo</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="buscar" class="apple-label">Buscar</label>
-                        <input type="text" name="buscar" id="buscar" class="apple-input"
-                               value="{{ request('buscar') }}" placeholder="Buscar peticiones...">
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="estado" class="apple-label">Estado</label>
-                        <select name="estado" id="estado" class="apple-input" onchange="this.form.submit()">
-                            <option value="" {{ request('estado') == '' ? 'selected' : '' }}>Todos</option>
-                            <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Aceptada</option>
-                            <option value="2" {{ request('estado') == '2' ? 'selected' : '' }}>Denegada</option>
-                            <option value="3" {{ request('estado') == '3' ? 'selected' : '' }}>Pendiente</option>
-                        </select>
-                    </div>
+    <!-- Filtros Compactos -->
+    <div class="filters-section">
+        <form method="GET" action="{{ route('holiday.index') }}" class="filters-form">
+            <div class="filter-controls">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="buscar" placeholder="Buscar solicitudes..." value="{{ request('buscar') }}">
                 </div>
-            </form>
-        </div>
+                <select name="estado" onchange="this.form.submit()">
+                    <option value="">Todos los estados</option>
+                    <option value="3" {{ request('estado') == '3' ? 'selected' : '' }}>Pendiente</option>
+                    <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Aceptada</option>
+                    <option value="2" {{ request('estado') == '2' ? 'selected' : '' }}>Denegada</option>
+                </select>
+                <select name="perPage" onchange="this.form.submit()">
+                    <option value="10" {{ request('perPage') == 10 ? 'selected' : '' }}>10 por página</option>
+                    <option value="25" {{ request('perPage') == 25 ? 'selected' : '' }}>25 por página</option>
+                    <option value="50" {{ request('perPage') == 50 ? 'selected' : '' }}>50 por página</option>
+                </select>
+            </div>
+        </form>
     </div>
 
     <!-- Lista de Peticiones -->
@@ -235,18 +193,16 @@
 
     @else
         <!-- Estado Vacío -->
-        <div class="apple-card">
-            <div class="apple-card-body text-center">
-                <div class="empty-icon">
-                    <i class="fas fa-umbrella-beach"></i>
-                </div>
-                <h3 class="apple-title">No tienes peticiones de vacaciones</h3>
-                <p class="apple-subtitle">Cuando hagas una petición, aparecerá aquí</p>
-                <a href="{{ route('holiday.create') }}" class="apple-btn apple-btn-primary">
-                    <i class="fas fa-plus me-2"></i>
-                    Hacer Primera Petición
-                </a>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-umbrella-beach"></i>
             </div>
+            <h3 class="empty-title">No tienes solicitudes de vacaciones</h3>
+            <p class="empty-subtitle">Crea tu primera solicitud para comenzar a gestionar tus vacaciones</p>
+            <a href="{{ route('holiday.create') }}" class="btn-primary">
+                <i class="fas fa-plus"></i>
+                <span>Crear Primera Solicitud</span>
+            </a>
         </div>
     @endif
 </div>

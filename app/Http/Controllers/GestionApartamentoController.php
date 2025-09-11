@@ -226,14 +226,6 @@ class GestionApartamentoController extends Controller
             }
         }
 
-        // Obtener zonas comunes activas que NO estén EN PROCESO de limpieza
-        // Las zonas ya limpiadas hoy SÍ pueden aparecer para limpiar de nuevo
-        $zonasComunesIdsEnLimpieza = $reservasEnLimpieza->pluck('zona_comun_id')->filter()->toArray();
-        
-        $zonasComunes = \App\Models\ZonaComun::activas()
-            ->ordenadas()
-            ->whereNotIn('id', $zonasComunesIdsEnLimpieza) // Solo excluir las EN PROCESO
-            ->get();
 
         $hoy = now()->toDateString();
         $limpiezaFondo = LimpiezaFondo::whereDate('fecha', $hoy)->get();
@@ -267,7 +259,6 @@ class GestionApartamentoController extends Controller
             'reservasLimpieza',
             'reservasEnLimpieza', 
             'limpiezaFondo', 
-            'zonasComunes', 
             'reservasManana',
             'amenities',
             'consumosExistentes',
@@ -382,10 +373,21 @@ class GestionApartamentoController extends Controller
             }
         }
         
-        // Obtener zonas comunes activas
-        $zonasComunes = \App\Models\ZonaComun::activas()
-            ->ordenadas()
-            ->get();
+        // Ordenar las colecciones por prioridad y orden de ejecución
+        $reservasPendientes = $reservasPendientes->sortBy([
+            ['prioridad', 'desc'],
+            ['orden_ejecucion', 'asc']
+        ])->values();
+        
+        $reservasEnLimpieza = $reservasEnLimpieza->sortBy([
+            ['prioridad', 'desc'],
+            ['orden_ejecucion', 'asc']
+        ])->values();
+        
+        $reservasLimpieza = $reservasLimpieza->sortBy([
+            ['prioridad', 'desc'],
+            ['orden_ejecucion', 'asc']
+        ])->values();
         
         // Obtener amenities
         $amenities = \App\Models\Amenity::activos()
@@ -411,7 +413,6 @@ class GestionApartamentoController extends Controller
             'reservasLimpieza',
             'reservasEnLimpieza', 
             'limpiezaFondo', 
-            'zonasComunes', 
             'reservasManana',
             'amenities',
             'consumosExistentes',

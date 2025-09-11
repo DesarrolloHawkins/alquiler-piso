@@ -395,8 +395,8 @@
         }
 
         .apple-tab-item {
-            padding: 4px 8px;
-            min-width: 52px;
+            padding: 4px 6px;
+            min-width: 48px;
         }
 
         .apple-tab-icon {
@@ -410,6 +410,30 @@
 
         .apple-tab-label {
             font-size: 9px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .apple-tab-bar {
+            height: 72px;
+        }
+
+        .apple-tab-item {
+            padding: 3px 4px;
+            min-width: 44px;
+        }
+
+        .apple-tab-icon {
+            width: 22px;
+            height: 22px;
+        }
+
+        .apple-tab-icon i {
+            font-size: 14px;
+        }
+
+        .apple-tab-label {
+            font-size: 8px;
         }
     }
 
@@ -1243,6 +1267,13 @@
                         <i class="fa-solid fa-calendar-check"></i>
                     </div>
                     <span class="apple-tab-label">Reservas</span>
+                </a>
+                
+                <a href="{{route('holiday.index')}}" class="apple-tab-item {{ request()->routeIs('holiday.*') ? 'active' : '' }}">
+                    <div class="apple-tab-icon">
+                        <i class="fa-solid fa-umbrella-beach"></i>
+                    </div>
+                    <span class="apple-tab-label">Mis Vacaciones</span>
                 </a>
                 
                 <a href="#" class="apple-tab-item">

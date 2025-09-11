@@ -231,6 +231,10 @@
                                 </h5>
                             </div>
                             <div class="card-body">
+                                <!-- Campos ocultos para asegurar que siempre se envíen -->
+                                <input type="hidden" name="requiere_apartamento" value="0">
+                                <input type="hidden" name="requiere_zona_comun" value="0">
+                                
                                 <div class="mb-3">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" 
@@ -305,28 +309,12 @@ document.addEventListener('DOMContentLoaded', function() {
     prioridadBase.addEventListener('input', validarPrioridades);
     prioridadMaxima.addEventListener('input', validarPrioridades);
     
-    // Validar que al menos uno de los requisitos esté marcado
-    const requiereApartamento = document.getElementById('requiere_apartamento');
-    const requiereZonaComun = document.getElementById('requiere_zona_comun');
-    
-    function validarRequisitos() {
-        if (!requiereApartamento.checked && !requiereZonaComun.checked) {
-            requiereApartamento.setCustomValidity('Debe seleccionar al menos un tipo de requisito');
-        } else {
-            requiereApartamento.setCustomValidity('');
-        }
-    }
-    
-    requiereApartamento.addEventListener('change', validarRequisitos);
-    requiereZonaComun.addEventListener('change', validarRequisitos);
-    
     // Validación inicial
     validarPrioridades();
-    validarRequisitos();
     
     // Mostrar errores de validación si existen
     @if($errors->any())
-        console.log('Errores de validación:', @json($errors->all()));
+        console.log('Errores de validación del servidor:', @json($errors->all()));
         
         // Mostrar alerta con errores
         Swal.fire({
