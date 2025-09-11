@@ -66,16 +66,60 @@ class LimpiadoraTurnosController extends Controller
             ->select('empleada_dias_libres.*')
             ->get();
         
+        // Si no hay días libres específicos para esta semana, buscar en semanas anteriores
+        if($empleadaDiasLibres->isEmpty()) {
+            $empleadaDiasLibres = \DB::table('empleada_dias_libres')
+                ->join('empleada_horarios', 'empleada_dias_libres.empleada_horario_id', '=', 'empleada_horarios.id')
+                ->where('empleada_horarios.user_id', $user->id)
+                ->where('empleada_dias_libres.semana_inicio', '<=', $finSemana)
+                ->orderBy('empleada_dias_libres.semana_inicio', 'desc')
+                ->select('empleada_dias_libres.*')
+                ->get();
+        }
+        
         foreach($empleadaDiasLibres as $diaLibre) {
             $semanaInicio = Carbon::parse($diaLibre->semana_inicio);
             $diasLibresArray = json_decode($diaLibre->dias_libres, true);
             
             if(is_array($diasLibresArray)) {
                 foreach($diasLibresArray as $diaNumero) {
-                    $fecha = $semanaInicio->copy()->addDays($diaNumero);
+                    // Los números de días libres están basados en el día de la semana (0=domingo, 6=sábado)
+                    // semana_inicio es un lunes, así que calculamos desde ahí
+                    $fecha = $semanaInicio->copy(); // Empezar desde el lunes
+                    
+                    // Calcular el desplazamiento correcto desde el lunes
+                    // 0=domingo (6 días después del lunes), 1=lunes (0 días), ..., 6=sábado (5 días)
+                    $desplazamiento = ($diaNumero == 0) ? 6 : $diaNumero - 1;
+                    $fecha = $fecha->addDays($desplazamiento);
+                    
                     if($fecha >= $inicioSemana && $fecha <= $finSemana) {
                         $diasLibres[] = $fecha->format('Y-m-d');
                     }
+                }
+            }
+        }
+        
+        // Si no hay días libres específicos configurados, usar la configuración general del horario
+        if(empty($diasLibres) && $horarioEmpleada) {
+            for ($i = 0; $i < 7; $i++) {
+                $fecha = $inicioSemana->copy()->addDays($i);
+                $diaSemana = $fecha->dayOfWeek; // 0=domingo, 1=lunes, ..., 6=sábado
+                
+                $diasColumnas = [
+                    1 => 'lunes',
+                    2 => 'martes', 
+                    3 => 'miercoles',
+                    4 => 'jueves',
+                    5 => 'viernes',
+                    6 => 'sabado',
+                    0 => 'domingo'
+                ];
+                
+                $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
+                $trabajaEseDia = $horarioEmpleada->$columnaDia ?? false;
+                
+                if(!$trabajaEseDia) {
+                    $diasLibres[] = $fecha->format('Y-m-d');
                 }
             }
         }
