@@ -2190,7 +2190,7 @@
                                         @elseif($reservaLimpieza->zonaComun)
                                             {{$reservaLimpieza->zonaComun->nombre}}
                                         @else
-                                            Elemento no encontrado
+                                            {{$reservaLimpieza->tipo_tarea->nombre}}
                                         @endif
                                     </div>
                                     <div class="apple-list-subtitle">
@@ -2224,12 +2224,14 @@
                                     </div>
                                 </div>
                                 <div class="apple-list-actions">
-                                    <button type="button" 
-                                                class="action-button amenities-btn" 
-                                                onclick="mostrarAmenities({{$reservaLimpieza->apartamento->id}}, {{$reservaLimpieza->id}}, '{{$reservaLimpieza->apartamento->nombre}}', 'completada')"
-                                                title="Ver amenities">
-                                            <i class="fa fa-gift"></i>
-                                        </button>
+                                    @if(isset($reservaLimpieza->apartamento) && $reservaLimpieza->apartamento)
+                                        <button type="button" 
+                                                    class="action-button amenities-btn" 
+                                                    onclick="mostrarAmenities({{$reservaLimpieza->apartamento->id}}, {{$reservaLimpieza->id}}, '{{$reservaLimpieza->apartamento->nombre}}', 'completada')"
+                                                    title="Ver amenities">
+                                                <i class="fa fa-gift"></i>
+                                            </button>
+                                    @endif
                                     @if(isset($reservaLimpieza->reserva_entra_hoy) && $reservaLimpieza->reserva_entra_hoy)
                                         <a href="{{ route('gestion.reserva.info', $reservaLimpieza->reserva_entra_hoy->id) }}" 
                                            class="action-button info-btn" 

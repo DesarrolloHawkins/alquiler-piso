@@ -350,7 +350,9 @@ class GestionApartamentoController extends Controller
                 $reserva = new \stdClass();
                 $reserva->id = $tarea->id;
                 $reserva->apartamento_id = null;
+                $reserva->apartamento = null;
                 $reserva->zona_comun_id = null;
+                $reserva->zonaComun = null;
                 $reserva->codigo_reserva = 'GENERAL-' . $tarea->id;
                 $reserva->numero_personas = 0;
                 $reserva->fecha_salida = $hoy->toDateString();
