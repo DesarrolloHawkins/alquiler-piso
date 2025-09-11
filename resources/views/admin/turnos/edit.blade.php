@@ -337,7 +337,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 // Gestión de tareas
 function addNewTask() {
@@ -485,8 +485,168 @@ function deleteTask(taskId) {
 }
 
 function reordenarTareas() {
-    // Implementar reordenamiento
-    console.log('Reordenando tareas');
+    // Crear modal de reordenamiento
+    const modalHtml = `
+        <div class="modal fade" id="reordenarModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reordenar Tareas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Arrastra las tareas para reordenarlas:</p>
+                        <div id="tareasList" class="list-group">
+                            <!-- Las tareas se cargarán aquí -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarReordenamiento()">Guardar Orden</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM si no existe
+    if (!document.getElementById('reordenarModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Cargar tareas en el modal
+    cargarTareasParaReordenar();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('reordenarModal'));
+    modal.show();
+}
+
+function cargarTareasParaReordenar() {
+    const tareasList = document.getElementById('tareasList');
+    const tareas = [];
+    
+    // Obtener tareas de la tabla
+    document.querySelectorAll('#tareasTable tbody tr').forEach((row, index) => {
+        const taskId = row.dataset.taskId;
+        const tarea = row.cells[2].textContent.trim();
+        const elemento = row.cells[3].textContent.trim();
+        const prioridad = row.cells[6].textContent.trim();
+        
+        tareas.push({
+            id: taskId,
+            tarea: tarea,
+            elemento: elemento,
+            prioridad: prioridad,
+            orden: index + 1
+        });
+    });
+    
+    // Crear elementos de lista ordenable
+    tareasList.innerHTML = tareas.map(tarea => `
+        <div class="list-group-item d-flex justify-content-between align-items-center" data-task-id="${tarea.id}">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-grip-vertical text-muted me-3" style="cursor: move;"></i>
+                <div>
+                    <h6 class="mb-1">${tarea.tarea}</h6>
+                    <small class="text-muted">${tarea.elemento} - Prioridad: ${tarea.prioridad}</small>
+                </div>
+            </div>
+            <span class="badge bg-primary">${tarea.orden}</span>
+        </div>
+    `).join('');
+    
+    // Hacer la lista ordenable
+    makeSortable();
+}
+
+function makeSortable() {
+    const tareasList = document.getElementById('tareasList');
+    let draggedElement = null;
+    
+    tareasList.addEventListener('dragstart', function(e) {
+        draggedElement = e.target.closest('.list-group-item');
+        e.target.style.opacity = '0.5';
+    });
+    
+    tareasList.addEventListener('dragend', function(e) {
+        e.target.style.opacity = '1';
+        draggedElement = null;
+    });
+    
+    tareasList.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(tareasList, e.clientY);
+        if (afterElement == null) {
+            tareasList.appendChild(draggedElement);
+        } else {
+            tareasList.insertBefore(draggedElement, afterElement);
+        }
+    });
+    
+    // Hacer elementos arrastrables
+    tareasList.querySelectorAll('.list-group-item').forEach(item => {
+        item.draggable = true;
+    });
+    
+    // Actualizar números de orden
+    actualizarNumerosOrden();
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.list-group-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function actualizarNumerosOrden() {
+    const tareas = document.querySelectorAll('#tareasList .list-group-item');
+    tareas.forEach((tarea, index) => {
+        const badge = tarea.querySelector('.badge');
+        badge.textContent = index + 1;
+    });
+}
+
+function guardarReordenamiento() {
+    const tareas = [];
+    document.querySelectorAll('#tareasList .list-group-item').forEach((item, index) => {
+        tareas.push({
+            id: item.dataset.taskId,
+            orden: index + 1
+        });
+    });
+    
+    fetch(`/admin/turnos/{{ $turno->id }}/reordenar-tareas`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tareas: tareas })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('Éxito', 'El orden de las tareas ha sido actualizado', 'success').then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Error', data.message || 'Error al reordenar las tareas', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al reordenar las tareas', 'error');
+    });
 }
 
 // Formulario de tareas
@@ -549,4 +709,4 @@ document.querySelectorAll('.task-checkbox').forEach(checkbox => {
     });
 });
 </script>
-@endpush
+@endsection
