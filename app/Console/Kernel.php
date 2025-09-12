@@ -76,13 +76,13 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
-        // Miramos si el cliente ha entregado el DNI el dia de entrada
+        // Aviso para gestion Miramos si el cliente ha entregado el DNI el dia de entrada 
         $schedule->call(function (ClienteService $clienteService) {
             // Hoy
             $hoy = Carbon::now();
 
             // Solo ejecutar después de las 10 de la mañana
-            if ($hoy->hour >= 8) {
+            if ($hoy->hour >= 10) {
                 // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
                 $reservasEntrada = Reserva::where('dni_entregado', null)
                                     ->where('estado_id', 1)
@@ -318,10 +318,10 @@ class Kernel extends ConsoleKernel
 
                 // Horas objetivo para lanzar mensajes
                 // $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 08:48:00');
-                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
-                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
-                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
-                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 12:00:00');
+                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 14:00:00');
+                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 16:00:00');
+                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 18:00:00');
 
                 // Diferencias horarias para las horas objetivos
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
