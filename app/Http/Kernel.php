@@ -71,6 +71,7 @@ class Kernel extends HttpKernel
         'mobile.redirect' => \App\Http\Middleware\MobileRedirect::class,
         'log.activity' => \App\Http\Middleware\LogUserActivity::class,
         'log.auth' => \App\Http\Middleware\LogAuthentication::class,
+        'validate.file.upload' => \App\Http\Middleware\ValidateFileUpload::class,
     ];
 
     /**

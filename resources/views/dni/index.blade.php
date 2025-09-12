@@ -342,6 +342,7 @@
                                                     <i class="fa-solid fa-camera me-2"></i>{{ $textos['Frontal'] ?? 'Subir frontal' }}
                                                 </button>
                                                 <img id="image-preview_frontal_{{ $i }}" style="max-width:100%;margin-top:10px;display:none;"/>
+                                                <div id="status_frontal_{{ $i }}" class="mt-2 text-muted small"></div>
                                             </div>
 
                                             <h5 class="mt-3">{{ $textos['Imagen.Trasera'] ?? 'Imagen trasera (DNI)' }}</h5>
@@ -355,6 +356,7 @@
                                                     <i class="fa-solid fa-camera me-2"></i>{{ $textos['Trasera'] ?? 'Subir trasera' }}
                                                 </button>
                                                 <img id="image-preview_trasera_{{ $i }}" style="max-width:100%;margin-top:10px;display:none;"/>
+                                                <div id="status_trasera_{{ $i }}" class="mt-2 text-muted small"></div>
                                             </div>
                                         </div>
 
@@ -371,6 +373,7 @@
                                                     <i class="fa-solid fa-camera me-2"></i>{{ $textos['Frontal'] ?? 'Subir pasaporte' }}
                                                 </button>
                                                 <img id="image-preview_pasaporte_{{ $i }}" style="max-width:65%;margin-top:10px;display:none;"/>
+                                                <div id="status_pasaporte_{{ $i }}" class="mt-2 text-muted small"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -498,6 +501,10 @@
             if(el && !String(el.value||'').trim()){ el.classList.add('is-invalid'); ok=false; }
             else if(el){ el.classList.remove('is-invalid'); el.classList.add('is-valid'); }
         });
+        
+        // Los archivos NO son obligatorios, solo validamos campos de texto
+        console.log(`Validando campos de texto para persona ${i}`);
+        
         if(!ok) showError('Por favor, completa todos los campos obligatorios');
         return ok;
     }
@@ -508,21 +515,35 @@
         const $dni  = $('#dniUploaed_'+index);
         const $pass = $('#pasaporteUpload_'+index);
 
+        console.log(`toggleUploads para persona ${index}, tipo:`, tipo);
+
         if (tipo === 'P') { // Pasaporte
+            console.log(`Configurando pasaporte para persona ${index}`);
             $dni.hide();  $pass.show();
             $('#fontal_'+index).prop('required', false);
             $('#trasera_'+index).prop('required', false);
-            $('#pasaporte_'+index).prop('required', true);
+            $('#pasaporte_'+index).prop('required', false); // NO obligatorio
+            $('#required_frontal_'+index).hide();
+            $('#required_trasera_'+index).hide();
+            $('#required_pasaporte_'+index).hide(); // Sin asterisco
         } else if (tipo) { // Cualquier otro (D,C,X,N,I...) => DNI
+            console.log(`Configurando DNI para persona ${index}`);
             $dni.show();  $pass.hide();
-            $('#fontal_'+index).prop('required', true);
-            $('#trasera_'+index).prop('required', true);
+            $('#fontal_'+index).prop('required', false); // NO obligatorio
+            $('#trasera_'+index).prop('required', false); // NO obligatorio
             $('#pasaporte_'+index).prop('required', false);
+            $('#required_frontal_'+index).hide(); // Sin asterisco
+            $('#required_trasera_'+index).hide(); // Sin asterisco
+            $('#required_pasaporte_'+index).hide();
         } else {
+            console.log(`Sin tipo de documento para persona ${index}, ocultando uploads`);
             $dni.hide();  $pass.hide();
             $('#fontal_'+index).prop('required', false);
             $('#trasera_'+index).prop('required', false);
             $('#pasaporte_'+index).prop('required', false);
+            $('#required_frontal_'+index).hide();
+            $('#required_trasera_'+index).hide();
+            $('#required_pasaporte_'+index).hide();
         }
     }
     $(document).on('change','.tipo-documento',function(){ toggleUploads($(this).data('index')); });
@@ -530,6 +551,37 @@
     function previewDoc(fileInput, index, target){
         const file = fileInput.files && fileInput.files[0];
         if(!file) return;
+        
+        // Validar tamaño del archivo (5MB máximo)
+        const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+        if (file.size > maxSize) {
+            showError(`El archivo ${file.name} es demasiado grande. El tamaño máximo permitido es 5MB.`);
+            fileInput.value = ''; // Limpiar el input
+            return;
+        }
+        
+        // Validar tipo de archivo
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            showError(`El archivo ${file.name} no es un formato válido. Solo se permiten archivos JPEG, JPG o PNG.`);
+            fileInput.value = ''; // Limpiar el input
+            return;
+        }
+        
+        console.log(`Archivo ${target} para persona ${index}:`, {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            sizeMB: (file.size / (1024 * 1024)).toFixed(2) + 'MB'
+        });
+        
+        // Actualizar estado del archivo
+        const statusId = `status_${target}_${index}`;
+        const statusEl = document.getElementById(statusId);
+        if (statusEl) {
+            statusEl.innerHTML = `<i class="fa-solid fa-check-circle text-success"></i> Archivo seleccionado: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e){
             const id = {
@@ -561,11 +613,17 @@
             for(let i=0;i<totalPersons;i++){
                 try{ $('.js-example-basic-single'+i).select2({width:'100%'}); }catch(e){}
             }
+            
+            // Después de inicializar Select2, configurar uploads
+            setTimeout(() => {
+                console.log('Inicializando uploads después de Select2');
+                for(let i=0;i<totalPersons;i++){ 
+                    console.log(`Inicializando uploads para persona ${i}`);
+                    toggleUploads(i); 
+                }
+            }, 100);
         }
         initSelect2();
-
-        // Uploads según selección actual + precarga desde $data
-        for(let i=0;i<totalPersons;i++){ toggleUploads(i); }
 
         @for ($j = 0; $j < ($reserva->numero_personas ?? 0); $j++)
             @if(isset($data[$j]))
@@ -585,7 +643,51 @@
 
         // Validación Bootstrap
         $('.needs-validation').on('submit', function (e) {
-            if(!this.checkValidity()){ e.preventDefault(); e.stopPropagation(); }
+            console.log('=== INICIO VALIDACIÓN FORMULARIO ===');
+            console.log('Formulario enviándose...');
+            console.log('Form validity:', this.checkValidity());
+            
+            // Verificar archivos
+            const formData = new FormData(this);
+            console.log('FormData entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}:`, value);
+            }
+            
+            // Verificar archivos específicos
+            const fileInputs = this.querySelectorAll('input[type="file"]');
+            console.log('File inputs encontrados:', fileInputs.length);
+            fileInputs.forEach((input, index) => {
+                console.log(`File input ${index}:`, {
+                    name: input.name,
+                    files: input.files.length,
+                    required: input.required,
+                    value: input.value
+                });
+                if (input.files.length > 0) {
+                    console.log(`Archivo ${index}:`, {
+                        name: input.files[0].name,
+                        size: input.files[0].size,
+                        type: input.files[0].type
+                    });
+                }
+            });
+            
+            // Validar cada persona
+            let allValid = true;
+            for(let i = 0; i < totalPersons; i++) {
+                if (!validatePersonForm(i)) {
+                    allValid = false;
+                }
+            }
+            
+            if(!this.checkValidity() || !allValid){ 
+                console.log('Formulario no válido, previniendo envío');
+                e.preventDefault(); 
+                e.stopPropagation(); 
+            } else {
+                console.log('Formulario válido, enviando...');
+            }
             $(this).addClass('was-validated');
             $('#spinnerSubmit').removeClass('d-none');
         });

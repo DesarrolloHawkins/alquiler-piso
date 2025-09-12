@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\DNIStoreRequest;
 
 class DNIController extends Controller
 {
@@ -1286,8 +1287,42 @@ class DNIController extends Controller
 
 
 
-    public function store(Request $request)
+    public function store(DNIStoreRequest $request)
     {
+        Log::info('=== INICIO PROCESO SUBIDA DNI ===');
+        Log::info('Request method:', ['method' => $request->method()]);
+        Log::info('Request URL:', ['url' => $request->fullUrl()]);
+        Log::info('Request data:', ['data' => $request->all()]);
+        Log::info('Files count:', ['count' => count($request->allFiles())]);
+        Log::info('Content-Type:', ['content_type' => $request->header('Content-Type')]);
+        Log::info('Content-Length:', ['content_length' => $request->header('Content-Length')]);
+        
+        // Debugging detallado de archivos
+        $allFiles = $request->allFiles();
+        Log::info('Archivos recibidos:', $allFiles);
+        
+        foreach ($allFiles as $key => $file) {
+            if (is_array($file)) {
+                foreach ($file as $index => $singleFile) {
+                    Log::info("Archivo $key[$index]:", [
+                        'name' => $singleFile->getClientOriginalName(),
+                        'size' => $singleFile->getSize(),
+                        'mime' => $singleFile->getMimeType(),
+                        'isValid' => $singleFile->isValid(),
+                        'error' => $singleFile->getError()
+                    ]);
+                }
+            } else {
+                Log::info("Archivo $key:", [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime' => $file->getMimeType(),
+                    'isValid' => $file->isValid(),
+                    'error' => $file->getError()
+                ]);
+            }
+        }
+        
         // dd($request->all());
 
         // Definir las reglas de validación
@@ -1316,8 +1351,10 @@ class DNIController extends Controller
         // }
 
         $reserva = Reserva:: find($request->id);
+        Log::info('Reserva encontrada:', ['id' => $reserva->id, 'numero_personas' => $reserva->numero_personas]);
 
         for ($i=0; $i < $reserva->numero_personas; $i++) {
+            Log::info("Procesando persona $i");
             if ($i == 0 ) {
                 // dd($request->input('nacionalidad_'.$i));
 
@@ -1361,9 +1398,11 @@ class DNIController extends Controller
                 //     '_csrf' => $csrfToken
                 // ];
                 if ($request->input('tipo_documento_'.$i) != 'P') {
+                    Log::info("Procesando DNI para persona $i");
 
                     // Si tenemos imagen Frontal DNI
                     if($request->hasFile('fontal_'.$i)){
+                        Log::info("Archivo frontal encontrado para persona $i");
                         // Imagen Frontal DNI
                         $file = $request->file('fontal_'.$i);
                         // Guardamos la imagen
@@ -1622,6 +1661,8 @@ class DNIController extends Controller
                 }
             }
         }
+        
+        Log::info("Actualizando estado de reserva y cliente");
         $reserva->dni_entregado = true;
         $reserva->save();
 
@@ -1629,6 +1670,7 @@ class DNIController extends Controller
         $cliente->data_dni = true;
         $cliente->save();
 
+        Log::info("=== FIN PROCESO SUBIDA DNI EXITOSO ===");
         return redirect(route('dni.index', $reserva->token));
     }
 
@@ -1661,42 +1703,66 @@ class DNIController extends Controller
 
     public function guardarImagen($file, $cliente, $reserva, $categoria, $name, $huesped)
     {
+        Log::info('=== INICIO GUARDAR IMAGEN ===');
+        Log::info('File info:', [
+            'original_name' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'extension' => $file->getClientOriginalExtension()
+        ]);
+        
         // Imagen Frontal DNI
         // dd($cliente);
         // $file = $file->file('fontal_'.$i);
         $imageName = time().'_'.$cliente->id.'_'.$name.'.'.$file->getClientOriginalExtension();
-        $file->move(public_path('imagesCliente'), $imageName);
+        Log::info("Nombre de archivo generado: $imageName");
+        
+        try {
+            $file->move(public_path('imagesCliente'), $imageName);
+            Log::info("Archivo movido exitosamente a: " . public_path('imagesCliente') . '/' . $imageName);
+        } catch (\Exception $e) {
+            Log::error("Error moviendo archivo: " . $e->getMessage());
+            return false;
+        }
 
         $imageUrl = 'imagesCliente/' . $imageName;
+        Log::info("URL de imagen: $imageUrl");
 
         if($huesped == true){
+            Log::info("Buscando imagen existente para huésped");
             $imagenExistente = Photo::where('reserva_id', $reserva->id)
             ->where('photo_categoria_id', $categoria)
             ->where('huespedes_id', $cliente->id)
             ->first();
         }else {
+            Log::info("Buscando imagen existente para cliente");
             $imagenExistente = Photo::where('reserva_id', $reserva->id)
             ->where('photo_categoria_id', $categoria)
             ->where('cliente_id', $cliente->id)
             ->first();
         }
+        
+        Log::info("Imagen existente encontrada:", $imagenExistente ? ['id' => $imagenExistente->id] : ['existe' => false]);
         // Verificar si ya existe una imagen para ese limpieza_id y photo_categoria_id
 
 
         if ($imagenExistente) {
+            Log::info("Actualizando imagen existente");
             // Si existe, borrar la imagen antigua del servidor
             $rutaImagenAntigua = public_path($imagenExistente->url);
 
             if (file_exists($rutaImagenAntigua)) {
                 unlink($rutaImagenAntigua);
+                Log::info("Imagen antigua eliminada");
             }
 
             // Actualizar la URL en la base de datos
             $imagenExistente->url = $imageUrl;
             $imagenExistente->save();
+            Log::info("Imagen actualizada en BD exitosamente");
             return true;
         } else {
-
+            Log::info("Creando nueva imagen en BD");
             // $cliente = Cliente::where('id', $reserva->cliente_id)->first();
             // Si no existe, guardar la nueva imagen
             $imagenes = new Photo;
@@ -1711,10 +1777,18 @@ class DNIController extends Controller
             }else {
                 $imagenes->cliente_id = $cliente->id;
             }
-            $imagenes->save();
-            return true;
+            
+            try {
+                $imagenes->save();
+                Log::info("Nueva imagen guardada en BD exitosamente");
+                return true;
+            } catch (\Exception $e) {
+                Log::error("Error guardando imagen en BD: " . $e->getMessage());
+                return false;
+            }
         }
 
+        Log::error("Error: llegó al final del método sin retornar");
         return false;
     }
 

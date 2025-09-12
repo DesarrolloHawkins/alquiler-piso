@@ -681,7 +681,7 @@ Route::get('/dni-user/{token}', [App\Http\Controllers\DNIController::class, 'ind
 Route::post('/dni/cambiar-idioma', [App\Http\Controllers\DNIController::class, 'cambiarIdioma'])->name('dni.cambiarIdioma');
 
 Route::post('/guardar-numero-personas', [App\Http\Controllers\DNIController::class, 'storeNumeroPersonas'])->name('dni.storeNumeroPersonas');
-Route::post('/dni-user/store', [App\Http\Controllers\DNIController::class, 'store'])->name('dni.store');
+Route::post('/dni-user/store', [App\Http\Controllers\DNIController::class, 'store'])->name('dni.store')->middleware('validate.file.upload');
 Route::get('/dni-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'dniUpload'])->name('dni.dniUpload');
 Route::get('/pasaporte-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'pasaporteUpload'])->name('dni.dniUpload');
 Route::get('/dni/{token}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
