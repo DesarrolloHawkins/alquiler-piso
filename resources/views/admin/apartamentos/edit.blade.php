@@ -144,6 +144,26 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="claves" class="form-label fw-semibold">
+                                        <i class="fas fa-key me-1 text-primary"></i>Claves <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('claves') is-invalid @enderror" 
+                                           id="claves" 
+                                           name="claves" 
+                                           value="{{ old('claves', $apartamento->claves) }}"
+                                           placeholder="Claves del apartamento"
+                                           required>
+                                    @error('claves')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Ubicación -->
@@ -245,7 +265,7 @@
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
                                     <label for="bedrooms" class="form-label fw-semibold">
-                                        <i class="fas fa-bed me-1 text-primary"></i>Habitaciones <span class="text-danger">*</span>
+                                        <i class="fas fa-bed me-1 text-primary"></i>Habitaciones
                                     </label>
                                     <input type="number" 
                                            class="form-control @error('bedrooms') is-invalid @enderror" 
@@ -253,8 +273,7 @@
                                            name="bedrooms" 
                                            value="{{ old('bedrooms', $apartamento->bedrooms) }}"
                                            placeholder="Número de habitaciones"
-                                           min="1"
-                                           required>
+                                           min="1">
                                     @error('bedrooms')
                                         <div class="invalid-feedback">
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
@@ -266,7 +285,7 @@
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
                                     <label for="bathrooms" class="form-label fw-semibold">
-                                        <i class="fas fa-bath me-1 text-primary"></i>Baños <span class="text-danger">*</span>
+                                        <i class="fas fa-bath me-1 text-primary"></i>Baños
                                     </label>
                                     <input type="number" 
                                            class="form-control @error('bathrooms') is-invalid @enderror" 
@@ -275,8 +294,7 @@
                                            value="{{ old('bathrooms', $apartamento->bathrooms) }}"
                                            placeholder="Número de baños"
                                            min="1"
-                                           step="0.5"
-                                           required>
+                                           step="0.5">
                                     @error('bathrooms')
                                         <div class="invalid-feedback">
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
@@ -288,7 +306,7 @@
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
                                     <label for="max_guests" class="form-label fw-semibold">
-                                        <i class="fas fa-users me-1 text-primary"></i>Huéspedes Máximos <span class="text-danger">*</span>
+                                        <i class="fas fa-users me-1 text-primary"></i>Huéspedes Máximos
                                     </label>
                                     <input type="number" 
                                            class="form-control @error('max_guests') is-invalid @enderror" 
@@ -296,8 +314,7 @@
                                            name="max_guests" 
                                            value="{{ old('max_guests', $apartamento->max_guests) }}"
                                            placeholder="Número máximo de huéspedes"
-                                           min="1"
-                                           required>
+                                           min="1">
                                     @error('max_guests')
                                         <div class="invalid-feedback">
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
@@ -339,14 +356,13 @@
                             <div class="col-12 mb-3">
                                 <div class="form-group">
                                     <label for="description" class="form-label fw-semibold">
-                                        <i class="fas fa-align-left me-1 text-primary"></i>Descripción <span class="text-danger">*</span>
+                                        <i class="fas fa-align-left me-1 text-primary"></i>Descripción
                                     </label>
                                     <textarea class="form-control @error('description') is-invalid @enderror" 
                                               id="description" 
                                               name="description" 
                                               rows="4"
-                                              placeholder="Descripción detallada del apartamento"
-                                              required>{{ old('description', $apartamento->description) }}</textarea>
+                                              placeholder="Descripción detallada del apartamento">{{ old('description', $apartamento->description) }}</textarea>
                                     @error('description')
                                         <div class="invalid-feedback">
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}

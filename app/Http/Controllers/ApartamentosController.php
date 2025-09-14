@@ -111,6 +111,10 @@ class ApartamentosController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'timezone' => 'required|string|max:100',
             'description' => 'nullable|string|max:2000',
+            'bedrooms' => 'nullable|integer|min:1',
+            'bathrooms' => 'nullable|numeric|min:0.5',
+            'max_guests' => 'nullable|integer|min:1',
+            'size' => 'nullable|numeric|min:1',
             'important_information' => 'nullable|string|max:2000',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:50',
@@ -189,6 +193,18 @@ class ApartamentosController extends Controller
             }
             if ($request->has('description')) {
                 $apartamento->description = $validatedData['description'];
+            }
+            if ($request->has('bedrooms')) {
+                $apartamento->bedrooms = $validatedData['bedrooms'];
+            }
+            if ($request->has('bathrooms')) {
+                $apartamento->bathrooms = $validatedData['bathrooms'];
+            }
+            if ($request->has('max_guests')) {
+                $apartamento->max_guests = $validatedData['max_guests'];
+            }
+            if ($request->has('size')) {
+                $apartamento->size = $validatedData['size'];
             }
             if ($request->has('important_information')) {
                 $apartamento->important_information = $validatedData['important_information'];
