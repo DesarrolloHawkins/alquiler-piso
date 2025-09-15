@@ -160,7 +160,7 @@
                                 @foreach($limpiezas as $limpieza)
                                     <option value="{{ $limpieza->id }}" 
                                             {{ old('apartamento_limpieza_id') == $limpieza->id ? 'selected' : '' }}>
-                                        {{ $limpieza->apartamento->nombre ?? 'Apartamento' }} - {{ $limpieza->fecha_limpieza->format('d/m/Y') }}
+                                        {{ $limpieza->apartamento->nombre ?? 'Apartamento' }} - {{ $limpieza->fecha_comienzo ? $limpieza->fecha_comienzo->format('d/m/Y') : 'Sin fecha' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -275,17 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const cantidadInput = document.getElementById('cantidad');
     const tipoSelect = document.getElementById('tipo');
     
-    // Información de artículos (simulada - en una implementación real vendría del servidor)
-    const articulos = @json($articulos->map(function($a) {
-        return [
-            'id' => $a->id,
-            'nombre' => $a->nombre,
-            'stock_actual' => $a->stock_actual,
-            'stock_minimo' => $a->stock_minimo,
-            'precio_compra' => $a->precio_compra,
-            'proveedor' => $a->proveedor ? $a->proveedor->nombre : null
-        ];
-    }));
+    // Información de artículos
+    const articulos = @json($articulosData);
     
     // Actualizar información del artículo
     function updateArticuloInfo() {

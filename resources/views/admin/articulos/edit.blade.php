@@ -87,15 +87,44 @@
                         <div class="col-md-6 mb-3">
                             <label for="categoria" class="form-label">
                                 <i class="fas fa-folder me-1"></i>
-                                Categoría
+                                Categoría <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control @error('categoria') is-invalid @enderror" 
                                    id="categoria" 
                                    name="categoria" 
                                    value="{{ old('categoria', $articulo->categoria) }}"
-                                   placeholder="Ej: Limpieza, Mantenimiento, Cocina...">
+                                   placeholder="Ej: Limpieza, Mantenimiento, Cocina..."
+                                   required>
                             @error('categoria')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="unidad_medida" class="form-label">
+                                <i class="fas fa-ruler me-1"></i>
+                                Unidad de Medida <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select @error('unidad_medida') is-invalid @enderror" 
+                                    id="unidad_medida" 
+                                    name="unidad_medida" 
+                                    required>
+                                <option value="">Seleccionar unidad</option>
+                                <option value="unidad" {{ old('unidad_medida', $articulo->unidad_medida) == 'unidad' ? 'selected' : '' }}>Unidad</option>
+                                <option value="kg" {{ old('unidad_medida', $articulo->unidad_medida) == 'kg' ? 'selected' : '' }}>Kilogramo (kg)</option>
+                                <option value="g" {{ old('unidad_medida', $articulo->unidad_medida) == 'g' ? 'selected' : '' }}>Gramo (g)</option>
+                                <option value="l" {{ old('unidad_medida', $articulo->unidad_medida) == 'l' ? 'selected' : '' }}>Litro (l)</option>
+                                <option value="ml" {{ old('unidad_medida', $articulo->unidad_medida) == 'ml' ? 'selected' : '' }}>Mililitro (ml)</option>
+                                <option value="m" {{ old('unidad_medida', $articulo->unidad_medida) == 'm' ? 'selected' : '' }}>Metro (m)</option>
+                                <option value="cm" {{ old('unidad_medida', $articulo->unidad_medida) == 'cm' ? 'selected' : '' }}>Centímetro (cm)</option>
+                                <option value="m2" {{ old('unidad_medida', $articulo->unidad_medida) == 'm2' ? 'selected' : '' }}>Metro cuadrado (m²)</option>
+                                <option value="pack" {{ old('unidad_medida', $articulo->unidad_medida) == 'pack' ? 'selected' : '' }}>Pack</option>
+                                <option value="caja" {{ old('unidad_medida', $articulo->unidad_medida) == 'caja' ? 'selected' : '' }}>Caja</option>
+                            </select>
+                            @error('unidad_medida')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
@@ -138,8 +167,9 @@
                                    name="stock_actual" 
                                    value="{{ old('stock_actual', $articulo->stock_actual) }}" 
                                    min="0"
-                                   readonly>
-                            <small class="form-text text-muted">Use movimientos de stock para modificar el inventario</small>
+                                   step="0.01"
+                                   required>
+                            <small class="form-text text-muted">Stock actual del artículo</small>
                             @error('stock_actual')
                                 <div class="invalid-feedback">
                                     {{ $message }}
@@ -389,24 +419,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validación del formulario
     const form = document.querySelector('form');
     const nombreInput = document.getElementById('nombre');
+    const categoriaInput = document.getElementById('categoria');
+    const unidadMedidaSelect = document.getElementById('unidad_medida');
     const proveedorSelect = document.getElementById('proveedor_id');
     const precioInput = document.getElementById('precio_compra');
+    const stockActualInput = document.getElementById('stock_actual');
+    const stockMinimoInput = document.getElementById('stock_minimo');
     
     form.addEventListener('submit', function(e) {
         let hasErrors = false;
         
+        // Validar nombre
         if (!nombreInput.value.trim()) {
             nombreInput.classList.add('is-invalid');
             hasErrors = true;
         }
         
+        // Validar categoría
+        if (!categoriaInput.value.trim()) {
+            categoriaInput.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        // Validar unidad de medida
+        if (!unidadMedidaSelect.value) {
+            unidadMedidaSelect.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        // Validar proveedor
         if (!proveedorSelect.value) {
             proveedorSelect.classList.add('is-invalid');
             hasErrors = true;
         }
         
+        // Validar precio
         if (!precioInput.value || parseFloat(precioInput.value) < 0) {
             precioInput.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        // Validar stock actual
+        if (!stockActualInput.value || parseFloat(stockActualInput.value) < 0) {
+            stockActualInput.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        // Validar stock mínimo
+        if (!stockMinimoInput.value || parseFloat(stockMinimoInput.value) < 0) {
+            stockMinimoInput.classList.add('is-invalid');
             hasErrors = true;
         }
         
@@ -417,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Limpiar errores al escribir
-    [nombreInput, proveedorSelect, precioInput].forEach(input => {
+    [nombreInput, categoriaInput, unidadMedidaSelect, proveedorSelect, precioInput, stockActualInput, stockMinimoInput].forEach(input => {
         input.addEventListener('input', function() {
             if (this.classList.contains('is-invalid')) {
                 this.classList.remove('is-invalid');

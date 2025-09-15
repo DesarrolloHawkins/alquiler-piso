@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MovimientoStock;
 use App\Models\Articulo;
 use App\Models\Proveedor;
+use App\Models\ApartamentoLimpieza;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -73,10 +74,26 @@ class MovimientoStockController extends Controller
      */
     public function create()
     {
-        $articulos = Articulo::activos()->orderBy('nombre')->get();
+        $articulos = Articulo::activos()->with('proveedor')->orderBy('nombre')->get();
         $proveedores = Proveedor::activos()->orderBy('nombre')->get();
+        $limpiezas = ApartamentoLimpieza::with('apartamento')
+            ->where('fecha_comienzo', '>=', now()->subDays(30))
+            ->orderBy('fecha_comienzo', 'desc')
+            ->get();
         
-        return view('admin.movimientos-stock.create', compact('articulos', 'proveedores'));
+        // Preparar datos de artículos para JavaScript
+        $articulosData = $articulos->map(function($articulo) {
+            return [
+                'id' => $articulo->id,
+                'nombre' => $articulo->nombre,
+                'stock_actual' => $articulo->stock_actual,
+                'stock_minimo' => $articulo->stock_minimo,
+                'precio_compra' => $articulo->precio_compra,
+                'proveedor' => $articulo->proveedor ? $articulo->proveedor->nombre : null
+            ];
+        });
+        
+        return view('admin.movimientos-stock.create', compact('articulos', 'proveedores', 'articulosData', 'limpiezas'));
     }
 
     /**

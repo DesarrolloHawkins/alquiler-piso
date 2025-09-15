@@ -161,6 +161,12 @@ class ArticuloController extends Controller
     public function edit(Articulo $articulo)
     {
         $proveedores = Proveedor::activos()->orderBy('nombre')->get();
+        
+        // Cargar los movimientos de stock ordenados por fecha descendente
+        $articulo->load(['movimientosStock' => function($query) {
+            $query->orderBy('fecha_movimiento', 'desc')->limit(10);
+        }]);
+        
         return view('admin.articulos.edit', compact('articulo', 'proveedores'));
     }
 
