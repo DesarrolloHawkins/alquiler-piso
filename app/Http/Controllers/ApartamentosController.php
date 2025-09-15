@@ -98,47 +98,34 @@ class ApartamentosController extends Controller
         // Reglas de validación completas para Channex
         $rules = [
             'edificio_id' => 'required|exists:edificios,id',
-            'titulo' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'claves' => 'required|string|max:255',
             'property_type' => 'required|string|in:apartment,hotel,hostel,villa,guest_house',
-            'currency' => 'required|string|size:3',
-            'country' => 'required|string|size:2',
-            'state' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'zip_code' => 'required|string|max:20',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'timezone' => 'required|string|max:100',
+            'country' => 'nullable|string|size:2',
+            'city' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'zip_code' => 'nullable|string|max:20',
             'description' => 'nullable|string|max:2000',
             'bedrooms' => 'nullable|integer|min:1',
             'bathrooms' => 'nullable|numeric|min:0.5',
             'max_guests' => 'nullable|integer|min:1',
             'size' => 'nullable|numeric|min:1',
-            'important_information' => 'nullable|string|max:2000',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'website' => 'nullable|url|max:500',
+            'id_booking' => 'nullable|string|max:100',
+            'id_airbnb' => 'nullable|string|max:100',
+            'id_web' => 'nullable|string|max:100',
         ];
 
         // Mensajes de validación personalizados
         $messages = [
             'edificio_id.required' => 'El edificio es obligatorio.',
             'edificio_id.exists' => 'El edificio seleccionado no existe.',
-            'titulo.required' => 'El título es obligatorio.',
-            'titulo.max' => 'El título no puede tener más de 255 caracteres.',
+            'title.required' => 'El título es obligatorio.',
+            'title.max' => 'El título no puede tener más de 255 caracteres.',
             'claves.required' => 'Las claves de acceso son obligatorias.',
             'claves.max' => 'Las claves no pueden tener más de 255 caracteres.',
             'property_type.required' => 'El tipo de propiedad es obligatorio.',
             'property_type.in' => 'El tipo de propiedad debe ser válido.',
-            'currency.required' => 'La moneda es obligatoria.',
-            'currency.size' => 'La moneda debe tener exactamente 3 caracteres.',
-            'country.required' => 'El país es obligatorio.',
             'country.size' => 'El código de país debe tener exactamente 2 caracteres.',
-            'state.required' => 'El estado/provincia es obligatorio.',
-            'city.required' => 'La ciudad es obligatoria.',
-            'address.required' => 'La dirección es obligatoria.',
-            'zip_code.required' => 'El código postal es obligatorio.',
             'latitude.numeric' => 'La latitud debe ser un número válido.',
             'latitude.between' => 'La latitud debe estar entre -90 y 90.',
             'longitude.numeric' => 'La longitud debe ser un número válido.',
@@ -155,8 +142,8 @@ class ApartamentosController extends Controller
 
         try {
             // Actualizar solo los campos que vienen en la request
-            if ($request->has('titulo')) {
-                $apartamento->titulo = $validatedData['titulo'];
+            if ($request->has('title')) {
+                $apartamento->titulo = $validatedData['title'];
             }
             if ($request->has('claves')) {
                 $apartamento->claves = $validatedData['claves'];
@@ -164,14 +151,8 @@ class ApartamentosController extends Controller
             if ($request->has('property_type')) {
                 $apartamento->property_type = $validatedData['property_type'];
             }
-            if ($request->has('currency')) {
-                $apartamento->currency = $validatedData['currency'];
-            }
             if ($request->has('country')) {
                 $apartamento->country = $validatedData['country'];
-            }
-            if ($request->has('state')) {
-                $apartamento->state = $validatedData['state'];
             }
             if ($request->has('city')) {
                 $apartamento->city = $validatedData['city'];
@@ -181,15 +162,6 @@ class ApartamentosController extends Controller
             }
             if ($request->has('zip_code')) {
                 $apartamento->zip_code = $validatedData['zip_code'];
-            }
-            if ($request->has('latitude')) {
-                $apartamento->latitude = $validatedData['latitude'];
-            }
-            if ($request->has('longitude')) {
-                $apartamento->longitude = $validatedData['longitude'];
-            }
-            if ($request->has('timezone')) {
-                $apartamento->timezone = $validatedData['timezone'];
             }
             if ($request->has('description')) {
                 $apartamento->description = $validatedData['description'];

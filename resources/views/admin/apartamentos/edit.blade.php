@@ -216,16 +216,16 @@
 
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
-                                    <label for="postal_code" class="form-label fw-semibold">
+                                    <label for="zip_code" class="form-label fw-semibold">
                                         <i class="fas fa-mail-bulk me-1 text-primary"></i>Código Postal
                                     </label>
                                     <input type="text" 
-                                           class="form-control @error('postal_code') is-invalid @enderror" 
-                                           id="postal_code" 
-                                           name="postal_code" 
-                                           value="{{ old('postal_code', $apartamento->postal_code) }}"
+                                           class="form-control @error('zip_code') is-invalid @enderror" 
+                                           id="zip_code" 
+                                           name="zip_code" 
+                                           value="{{ old('zip_code', $apartamento->zip_code) }}"
                                            placeholder="Código postal">
-                                    @error('postal_code')
+                                    @error('zip_code')
                                         <div class="invalid-feedback">
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
                                         </div>

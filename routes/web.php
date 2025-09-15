@@ -99,7 +99,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/apartamentos/{id}/estadisticas', [App\Http\Controllers\ApartamentosController::class, 'estadisticasAdmin'])->name('apartamentos.admin.estadisticas');
     Route::get('/apartamentos/{id}/edit', [App\Http\Controllers\ApartamentosController::class, 'editAdmin'])->name('apartamentos.admin.edit');
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
-    Route::post('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
+    Route::put('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
 
     // Tarifas
