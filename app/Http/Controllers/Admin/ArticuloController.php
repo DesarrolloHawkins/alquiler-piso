@@ -86,7 +86,24 @@ class ArticuloController extends Controller
             'codigo_producto' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string',
             'activo' => 'boolean',
-            'proveedor_id' => 'nullable|exists:proveedors,id'
+            'proveedor_id' => 'required|exists:proveedors,id'
+        ], [
+            'nombre.required' => 'El nombre del artículo es obligatorio.',
+            'categoria.required' => 'La categoría es obligatoria.',
+            'unidad_medida.required' => 'La unidad de medida es obligatoria.',
+            'stock_actual.required' => 'El stock inicial es obligatorio.',
+            'stock_actual.numeric' => 'El stock inicial debe ser un número válido.',
+            'stock_actual.min' => 'El stock inicial no puede ser negativo.',
+            'stock_minimo.required' => 'El stock mínimo es obligatorio.',
+            'stock_minimo.numeric' => 'El stock mínimo debe ser un número válido.',
+            'stock_minimo.min' => 'El stock mínimo no puede ser negativo.',
+            'stock_maximo.numeric' => 'El stock máximo debe ser un número válido.',
+            'stock_maximo.min' => 'El stock máximo no puede ser negativo.',
+            'precio_compra.required' => 'El precio de compra es obligatorio.',
+            'precio_compra.numeric' => 'El precio de compra debe ser un número válido.',
+            'precio_compra.min' => 'El precio de compra no puede ser negativo.',
+            'proveedor_id.required' => 'Debe seleccionar un proveedor.',
+            'proveedor_id.exists' => 'El proveedor seleccionado no existe.'
         ]);
 
         try {
@@ -164,7 +181,24 @@ class ArticuloController extends Controller
             'codigo_producto' => 'nullable|string|max:100',
             'observaciones' => 'nullable|string',
             'activo' => 'boolean',
-            'proveedor_id' => 'nullable|exists:proveedors,id'
+            'proveedor_id' => 'required|exists:proveedors,id'
+        ], [
+            'nombre.required' => 'El nombre del artículo es obligatorio.',
+            'categoria.required' => 'La categoría es obligatoria.',
+            'unidad_medida.required' => 'La unidad de medida es obligatoria.',
+            'stock_actual.required' => 'El stock actual es obligatorio.',
+            'stock_actual.numeric' => 'El stock actual debe ser un número válido.',
+            'stock_actual.min' => 'El stock actual no puede ser negativo.',
+            'stock_minimo.required' => 'El stock mínimo es obligatorio.',
+            'stock_minimo.numeric' => 'El stock mínimo debe ser un número válido.',
+            'stock_minimo.min' => 'El stock mínimo no puede ser negativo.',
+            'stock_maximo.numeric' => 'El stock máximo debe ser un número válido.',
+            'stock_maximo.min' => 'El stock máximo no puede ser negativo.',
+            'precio_compra.required' => 'El precio de compra es obligatorio.',
+            'precio_compra.numeric' => 'El precio de compra debe ser un número válido.',
+            'precio_compra.min' => 'El precio de compra no puede ser negativo.',
+            'proveedor_id.required' => 'Debe seleccionar un proveedor.',
+            'proveedor_id.exists' => 'El proveedor seleccionado no existe.'
         ]);
 
         try {

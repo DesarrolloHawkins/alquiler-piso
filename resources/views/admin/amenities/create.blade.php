@@ -241,9 +241,10 @@
                                        id="stock_actual" 
                                        name="stock_actual" 
                                        value="{{ old('stock_actual', 0) }}"
+                                       step="0.01"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0"
+                                       max="999999.99"
+                                       placeholder="0.00"
                                        required>
                                 @error('stock_actual')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -263,9 +264,10 @@
                                        id="stock_minimo" 
                                        name="stock_minimo" 
                                        value="{{ old('stock_minimo', 0) }}"
+                                       step="0.01"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0"
+                                       max="999999.99"
+                                       placeholder="0.00"
                                        required>
                                 @error('stock_minimo')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -283,9 +285,10 @@
                                        id="stock_maximo" 
                                        name="stock_maximo" 
                                        value="{{ old('stock_maximo') }}"
+                                       step="0.01"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="Opcional">
+                                       max="999999.99"
+                                       placeholder="0.00">
                                 @error('stock_maximo')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

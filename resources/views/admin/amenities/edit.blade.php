@@ -182,9 +182,10 @@
                                        id="stock_minimo" 
                                        name="stock_minimo" 
                                        value="{{ old('stock_minimo', $amenity->stock_minimo) }}"
+                                       step="0.01"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0"
+                                       max="999999.99"
+                                       placeholder="0.00"
                                        required>
                                 @error('stock_minimo')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -202,9 +203,10 @@
                                        id="stock_maximo" 
                                        name="stock_maximo" 
                                        value="{{ old('stock_maximo', $amenity->stock_maximo) }}"
+                                       step="0.01"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="Opcional">
+                                       max="999999.99"
+                                       placeholder="0.00">
                                 @error('stock_maximo')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
