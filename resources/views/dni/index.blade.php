@@ -184,6 +184,17 @@
                     <div class="alert alert-warning m-4">{{ session('alerta') }}</div>
                 @endif
 
+                @if ($errors->any())
+                    <div class="alert alert-danger m-4">
+                        <h5><i class="fa-solid fa-exclamation-triangle me-2"></i>Errores de validación:</h5>
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="p-4">
                     @php $nacionalidadComun = $data[0]->nacionalidad ?? null; @endphp
 
@@ -244,9 +255,9 @@
                                                     @foreach ($paises as $pais)
                                                         <option value="{{ $pais }}"
                                                             {{
-                                                                ($nacionalidadComun && $nacionalidadComun == $pais) ||
                                                                 (old('nacionalidad_'.$i) == $pais) ||
-                                                                (empty(old('nacionalidad_'.$i)) && !$nacionalidadComun && $pais == 'España')
+                                                                (empty(old('nacionalidad_'.$i)) && $data[$i]->nacionalidad ?? '' == $pais) ||
+                                                                (empty(old('nacionalidad_'.$i)) && empty($data[$i]->nacionalidad ?? '') && $pais == 'España')
                                                                 ? 'selected' : ''
                                                             }}>
                                                             {{ $pais }}
@@ -268,8 +279,14 @@
                                                     placeholder="{{ $textos['Tipo.Documento'] ?? 'Tipo de Documento' }}"
                                                     required>
                                                     <option value="">{{ $textos['Tipo.Documento'] ?? 'Tipo de Documento' }}</option>
-                                                    <option value="D" {{ old('tipo_documento_'.$i)=='D' ? 'selected':'' }}>{{ $textos['Dni'] ?? 'DNI' }}</option>
-                                                    <option value="P" {{ old('tipo_documento_'.$i)=='P' ? 'selected':'' }}>{{ $textos['Pasaporte'] ?? 'Pasaporte' }}</option>
+                                                    <option value="D" {{ 
+                                                        (old('tipo_documento_'.$i)=='D' ? 'selected':'') || 
+                                                        (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'D' ? 'selected' : '') 
+                                                    }}>{{ $textos['Dni'] ?? 'DNI' }}</option>
+                                                    <option value="P" {{ 
+                                                        (old('tipo_documento_'.$i)=='P' ? 'selected':'') || 
+                                                        (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'P' ? 'selected' : '') 
+                                                    }}>{{ $textos['Pasaporte'] ?? 'Pasaporte' }}</option>
                                                     {{-- Otras letras si las necesitas:
                                                     <option value="C">Permiso Conducir</option>
                                                     <option value="X">Residencia UE</option>
@@ -311,8 +328,14 @@
                                             <div class="form-floating">
                                                 <select name="sexo_{{ $i }}" id="sexo_{{ $i }}" class="form-select" placeholder="{{ $textos['Sexo'] ?? 'Sexo' }}" required>
                                                     <option value="">{{ $textos['Sexo'] ?? 'Sexo' }}</option>
-                                                    <option value="Masculino" {{ old('sexo_'.$i)=='Masculino' ? 'selected':'' }}>{{ $textos['Masculino'] ?? 'Masculino' }}</option>
-                                                    <option value="Femenino" {{ old('sexo_'.$i)=='Femenino' ? 'selected':'' }}>{{ $textos['Femenino'] ?? 'Femenino' }}</option>
+                                                    <option value="Masculino" {{ 
+                                                        (old('sexo_'.$i)=='Masculino' ? 'selected':'') || 
+                                                        (empty(old('sexo_'.$i)) && ($data[$i]->sexo ?? '') == 'Masculino' ? 'selected' : '') 
+                                                    }}>{{ $textos['Masculino'] ?? 'Masculino' }}</option>
+                                                    <option value="Femenino" {{ 
+                                                        (old('sexo_'.$i)=='Femenino' ? 'selected':'') || 
+                                                        (empty(old('sexo_'.$i)) && ($data[$i]->sexo ?? '') == 'Femenino' ? 'selected' : '') 
+                                                    }}>{{ $textos['Femenino'] ?? 'Femenino' }}</option>
                                                 </select>
                                                 <label for="sexo_{{ $i }}">{{ $textos['Sexo'] ?? 'Sexo' }}</label>
                                                 <div class="invalid-feedback">{{ $textos['sexo_obli'] ?? 'El sexo es obligatorio.' }}</div>

@@ -402,7 +402,7 @@
                                        id="consumo_por_reserva" 
                                        name="consumo_por_reserva" 
                                        value="{{ old('consumo_por_reserva') }}"
-                                       step="0.01"
+                                       step="any"
                                        min="0" 
                                        max="999999.99"
                                        placeholder="0.00">
@@ -418,7 +418,7 @@
                                        id="consumo_minimo_reserva" 
                                        name="consumo_minimo_reserva" 
                                        value="{{ old('consumo_minimo_reserva') }}"
-                                       step="0.01"
+                                       step="any"
                                        min="0" 
                                        max="999999.99"
                                        placeholder="0.00">
@@ -434,7 +434,7 @@
                                        id="consumo_maximo_reserva" 
                                        name="consumo_maximo_reserva" 
                                        value="{{ old('consumo_maximo_reserva') }}"
-                                       step="0.01"
+                                       step="any"
                                        min="0" 
                                        max="999999.99"
                                        placeholder="0.00">

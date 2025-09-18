@@ -320,9 +320,10 @@
                                        id="consumo_por_reserva" 
                                        name="consumo_por_reserva" 
                                        value="{{ old('consumo_por_reserva', $amenity->consumo_por_reserva) }}"
+                                       step="any"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0">
+                                       max="999999.99"
+                                       placeholder="0.00">
                                 @error('consumo_por_reserva')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -335,9 +336,10 @@
                                        id="consumo_minimo_reserva" 
                                        name="consumo_minimo_reserva" 
                                        value="{{ old('consumo_minimo_reserva', $amenity->consumo_minimo_reserva) }}"
+                                       step="any"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0">
+                                       max="999999.99"
+                                       placeholder="0.00">
                                 @error('consumo_minimo_reserva')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -350,9 +352,10 @@
                                        id="consumo_maximo_reserva" 
                                        name="consumo_maximo_reserva" 
                                        value="{{ old('consumo_maximo_reserva', $amenity->consumo_maximo_reserva) }}"
+                                       step="any"
                                        min="0" 
-                                       max="999999"
-                                       placeholder="0">
+                                       max="999999.99"
+                                       placeholder="0.00">
                                 @error('consumo_maximo_reserva')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

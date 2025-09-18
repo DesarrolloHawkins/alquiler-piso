@@ -279,7 +279,7 @@ class DNIController extends Controller
         $data = [];
         if($cliente != null){
 
-            if ($cliente->tipo_documento == 1) {
+            if ($cliente->tipo_documento == 'D') {
                 $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
                 $cliente['frontal'] = $photoFrontal;
                 $photoTrasera = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
@@ -297,7 +297,7 @@ class DNIController extends Controller
 
         if (count($huespedes)>0) {
             foreach($huespedes as $huesped){
-                if ($huesped->tipo_documento == 1) {
+                if ($huesped->tipo_documento == 'D') {
                     $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 13)->first();
                     $huesped['frontal'] = $photoFrontal;
                     $photoTrasera = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 14)->first();
@@ -1372,9 +1372,17 @@ class DNIController extends Controller
                 $cliente->sexo = $request->input('sexo_'.$i);
                 $cliente->sexo_str = $request->input('sexo_'.$i) == "Masculino" ? "M" : "F";
                 $cliente->email = $request->input('email_'.$i);
-                $cliente->nacionalidadStr = $resultado['index'];
-                $cliente->nacionalidadCode = $resultado['value'];
-                // $cliente->data_dni = true;
+                
+                // Verificar si obtenerNacionalidad devolvió un resultado válido
+                if ($resultado && isset($resultado['index']) && isset($resultado['value'])) {
+                    $cliente->nacionalidadStr = $resultado['index'];
+                    $cliente->nacionalidadCode = $resultado['value'];
+                } else {
+                    // Si no se encuentra el país, usar el valor original
+                    $cliente->nacionalidadStr = $request->input('nacionalidad_'.$i);
+                    $cliente->nacionalidadCode = null;
+                }
+                $cliente->data_dni = true;
                 $cliente->save();
                 // $data = [
                 //     'jsonHiddenComunes'=> null,
@@ -1488,8 +1496,16 @@ class DNIController extends Controller
                     $huesped->pais = $request->input('pais'.$i);
                     $huesped->email = $request->input('email_'.$i);
                     $huesped->contador = $i;
-                    $huesped->nacionalidadStr = $resultadoHuesped['index'];
-                    $huesped->nacionalidadCode = $resultadoHuesped['value'];
+                    
+                    // Verificar si obtenerNacionalidad devolvió un resultado válido
+                    if ($resultadoHuesped && isset($resultadoHuesped['index']) && isset($resultadoHuesped['value'])) {
+                        $huesped->nacionalidadStr = $resultadoHuesped['index'];
+                        $huesped->nacionalidadCode = $resultadoHuesped['value'];
+                    } else {
+                        // Si no se encuentra el país, usar el valor original
+                        $huesped->nacionalidadStr = $request->input('nacionalidad_'.$i);
+                        $huesped->nacionalidadCode = null;
+                    }
                     $huesped->nacionalidad = $request->input('nacionalidad_'.$i);
                     $huesped->save();
                     // dd($huesped);
@@ -1586,11 +1602,18 @@ class DNIController extends Controller
                         'email'  => $request->input('email_'.$i),
                         'contador' => $i,
                         'reserva_id' => $reserva->id,
-                        'nacionalidadStr' => $resultadoHuesped['index'],
-                        'nacionalidadCode' => $resultadoHuesped['value'],
                         'nacionalidad' => $request->input('nacionalidad_'.$i)
-
                     ];
+                    
+                    // Verificar si obtenerNacionalidad devolvió un resultado válido
+                    if ($resultadoHuesped && isset($resultadoHuesped['index']) && isset($resultadoHuesped['value'])) {
+                        $huespedNew['nacionalidadStr'] = $resultadoHuesped['index'];
+                        $huespedNew['nacionalidadCode'] = $resultadoHuesped['value'];
+                    } else {
+                        // Si no se encuentra el país, usar el valor original
+                        $huespedNew['nacionalidadStr'] = $request->input('nacionalidad_'.$i);
+                        $huespedNew['nacionalidadCode'] = null;
+                    }
                     $huespedFinal = Huesped::create($huespedNew);
                     // dd($huespedNew);
 
@@ -1666,12 +1689,8 @@ class DNIController extends Controller
         $reserva->dni_entregado = true;
         $reserva->save();
 
-        $cliente = Cliente::where('id', $reserva->cliente_id)->first();
-        $cliente->data_dni = true;
-        $cliente->save();
-
         Log::info("=== FIN PROCESO SUBIDA DNI EXITOSO ===");
-        return redirect(route('dni.index', $reserva->token));
+        return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
     }
 
     public function dni($token){
@@ -1682,7 +1701,7 @@ class DNIController extends Controller
         $id = $reserva->id;
         // Comprobamos si el cliente relleno los datos principales
         if ($cliente->data_dni) {
-            return redirect(route('dni.index', $token));
+            return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
         }
 
         // Cargar la URL de la imagen si existe
