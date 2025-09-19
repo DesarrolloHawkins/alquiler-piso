@@ -390,7 +390,7 @@ class WhatsappController extends Controller
 
 
                     $clave = $reserva->apartamento->claves ?? 'No asignada aún';
-                    $clave2 = $reserva->apartamento->edificioRelacion->clave ?? 'No asignada aún';
+                    $clave2 = $reserva->apartamento->edificioName->clave ?? 'No asignada aún';
                     $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅, Apartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
 
                     // Segunda llamada a OpenAI para integrar en la conversación
@@ -976,9 +976,9 @@ class WhatsappController extends Controller
                     ->where('fecha_salida', '>=', now())
                     ->first();
                 
-                if ($reserva && $reserva->apartamento && $reserva->apartamento->edificioRelacion) {
-                    Log::info("✅ Edificio encontrado: {$reserva->apartamento->edificioRelacion->nombre}");
-                    return $reserva->apartamento->edificioRelacion->nombre;
+                if ($reserva && $reserva->apartamento && $reserva->apartamento->edificioName) {
+                    Log::info("✅ Edificio encontrado: {$reserva->apartamento->edificioName->nombre}");
+                    return $reserva->apartamento->edificioName->nombre;
                 } else {
                     Log::warning("⚠️ No se encontró edificio para la reserva");
                 }

@@ -323,11 +323,11 @@ class InvoicesController extends Controller
     $conceptos = [];
 
     if ($invoice->reserva_id) {
-        $reserva = Reserva::with(['apartamento', 'apartamento.edificioRelacion'])->find($invoice->reserva_id);
+        $reserva = Reserva::with(['apartamento', 'apartamento.edificioName'])->find($invoice->reserva_id);
 
         if ($reserva) {
             $reserva->apartamento = $reserva->apartamento;
-            $reserva->edificio = $reserva->apartamento->edificio;
+            $reserva->edificio = $reserva->apartamento->edificioName;
             $conceptos[] = $reserva;
         }
 
