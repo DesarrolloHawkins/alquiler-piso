@@ -48,8 +48,9 @@ class InvoicesController extends Controller
             \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
             // Eliminar referencias autoincrementales del mes de enero
+            $mesFormateado = str_pad($mes, 2, '0', STR_PAD_LEFT);
             InvoicesReferenceAutoincrement::where('year', $anio)
-                ->where('month_num', $mes)
+                ->where('month_num', $mesFormateado)
                 ->forceDelete();
 
             // Habilitar nuevamente las restricciones de claves foráneas
@@ -58,7 +59,7 @@ class InvoicesController extends Controller
             // Verifica si todas las facturas y referencias fueron eliminadas
             if (
                 Invoices::whereYear('fecha', $anio)->whereMonth('fecha', $mes)->exists() ||
-                InvoicesReferenceAutoincrement::where('year', $anio)->where('month_num', $mes)->exists()
+                InvoicesReferenceAutoincrement::where('year', $anio)->where('month_num', $mesFormateado)->exists()
             ) {
                 throw new \Exception("No se pudieron eliminar todas las facturas o referencias del mes de $anio/$mes.");
             }
@@ -125,10 +126,13 @@ class InvoicesController extends Controller
      */
     protected function generateSpecificBudgetReference(Invoices $invoices, $anio, $mes)
     {
+        // Asegurar que el mes tenga formato de dos dígitos
+        $mesFormateado = str_pad($mes, 2, '0', STR_PAD_LEFT);
+        
         do {
             // Buscar la última referencia autoincremental para el año y mes proporcionados
             $latestReference = InvoicesReferenceAutoincrement::where('year', $anio)
-                ->where('month_num', $mes)
+                ->where('month_num', $mesFormateado)
                 ->orderBy('id', 'desc')
                 ->first();
 
@@ -139,7 +143,7 @@ class InvoicesController extends Controller
             $formattedAutoIncrement = str_pad($newReferenceAutoincrement, 6, '0', STR_PAD_LEFT);
 
             // Crear la referencia
-            $reference = $anio . '/' . $mes . '/' . $formattedAutoIncrement;
+            $reference = $anio . '/' . $mesFormateado . '/' . $formattedAutoIncrement;
 
             // Verificar si ya existe en la tabla de facturas
             $exists = Invoices::where('reference', $reference)->exists();
@@ -156,7 +160,7 @@ class InvoicesController extends Controller
         $referenceToSave = new InvoicesReferenceAutoincrement([
             'reference_autoincrement' => $newReferenceAutoincrement,
             'year' => $anio,
-            'month_num' => $mes,
+            'month_num' => $mesFormateado,
         ]);
         $referenceToSave->save();
 
