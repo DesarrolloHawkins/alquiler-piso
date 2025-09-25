@@ -45,11 +45,11 @@ class DNIStoreRequest extends FormRequest
             
             if ($tipoDocumento === 'P') {
                 // Pasaporte - solo una imagen (opcional)
-                $rules["pasaporte_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png|max:5120'; // 5MB max
+                $rules["pasaporte_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=100,min_height=100'; // 5MB max
             } else {
                 // DNI - frontal y trasera (opcionales)
-                $rules["fontal_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png|max:5120'; // 5MB max
-                $rules["trasera_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png|max:5120'; // 5MB max
+                $rules["fontal_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=100,min_height=100'; // 5MB max
+                $rules["trasera_{$i}"] = 'nullable|file|image|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=100,min_height=100'; // 5MB max
             }
         }
         
@@ -87,17 +87,20 @@ class DNIStoreRequest extends FormRequest
             $messages["email_{$i}.email"] = "El email del {$persona} debe ser válido.";
             
             // Mensajes para archivos (opcionales)
-            $messages["pasaporte_{$i}.image"] = "El archivo del pasaporte del {$persona} debe ser una imagen.";
-            $messages["pasaporte_{$i}.mimes"] = "El pasaporte del {$persona} debe ser un archivo JPEG, JPG o PNG.";
+            $messages["pasaporte_{$i}.image"] = "El archivo del pasaporte del {$persona} debe ser una imagen válida.";
+            $messages["pasaporte_{$i}.mimes"] = "El pasaporte del {$persona} debe ser un archivo JPEG, JPG, PNG o WEBP.";
             $messages["pasaporte_{$i}.max"] = "El pasaporte del {$persona} no puede superar los 5MB.";
+            $messages["pasaporte_{$i}.dimensions"] = "La imagen del pasaporte del {$persona} debe tener al menos 100x100 píxeles.";
             
-            $messages["fontal_{$i}.image"] = "El archivo frontal del DNI del {$persona} debe ser una imagen.";
-            $messages["fontal_{$i}.mimes"] = "La imagen frontal del DNI del {$persona} debe ser un archivo JPEG, JPG o PNG.";
+            $messages["fontal_{$i}.image"] = "El archivo frontal del DNI del {$persona} debe ser una imagen válida.";
+            $messages["fontal_{$i}.mimes"] = "La imagen frontal del DNI del {$persona} debe ser un archivo JPEG, JPG, PNG o WEBP.";
             $messages["fontal_{$i}.max"] = "La imagen frontal del DNI del {$persona} no puede superar los 5MB.";
+            $messages["fontal_{$i}.dimensions"] = "La imagen frontal del DNI del {$persona} debe tener al menos 100x100 píxeles.";
             
-            $messages["trasera_{$i}.image"] = "El archivo trasero del DNI del {$persona} debe ser una imagen.";
-            $messages["trasera_{$i}.mimes"] = "La imagen trasera del DNI del {$persona} debe ser un archivo JPEG, JPG o PNG.";
+            $messages["trasera_{$i}.image"] = "El archivo trasero del DNI del {$persona} debe ser una imagen válida.";
+            $messages["trasera_{$i}.mimes"] = "La imagen trasera del DNI del {$persona} debe ser un archivo JPEG, JPG, PNG o WEBP.";
             $messages["trasera_{$i}.max"] = "La imagen trasera del DNI del {$persona} no puede superar los 5MB.";
+            $messages["trasera_{$i}.dimensions"] = "La imagen trasera del DNI del {$persona} debe tener al menos 100x100 píxeles.";
         }
         
         return $messages;

@@ -271,12 +271,33 @@ class DNIController extends Controller
 
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
-            if($reserva->dni_entregado == true){
+            if($reserva->dni_entregado === true){
                 return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
             }
         }
 
         $data = [];
+        
+        // Inicializar array con objetos vacíos para evitar errores de índice
+        for ($i = 0; $i < ($reserva->numero_personas ?? 1); $i++) {
+            $data[$i] = (object) [
+                'nombre' => '',
+                'primer_apellido' => '',
+                'apellido1' => '',
+                'segundo_apellido' => '',
+                'apellido2' => '',
+                'fecha_nacimiento' => '',
+                'nacionalidad' => '',
+                'tipo_documento' => '',
+                'num_identificacion' => '',
+                'numero_identificacion' => '',
+                'fecha_expedicion' => '',
+                'fecha_expedicion_doc' => '',
+                'sexo' => '',
+                'email' => ''
+            ];
+        }
+        
         if($cliente != null){
 
             if ($cliente->tipo_documento == 'D') {
@@ -284,11 +305,11 @@ class DNIController extends Controller
                 $cliente['frontal'] = $photoFrontal;
                 $photoTrasera = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
                 $cliente['trasera'] = $photoTrasera;
-                array_push($data, $cliente);
+                $data[0] = $cliente;
             } else {
                 $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 15)->first();
                 $cliente['pasaporte'] = $photoFrontal;
-                array_push($data, $cliente);
+                $data[0] = $cliente;
             }
 
         }
@@ -302,11 +323,11 @@ class DNIController extends Controller
                     $huesped['frontal'] = $photoFrontal;
                     $photoTrasera = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 14)->first();
                     $huesped['trasera'] = $photoTrasera;
-                    array_push($data, $huesped);
+                    $data[$huesped->contador] = $huesped;
                 } else {
                     $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 15)->first();
                     $huesped['pasaporte'] = $photoFrontal;
-                    array_push($data, $huesped);
+                    $data[$huesped->contador] = $huesped;
                 }
             }
         }
@@ -1417,7 +1438,7 @@ class DNIController extends Controller
                         $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 13, 'FrontalDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
 
@@ -1440,7 +1461,7 @@ class DNIController extends Controller
                         $reponseImage = $this->guardarImagen($fileTrasera, $cliente, $reserva, 14, 'TraseraDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
                     if ($request->input('tipo_documento_'.$i) != 'P') {
@@ -1462,7 +1483,7 @@ class DNIController extends Controller
                         $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 15, 'Pasaporte', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
                     if ($request->input('tipo_documento_'.$i) == 'P') {
@@ -1720,6 +1741,21 @@ class DNIController extends Controller
         return view('dni.pasaporte', compact('id'));
     }
 
+    /**
+     * Manejar errores de subida de archivos de manera consistente
+     */
+    private function handleUploadError($reserva, $tipoImagen, $persona = '')
+    {
+        $mensaje = "Error al guardar la imagen {$tipoImagen}";
+        if ($persona) {
+            $mensaje .= " del {$persona}";
+        }
+        $mensaje .= ". Por favor, verifica que el archivo sea una imagen válida (JPEG, PNG, WEBP) y no supere los 5MB.";
+        
+        Log::error($mensaje);
+        return redirect(route('dni.index', $reserva->token))->with('alerta', $mensaje);
+    }
+
     public function guardarImagen($file, $cliente, $reserva, $categoria, $name, $huesped)
     {
         Log::info('=== INICIO GUARDAR IMAGEN ===');
@@ -1730,17 +1766,47 @@ class DNIController extends Controller
             'extension' => $file->getClientOriginalExtension()
         ]);
         
-        // Imagen Frontal DNI
-        // dd($cliente);
-        // $file = $file->file('fontal_'.$i);
-        $imageName = time().'_'.$cliente->id.'_'.$name.'.'.$file->getClientOriginalExtension();
+        // Validaciones adicionales de seguridad
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            Log::error("Tipo MIME no permitido: " . $file->getMimeType());
+            return false;
+        }
+        
+        // Validar tamaño máximo (5MB)
+        $maxSize = 5 * 1024 * 1024; // 5MB en bytes
+        if ($file->getSize() > $maxSize) {
+            Log::error("Archivo demasiado grande: " . $file->getSize() . " bytes");
+            return false;
+        }
+        
+        // Validar que sea una imagen válida
+        if (!getimagesize($file->getPathname())) {
+            Log::error("Archivo no es una imagen válida");
+            return false;
+        }
+        
+        // Generar nombre único para evitar colisiones
+        $imageName = time().'_'.$cliente->id.'_'.$name.'_'.uniqid().'.'.$file->getClientOriginalExtension();
         Log::info("Nombre de archivo generado: $imageName");
         
         try {
-            $file->move(public_path('imagesCliente'), $imageName);
-            Log::info("Archivo movido exitosamente a: " . public_path('imagesCliente') . '/' . $imageName);
+            // Crear directorio si no existe
+            $uploadPath = public_path('imagesCliente');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            
+            // Comprimir imagen antes de guardar
+            $compressed = $this->comprimirImagen($file, $uploadPath, $imageName);
+            if (!$compressed) {
+                Log::error("Error comprimiendo imagen");
+                return false;
+            }
+            
+            Log::info("Imagen comprimida y guardada exitosamente: " . $uploadPath . '/' . $imageName);
         } catch (\Exception $e) {
-            Log::error("Error moviendo archivo: " . $e->getMessage());
+            Log::error("Error procesando archivo: " . $e->getMessage());
             return false;
         }
 
@@ -1869,6 +1935,120 @@ class DNIController extends Controller
             'message' => 'Idioma cambiado correctamente',
             'redirect' => route('dni.index', $token)
         ]);
+    }
+
+    /**
+     * Comprimir imagen para reducir su tamaño
+     */
+    private function comprimirImagen($file, $uploadPath, $imageName)
+    {
+        try {
+            $mimeType = $file->getMimeType();
+            $filePath = $file->getPathname();
+            
+            // Obtener información de la imagen
+            $imageInfo = getimagesize($filePath);
+            if (!$imageInfo) {
+                Log::error("No se pudo obtener información de la imagen");
+                return false;
+            }
+            
+            $width = $imageInfo[0];
+            $height = $imageInfo[1];
+            
+            // Calcular nuevas dimensiones (máximo 1920x1080)
+            $maxWidth = 1920;
+            $maxHeight = 1080;
+            
+            if ($width > $maxWidth || $height > $maxHeight) {
+                $ratio = min($maxWidth / $width, $maxHeight / $height);
+                $newWidth = (int)($width * $ratio);
+                $newHeight = (int)($height * $ratio);
+            } else {
+                $newWidth = $width;
+                $newHeight = $height;
+            }
+            
+            // Crear imagen desde archivo según el tipo
+            switch ($mimeType) {
+                case 'image/jpeg':
+                case 'image/jpg':
+                    $sourceImage = imagecreatefromjpeg($filePath);
+                    break;
+                case 'image/png':
+                    $sourceImage = imagecreatefrompng($filePath);
+                    break;
+                case 'image/webp':
+                    $sourceImage = imagecreatefromwebp($filePath);
+                    break;
+                default:
+                    Log::error("Tipo de imagen no soportado para compresión: " . $mimeType);
+                    return false;
+            }
+            
+            if (!$sourceImage) {
+                Log::error("No se pudo crear imagen desde archivo");
+                return false;
+            }
+            
+            // Crear nueva imagen redimensionada
+            $newImage = imagecreatetruecolor($newWidth, $newHeight);
+            
+            // Preservar transparencia para PNG
+            if ($mimeType === 'image/png') {
+                imagealphablending($newImage, false);
+                imagesavealpha($newImage, true);
+                $transparent = imagecolorallocatealpha($newImage, 255, 255, 255, 127);
+                imagefilledrectangle($newImage, 0, 0, $newWidth, $newHeight, $transparent);
+            }
+            
+            // Redimensionar imagen
+            imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            
+            // Guardar imagen comprimida
+            $outputPath = $uploadPath . '/' . $imageName;
+            $quality = 85; // Calidad de compresión (0-100)
+            
+            switch ($mimeType) {
+                case 'image/jpeg':
+                case 'image/jpg':
+                    $result = imagejpeg($newImage, $outputPath, $quality);
+                    break;
+                case 'image/png':
+                    $result = imagepng($newImage, $outputPath, 8); // Compresión PNG (0-9)
+                    break;
+                case 'image/webp':
+                    $result = imagewebp($newImage, $outputPath, $quality);
+                    break;
+            }
+            
+            // Limpiar memoria
+            imagedestroy($sourceImage);
+            imagedestroy($newImage);
+            
+            if (!$result) {
+                Log::error("Error guardando imagen comprimida");
+                return false;
+            }
+            
+            // Verificar tamaño del archivo comprimido
+            $compressedSize = filesize($outputPath);
+            $originalSize = $file->getSize();
+            $compressionRatio = round((1 - $compressedSize / $originalSize) * 100, 2);
+            
+            Log::info("Imagen comprimida exitosamente", [
+                'original_size' => $originalSize,
+                'compressed_size' => $compressedSize,
+                'compression_ratio' => $compressionRatio . '%',
+                'new_dimensions' => $newWidth . 'x' . $newHeight
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error("Error comprimiendo imagen: " . $e->getMessage());
+            return false;
+        }
     }
 
 }

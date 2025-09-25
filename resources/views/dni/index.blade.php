@@ -196,7 +196,7 @@
                 @endif
 
                 <div class="p-4">
-                    @php $nacionalidadComun = $data[0]->nacionalidad ?? null; @endphp
+                    @php $nacionalidadComun = isset($data[0]) ? ($data[0]->nacionalidad ?? null) : null; @endphp
 
                     <div id="formularios">
                         <form action="{{ route('dni.store') }}" method="POST" class="needs-validation" novalidate enctype="multipart/form-data">

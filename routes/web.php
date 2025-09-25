@@ -183,7 +183,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
     Route::put('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'updateReserva'])->name('reservas.updateReserva');
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
-    Route::get('/reservas/{id}/destroy', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
+    Route::delete('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
     Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
 
 
@@ -372,7 +372,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/items_checklist/{id}', [App\Http\Controllers\ItemChecklistController::class, 'show'])->name('admin.itemsChecklist.show');
     Route::get('/items_checklist/{id}/edit', [App\Http\Controllers\ItemChecklistController::class, 'edit'])->name('admin.itemsChecklist.edit');
     Route::post('/items_checklist/{id}/update', [App\Http\Controllers\ItemChecklistController::class, 'update'])->name('admin.itemsChecklist.update');
-    Route::post('/items_checklist/{id}/destroy', [App\Http\Controllers\ItemChecklistController::class, 'destroy'])->name('admin.itemsChecklist.destroy');
+    Route::delete('/items_checklist/{id}', [App\Http\Controllers\ItemChecklistController::class, 'destroy'])->name('admin.itemsChecklist.destroy');
     Route::post('/items_checklist/{id}/toggle-status', [App\Http\Controllers\ItemChecklistController::class, 'toggleStatus'])->name('admin.itemsChecklist.toggle-status');
     Route::post('/items_checklist/reorder', [App\Http\Controllers\ItemChecklistController::class, 'reorder'])->name('admin.itemsChecklist.reorder');
 
@@ -399,6 +399,11 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/generar-factura',[App\Http\Controllers\InvoicesController::class, 'facturar'])->name('admin.facturas.facturar');
     Route::post('/facturas/update-fecha/{id}', [App\Http\Controllers\InvoicesController::class, 'updateFecha'])->name('admin.facturas.updateFecha');
     Route::get('/admin/facturas/download-zip', [App\Http\Controllers\InvoicesController::class, 'downloadInvoicesZip'])->name('admin.facturas.downloadZip');
+    
+    // Facturas Rectificativas
+    Route::get('/facturas/{id}/rectificar', [App\Http\Controllers\InvoicesController::class, 'createRectificativa'])->name('admin.facturas.createRectificativa');
+    Route::post('/facturas/{id}/rectificar', [App\Http\Controllers\InvoicesController::class, 'storeRectificativa'])->name('admin.facturas.storeRectificativa');
+    Route::get('/facturas/{id}/rectificativas', [App\Http\Controllers\InvoicesController::class, 'showRectificativas'])->name('admin.facturas.showRectificativas');
 
 
     // Vacaciones

@@ -160,6 +160,12 @@ class Kernel extends ConsoleKernel
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
 
                 if ($invoice == null) {
+                    // Validar que el precio sea mayor o igual a 10 euros
+                    if ($reserva->precio < 10) {
+                        Log::info("Reserva {$reserva->id} con precio {$reserva->precio}€ no facturada (menor a 10€)");
+                        continue; // Saltar esta reserva
+                    }
+                    
                      // Cálculo correcto de la base imponible y el IVA
                     $total = $reserva->precio;
                     $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
