@@ -42,7 +42,8 @@ class Reserva extends Model
         'iva',
         'numero_ninos',
         'edades_ninos',
-        'notas_ninos'
+        'notas_ninos',
+        'no_facturar'
     ];
 
     /**
@@ -61,6 +62,7 @@ class Reserva extends Model
      */
     protected $casts = [
         'edades_ninos' => 'array',
+        'no_facturar' => 'boolean',
     ];
 
     /**

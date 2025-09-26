@@ -271,6 +271,16 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalNoFacturadas" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">No Facturadas</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecioNoFacturado, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         {{-- <div class="col-md-3">
@@ -1186,8 +1196,121 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<!-- Modal de Reservas No Facturadas -->
+<div class="modal fade" id="modalNoFacturadas" tabindex="-1" aria-labelledby="modalNoFacturadasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalNoFacturadasLabel">
+                    <i class="fas fa-ban me-2"></i>Reservas No Facturadas entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="filtroApartamentoNoFacturadas" class="form-label fw-bold">Filtrar por Apartamento</label>
+                        <select id="filtroApartamentoNoFacturadas" class="form-select">
+                            <option value="">Todos los apartamentos</option>
+                            @foreach($apartamentos as $apartamento)
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchNoFacturadas" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchNoFacturadas" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-warning mb-0">
+                            <strong>Total No Facturadas: <span id="totalFiltradoNoFacturadas">{{ number_format($sumPrecioNoFacturado, 2) }} €</span></strong>
+                            <br>
+                            <small>Reservas: <span id="countNoFacturadas">{{ $countReservasNoFacturadas }}</span></small>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="table-responsive">
+                    <table id="tablaNoFacturadas" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 15%;">CÓDIGO</th>
+                                <th style="width: 20%;">APARTAMENTO</th>
+                                <th style="width: 15%;">CLIENTE</th>
+                                <th style="width: 15%;">FECHA ENTRADA</th>
+                                <th style="width: 15%;">FECHA SALIDA</th>
+                                <th style="width: 10%;">PRECIO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($reservas->where('no_facturar', true) as $reserva)
+                                <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
+                                    <td>{{ $reserva->id }}</td>
+                                    <td>{{ $reserva->codigo_reserva }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->cliente->nombre ?? 'N/A' }} {{ $reserva->cliente->apellido1 ?? '' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
+                                    <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Configurar DataTable para reservas no facturadas
+    const tableNoFacturadas = $('#tablaNoFacturadas').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Filtro por apartamento
+    $('#filtroApartamentoNoFacturadas').on('change', function () {
+        tableNoFacturadas.column(2).search(this.value).draw();
+    });
+
+    // Búsqueda en la tabla
+    $('#searchNoFacturadas').on('keyup', function () {
+        tableNoFacturadas.search(this.value).draw();
+    });
+
+    // Click en fila para editar reserva
+    $('#tablaNoFacturadas tbody').on('click', 'tr', function () {
+        var idReserva = $(this).data('id');
+        if (idReserva) {
+            window.open('/reservas/' + idReserva + '/edit', '_blank');
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos
+    tableNoFacturadas.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableNoFacturadas.rows({ search: 'applied' }).every(function () {
+            const precio = parseFloat($(this.node()).find('td[data-precio]').attr('data-precio') || 0);
+            total += precio;
+            count++;
+        });
+        
+        $('#totalFiltradoNoFacturadas').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countNoFacturadas').text(count);
+    });
+});
+</script>
 
 <style>
     #legendNacionalidad {

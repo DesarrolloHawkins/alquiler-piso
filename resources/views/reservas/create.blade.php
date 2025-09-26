@@ -217,8 +217,26 @@
                         </div>
                     @enderror
                 </div>
+            </div>
 
-                <!-- Checkboxes -->
+            <!-- Opciones de Facturación -->
+            <div class="row g-3 mt-3">
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="no_facturar" name="no_facturar" value="1" 
+                               {{ old('no_facturar') ? 'checked' : '' }}>
+                        <label class="form-check-label fw-semibold" for="no_facturar">
+                            <i class="fas fa-ban text-warning me-2"></i>
+                            No facturar automáticamente
+                        </label>
+                        <div class="form-text text-muted">
+                            Marca esta opción si esta reserva no debe ser facturada por el sistema automático.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checkboxes -->
                 <div class="col-12">
                     <div class="row g-3">
                         <div class="col-md-4">

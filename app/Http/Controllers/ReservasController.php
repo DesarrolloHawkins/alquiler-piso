@@ -193,7 +193,8 @@ class ReservasController extends Controller
             'precio' => 'required|string',
             'verificado' => 'nullable|integer',
             'dni_entregado' => 'nullable|integer',
-            'enviado_webpol' => 'nullable|integer'
+            'enviado_webpol' => 'nullable|integer',
+            'no_facturar' => 'nullable|boolean'
         ]);
 
         $input = $request->all();
@@ -212,7 +213,8 @@ class ReservasController extends Controller
             'precio' => $input['precio'],
             'verificado' => $input['verificado'] ?? null,
             'dni_entregado' => $input['dni_entregado'] ?? null,
-            'enviado_webpol' => $input['enviado_webpol'] ?? null
+            'enviado_webpol' => $input['enviado_webpol'] ?? null,
+            'no_facturar' => $input['no_facturar'] ?? false
         ]);
 
         // Log the creation
@@ -305,6 +307,7 @@ class ReservasController extends Controller
         'fecha_entrada' => 'required|date',
         'fecha_salida' => 'required|date|after_or_equal:fecha_entrada',
         'precio' => 'required|numeric|min:0',
+        'no_facturar' => 'nullable|boolean',
     ]);
 
     // Buscar la reserva
@@ -319,6 +322,7 @@ class ReservasController extends Controller
         'fecha_entrada' => $validated['fecha_entrada'],
         'fecha_salida' => $validated['fecha_salida'],
         'precio' => $validated['precio'],
+        'no_facturar' => $validated['no_facturar'] ?? false,
     ]);
 
     // Log the update

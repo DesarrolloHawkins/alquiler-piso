@@ -198,6 +198,17 @@ class DashboardController extends Controller
         $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
         $categoriasGastos = CategoriaGastos::all();
 
+        // **Calcular reservas no facturadas**
+        $reservasNoFacturadas = $reservas->where('no_facturar', true);
+        $sumPrecioNoFacturado = $reservasNoFacturadas->sum(function ($reserva) {
+            $precio = $reserva->precio;
+            if (is_string($precio)) {
+                $precio = str_replace(',', '.', $precio);
+                return is_numeric($precio) ? floatval($precio) : 0;
+            }
+            return is_numeric($precio) ? floatval($precio) : 0;
+        });
+
         return [
             'countReservas' => $countReservas,
             'sumPrecio' => $sumPrecio,
@@ -208,6 +219,8 @@ class DashboardController extends Controller
             'ingresosLista' => $ingresosLista,
             'gastosLista' => $gastosLista,
             'categoriasGastos' => $categoriasGastos,
+            'countReservasNoFacturadas' => $reservasNoFacturadas->count(),
+            'sumPrecioNoFacturado' => $sumPrecioNoFacturado,
         ];
     }
 

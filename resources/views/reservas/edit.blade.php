@@ -107,7 +107,7 @@
                         <i class="fas fa-calendar-plus text-primary me-1"></i>
                         Fecha de Entrada
                     </label>
-                    <input type="date" class="form-control form-control-lg" id="fecha_entrada" name="fecha_entrada" value="{{ $reserva->fecha_entrada }}" required>
+                    <input type="date" class="form-control form-control-lg" id="fecha_entrada" name="fecha_entrada" value="{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('Y-m-d') }}" required>
                 </div>
 
                 <!-- Fecha de Salida -->
@@ -116,7 +116,7 @@
                         <i class="fas fa-calendar-minus text-primary me-1"></i>
                         Fecha de Salida
                     </label>
-                    <input type="date" class="form-control form-control-lg" id="fecha_salida" name="fecha_salida" value="{{ $reserva->fecha_salida }}" required>
+                    <input type="date" class="form-control form-control-lg" id="fecha_salida" name="fecha_salida" value="{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('Y-m-d') }}" required>
                 </div>
 
                 <!-- Precio -->
@@ -128,6 +128,23 @@
                     <div class="input-group input-group-lg">
                         <span class="input-group-text">€</span>
                         <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ $reserva->precio }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opciones de Facturación -->
+            <div class="row g-3 mt-3">
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="no_facturar" name="no_facturar" value="1" 
+                               {{ old('no_facturar', $reserva->no_facturar) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-semibold" for="no_facturar">
+                            <i class="fas fa-ban text-warning me-2"></i>
+                            No facturar automáticamente
+                        </label>
+                        <div class="form-text text-muted">
+                            Marca esta opción si esta reserva no debe ser facturada por el sistema automático.
+                        </div>
                     </div>
                 </div>
             </div>

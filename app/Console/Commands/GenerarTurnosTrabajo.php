@@ -1066,7 +1066,7 @@ DATOS DE ENTRADA:
 " . json_encode($datos, JSON_PRETTY_PRINT) . "
 
 INSTRUCCIONES DETALLADAS:
-1. PRIMERO: Asignar TODOS los apartamentos (prioridad máxima)
+1. PRIMERO: Asignar TODOS los apartamentos (prioridad máxima) - OBLIGATORIO
 2. SEGUNDO: Asignar limpieza de zonas comunes por edificio (incluye mantenimiento)
 3. TERCERO: Asignar tareas urgentes por tiempo sin ejecutar
 4. CUARTO: Asignar tareas de prioridad media
@@ -1074,11 +1074,16 @@ INSTRUCCIONES DETALLADAS:
 6. RESPETAR: Jornada estricta - nunca sobrepasar tiempo disponible
 7. OPTIMIZAR: Agrupar por edificio cuando sea posible
 
+CRÍTICO: TODOS los apartamentos de salida DEBEN ser asignados. No dejar ningún apartamento sin asignar.
+
 INSTRUCCIONES CRÍTICAS OBLIGATORIAS:
+- APARTAMENTOS: TODOS los apartamentos de salida DEBEN ser asignados (no opcional)
 - LAVANDERÍA Y COCINA COMUNITARIA: SOLO a la empleada con MÁS HORAS
 - EDIFICIO COSTA: Asignar a la empleada con más horas cuando sea posible
 - TAREAS PRIORIDAD 10: Exclusivas de la empleada con más horas
 - ORDEN: Procesar empleadas por horas contratadas (descendente)
+
+VALIDACIÓN OBLIGATORIA: Al final, verificar que TODOS los apartamentos de salida estén asignados.
 
 FORMATO DE RESPUESTA (JSON):
 {

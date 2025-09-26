@@ -160,6 +160,12 @@ class Kernel extends ConsoleKernel
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
 
                 if ($invoice == null) {
+                    // Validar que la reserva no esté marcada para no facturar
+                    if ($reserva->no_facturar) {
+                        Log::info("Reserva {$reserva->id} no facturada (marcada como no_facturar)");
+                        continue; // Saltar esta reserva
+                    }
+                    
                     // Validar que el precio sea mayor o igual a 10 euros
                     if ($reserva->precio < 10) {
                         Log::info("Reserva {$reserva->id} con precio {$reserva->precio}€ no facturada (menor a 10€)");
