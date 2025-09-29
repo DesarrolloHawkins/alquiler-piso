@@ -329,10 +329,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Botones de eliminar
     const deleteButtons = document.querySelectorAll('.delete-btn');
+    console.log('Delete buttons found:', deleteButtons.length);
     deleteButtons.forEach(button => {
-        button.addEventListener('click', function () {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('Delete button clicked');
             const itemId = this.dataset.id;
             const itemName = this.dataset.name;
+            console.log('Item ID:', itemId, 'Name:', itemName);
             
             Swal.fire({
                 title: '⚠️ Eliminar Item del Checklist',
@@ -389,8 +393,74 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
 
                     const form = document.getElementById('delete-form');
+                    if (!form) {
+                        console.error('Formulario delete-form no encontrado');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Formulario de eliminación no encontrado'
+                        });
+                        return;
+                    }
+                    
                     form.action = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
-                    form.submit();
+                    console.log('Form action:', form.action);
+                    console.log('Item ID:', itemId);
+                    console.log('Form method:', form.method);
+                    console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
+                    console.log('Form DELETE method:', form.querySelector('input[name="_method"]')?.value);
+                    
+                    // Verificar que el formulario tenga todos los campos necesarios
+                    const csrfToken = form.querySelector('input[name="_token"]');
+                    const methodField = form.querySelector('input[name="_method"]');
+                    
+                    if (!csrfToken) {
+                        console.error('CSRF token no encontrado');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Token CSRF no encontrado'
+                        });
+                        return;
+                    }
+                    
+                    if (!methodField) {
+                        console.error('Method field no encontrado');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Campo de método no encontrado'
+                        });
+                        return;
+                    }
+                    
+                    console.log('Enviando formulario...');
+                    
+                    // Agregar un pequeño delay para asegurar que el loading se muestre
+                    setTimeout(() => {
+                        console.log('Enviando formulario después del delay...');
+                        console.log('Form action final:', form.action);
+                        console.log('Form method final:', form.method);
+                        console.log('Form CSRF final:', form.querySelector('input[name="_token"]')?.value);
+                        console.log('Form DELETE final:', form.querySelector('input[name="_method"]')?.value);
+                        
+                        // Verificar que la URL se construyó correctamente
+                        const expectedUrl = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
+                        console.log('URL esperada:', expectedUrl);
+                        console.log('URL actual:', form.action);
+                        
+                        if (form.action !== expectedUrl) {
+                            console.error('URL no coincide');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'URL de eliminación incorrecta'
+                            });
+                            return;
+                        }
+                        
+                        form.submit();
+                    }, 100);
                 }
             });
         });

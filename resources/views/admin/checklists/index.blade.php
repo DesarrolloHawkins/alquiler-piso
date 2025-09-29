@@ -274,6 +274,7 @@
 <!-- Formulario oculto para eliminar -->
 <form id="delete-form" method="POST" style="display: none;">
     @csrf
+    @method('DELETE')
 </form>
 @endsection
 
@@ -286,11 +287,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const deleteButtons = document.querySelectorAll('.delete-btn');
     console.log('Delete buttons found:', deleteButtons.length);
     deleteButtons.forEach(button => {
-        button.addEventListener('click', function () {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
             console.log('Delete button clicked');
             const checklistId = this.dataset.id;
             const checklistName = this.dataset.name;
             console.log('Checklist ID:', checklistId, 'Name:', checklistName);
+            
+            // Verificar que el formulario existe antes de mostrar el modal
+            const form = document.getElementById('delete-form');
+            if (!form) {
+                console.error('Formulario delete-form no encontrado');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Formulario de eliminación no encontrado'
+                });
+                return;
+            }
             
             Swal.fire({
                 title: '¿Eliminar checklist?',
@@ -306,10 +320,66 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('delete-form');
-                    form.action = `{{ route('admin.checklists.destroy', ':id') }}`.replace(':id', checklistId);
+                    if (!form) {
+                        console.error('Formulario delete-form no encontrado');
+                        return;
+                    }
+                    
+                    // Construir la URL de eliminación
+                    const deleteUrl = `{{ route('admin.checklists.destroy', '') }}/${checklistId}`;
+                    form.action = deleteUrl;
+                    
+                    // Verificar que la URL se construyó correctamente
+                    console.log('Delete URL construida:', deleteUrl);
+                    
                     console.log('Form action:', form.action);
                     console.log('Checklist ID:', checklistId);
-                    form.submit();
+                    console.log('Form method:', form.method);
+                    console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
+                    console.log('Form DELETE method:', form.querySelector('input[name="_method"]')?.value);
+                    
+                    // Verificar que el formulario tenga todos los campos necesarios
+                    const csrfToken = form.querySelector('input[name="_token"]');
+                    const methodField = form.querySelector('input[name="_method"]');
+                    
+                    if (!csrfToken) {
+                        console.error('CSRF token no encontrado');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Token CSRF no encontrado'
+                        });
+                        return;
+                    }
+                    
+                    if (!methodField) {
+                        console.error('Method field no encontrado');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Campo de método no encontrado'
+                        });
+                        return;
+                    }
+                    
+                    console.log('Enviando formulario...');
+                    
+                    // Mostrar un loading mientras se procesa
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        text: 'Por favor espera',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Agregar un pequeño delay para asegurar que el loading se muestre
+                    setTimeout(() => {
+                        console.log('Enviando formulario después del delay...');
+                        form.submit();
+                    }, 100);
                 }
             });
         });

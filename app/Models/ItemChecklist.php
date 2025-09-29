@@ -16,6 +16,7 @@ class ItemChecklist extends Model
     protected $fillable = [
         'nombre', 
         'checklist_id',
+        'activo',
         'tiene_stock',
         'articulo_id',
         'cantidad_requerida',
@@ -24,6 +25,7 @@ class ItemChecklist extends Model
     ];
 
     protected $casts = [
+        'activo' => 'boolean',
         'tiene_stock' => 'boolean',
         'cantidad_requerida' => 'decimal:2',
         'tiene_averias' => 'boolean'
