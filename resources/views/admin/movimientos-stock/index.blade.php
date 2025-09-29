@@ -67,7 +67,7 @@
                             Total Movimientos
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ $estadisticas['total_movimientos'] }}
+                            {{ $estadisticas['total_movimientos'] ?? 0 }}
                         </div>
                     </div>
                     <div class="col-auto">
@@ -87,7 +87,7 @@
                             Entradas
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ $estadisticas['entradas'] }}
+                            {{ $estadisticas['entradas'] ?? 0 }}
                         </div>
                     </div>
                     <div class="col-auto">
@@ -107,7 +107,7 @@
                             Salidas
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ $estadisticas['salidas'] }}
+                            {{ $estadisticas['salidas'] ?? 0 }}
                         </div>
                     </div>
                     <div class="col-auto">
@@ -127,7 +127,7 @@
                             Ajustes
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ $estadisticas['ajustes'] }}
+                            {{ $estadisticas['ajustes'] ?? 0 }}
                         </div>
                     </div>
                     <div class="col-auto">

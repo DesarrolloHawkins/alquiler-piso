@@ -35,15 +35,36 @@
             font-size: large;
             font-weight: bold;
         }
+
+        .rectificativa {
+            border: 2px solid #dc3545;
+            background-color: #fff5f5;
+        }
+
+        .rectificativa-header {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+    @if($invoice->es_rectificativa)
+        <div class="rectificativa-header" style="margin-top: -130px; margin-bottom: 20px;">
+            ⚠️ FACTURA RECTIFICATIVA - Esta factura anula la factura original {{ $invoice->facturaOriginal->reference ?? 'N/A' }}
+        </div>
+    @endif
+
     <header>
         <div class="information" style="margin-top: -130px">
             <table width="100%">
                 <tr>
                     <td align="left" style="width: 40%;padding-left: 20px;vertical-align: bottom;">
-                        <h1 style="font-weight: normal; font-size:40px"><strong>FACTURA</strong></h1>
+                        <h1 style="font-weight: normal; font-size:40px">
+                            <strong>{{ $invoice->es_rectificativa ? 'FACTURA RECTIFICATIVA' : 'FACTURA' }}</strong>
+                        </h1>
                     </td>
                     <td align="right" style="width: 50%;padding-right: 15px;">
                         <h1>Hawkins Real State SL</h1>
@@ -60,7 +81,17 @@
                         <p><strong>Ref.:</strong> {{ $invoice->reference }}</p>
                         <p><strong>Fecha de Factura:</strong> {{ \Carbon\Carbon::parse($invoice->fecha)->format('d/m/Y') }}</p>
                         <p><strong>Concepto:</strong> {{ $invoice->concepto }}</p>
-                        <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
+                        @if($invoice->es_rectificativa)
+                            <p><strong>Motivo de Rectificación:</strong> {{ $invoice->motivo_rectificacion }}</p>
+                            @if($invoice->observaciones_rectificacion)
+                                <p><strong>Observaciones:</strong> {{ $invoice->observaciones_rectificacion }}</p>
+                            @endif
+                            @if($invoice->facturaOriginal)
+                                <p><strong>Factura Original:</strong> {{ $invoice->facturaOriginal->reference }}</p>
+                            @endif
+                        @else
+                            <p><strong>Observaciones:</strong> {{ $invoice->description }}</p>
+                        @endif
                     </td>
                     <td align="right" style="width: 50%;padding-right: 20px;">
                         <h3>{{ $invoice->cliente->nombre == null ? $invoice->cliente->alias : $invoice->cliente->nombre .' '. $invoice->cliente->apellido1 .' '. $invoice->cliente->apellido2 }}</h3>
@@ -121,9 +152,13 @@
                             <td style="text-align: right;">—</td>
                             <td style="text-align: right;">—</td>
                             <td style="text-align: right;">1</td>
-                            <td style="text-align: right;">{{ number_format($concept->precio, 2) }} €</td>
+                            <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($concept->precio, 2) }} €
+                            </td>
                             <td style="text-align: right;">—</td>
-                            <td style="text-align: right;">{{ number_format($concept->precio, 2) }} €</td>
+                            <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($concept->precio, 2) }} €
+                            </td>
                         </tr>
                         @endforeach
                     @elseif ($invoice->reserva_id)
@@ -137,9 +172,13 @@
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
-                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} €</td>
+                            <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base - $invoice->iva , 2) }} €
+                            </td>
                             <td style="text-align: right;">{{ $invoice->discount }}%</td>
-                            <td style="text-align: right;">{{ number_format($invoice->base - $invoice->iva , 2) }} €</td>
+                            <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base - $invoice->iva , 2) }} €
+                            </td>
                         </tr>
                         @endforeach
                     @else
@@ -183,12 +222,20 @@
                     <th style="text-align:right">TOTAL</th>
                 </tr>
                 <tr>
-                    <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td>
-                    <td style="text-align:center">{{ number_format($invoice->descuento, 2) }} &euro;</td>
+                    <td style="text-align:center; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                        {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base, 2) }} &euro;
+                    </td>
+                    <td style="text-align:center; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                        {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->descuento, 2) }} &euro;
+                    </td>
                     {{-- <td style="text-align:center">{{ number_format($invoice->base, 2) }} &euro;</td> --}}
-                    <td style="text-align:center">{{ number_format($invoice->iva , 2) }} &euro;</td>
+                    <td style="text-align:center; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                        {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->iva , 2) }} &euro;
+                    </td>
                     {{-- <td style="text-align:center">10%</td> --}}
-                    <td style="text-align:right" class="total-amount">{{ number_format($invoice->total, 2) }} &euro;</td>
+                    <td style="text-align:right" class="total-amount" style="{{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
+                        {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->total, 2) }} &euro;
+                    </td>
                 </tr>
             </table>
         </div>

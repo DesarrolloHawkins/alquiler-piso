@@ -280,7 +280,22 @@
                             </td>
                             <td><strong>{{ $factura->total }} €</strong></td>
                             <td>{{ $factura->estado->name }}</td>
-                            <td><a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn bg-color-segundo">Descargar PDF</a></td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn btn-sm bg-color-segundo" title="Descargar PDF">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    @if(!$factura->es_rectificativa && !$factura->tieneRectificativas())
+                                        <a href="{{route('admin.facturas.createRectificativa', $factura->id)}}" class="btn btn-sm btn-warning" title="Crear Factura Rectificativa">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
+                                    @elseif($factura->tieneRectificativas())
+                                        <a href="{{route('admin.facturas.showRectificativas', $factura->id)}}" class="btn btn-sm btn-info" title="Ver Rectificativas">
+                                            <i class="fas fa-list"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
                       </tr>
                   @endforeach
               </tbody>

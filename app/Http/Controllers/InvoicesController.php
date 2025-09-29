@@ -297,7 +297,7 @@ class InvoicesController extends Controller
 
     public function previewPDF($id){
         // Buscar la factura por su ID
-        $invoice = Invoices::findOrFail($id);
+        $invoice = Invoices::with(['facturaOriginal'])->findOrFail($id);
 
         // Datos adicionales para la vista
         $data = [
@@ -317,7 +317,7 @@ class InvoicesController extends Controller
 
     public function generateInvoicePDF($invoiceId)
 {
-    $invoice = Invoices::findOrFail($invoiceId);
+    $invoice = Invoices::with(['facturaOriginal'])->findOrFail($invoiceId);
 
     $data = [
         'title' => 'Factura ' . $invoice->reference,
@@ -655,6 +655,143 @@ class InvoicesController extends Controller
 
         return redirect()->route('admin.facturas.index')
                         ->with('success', 'Factura actualizada correctamente');
+    }
+
+    /**
+     * Crear una factura rectificativa
+     */
+    public function createRectificativa($id)
+    {
+        $facturaOriginal = Invoices::with(['cliente', 'reserva', 'estado'])->findOrFail($id);
+        
+        // Verificar que la factura original no sea ya una rectificativa
+        if ($facturaOriginal->es_rectificativa) {
+            return redirect()->back()
+                ->with('swal_error', 'No se puede rectificar una factura rectificativa.');
+        }
+
+        // Verificar que la factura original no tenga ya rectificativas
+        if ($facturaOriginal->tieneRectificativas()) {
+            return redirect()->back()
+                ->with('swal_error', 'Esta factura ya tiene una rectificativa asociada.');
+        }
+
+        return view('admin.invoices.create-rectificativa', compact('facturaOriginal'));
+    }
+
+    /**
+     * Guardar la factura rectificativa
+     */
+    public function storeRectificativa(Request $request, $id)
+    {
+        $request->validate([
+            'motivo_rectificacion' => 'required|string|max:255',
+            'observaciones_rectificacion' => 'nullable|string|max:1000',
+        ]);
+
+        $facturaOriginal = Invoices::findOrFail($id);
+        
+        // Verificar que la factura original no sea ya una rectificativa
+        if ($facturaOriginal->es_rectificativa) {
+            return redirect()->back()
+                ->with('swal_error', 'No se puede rectificar una factura rectificativa.');
+        }
+
+        // Verificar que la factura original no tenga ya rectificativas
+        if ($facturaOriginal->tieneRectificativas()) {
+            return redirect()->back()
+                ->with('swal_error', 'Esta factura ya tiene una rectificativa asociada.');
+        }
+
+        try {
+            // Crear la factura rectificativa con valores negativos
+            $facturaRectificativa = Invoices::create([
+                'budget_id' => $facturaOriginal->budget_id,
+                'cliente_id' => $facturaOriginal->cliente_id,
+                'reserva_id' => $facturaOriginal->reserva_id,
+                'invoice_status_id' => $facturaOriginal->invoice_status_id,
+                'concepto' => 'RECTIFICATIVA - ' . $facturaOriginal->concepto,
+                'description' => $facturaOriginal->description,
+                'fecha' => now()->toDateString(),
+                'fecha_cobro' => null,
+                'base' => -$facturaOriginal->base, // Valor negativo
+                'iva' => -$facturaOriginal->iva,   // Valor negativo
+                'descuento' => $facturaOriginal->descuento ? -$facturaOriginal->descuento : null,
+                'total' => -$facturaOriginal->total, // Valor negativo
+                'reference' => null, // Se generará después
+                'reference_autoincrement_id' => null,
+                // Campos específicos de rectificativa
+                'es_rectificativa' => true,
+                'factura_original_id' => $facturaOriginal->id,
+                'motivo_rectificacion' => $request->motivo_rectificacion,
+                'observaciones_rectificacion' => $request->observaciones_rectificacion,
+            ]);
+
+            // Generar referencia para la factura rectificativa
+            $referencia = $this->generateRectificativaReference($facturaOriginal);
+            $facturaRectificativa->reference = $referencia['reference'];
+            $facturaRectificativa->reference_autoincrement_id = $referencia['id'];
+            $facturaRectificativa->save();
+
+            return redirect()->route('admin.facturas.show', $facturaRectificativa->id)
+                ->with('swal_success', 'Factura rectificativa creada correctamente. El total neto de la factura original es ahora 0€.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al crear la factura rectificativa: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar las facturas rectificativas de una factura original
+     */
+    public function showRectificativas($id)
+    {
+        $facturaOriginal = Invoices::with(['cliente', 'reserva', 'estado', 'facturasRectificativas'])->findOrFail($id);
+        
+        return view('admin.invoices.show-rectificativas', compact('facturaOriginal'));
+    }
+
+    /**
+     * Generar referencia para factura rectificativa
+     * Formato: R + referencia original (ej: R2025/09/000001)
+     */
+    protected function generateRectificativaReference(Invoices $facturaOriginal)
+    {
+        // Obtener la referencia original
+        $referenciaOriginal = $facturaOriginal->reference;
+        
+        // Crear la referencia rectificativa con "R" al principio
+        $referenciaRectificativa = 'R' . $referenciaOriginal;
+        
+        // Verificar si ya existe una rectificativa con esta referencia
+        $existe = Invoices::where('reference', $referenciaRectificativa)->exists();
+        
+        if ($existe) {
+            // Si ya existe, añadir un sufijo numérico
+            $contador = 1;
+            do {
+                $referenciaRectificativa = 'R' . $referenciaOriginal . '-' . $contador;
+                $existe = Invoices::where('reference', $referenciaRectificativa)->exists();
+                $contador++;
+            } while ($existe);
+        }
+        
+        // Crear un registro en la tabla de referencias autoincrementales
+        // para mantener la consistencia del sistema
+        $referenceToSave = new InvoicesReferenceAutoincrement([
+            'reference_autoincrement' => 0, // Las rectificativas no usan autoincremento
+            'year' => date('Y'),
+            'month_num' => date('m'),
+        ]);
+        $referenceToSave->save();
+        
+        return [
+            'id' => $referenceToSave->id,
+            'reference' => $referenciaRectificativa,
+            'reference_autoincrement' => 0,
+        ];
     }
 
 

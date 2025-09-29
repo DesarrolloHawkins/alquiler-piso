@@ -754,7 +754,7 @@ class GenerarTurnosTrabajo extends Command
     {
         try {
             // Preparar datos para OpenAI
-            $datosIA = $this->prepararDatosParaIA($empleadas, $tareas);
+            $datosIA = $this->prepararDatosParaIA($empleadas, $tareas, $fecha);
             
             // Crear prompt para OpenAI
             $prompt = $this->crearPromptParaIA($datosIA);
@@ -787,8 +787,14 @@ class GenerarTurnosTrabajo extends Command
     /**
      * Preparar datos estructurados para OpenAI
      */
-    private function prepararDatosParaIA($empleadas, $tareas)
+    private function prepararDatosParaIA($empleadas, $tareas, $fecha = null)
     {
+        // Obtener información del día de la semana
+        $fechaCarbon = $fecha ? Carbon::parse($fecha) : today();
+        $diaSemana = $fechaCarbon->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
+        $esFinDeSemana = $diaSemana == 0 || $diaSemana == 6; // Domingo o sábado
+        $nombreDia = $fechaCarbon->locale('es')->dayName;
+        
         // Separar tareas por categorías
         $tareasApartamentos = $tareas->filter(function($tarea) {
             return $tarea['apartamento_id'] !== null;
@@ -889,17 +895,39 @@ class GenerarTurnosTrabajo extends Command
         }
         
         return [
-            'empleadas' => $empleadas->map(function($empleada) use ($empleadas) {
-                // Si solo hay una empleada disponible, asignar 8 horas completas
-                $tiempoDisponible = $empleadas->count() === 1 ? 8 * 60 : $empleada->horas_contratadas_dia * 60;
+            'fecha' => $fechaCarbon->format('Y-m-d'),
+            'dia_semana' => $nombreDia,
+            'es_fin_de_semana' => $esFinDeSemana,
+            'reglas_especiales' => [
+                'fines_semana' => [
+                    'empleada_4_horas' => 'DEBE trabajar 8 horas (o más si hay muchos apartamentos)',
+                    'apartamentos_prioridad' => 'Los apartamentos SIEMPRE se limpian aunque se sobrepasen las horas contratadas',
+                    'prioridad_absoluta' => 'TODOS los apartamentos de salida'
+                ],
+                'entre_semana' => [
+                    'empleada_4_horas' => 'MÍNIMO 6 horas (no 4 ni 8)',
+                    'balance_carga' => 'Balancear carga entre ambas empleadas',
+                    'solo_una_empleada' => 'Trabaja su jornada normal'
+                ]
+            ],
+            'empleadas' => $empleadas->map(function($empleada) use ($empleadas, $esFinDeSemana) {
+                // Lógica especial para fines de semana
+                if ($esFinDeSemana && $empleada->horas_contratadas_dia == 4) {
+                    $tiempoDisponible = 8 * 60; // 8 horas en fines de semana
+                } elseif ($empleadas->count() === 1) {
+                    $tiempoDisponible = 8 * 60; // 8 horas si es la única
+                } else {
+                    $tiempoDisponible = $empleada->horas_contratadas_dia * 60;
+                }
                 
                 return [
                     'id' => $empleada->id,
                     'nombre' => $empleada->user->name,
                     'jornada_horas' => $empleada->horas_contratadas_dia,
                     'jornada_minutos' => $empleada->horas_contratadas_dia * 60,
-                    'tiempo_disponible' => $tiempoDisponible, // 8 horas si es la única, sino su jornada normal
-                    'dias_trabajo_semana' => $empleada->numero_dias_trabajo
+                    'tiempo_disponible' => $tiempoDisponible,
+                    'dias_trabajo_semana' => $empleada->numero_dias_trabajo,
+                    'regla_especial' => $esFinDeSemana && $empleada->horas_contratadas_dia == 4 ? 'FIN DE SEMANA: 8 horas obligatorias' : null
                 ];
             })->toArray(),
             'edificios' => array_values($apartamentosPorEdificio),
@@ -1052,6 +1080,16 @@ REGLAS DE ASIGNACIÓN:
 4. BALANCEAR: Distribuir carga de trabajo equitativamente entre múltiples empleadas
 5. EFICIENCIA: Agrupar tareas por ubicación cuando sea posible
 
+REGLAS ESPECÍFICAS POR DÍA DE LA SEMANA:
+- FINES DE SEMANA (SÁBADO Y DOMINGO):
+  * Empleada de 4 horas: DEBE trabajar 8 horas (o más si hay muchos apartamentos)
+  * Los apartamentos SIEMPRE se limpian aunque se sobrepasen las horas contratadas
+  * Prioridad absoluta: TODOS los apartamentos de salida
+- ENTRE SEMANA (LUNES A VIERNES):
+  * Si hay 2 empleadas disponibles: empleada de 4 horas trabaja MÍNIMO 6 horas (no 4 ni 8)
+  * Si solo hay 1 empleada: trabaja su jornada normal
+  * Balancear carga entre ambas empleadas
+
 REGLAS ESPECÍFICAS CRÍTICAS:
 1. LAVANDERÍA Y COCINA COMUNITARIA: SIEMPRE asignar a la empleada con MÁS HORAS contratadas
 2. EDIFICIO COSTA: La empleada con más horas debe trabajar preferentemente en Edificio Costa
@@ -1075,6 +1113,11 @@ INSTRUCCIONES DETALLADAS:
 7. OPTIMIZAR: Agrupar por edificio cuando sea posible
 
 CRÍTICO: TODOS los apartamentos de salida DEBEN ser asignados. No dejar ningún apartamento sin asignar.
+
+LÓGICA ESPECIAL PARA APARTAMENTOS:
+- FINES DE SEMANA: Los apartamentos tienen prioridad ABSOLUTA sobre las horas contratadas
+- ENTRE SEMANA: Respetar horas contratadas pero asignar MÍNIMO 6 horas a empleada de 4 horas
+- SIEMPRE: Todos los apartamentos de salida se limpian, sin excepción
 
 INSTRUCCIONES CRÍTICAS OBLIGATORIAS:
 - APARTAMENTOS: TODOS los apartamentos de salida DEBEN ser asignados (no opcional)

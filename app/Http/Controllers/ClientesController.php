@@ -267,6 +267,21 @@ class ClientesController extends Controller
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
+            // Campos de facturación
+            'tipo_cliente' => 'required|string|in:particular,empresa,autonomo',
+            'es_empresa' => 'boolean',
+            'requiere_factura' => 'boolean',
+            'condiciones_pago' => 'nullable|string|in:contado,30_dias,60_dias,90_dias',
+            'facturacion_nombre_razon_social' => 'nullable|string|max:255',
+            'facturacion_nif_cif' => 'nullable|string|max:20',
+            'facturacion_direccion' => 'nullable|string|max:255',
+            'facturacion_localidad' => 'nullable|string|max:255',
+            'facturacion_codigo_postal' => 'nullable|string|max:10',
+            'facturacion_provincia' => 'nullable|string|max:255',
+            'facturacion_pais' => 'nullable|string|max:255',
+            'facturacion_email' => 'nullable|email|max:255',
+            'facturacion_telefono' => 'nullable|string|max:20',
+            'observaciones_facturacion' => 'nullable|string|max:1000',
         ];
 
         // Mensajes de validación personalizados
@@ -282,6 +297,13 @@ class ClientesController extends Controller
             'email.email' => 'El formato del email no es válido.',
             'email.unique' => 'Este email ya está registrado.',
             'nacionalidad.required' => 'La nacionalidad es obligatoria.',
+            // Mensajes para campos de facturación
+            'tipo_cliente.required' => 'El tipo de cliente es obligatorio.',
+            'tipo_cliente.in' => 'El tipo de cliente debe ser: particular, empresa o autónomo.',
+            'facturacion_email.email' => 'El formato del email de facturación no es válido.',
+            'facturacion_nif_cif.max' => 'El NIF/CIF no puede tener más de 20 caracteres.',
+            'facturacion_codigo_postal.max' => 'El código postal no puede tener más de 10 caracteres.',
+            'observaciones_facturacion.max' => 'Las observaciones no pueden tener más de 1000 caracteres.',
         ];
 
         // Validar los datos del formulario
@@ -572,6 +594,21 @@ class ClientesController extends Controller
             'codigo_postal' => 'nullable|string|max:255',
             'provincia' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:255',
+            // Campos de facturación
+            'tipo_cliente' => 'required|string|in:particular,empresa,autonomo',
+            'es_empresa' => 'boolean',
+            'requiere_factura' => 'boolean',
+            'condiciones_pago' => 'nullable|string|in:contado,30_dias,60_dias,90_dias',
+            'facturacion_nombre_razon_social' => 'nullable|string|max:255',
+            'facturacion_nif_cif' => 'nullable|string|max:20',
+            'facturacion_direccion' => 'nullable|string|max:255',
+            'facturacion_localidad' => 'nullable|string|max:255',
+            'facturacion_codigo_postal' => 'nullable|string|max:10',
+            'facturacion_provincia' => 'nullable|string|max:255',
+            'facturacion_pais' => 'nullable|string|max:255',
+            'facturacion_email' => 'nullable|email|max:255',
+            'facturacion_telefono' => 'nullable|string|max:20',
+            'observaciones_facturacion' => 'nullable|string|max:1000',
         ];
 
         // Mensajes de validación personalizados

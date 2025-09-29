@@ -335,18 +335,59 @@ document.addEventListener('DOMContentLoaded', function () {
             const itemName = this.dataset.name;
             
             Swal.fire({
-                title: '¿Eliminar item?',
-                html: `¿Estás seguro de que quieres eliminar <strong>${itemName}</strong>?<br><br>
-                       <small class="text-muted">Esta acción no se puede deshacer.</small>`,
+                title: '⚠️ Eliminar Item del Checklist',
+                html: `
+                    <div class="text-center">
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <h5 class="mb-2"><strong>¡ATENCIÓN!</strong></h5>
+                            <p class="mb-0">Esta acción es <strong>IRREVERSIBLE</strong> y eliminará permanentemente el item del checklist.</p>
+                        </div>
+                        <div class="card border-warning">
+                            <div class="card-body text-start">
+                                <h6 class="card-title text-warning">
+                                    <i class="fas fa-info-circle me-2"></i>Detalles del Item:
+                                </h6>
+                                <p class="mb-0"><strong>Nombre:</strong> <code>${itemName}</code></p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                El item será eliminado permanentemente del checklist y no se podrá recuperar.
+                            </p>
+                        </div>
+                    </div>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, eliminar',
+                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar Definitivamente',
                 cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                reverseButtons: true
+                customClass: {
+                    confirmButton: 'btn btn-danger btn-lg',
+                    cancelButton: 'btn btn-secondary btn-lg'
+                },
+                buttonsStyling: false,
+                focusCancel: true,
+                allowOutsideClick: false,
+                allowEscapeKey: false
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // Mostrar loading mientras se procesa
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        text: 'Por favor espera mientras se procesa la eliminación',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
                     const form = document.getElementById('delete-form');
                     form.action = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
                     form.submit();

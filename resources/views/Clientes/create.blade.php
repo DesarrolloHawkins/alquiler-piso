@@ -357,6 +357,314 @@
                     </div>
                 </div>
 
+                <!-- Configuración de Facturación -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold text-dark">
+                            <i class="fas fa-file-invoice me-2 text-primary"></i>
+                            Configuración de Facturación
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Tipo de Cliente -->
+                            <div class="col-md-6">
+                                <label for="tipo_cliente" class="form-label fw-semibold">
+                                    Tipo de Cliente <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select @error('tipo_cliente') is-invalid @enderror" 
+                                        id="tipo_cliente" 
+                                        name="tipo_cliente" 
+                                        required>
+                                    <option value="">Seleccionar tipo</option>
+                                    <option value="particular" {{ old('tipo_cliente') == 'particular' ? 'selected' : '' }}>Particular</option>
+                                    <option value="empresa" {{ old('tipo_cliente') == 'empresa' ? 'selected' : '' }}>Empresa</option>
+                                    <option value="autonomo" {{ old('tipo_cliente') == 'autonomo' ? 'selected' : '' }}>Autónomo</option>
+                                </select>
+                                @error('tipo_cliente')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-building me-1 text-info"></i>
+                                    Tipo de cliente para facturación
+                                </div>
+                            </div>
+
+                            <!-- Es Empresa -->
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="es_empresa" 
+                                           name="es_empresa" 
+                                           value="1"
+                                           {{ old('es_empresa') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-semibold" for="es_empresa">
+                                        Es una empresa
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1 text-info"></i>
+                                    Marca si el cliente es una empresa o persona jurídica
+                                </div>
+                            </div>
+
+                            <!-- Requiere Factura -->
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="requiere_factura" 
+                                           name="requiere_factura" 
+                                           value="1"
+                                           {{ old('requiere_factura') ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-semibold" for="requiere_factura">
+                                        Requiere factura
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-receipt me-1 text-info"></i>
+                                    Indica si el cliente necesita factura para sus reservas
+                                </div>
+                            </div>
+
+                            <!-- Condiciones de Pago -->
+                            <div class="col-md-6">
+                                <label for="condiciones_pago" class="form-label fw-semibold">Condiciones de Pago</label>
+                                <select class="form-select @error('condiciones_pago') is-invalid @enderror" 
+                                        id="condiciones_pago" 
+                                        name="condiciones_pago">
+                                    <option value="">Seleccionar condiciones</option>
+                                    <option value="contado" {{ old('condiciones_pago') == 'contado' ? 'selected' : '' }}>Al contado</option>
+                                    <option value="30_dias" {{ old('condiciones_pago') == '30_dias' ? 'selected' : '' }}>30 días</option>
+                                    <option value="60_dias" {{ old('condiciones_pago') == '60_dias' ? 'selected' : '' }}>60 días</option>
+                                    <option value="90_dias" {{ old('condiciones_pago') == '90_dias' ? 'selected' : '' }}>90 días</option>
+                                </select>
+                                @error('condiciones_pago')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos Específicos de Facturación -->
+                <div class="card shadow-sm border-0 mb-4" id="datos-facturacion" style="display: none;">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold text-dark">
+                            <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                            Datos Específicos de Facturación
+                        </h5>
+                        <p class="text-muted mb-0 mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Si no se rellenan estos campos, se usarán los datos generales del cliente
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Nombre/Razón Social -->
+                            <div class="col-md-6">
+                                <label for="facturacion_nombre_razon_social" class="form-label fw-semibold">
+                                    Nombre/Razón Social
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_nombre_razon_social') is-invalid @enderror" 
+                                       id="facturacion_nombre_razon_social" 
+                                       name="facturacion_nombre_razon_social" 
+                                       value="{{ old('facturacion_nombre_razon_social') }}"
+                                       maxlength="255"
+                                       placeholder="Nombre o razón social para facturación">
+                                @error('facturacion_nombre_razon_social')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-building me-1 text-info"></i>
+                                    Nombre completo o razón social para facturación
+                                </div>
+                            </div>
+
+                            <!-- NIF/CIF -->
+                            <div class="col-md-6">
+                                <label for="facturacion_nif_cif" class="form-label fw-semibold">
+                                    NIF/CIF
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_nif_cif') is-invalid @enderror" 
+                                       id="facturacion_nif_cif" 
+                                       name="facturacion_nif_cif" 
+                                       value="{{ old('facturacion_nif_cif') }}"
+                                       maxlength="20"
+                                       placeholder="12345678A o A12345678">
+                                @error('facturacion_nif_cif')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-id-card me-1 text-info"></i>
+                                    NIF (personas) o CIF (empresas) para facturación
+                                </div>
+                            </div>
+
+                            <!-- Dirección Fiscal -->
+                            <div class="col-12">
+                                <label for="facturacion_direccion" class="form-label fw-semibold">
+                                    Dirección Fiscal
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_direccion') is-invalid @enderror" 
+                                       id="facturacion_direccion" 
+                                       name="facturacion_direccion" 
+                                       value="{{ old('facturacion_direccion') }}"
+                                       maxlength="255"
+                                       placeholder="Calle, número, piso...">
+                                @error('facturacion_direccion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Localidad Fiscal -->
+                            <div class="col-md-4">
+                                <label for="facturacion_localidad" class="form-label fw-semibold">
+                                    Localidad
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_localidad') is-invalid @enderror" 
+                                       id="facturacion_localidad" 
+                                       name="facturacion_localidad" 
+                                       value="{{ old('facturacion_localidad') }}"
+                                       maxlength="255"
+                                       placeholder="Ciudad o pueblo">
+                                @error('facturacion_localidad')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Código Postal Fiscal -->
+                            <div class="col-md-4">
+                                <label for="facturacion_codigo_postal" class="form-label fw-semibold">
+                                    Código Postal
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_codigo_postal') is-invalid @enderror" 
+                                       id="facturacion_codigo_postal" 
+                                       name="facturacion_codigo_postal" 
+                                       value="{{ old('facturacion_codigo_postal') }}"
+                                       maxlength="10"
+                                       placeholder="28001">
+                                @error('facturacion_codigo_postal')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Provincia Fiscal -->
+                            <div class="col-md-4">
+                                <label for="facturacion_provincia" class="form-label fw-semibold">
+                                    Provincia
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('facturacion_provincia') is-invalid @enderror" 
+                                       id="facturacion_provincia" 
+                                       name="facturacion_provincia" 
+                                       value="{{ old('facturacion_provincia') }}"
+                                       maxlength="255"
+                                       placeholder="Madrid, Barcelona...">
+                                @error('facturacion_provincia')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- País Fiscal -->
+                            <div class="col-md-6">
+                                <label for="facturacion_pais" class="form-label fw-semibold">
+                                    País
+                                </label>
+                                <select class="form-select @error('facturacion_pais') is-invalid @enderror" 
+                                        id="facturacion_pais" 
+                                        name="facturacion_pais">
+                                    <option value="">Seleccionar país</option>
+                                    <option value="España" {{ old('facturacion_pais') == 'España' ? 'selected' : '' }}>España</option>
+                                    @foreach($paises as $pais)
+                                        @if($pais != 'España')
+                                            <option value="{{ $pais }}" {{ old('facturacion_pais') == $pais ? 'selected' : '' }}>
+                                                {{ $pais }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                @error('facturacion_pais')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Email Facturación -->
+                            <div class="col-md-6">
+                                <label for="facturacion_email" class="form-label fw-semibold">
+                                    Email para Facturas
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" 
+                                           class="form-control @error('facturacion_email') is-invalid @enderror" 
+                                           id="facturacion_email" 
+                                           name="facturacion_email" 
+                                           value="{{ old('facturacion_email') }}"
+                                           maxlength="255"
+                                           placeholder="facturacion@empresa.com">
+                                </div>
+                                @error('facturacion_email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1 text-info"></i>
+                                    Email específico para envío de facturas
+                                </div>
+                            </div>
+
+                            <!-- Teléfono Facturación -->
+                            <div class="col-md-6">
+                                <label for="facturacion_telefono" class="form-label fw-semibold">
+                                    Teléfono para Facturación
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+                                    <input type="tel" 
+                                           class="form-control @error('facturacion_telefono') is-invalid @enderror" 
+                                           id="facturacion_telefono" 
+                                           name="facturacion_telefono" 
+                                           value="{{ old('facturacion_telefono') }}"
+                                           maxlength="20"
+                                           placeholder="+34 600 000 000">
+                                </div>
+                                @error('facturacion_telefono')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Observaciones Facturación -->
+                            <div class="col-12">
+                                <label for="observaciones_facturacion" class="form-label fw-semibold">
+                                    Observaciones de Facturación
+                                </label>
+                                <textarea class="form-control @error('observaciones_facturacion') is-invalid @enderror" 
+                                          id="observaciones_facturacion" 
+                                          name="observaciones_facturacion" 
+                                          rows="3"
+                                          placeholder="Observaciones específicas para facturación...">{{ old('observaciones_facturacion') }}</textarea>
+                                @error('observaciones_facturacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-sticky-note me-1 text-info"></i>
+                                    Notas adicionales para el proceso de facturación
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Botones de acción -->
                 <div class="d-flex justify-content-between">
                     <a href="{{ route('clientes.index') }}" class="btn btn-outline-secondary btn-lg">
@@ -392,6 +700,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Lógica para mostrar/ocultar sección de datos de facturación
+    const tipoClienteSelect = document.getElementById('tipo_cliente');
+    const esEmpresaCheckbox = document.getElementById('es_empresa');
+    const requiereFacturaCheckbox = document.getElementById('requiere_factura');
+    const datosFacturacionSection = document.getElementById('datos-facturacion');
+
+    function toggleDatosFacturacion() {
+        const tipoCliente = tipoClienteSelect.value;
+        const esEmpresa = esEmpresaCheckbox.checked;
+        const requiereFactura = requiereFacturaCheckbox.checked;
+        
+        // Mostrar sección si es empresa, autónomo o requiere factura
+        if (tipoCliente === 'empresa' || tipoCliente === 'autonomo' || requiereFactura) {
+            datosFacturacionSection.style.display = 'block';
+        } else {
+            datosFacturacionSection.style.display = 'none';
+        }
+    }
+
+    // Event listeners para cambios
+    tipoClienteSelect.addEventListener('change', toggleDatosFacturacion);
+    esEmpresaCheckbox.addEventListener('change', toggleDatosFacturacion);
+    requiereFacturaCheckbox.addEventListener('change', toggleDatosFacturacion);
+
+    // Inicializar estado
+    toggleDatosFacturacion();
 
     // Envío del formulario
     form.addEventListener('submit', function(e) {

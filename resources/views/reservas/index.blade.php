@@ -389,7 +389,9 @@
                     </thead>
                     <tbody>
                         @foreach ($reservas as $reserva)
-                            <tr>
+                            <tr ondblclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')" 
+                                style="cursor: pointer;" 
+                                title="Doble clic para eliminar reserva">
                                 <td>
                                     <span class="badge bg-primary-subtle text-primary fw-bold">#{{ $reserva->id }}</span>
                                 </td>
@@ -483,8 +485,9 @@
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm" 
                                                     onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')"
+                                                    ondblclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')"
                                                     data-bs-toggle="tooltip" 
-                                                    title="Eliminar reserva">
+                                                    title="Eliminar reserva (clic o doble clic)">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         @endif
@@ -557,27 +560,60 @@
     // Función para confirmar eliminación de reserva
     function confirmarEliminacion(id, cliente, codigo) {
         Swal.fire({
-            title: '¿Eliminar Reserva?',
+            title: '⚠️ Eliminar Reserva',
             html: `
-                <div class="text-start">
-                    <p><strong>Cliente:</strong> ${cliente}</p>
-                    <p><strong>Código de Reserva:</strong> ${codigo}</p>
-                    <p class="text-danger mt-3"><strong>Esta acción no se puede deshacer.</strong></p>
+                <div class="text-center">
+                    <div class="alert alert-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h5 class="mb-2"><strong>¡ATENCIÓN!</strong></h5>
+                        <p class="mb-0">Esta acción es <strong>IRREVERSIBLE</strong> y eliminará permanentemente la reserva del sistema.</p>
+                    </div>
+                    <div class="card border-warning">
+                        <div class="card-body text-start">
+                            <h6 class="card-title text-warning">
+                                <i class="fas fa-info-circle me-2"></i>Detalles de la Reserva:
+                            </h6>
+                            <p class="mb-1"><strong>Cliente:</strong> ${cliente}</p>
+                            <p class="mb-0"><strong>Código de Reserva:</strong> <code>${codigo}</code></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            La reserva será marcada como eliminada y no aparecerá en los listados activos.
+                        </p>
+                    </div>
                 </div>
             `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar Definitivamente',
             cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
             customClass: {
-                confirmButton: 'btn btn-danger',
-                cancelButton: 'btn btn-secondary'
+                confirmButton: 'btn btn-danger btn-lg',
+                cancelButton: 'btn btn-secondary btn-lg'
             },
-            buttonsStyling: false
+            buttonsStyling: false,
+            focusCancel: true,
+            allowOutsideClick: false,
+            allowEscapeKey: false
         }).then((result) => {
             if (result.isConfirmed) {
+                // Mostrar loading mientras se procesa
+                Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Por favor espera mientras se procesa la eliminación',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 // Crear formulario temporal para enviar la petición DELETE
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -908,5 +944,44 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Estilos para el doble clic en filas de reservas */
+tbody tr:hover {
+    background-color: rgba(220, 53, 69, 0.05) !important;
+    transition: background-color 0.2s ease;
+}
+
+tbody tr:hover .btn-outline-danger {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+/* Animación para el botón de eliminar */
+.btn-outline-danger {
+    transition: all 0.2s ease;
+}
+
+.btn-outline-danger:hover {
+    transform: scale(1.05);
+}
+
+/* Indicador visual para doble clic */
+tbody tr[title*="Doble clic"]:hover::after {
+    content: " (Doble clic para eliminar)";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    z-index: 1000;
+    pointer-events: none;
+}
+</style>
 
 @endsection

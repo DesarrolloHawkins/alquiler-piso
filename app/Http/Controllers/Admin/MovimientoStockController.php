@@ -9,6 +9,7 @@ use App\Models\Proveedor;
 use App\Models\ApartamentoLimpieza;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class MovimientoStockController extends Controller
 {
@@ -58,6 +59,9 @@ class MovimientoStockController extends Controller
             'salidas' => MovimientoStock::salidas()->count(),
             'ajustes' => MovimientoStock::ajustes()->count()
         ];
+
+        // Log para debugging
+        Log::info('Estadísticas generadas:', $estadisticas);
 
         return view('admin.movimientos-stock.index', compact(
             'movimientos', 
