@@ -31,6 +31,7 @@ class AdminLimpiezasController extends Controller
             'apartamento', 
             'zonaComun',
             'user', 
+            'empleada',  // Agregar relación empleada
             'estado',
             'itemsMarcados.item',
             'fotos'
@@ -47,7 +48,10 @@ class AdminLimpiezasController extends Controller
         }
 
         if ($request->filled('empleada')) {
-            $query->where('user_id', $request->empleada);
+            $query->where(function($q) use ($request) {
+                $q->where('user_id', $request->empleada)
+                  ->orWhere('empleada_id', $request->empleada);
+            });
         }
 
         if ($request->filled('apartamento')) {

@@ -300,8 +300,12 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($limpieza->user)
+                                                @if($limpieza->empleada)
                                                     <span class="badge bg-success">
+                                                        {{ $limpieza->empleada->name }}
+                                                    </span>
+                                                @elseif($limpieza->user)
+                                                    <span class="badge bg-info">
                                                         {{ $limpieza->user->name }}
                                                     </span>
                                                 @else
