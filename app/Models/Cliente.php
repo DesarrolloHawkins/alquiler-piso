@@ -238,4 +238,38 @@ class Cliente extends Model
         ];
     }
 
+    /**
+     * Obtiene los datos de facturación formateados para el PDF
+     * Incluye información adicional como tipo de documento y etiquetas
+     */
+    public function getDatosFacturacionParaPDF()
+    {
+        $datos = $this->getDatosFacturacion();
+        
+        // Agregar información adicional para el PDF
+        $datos['tipo_documento_label'] = $this->getTipoDocumentoLabel();
+        $datos['direccion_completa'] = $this->direccion_facturacion;
+        $datos['es_particular'] = $this->tipo_cliente === 'particular';
+        $datos['es_empresa'] = $this->tipo_cliente === 'empresa';
+        $datos['es_autonomo'] = $this->tipo_cliente === 'autonomo';
+        
+        return $datos;
+    }
+
+    /**
+     * Obtiene la etiqueta del tipo de documento para el PDF
+     */
+    private function getTipoDocumentoLabel()
+    {
+        if ($this->tipo_cliente === 'particular') {
+            return $this->tipo_documento != 'P' ? 'DNI:' : 'PASAPORTE:';
+        } elseif ($this->tipo_cliente === 'empresa') {
+            return 'CIF:';
+        } elseif ($this->tipo_cliente === 'autonomo') {
+            return 'NIF:';
+        }
+        
+        return 'DOCUMENTO:';
+    }
+
 }

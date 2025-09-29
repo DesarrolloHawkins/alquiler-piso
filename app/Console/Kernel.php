@@ -190,13 +190,11 @@ class Kernel extends ConsoleKernel
                     $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
                     $iva = $total - $base; // Calcular el IVA
 
-                    // Generar descripción con datos de facturación
+                    // Generar descripción básica (los datos de facturación se obtienen dinámicamente en el PDF)
                     $descripcion = "Estancia en apartamento: " . $reserva->apartamento->titulo;
-                    $descripcion .= "\nCliente: " . $cliente->nombre_facturacion;
-                    $descripcion .= "\nNIF/CIF: " . $cliente->nif_facturacion;
-                    $descripcion .= "\nDirección: " . $cliente->direccion_facturacion;
-                    $descripcion .= "\nEmail: " . $cliente->email_facturacion;
-                    $descripcion .= "\nTeléfono: " . $cliente->telefono_facturacion;
+                    $descripcion .= "\nFecha de entrada: " . $reserva->fecha_entrada;
+                    $descripcion .= "\nFecha de salida: " . $reserva->fecha_salida;
+                    $descripcion .= "\nNúmero de personas: " . $reserva->numero_personas;
 
                     $data = [
                         'budget_id' => null,
