@@ -196,34 +196,34 @@ class PhotoAnalysisController extends Controller
     {
         return "Eres un inspector de calidad de limpieza para apartamentos turísticos. Analiza esta imagen de la categoría: {$categoria}.
 
-        INSTRUCCIONES CRÍTICAS:
-        1. Evalúa la calidad de limpieza general (SOLO: excelente/buena/regular/mala)
-        2. Identifica deficiencias específicas y visibles - SIEMPRE busca problemas reales
-        3. Verifica si cumple estándares de apartamento turístico (true/false)
-        4. Busca manchas, suciedad, desorden, elementos mal colocados, polvo, restos
-        5. Considera presentación visual y profesional
-        6. Asigna puntuación del 1 al 10 basada en lo que realmente ves
-        7. Escribe observaciones descriptivas y específicas sobre lo que observas
-        8. Proporciona recomendaciones prácticas y accionables
+INSTRUCCIONES CRÍTICAS:
+1. Evalúa la calidad de limpieza general (SOLO: excelente/buena/regular/mala)
+2. Identifica deficiencias específicas y visibles - SIEMPRE busca problemas reales
+3. Verifica si cumple estándares de apartamento turístico (true/false)
+4. Busca manchas, suciedad, desorden, elementos mal colocados, polvo, restos
+5. Considera presentación visual y profesional
+6. Asigna puntuación del 1 al 10 basada en lo que realmente ves
+7. Escribe observaciones descriptivas y específicas sobre lo que observas
+8. Proporciona recomendaciones prácticas y accionables
 
-        REGLAS ABSOLUTAS:
-        - Responde ÚNICAMENTE en formato JSON válido
-        - NO incluyas texto explicativo antes o después del JSON
-        - NO uses comillas extra o caracteres adicionales
-        - SIEMPRE incluye todos los campos requeridos
-        - Las deficiencias y recomendaciones deben ser arrays con elementos reales
-        - NUNCA pongas 'Análisis automático no disponible' - SIEMPRE analiza la imagen
-        - Si no ves problemas obvios, escribe deficiencias menores como 'revisar detalle' o 'verificar estándares'
+REGLAS ABSOLUTAS:
+- Responde ÚNICAMENTE en formato JSON válido
+- NO incluyas texto explicativo antes o después del JSON
+- NO uses comillas extra o caracteres adicionales
+- SIEMPRE incluye todos los campos requeridos
+- Las deficiencias y recomendaciones deben ser arrays con elementos reales
+- NUNCA pongas 'Análisis automático no disponible' - SIEMPRE analiza la imagen
+- Si no ves problemas obvios, escribe deficiencias menores como 'revisar detalle' o 'verificar estándares'
 
-        FORMATO JSON EXACTO (responde SOLO esto):
-        {
-            \"calidad_general\": \"buena\",
-            \"deficiencias\": [\"mancha en la pared\", \"toalla mal doblada\"],
-            \"cumple_estandares\": false,
-            \"observaciones\": \"La limpieza general es aceptable, pero se observan manchas en la pared y la toalla no está correctamente doblada según estándares turísticos\",
-            \"puntuacion\": 6,
-            \"recomendaciones\": [\"Limpiar mancha en pared con producto específico\", \"Doblar toalla siguiendo estándares de hotel\"]
-        }";
+FORMATO JSON EXACTO (responde SOLO esto):
+{
+    \"calidad_general\": \"buena\",
+    \"deficiencias\": [\"mancha en la pared\", \"toalla mal doblada\"],
+    \"cumple_estandares\": false,
+    \"observaciones\": \"La limpieza general es aceptable, pero se observan manchas en la pared y la toalla no está correctamente doblada según estándares turísticos\",
+    \"puntuacion\": 6,
+    \"recomendaciones\": [\"Limpiar mancha en pared con producto específico\", \"Doblar toalla siguiendo estándares de hotel\"]
+}";
     }
 
     private function callOpenAI($base64Image, $prompt)
@@ -313,11 +313,11 @@ class PhotoAnalysisController extends Controller
         try {
             Log::info('Respuesta raw de OpenAI:', ['response' => $response]);
             
-            // Limpiar la respuesta de OpenAI
-            $cleanResponse = trim($response);
+            // Normalizar la respuesta de OpenAI
+            $normalizedResponse = $this->normalizeOpenAIResponse($response);
             
             // Intentar parsear JSON
-            $parsed = json_decode($cleanResponse, true);
+            $parsed = json_decode($normalizedResponse, true);
             
             if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
                 Log::info('JSON parseado correctamente:', $parsed);
@@ -330,17 +330,46 @@ class PhotoAnalysisController extends Controller
             
             Log::warning('JSON no válido, creando respuesta estructurada', [
                 'json_error' => json_last_error_msg(),
-                'clean_response' => $cleanResponse
+                'normalized_response' => $normalizedResponse
             ]);
             
             // Si no es JSON válido, crear respuesta estructurada mejorada
-            return $this->createFallbackAnalysis($cleanResponse);
+            return $this->createFallbackAnalysis($normalizedResponse);
 
         } catch (\Exception $e) {
             Log::error('Error parseando respuesta de OpenAI: ' . $e->getMessage());
             
             return $this->createFallbackAnalysis($response);
         }
+    }
+    
+    private function normalizeOpenAIResponse($response)
+    {
+        // Limpiar la respuesta
+        $cleanResponse = trim($response);
+        
+        // Corregir errores tipográficos comunes
+        $cleanResponse = str_replace('Analisis realizado con ormacion disponible', 'Análisis realizado con información disponible', $cleanResponse);
+        $cleanResponse = str_replace('Analisis realizado con información disponible', 'Análisis realizado con información disponible', $cleanResponse);
+        $cleanResponse = str_replace('Json {', 'json {', $cleanResponse);
+        $cleanResponse = str_replace('JSON {', 'json {', $cleanResponse);
+        
+        // Buscar el JSON en la respuesta
+        $jsonStart = strpos($cleanResponse, '{');
+        if ($jsonStart !== false) {
+            $jsonEnd = strrpos($cleanResponse, '}');
+            if ($jsonEnd !== false) {
+                $jsonString = substr($cleanResponse, $jsonStart, $jsonEnd - $jsonStart + 1);
+                
+                // Limpiar caracteres extra
+                $jsonString = preg_replace('/[^\x20-\x7E]/', '', $jsonString);
+                
+                return $jsonString;
+            }
+        }
+        
+        // Si no se encuentra JSON, devolver la respuesta limpia
+        return $cleanResponse;
     }
     
     private function validateAndCompleteAnalysis($analysis)
@@ -361,15 +390,28 @@ class PhotoAnalysisController extends Controller
             }
         }
         
-        // Validar calidad_general - solo cambiar si no es válida
+        // Estandarizar calidad_general
         $validQualities = ['excelente', 'buena', 'regular', 'mala'];
         if (!in_array($analysis['calidad_general'], $validQualities)) {
             $analysis['calidad_general'] = 'regular';
         }
         
-        // Validar puntuación - solo cambiar si no es válida
+        // Estandarizar puntuación
         if (!is_numeric($analysis['puntuacion']) || $analysis['puntuacion'] < 1 || $analysis['puntuacion'] > 10) {
             $analysis['puntuacion'] = 5;
+        }
+        
+        // Estandarizar arrays
+        if (!is_array($analysis['deficiencias'])) {
+            $analysis['deficiencias'] = ['Revisar detalle de limpieza'];
+        }
+        if (!is_array($analysis['recomendaciones'])) {
+            $analysis['recomendaciones'] = ['Revisar manualmente la imagen'];
+        }
+        
+        // Estandarizar observaciones
+        if (empty($analysis['observaciones']) || $analysis['observaciones'] === 'Análisis realizado correctamente') {
+            $analysis['observaciones'] = 'Análisis realizado con información disponible';
         }
         
         // Asegurar consistencia entre puntuación y calidad
