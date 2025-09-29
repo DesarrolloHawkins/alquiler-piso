@@ -492,8 +492,8 @@
                                 </div>
                             </div>
 
-                            <!-- NIF/CIF -->
-                            <div class="col-md-6">
+                            <!-- NIF/CIF (solo para empresas y autónomos) -->
+                            <div class="col-md-6" id="nif-cif-field" style="display: none;">
                                 <label for="facturacion_nif_cif" class="form-label fw-semibold">
                                     NIF/CIF <span class="text-danger">*</span>
                                 </label>
@@ -503,14 +503,22 @@
                                        name="facturacion_nif_cif" 
                                        value="{{ old('facturacion_nif_cif', $cliente->facturacion_nif_cif) }}"
                                        maxlength="20"
-                                       placeholder="12345678A o B12345678"
+                                       placeholder="B12345678 o A12345678"
                                        required>
                                 @error('facturacion_nif_cif')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <div class="form-text">
                                     <i class="fas fa-id-card me-1 text-info"></i>
-                                    NIF para particulares, CIF para empresas
+                                    CIF para empresas, NIF para autónomos
+                                </div>
+                            </div>
+
+                            <!-- Información para particulares -->
+                            <div class="col-md-6" id="particular-info" style="display: none;">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Para particulares:</strong> Se utilizará el documento de identidad ya registrado ({{ $cliente->tipo_documento }}: {{ $cliente->num_identificacion }})
                                 </div>
                             </div>
                         </div>
@@ -711,11 +719,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleDatosFacturacion() {
         const tipoCliente = document.getElementById('tipo_cliente').value;
         const datosFacturacion = document.getElementById('datos-facturacion');
+        const nifCifField = document.getElementById('nif-cif-field');
+        const particularInfo = document.getElementById('particular-info');
         
         if (tipoCliente === 'empresa' || tipoCliente === 'autonomo') {
             datosFacturacion.style.display = 'block';
+            nifCifField.style.display = 'block';
+            particularInfo.style.display = 'none';
+        } else if (tipoCliente === 'particular') {
+            datosFacturacion.style.display = 'none';
+            nifCifField.style.display = 'none';
+            particularInfo.style.display = 'block';
         } else {
             datosFacturacion.style.display = 'none';
+            nifCifField.style.display = 'none';
+            particularInfo.style.display = 'none';
         }
     }
     

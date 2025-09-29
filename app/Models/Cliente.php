@@ -96,27 +96,43 @@ class Cliente extends Model
 
     /**
      * Obtiene el nombre completo para facturación
-     * Si tiene datos específicos de facturación, los usa, sino usa los datos generales
+     * Para particulares: usa nombre + apellidos
+     * Para empresas/autónomos: usa facturacion_nombre_razon_social si existe, sino nombre + apellidos
      */
     public function getNombreFacturacionAttribute()
     {
-        if ($this->es_empresa && $this->facturacion_nombre_razon_social) {
+        // Para particulares, siempre usar nombre + apellidos
+        if ($this->tipo_cliente === 'particular') {
+            return trim($this->nombre . ' ' . $this->apellido1 . ' ' . $this->apellido2);
+        }
+        
+        // Para empresas y autónomos, usar razón social si existe
+        if ($this->facturacion_nombre_razon_social) {
             return $this->facturacion_nombre_razon_social;
         }
         
+        // Fallback a nombre + apellidos
         return trim($this->nombre . ' ' . $this->apellido1 . ' ' . $this->apellido2);
     }
 
     /**
      * Obtiene el NIF/CIF para facturación
-     * Si tiene datos específicos de facturación, los usa, sino usa el documento general
+     * Para particulares: usa el documento de identidad
+     * Para empresas/autónomos: usa facturacion_nif_cif si existe, sino el documento general
      */
     public function getNifFacturacionAttribute()
     {
+        // Para particulares, siempre usar el documento de identidad
+        if ($this->tipo_cliente === 'particular') {
+            return $this->num_identificacion;
+        }
+        
+        // Para empresas y autónomos, usar facturacion_nif_cif si existe
         if ($this->facturacion_nif_cif) {
             return $this->facturacion_nif_cif;
         }
         
+        // Fallback al documento general
         return $this->num_identificacion;
     }
 
@@ -181,22 +197,27 @@ class Cliente extends Model
 
     /**
      * Verifica si el cliente tiene todos los datos necesarios para facturación
+     * Para particulares: solo necesita tipo_cliente y documento de identidad
+     * Para empresas/autónomos: necesita tipo_cliente, NIF/CIF y datos específicos
      */
     public function tieneDatosFacturacionCompletos()
     {
-        $camposRequeridos = [
-            'nombre_facturacion' => $this->nombre_facturacion,
-            'nif_facturacion' => $this->nif_facturacion,
-            'direccion_facturacion' => $this->direccion_facturacion,
-        ];
-
-        foreach ($camposRequeridos as $campo => $valor) {
-            if (empty($valor)) {
-                return false;
-            }
+        // Verificar que tenga tipo_cliente
+        if (!$this->tipo_cliente) {
+            return false;
         }
 
-        return true;
+        // Para particulares: solo necesita documento de identidad
+        if ($this->tipo_cliente === 'particular') {
+            return !empty($this->num_identificacion);
+        }
+
+        // Para empresas y autónomos: necesita NIF/CIF específico y al menos nombre/razón social
+        if ($this->tipo_cliente === 'empresa' || $this->tipo_cliente === 'autonomo') {
+            return !empty($this->facturacion_nif_cif) && !empty($this->facturacion_nombre_razon_social);
+        }
+
+        return false;
     }
 
     /**

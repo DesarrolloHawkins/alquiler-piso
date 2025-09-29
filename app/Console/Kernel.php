@@ -172,10 +172,31 @@ class Kernel extends ConsoleKernel
                         continue; // Saltar esta reserva
                     }
                     
+                    // Obtener datos de facturación del cliente
+                    $cliente = $reserva->cliente;
+                    if (!$cliente) {
+                        Log::warning("Cliente no encontrado para reserva {$reserva->id}");
+                        continue;
+                    }
+                    
+                    // Verificar que el cliente tenga datos de facturación completos
+                    if (!$cliente->tieneDatosFacturacionCompletos()) {
+                        Log::warning("Cliente {$cliente->id} no tiene datos de facturación completos para reserva {$reserva->id}");
+                        continue;
+                    }
+                    
                      // Cálculo correcto de la base imponible y el IVA
                     $total = $reserva->precio;
                     $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
                     $iva = $total - $base; // Calcular el IVA
+
+                    // Generar descripción con datos de facturación
+                    $descripcion = "Estancia en apartamento: " . $reserva->apartamento->titulo;
+                    $descripcion .= "\nCliente: " . $cliente->nombre_facturacion;
+                    $descripcion .= "\nNIF/CIF: " . $cliente->nif_facturacion;
+                    $descripcion .= "\nDirección: " . $cliente->direccion_facturacion;
+                    $descripcion .= "\nEmail: " . $cliente->email_facturacion;
+                    $descripcion .= "\nTeléfono: " . $cliente->telefono_facturacion;
 
                     $data = [
                         'budget_id' => null,
@@ -183,7 +204,7 @@ class Kernel extends ConsoleKernel
                         'reserva_id' => $reserva->id,
                         'invoice_status_id' => 1,
                         'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-                        'description' => '',
+                        'description' => $descripcion,
                         'fecha' => $reserva->fecha_salida,
                         'fecha_cobro' => null,
                         'base' => round($base, 2), // Redondear la base a 2 decimales
@@ -193,7 +214,8 @@ class Kernel extends ConsoleKernel
                         'created_at' => $reserva->fecha_salida,
                         'updated_at' => $reserva->fecha_salida,
                     ];
-                    // dd($data);
+                    
+                    Log::info("Generando factura para reserva {$reserva->id} con datos de facturación del cliente {$cliente->id}");
                     $crearFactura = Invoices::create($data);
 
                     $referencia = $this->generateBudgetReference($crearFactura);
@@ -203,6 +225,8 @@ class Kernel extends ConsoleKernel
                     $crearFactura->save();
                     $reserva->estado_id = 5;
                     $reserva->save();
+                    
+                    Log::info("Factura {$crearFactura->id} generada exitosamente para reserva {$reserva->id}");
                 }
 
             }

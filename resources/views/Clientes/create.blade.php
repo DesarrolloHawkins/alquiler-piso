@@ -377,7 +377,7 @@
                                         name="tipo_cliente" 
                                         required>
                                     <option value="">Seleccionar tipo</option>
-                                    <option value="particular" {{ old('tipo_cliente') == 'particular' ? 'selected' : '' }}>Particular</option>
+                                    <option value="particular" {{ old('tipo_cliente', 'particular') == 'particular' ? 'selected' : '' }}>Particular</option>
                                     <option value="empresa" {{ old('tipo_cliente') == 'empresa' ? 'selected' : '' }}>Empresa</option>
                                     <option value="autonomo" {{ old('tipo_cliente') == 'autonomo' ? 'selected' : '' }}>Autónomo</option>
                                 </select>
