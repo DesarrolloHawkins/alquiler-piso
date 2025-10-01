@@ -322,4 +322,85 @@ class WhatsappToolsController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Verificar si una reserva existe
+     */
+    public function verificarReserva(Request $request)
+    {
+        $request->validate([
+            'codigo_reserva' => 'required|string'
+        ]);
+
+        $codigoReserva = $request->codigo_reserva;
+
+        Log::info("🔍 VERIFICAR RESERVA - Código: {$codigoReserva}");
+
+        $reserva = Reserva::with(['cliente', 'apartamento', 'apartamento.edificio'])
+            ->where('codigo_reserva', $codigoReserva)
+            ->first();
+
+        if (!$reserva) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró ninguna reserva con ese código.',
+                'data' => [
+                    'codigo_reserva' => $codigoReserva,
+                    'existe' => false
+                ]
+            ], 404);
+        }
+
+        // Información básica de la reserva
+        $reservaData = [
+            'codigo_reserva' => $reserva->codigo_reserva,
+            'existe' => true,
+            'fecha_entrada' => $reserva->fecha_entrada,
+            'fecha_salida' => $reserva->fecha_salida,
+            'estado' => $reserva->estado->nombre ?? 'Sin estado',
+            'apartamento' => [
+                'id' => $reserva->apartamento->id,
+                'titulo' => $reserva->apartamento->titulo,
+                'edificio' => $reserva->apartamento->edificio->nombre ?? 'Sin edificio'
+            ],
+            'cliente' => [
+                'id' => $reserva->cliente->id,
+                'nombre' => $reserva->cliente->nombre,
+                'telefono' => $reserva->cliente->telefono ?? 'No disponible',
+                'email' => $reserva->cliente->email ?? 'No disponible'
+            ],
+            'dni_entregado' => !empty($reserva->dni_entregado),
+            'claves_disponibles' => !empty($reserva->claves),
+            'fecha_entrada_formateada' => Carbon::parse($reserva->fecha_entrada)->format('d/m/Y'),
+            'fecha_salida_formateada' => Carbon::parse($reserva->fecha_salida)->format('d/m/Y')
+        ];
+
+        // Verificar si es el día de entrada
+        $hoy = now();
+        $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+        $esDiaEntrada = $fechaEntrada->format('Y-m-d') === $hoy->format('Y-m-d');
+        
+        // Verificar si puede obtener claves
+        $puedeObtenerClaves = $esDiaEntrada && 
+                             !empty($reserva->dni_entregado) && 
+                             now()->format('H:i') >= '15:00';
+
+        $reservaData['es_dia_entrada'] = $esDiaEntrada;
+        $reservaData['puede_obtener_claves'] = $puedeObtenerClaves;
+
+        if (!$puedeObtenerClaves && $esDiaEntrada) {
+            if (empty($reserva->dni_entregado)) {
+                $reservaData['mensaje_claves'] = 'Debe entregar el DNI antes de obtener las claves';
+                $reservaData['url_dni'] = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
+            } elseif (now()->format('H:i') < '15:00') {
+                $reservaData['mensaje_claves'] = 'Las claves estarán disponibles a partir de las 15:00';
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reserva encontrada correctamente.',
+            'data' => $reservaData
+        ]);
+    }
 }
