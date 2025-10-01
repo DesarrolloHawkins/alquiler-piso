@@ -323,148 +323,43 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    let isOrderMode = false;
-    let sortable = null;
+// TEST INMEDIATO - Sin esperar DOMContentLoaded
+console.log('=== SCRIPT CARGADO INMEDIATAMENTE ===');
+alert('Script cargado');
 
-    // Botones de eliminar
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('=== SCRIPT DE ITEMS CHECKLIST CARGADO ===');
+    alert('DOM cargado');
+    
+    // TEST SIMPLE: Verificar si se puede hacer clic en botones de eliminar
+    console.log('Agregando event listener simple...');
+    document.addEventListener('click', function(e) {
+        console.log('Cualquier click detectado en:', e.target);
+        if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
+            e.preventDefault();
+            console.log('¡BOTÓN DE ELIMINAR CLICKEADO!');
+            const button = e.target.classList.contains('delete-btn') ? e.target : e.target.closest('.delete-btn');
+            console.log('Botón:', button);
+            console.log('ID:', button.dataset.id);
+            console.log('Nombre:', button.dataset.name);
+            
+            alert('¡Botón de eliminar clickeado! ID: ' + button.dataset.id);
+            return;
+        }
+    });
+
+    // SIMPLIFICADO - Solo verificar que los botones existen
     const deleteButtons = document.querySelectorAll('.delete-btn');
     console.log('Delete buttons found:', deleteButtons.length);
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
-            console.log('Delete button clicked');
-            const itemId = this.dataset.id;
-            const itemName = this.dataset.name;
-            console.log('Item ID:', itemId, 'Name:', itemName);
-            
-            Swal.fire({
-                title: '⚠️ Eliminar Item del Checklist',
-                html: `
-                    <div class="text-center">
-                        <div class="alert alert-danger mb-3">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <h5 class="mb-2"><strong>¡ATENCIÓN!</strong></h5>
-                            <p class="mb-0">Esta acción es <strong>IRREVERSIBLE</strong> y eliminará permanentemente el item del checklist.</p>
-                        </div>
-                        <div class="card border-warning">
-                            <div class="card-body text-start">
-                                <h6 class="card-title text-warning">
-                                    <i class="fas fa-info-circle me-2"></i>Detalles del Item:
-                                </h6>
-                                <p class="mb-0"><strong>Nombre:</strong> <code>${itemName}</code></p>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <p class="text-muted small">
-                                <i class="fas fa-info-circle me-1"></i>
-                                El item será eliminado permanentemente del checklist y no se podrá recuperar.
-                            </p>
-                        </div>
-                    </div>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar Definitivamente',
-                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                customClass: {
-                    confirmButton: 'btn btn-danger btn-lg',
-                    cancelButton: 'btn btn-secondary btn-lg'
-                },
-                buttonsStyling: false,
-                focusCancel: true,
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Mostrar loading mientras se procesa
-                    Swal.fire({
-                        title: 'Eliminando...',
-                        text: 'Por favor espera mientras se procesa la eliminación',
-                        icon: 'info',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
-                    const form = document.getElementById('delete-form');
-                    if (!form) {
-                        console.error('Formulario delete-form no encontrado');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Formulario de eliminación no encontrado'
-                        });
-                        return;
-                    }
-                    
-                    form.action = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
-                    console.log('Form action:', form.action);
-                    console.log('Item ID:', itemId);
-                    console.log('Form method:', form.method);
-                    console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
-                    console.log('Form DELETE method:', form.querySelector('input[name="_method"]')?.value);
-                    
-                    // Verificar que el formulario tenga todos los campos necesarios
-                    const csrfToken = form.querySelector('input[name="_token"]');
-                    const methodField = form.querySelector('input[name="_method"]');
-                    
-                    if (!csrfToken) {
-                        console.error('CSRF token no encontrado');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Token CSRF no encontrado'
-                        });
-                        return;
-                    }
-                    
-                    if (!methodField) {
-                        console.error('Method field no encontrado');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Campo de método no encontrado'
-                        });
-                        return;
-                    }
-                    
-                    console.log('Enviando formulario...');
-                    
-                    // Agregar un pequeño delay para asegurar que el loading se muestre
-                    setTimeout(() => {
-                        console.log('Enviando formulario después del delay...');
-                        console.log('Form action final:', form.action);
-                        console.log('Form method final:', form.method);
-                        console.log('Form CSRF final:', form.querySelector('input[name="_token"]')?.value);
-                        console.log('Form DELETE final:', form.querySelector('input[name="_method"]')?.value);
-                        
-                        // Verificar que la URL se construyó correctamente
-                        const expectedUrl = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
-                        console.log('URL esperada:', expectedUrl);
-                        console.log('URL actual:', form.action);
-                        
-                        if (form.action !== expectedUrl) {
-                            console.error('URL no coincide');
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: 'URL de eliminación incorrecta'
-                            });
-                            return;
-                        }
-                        
-                        form.submit();
-                    }, 100);
-                }
-            });
-        });
-    });
+    console.log('Delete buttons:', deleteButtons);
+    
+    if (deleteButtons.length === 0) {
+        console.error('NO SE ENCONTRARON BOTONES DE ELIMINAR');
+        alert('NO SE ENCONTRARON BOTONES DE ELIMINAR');
+    } else {
+        console.log('Botones encontrados correctamente');
+        alert('Se encontraron ' + deleteButtons.length + ' botones de eliminar');
+    }
 
     // Toggle modo ordenación
     const toggleOrderBtn = document.getElementById('toggle-order-mode');
