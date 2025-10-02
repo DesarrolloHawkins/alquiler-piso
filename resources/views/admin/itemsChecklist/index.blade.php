@@ -323,51 +323,68 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-// TEST INMEDIATO - Sin esperar DOMContentLoaded
-console.log('=== SCRIPT CARGADO INMEDIATAMENTE ===');
-alert('Script cargado');
-
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('=== SCRIPT DE ITEMS CHECKLIST CARGADO ===');
-    alert('DOM cargado');
-    
-    // TEST SIMPLE: Verificar si se puede hacer clic en botones de eliminar
-    console.log('Agregando event listener simple...');
-    document.addEventListener('click', function(e) {
-        console.log('Cualquier click detectado en:', e.target);
-        if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
-            e.preventDefault();
-            console.log('¡BOTÓN DE ELIMINAR CLICKEADO!');
-            const button = e.target.classList.contains('delete-btn') ? e.target : e.target.closest('.delete-btn');
-            console.log('Botón:', button);
-            console.log('ID:', button.dataset.id);
-            console.log('Nombre:', button.dataset.name);
+    // Botones de eliminar items
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const itemId = this.dataset.id;
+            const itemName = this.dataset.name;
             
-            alert('¡Botón de eliminar clickeado! ID: ' + button.dataset.id);
-            return;
-        }
+            Swal.fire({
+                title: '⚠️ Eliminar Item del Checklist',
+                html: `
+                    <div class="text-center">
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <h5 class="mb-2"><strong>¡ATENCIÓN!</strong></h5>
+                            <p class="mb-0">Esta acción es <strong>IRREVERSIBLE</strong> y eliminará permanentemente el item del checklist.</p>
+                        </div>
+                        <div class="card border-warning">
+                            <div class="card-body text-start">
+                                <h6 class="card-title text-warning">
+                                    <i class="fas fa-info-circle me-2"></i>Detalles del Item:
+                                </h6>
+                                <p class="mb-0"><strong>Nombre:</strong> <code>${itemName}</code></p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                El item será eliminado permanentemente del checklist y no se podrá recuperar.
+                            </p>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar Definitivamente',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('delete-form');
+                    form.action = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
+                    form.submit();
+                }
+            });
+        });
     });
 
-    // SIMPLIFICADO - Solo verificar que los botones existen
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    console.log('Delete buttons found:', deleteButtons.length);
-    console.log('Delete buttons:', deleteButtons);
+    // Variables para el modo ordenación
+    let isOrderMode = false;
+    let sortable = null;
     
-    if (deleteButtons.length === 0) {
-        console.error('NO SE ENCONTRARON BOTONES DE ELIMINAR');
-        alert('NO SE ENCONTRARON BOTONES DE ELIMINAR');
-    } else {
-        console.log('Botones encontrados correctamente');
-        alert('Se encontraron ' + deleteButtons.length + ' botones de eliminar');
-    }
-
     // Toggle modo ordenación
     const toggleOrderBtn = document.getElementById('toggle-order-mode');
     const sortableItems = document.getElementById('sortable-items');
     const dragHandles = document.querySelectorAll('.drag-handle');
 
-    toggleOrderBtn.addEventListener('click', function() {
-        isOrderMode = !isOrderMode;
+    if (toggleOrderBtn) {
+        toggleOrderBtn.addEventListener('click', function() {
+            isOrderMode = !isOrderMode;
         
         if (isOrderMode) {
             // Activar modo ordenación
@@ -400,7 +417,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Guardar orden
             saveOrder();
         }
-    });
+        });
+    }
 
     // Función para guardar el orden
     function saveOrder() {
