@@ -323,53 +323,117 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+console.log('🚀 SCRIPT INICIADO - Checklist Items');
+
 document.addEventListener('DOMContentLoaded', function () {
-    // Botones de eliminar items
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const itemId = this.dataset.id;
-            const itemName = this.dataset.name;
+    console.log('📋 DOM CARGADO - Buscando botones de eliminar...');
+    
+    // Buscar botones de eliminar con múltiples selectores
+    const deleteButtons = document.querySelectorAll('.delete-btn, .btn-outline-danger[data-id]');
+    console.log('🔍 Botones encontrados:', deleteButtons.length);
+    console.log('📝 Botones:', deleteButtons);
+    
+    if (deleteButtons.length === 0) {
+        console.error('❌ NO SE ENCONTRARON BOTONES DE ELIMINAR');
+        // Buscar todos los botones rojos para debug
+        const allRedButtons = document.querySelectorAll('.btn-danger, .btn-outline-danger');
+        console.log('🔴 Todos los botones rojos encontrados:', allRedButtons.length);
+        allRedButtons.forEach((btn, index) => {
+            console.log(`Botón ${index}:`, btn, 'Classes:', btn.className, 'Data-id:', btn.dataset.id);
+        });
+    }
+    
+    // Event delegation - capturar TODOS los clicks
+    document.addEventListener('click', function(e) {
+        console.log('👆 CLICK DETECTADO en:', e.target);
+        console.log('📍 Clases del elemento:', e.target.className);
+        console.log('🏷️ Dataset:', e.target.dataset);
+        
+        // Verificar si es un botón de eliminar
+        const isDeleteBtn = e.target.classList.contains('delete-btn') || 
+                           e.target.classList.contains('btn-outline-danger') ||
+                           e.target.closest('.delete-btn') ||
+                           e.target.closest('.btn-outline-danger[data-id]');
+        
+        if (isDeleteBtn) {
+            console.log('🗑️ BOTÓN DE ELIMINAR DETECTADO!');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.classList.contains('delete-btn') || e.target.classList.contains('btn-outline-danger') 
+                          ? e.target 
+                          : e.target.closest('.delete-btn, .btn-outline-danger[data-id]');
+            
+            const itemId = button.dataset.id;
+            const itemName = button.dataset.name || 'Item sin nombre';
+            
+            console.log('📊 Datos del item:', { itemId, itemName });
+            
+            if (!itemId) {
+                console.error('❌ No se encontró ID del item');
+                alert('Error: No se puede eliminar el item (ID no encontrado)');
+                return;
+            }
+            
+            console.log('🎯 Mostrando SweetAlert...');
             
             Swal.fire({
-                title: '⚠️ Eliminar Item del Checklist',
-                html: `
-                    <div class="text-center">
-                        <div class="alert alert-danger mb-3">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <h5 class="mb-2"><strong>¡ATENCIÓN!</strong></h5>
-                            <p class="mb-0">Esta acción es <strong>IRREVERSIBLE</strong> y eliminará permanentemente el item del checklist.</p>
-                        </div>
-                        <div class="card border-warning">
-                            <div class="card-body text-start">
-                                <h6 class="card-title text-warning">
-                                    <i class="fas fa-info-circle me-2"></i>Detalles del Item:
-                                </h6>
-                                <p class="mb-0"><strong>Nombre:</strong> <code>${itemName}</code></p>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <p class="text-muted small">
-                                <i class="fas fa-info-circle me-1"></i>
-                                El item será eliminado permanentemente del checklist y no se podrá recuperar.
-                            </p>
-                        </div>
-                    </div>
-                `,
+                title: '⚠️ Eliminar Item',
+                text: `¿Estás seguro de eliminar "${itemName}"?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, Eliminar Definitivamente',
-                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-                reverseButtons: true
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
             }).then((result) => {
+                console.log('📋 Resultado SweetAlert:', result);
                 if (result.isConfirmed) {
-                    const form = document.getElementById('delete-form');
-                    form.action = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
+                    console.log('✅ Usuario confirmó eliminación');
+                    
+                    // Crear formulario dinámicamente si no existe
+                    let form = document.getElementById('delete-form');
+                    if (!form) {
+                        console.log('📝 Creando formulario de eliminación...');
+                        form = document.createElement('form');
+                        form.id = 'delete-form';
+                        form.method = 'POST';
+                        form.style.display = 'none';
+                        
+                        // CSRF Token
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        form.appendChild(csrfInput);
+                        
+                        // Method DELETE
+                        const methodInput = document.createElement('input');
+                        methodInput.type = 'hidden';
+                        methodInput.name = '_method';
+                        methodInput.value = 'DELETE';
+                        form.appendChild(methodInput);
+                        
+                        document.body.appendChild(form);
+                    }
+                    
+                    const deleteUrl = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
+                    console.log('🔗 URL de eliminación:', deleteUrl);
+                    
+                    form.action = deleteUrl;
+                    console.log('📤 Enviando formulario...');
                     form.submit();
                 }
             });
+        }
+    });
+    
+    // También agregar event listeners directos como backup
+    deleteButtons.forEach((button, index) => {
+        console.log(`🔗 Agregando listener al botón ${index}:`, button);
+        button.addEventListener('click', function(e) {
+            console.log('🎯 LISTENER DIRECTO ACTIVADO');
+            // El event delegation ya maneja esto, pero por si acaso
         });
     });
 
