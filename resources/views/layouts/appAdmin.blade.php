@@ -694,7 +694,6 @@
 
 
         @include('sweetalert::alert')
-        @yield('scripts')
 
         <!-- Script para comandos de descuento -->
         <script>
@@ -786,6 +785,9 @@
                 }
             }
         </script>
+
+        <!-- Scripts personalizados de las vistas -->
+        @yield('scripts')
 
     </body>
 </html>

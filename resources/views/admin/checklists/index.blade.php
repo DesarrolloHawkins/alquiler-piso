@@ -280,32 +280,20 @@
 
 @include('sweetalert::alert')
 
-@section('scripts')
+<!-- Script inline para eliminar checklists -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Botones de eliminar
+// Esperar a que todo esté cargado
+setTimeout(function() {
     const deleteButtons = document.querySelectorAll('.delete-btn');
-    console.log('Delete buttons found:', deleteButtons.length);
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function (e) {
+    
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Delete button clicked');
+            
             const checklistId = this.dataset.id;
             const checklistName = this.dataset.name;
-            console.log('Checklist ID:', checklistId, 'Name:', checklistName);
             
-            // Verificar que el formulario existe antes de mostrar el modal
-            const form = document.getElementById('delete-form');
-            if (!form) {
-                console.error('Formulario delete-form no encontrado');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Formulario de eliminación no encontrado'
-                });
-                return;
-            }
-            
+            // Mostrar confirmación con SweetAlert
             Swal.fire({
                 title: '¿Eliminar checklist?',
                 html: `¿Estás seguro de que quieres eliminar <strong>${checklistName}</strong>?<br><br>
@@ -320,73 +308,24 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('delete-form');
-                    if (!form) {
-                        console.error('Formulario delete-form no encontrado');
-                        return;
-                    }
-                    
-                    // Construir la URL de eliminación
-                    const deleteUrl = `{{ route('admin.checklists.destroy', '') }}/${checklistId}`;
-                    form.action = deleteUrl;
-                    
-                    // Verificar que la URL se construyó correctamente
-                    console.log('Delete URL construida:', deleteUrl);
-                    
-                    console.log('Form action:', form.action);
-                    console.log('Checklist ID:', checklistId);
-                    console.log('Form method:', form.method);
-                    console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
-                    console.log('Form DELETE method:', form.querySelector('input[name="_method"]')?.value);
-                    
-                    // Verificar que el formulario tenga todos los campos necesarios
-                    const csrfToken = form.querySelector('input[name="_token"]');
-                    const methodField = form.querySelector('input[name="_method"]');
-                    
-                    if (!csrfToken) {
-                        console.error('CSRF token no encontrado');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Token CSRF no encontrado'
-                        });
-                        return;
-                    }
-                    
-                    if (!methodField) {
-                        console.error('Method field no encontrado');
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Campo de método no encontrado'
-                        });
-                        return;
-                    }
-                    
-                    console.log('Enviando formulario...');
-                    
-                    // Mostrar un loading mientras se procesa
-                    Swal.fire({
-                        title: 'Eliminando...',
-                        text: 'Por favor espera',
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                    
-                    // Agregar un pequeño delay para asegurar que el loading se muestre
-                    setTimeout(() => {
-                        console.log('Enviando formulario después del delay...');
+                    if (form && checklistId) {
+                        // Construir la URL correctamente
+                        const baseUrl = '{{ url("/checklists") }}';
+                        form.action = baseUrl + '/' + checklistId + '/destroy';
                         form.submit();
-                    }, 100);
+                    }
                 }
             });
         });
     });
+}, 1000);
+</script>
 
-    // Mostrar mensajes de SweetAlert
-    @if(session('swal_success'))
+@section('scripts')
+<script>
+// Mostrar mensajes de sesión con SweetAlert
+@if(session('swal_success'))
+    if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'success',
             title: '¡Éxito!',
@@ -397,9 +336,11 @@ document.addEventListener('DOMContentLoaded', function () {
             position: 'top-end',
             showConfirmButton: false
         });
-    @endif
+    }
+@endif
 
-    @if(session('swal_error'))
+@if(session('swal_error'))
+    if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -410,8 +351,8 @@ document.addEventListener('DOMContentLoaded', function () {
             position: 'top-end',
             showConfirmButton: false
         });
-    @endif
-});
+    }
+@endif
 </script>
 @endsection
 

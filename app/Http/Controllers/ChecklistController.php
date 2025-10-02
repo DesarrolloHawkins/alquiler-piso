@@ -184,15 +184,18 @@ class ChecklistController extends Controller
         try {
             $checklist = Checklist::with(['items'])->findOrFail($id);
             
-            // Verificar si tiene items asociados
+            // Eliminar primero todos los items asociados
             if ($checklist->items->count() > 0) {
-                return redirect()->back()
-                    ->with('swal_error', 'No se puede eliminar el checklist porque tiene items asociados.');
+                foreach ($checklist->items as $item) {
+                    $item->delete();
+                }
             }
 
+            // Luego eliminar el checklist
             $checklist->delete();
+            
             return redirect()->route('admin.checklists.index')
-                ->with('swal_success', '¡Checklist eliminado con éxito!');
+                ->with('swal_success', '¡Checklist y sus items eliminados con éxito!');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('swal_error', 'Error al eliminar el checklist: ' . $e->getMessage());
