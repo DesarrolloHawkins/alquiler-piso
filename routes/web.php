@@ -362,7 +362,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/checklists/{id}', [App\Http\Controllers\ChecklistController::class, 'show'])->name('admin.checklists.show');
     Route::get('/checklists/{id}/edit', [App\Http\Controllers\ChecklistController::class, 'edit'])->name('admin.checklists.edit');
     Route::post('/checklists/{id}/update', [App\Http\Controllers\ChecklistController::class, 'update'])->name('admin.checklists.update');
-    Route::post('/checklists/{id}/destroy', [App\Http\Controllers\ChecklistController::class, 'destroy'])->name('admin.checklists.destroy');
+    Route::delete('/checklists/{id}/destroy', [App\Http\Controllers\ChecklistController::class, 'destroy'])->name('admin.checklists.destroy');
     Route::post('/checklists/{id}/toggle-status', [App\Http\Controllers\ChecklistController::class, 'toggleStatus'])->name('admin.checklists.toggle-status');
 
     // Items_checklist - Limpieza
