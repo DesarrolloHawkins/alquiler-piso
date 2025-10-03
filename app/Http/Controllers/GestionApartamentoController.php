@@ -2533,6 +2533,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             'zonaComun', 
             'empleada', 
             'estado',
+            'reserva',
             'fotos' => function($query) {
                 $query->orderBy('created_at', 'desc');
             }

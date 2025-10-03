@@ -57,7 +57,7 @@
             </div>
 
             <!-- Información de la reserva si existe -->
-            @if($apartamentoLimpieza->origenReserva)
+            @if($apartamentoLimpieza->reserva)
             <div class="apple-card">
                 <div class="apple-card-header">
                     <div class="apple-card-title">
@@ -71,30 +71,30 @@
                             <div class="info-section">
                                 <div class="info-item">
                                     <span class="info-label">Fecha Entrada:</span>
-                                    <span class="info-value">{{ $apartamentoLimpieza->origenReserva->fecha_entrada }}</span>
+                                    <span class="info-value">{{ $apartamentoLimpieza->reserva->fecha_entrada }}</span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Fecha Salida:</span>
-                                    <span class="info-value">{{ $apartamentoLimpieza->origenReserva->fecha_salida }}</span>
+                                    <span class="info-value">{{ $apartamentoLimpieza->reserva->fecha_salida }}</span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Número de Personas:</span>
-                                    <span class="info-value">{{ $apartamentoLimpieza->origenReserva->numero_personas }}</span>
+                                    <span class="info-value">{{ $apartamentoLimpieza->reserva->numero_personas }}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            @if($apartamentoLimpieza->origenReserva->numero_ninos > 0)
+                            @if($apartamentoLimpieza->reserva->numero_ninos > 0)
                                 <div class="info-section">
                                     <div class="info-item">
                                         <span class="info-label">Niños:</span>
-                                        <span class="info-value">{{ $apartamentoLimpieza->origenReserva->numero_ninos }}</span>
+                                        <span class="info-value">{{ $apartamentoLimpieza->reserva->numero_ninos }}</span>
                                     </div>
-                                    @if($apartamentoLimpieza->origenReserva->edades_ninos)
+                                    @if($apartamentoLimpieza->reserva->edades_ninos)
                                         <div class="info-item">
                                             <span class="info-label">Edades:</span>
                                             <span class="info-value">
-                                                @foreach($apartamentoLimpieza->origenReserva->edades_ninos as $edad)
+                                                @foreach($apartamentoLimpieza->reserva->edades_ninos as $edad)
                                                     @if($edad <= 2)
                                                         bebé ({{$edad}} años)
                                                     @elseif($edad <= 12)
@@ -143,7 +143,7 @@
                                         if ($amenity->tipo_consumo === 'por_reserva') {
                                             $cantidadRecomendada = $amenity->consumo_por_reserva ?? 1;
                                         } elseif ($amenity->tipo_consumo === 'por_persona') {
-                                            $cantidadRecomendada = ($amenity->consumo_por_persona ?? 1) * ($apartamentoLimpieza->origenReserva ? $apartamentoLimpieza->origenReserva->numero_personas : 1);
+                                            $cantidadRecomendada = ($amenity->consumo_por_persona ?? 1) * ($apartamentoLimpieza->reserva ? $apartamentoLimpieza->reserva->numero_personas : 1);
                                         }
                                         
                                         // Verificar si se puso el amenity
@@ -290,9 +290,9 @@
                             <div class="row g-4">
                                 @foreach($fotos as $foto)
                                     <div class="col-md-4 col-sm-6">
-                                        <div class="photo-card" onclick="abrirModalFoto('{{ asset('storage/' . ($foto->ruta ?? $foto->photo_url ?? '')) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
+                                        <div class="photo-card" onclick="abrirModalFoto('{{ asset('storage/' . $foto->photo_url) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
                                             <div class="photo-image">
-                                                <img src="{{ asset('storage/' . ($foto->ruta ?? $foto->photo_url ?? '')) }}" 
+                                                <img src="{{ asset('storage/' . $foto->photo_url) }}" 
                                                      alt="Foto de limpieza - {{ $categoria }}"
                                                      class="img-fluid">
                                                 <div class="photo-overlay">
