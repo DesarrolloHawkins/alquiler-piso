@@ -185,7 +185,7 @@
                                     <div class="col-md-4 col-sm-6">
                                         <div class="photo-card" onclick="abrirModalFoto('{{ asset('storage/' . $foto->url) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
                                             <div class="photo-image">
-                                                <img src="{{ asset('storage/' . $foto->url) }}" 
+                                                <img src="{{ asset($foto->url) }}" 
                                                      alt="Foto de limpieza - {{ $categoria }}"
                                                      class="img-fluid">
                                                 <div class="photo-overlay">
