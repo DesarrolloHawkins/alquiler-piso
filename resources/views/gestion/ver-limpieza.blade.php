@@ -115,115 +115,6 @@
             </div>
             @endif
 
-            <!-- Amenities de Consumo -->
-            @if($amenities && $amenities->count() > 0)
-            <div class="apple-card">
-                <div class="apple-card-header">
-                    <div class="apple-card-title">
-                        <i class="fa fa-gift me-3"></i>
-                        <span>Amenities de Consumo</span>
-                    </div>
-                </div>
-                <div class="apple-card-body">
-                    @foreach($amenities as $categoria => $amenitiesCategoria)
-                        <div class="amenity-category mb-4">
-                            <h6 class="category-title">
-                                <i class="fa fa-tag me-2"></i>
-                                {{ ucfirst($categoria) }} ({{ $amenitiesCategoria->count() }} amenities)
-                            </h6>
-                            <div class="amenities-grid">
-                                @foreach($amenitiesCategoria as $amenity)
-                                    @php
-                                        $consumoExistente = $consumosExistentes->get($amenity->id);
-                                        $cantidadRecomendada = 0;
-                                        $sePuso = false;
-                                        $cantidadPuesta = 0;
-                                        
-                                        // Calcular cantidad recomendada según el tipo de consumo
-                                        if ($amenity->tipo_consumo === 'por_reserva') {
-                                            $cantidadRecomendada = $amenity->consumo_por_reserva ?? 1;
-                                        } elseif ($amenity->tipo_consumo === 'por_persona') {
-                                            $cantidadRecomendada = ($amenity->consumo_por_persona ?? 1) * ($apartamentoLimpieza->reserva ? $apartamentoLimpieza->reserva->numero_personas : 1);
-                                        }
-                                        
-                                        // Verificar si se puso el amenity
-                                        if ($consumoExistente) {
-                                            $sePuso = true;
-                                            $cantidadPuesta = $consumoExistente->cantidad_consumida ?? 0;
-                                        }
-                                    @endphp
-                                    
-                                    <div class="amenity-item {{ $sePuso ? 'amenity-puesto' : 'amenity-no-puesto' }}">
-                                        <div class="amenity-icon {{ $sePuso ? 'icon-puesto' : 'icon-no-puesto' }}">
-                                            <i class="fa {{ $sePuso ? 'fa-check' : 'fa-gift' }}"></i>
-                                        </div>
-                                        <div class="amenity-content">
-                                            <div class="amenity-header">
-                                                <h6 class="amenity-name">{{ $amenity->nombre }}</h6>
-                                                <div class="amenity-status">
-                                                    @if($sePuso)
-                                                        <span class="status-badge status-puesto">
-                                                            <i class="fa fa-check me-1"></i>PUESTO
-                                                        </span>
-                                                    @else
-                                                        <span class="status-badge status-no-puesto">
-                                                            <i class="fa fa-times me-1"></i>NO PUESTO
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            
-                                            <p class="amenity-type">
-                                                <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $amenity->tipo_consumo)) }}</span>
-                                            </p>
-                                            
-                                            <div class="amenity-details">
-                                                <span class="detail-item">
-                                                    <strong>Recomendado:</strong> {{ $cantidadRecomendada }}
-                                                </span>
-                                                @if($sePuso)
-                                                    <span class="detail-item detail-puesto">
-                                                        <strong>Puesto:</strong> {{ $cantidadPuesta }}
-                                                        @if($cantidadPuesta < $cantidadRecomendada)
-                                                            <span class="warning-text">⚠️ Menos del recomendado</span>
-                                                        @elseif($cantidadPuesta > $cantidadRecomendada)
-                                                            <span class="warning-text">⚠️ Más del recomendado</span>
-                                                        @else
-                                                            <span class="success-text">✅ Cantidad correcta</span>
-                                                        @endif
-                                                    </span>
-                                                @endif
-                                                <span class="detail-item">
-                                                    <strong>Stock:</strong> {{ $amenity->stock_actual }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            @else
-            <!-- Mensaje si no hay amenities -->
-            <div class="apple-card">
-                <div class="apple-card-header">
-                    <div class="apple-card-title">
-                        <i class="fa fa-gift me-3"></i>
-                        <span>Amenities de Consumo</span>
-                    </div>
-                </div>
-                <div class="apple-card-body">
-                    <div class="no-amenities">
-                        <p class="text-muted text-center">
-                            <i class="fa fa-info-circle me-2"></i>
-                            No hay amenities de consumo configurados para este edificio
-                        </p>
-                    </div>
-                </div>
-            </div>
-            @endif
 
             <!-- Checklist completado -->
             @if($checklists->count() > 0)
@@ -278,7 +169,9 @@
                 <div class="apple-card-body">
                     <!-- Agrupar fotos por categoría -->
                     @php
-                        $fotosPorCategoria = $todasLasFotos->groupBy('photo_cat');
+                        $fotosPorCategoria = $todasLasFotos->groupBy(function($foto) {
+                            return $foto->photo_cat ?? $foto->photo_categoria_id ?? 'sin_categoria';
+                        });
                     @endphp
                     
                     @foreach($fotosPorCategoria as $categoria => $fotos)
@@ -290,9 +183,9 @@
                             <div class="row g-4">
                                 @foreach($fotos as $foto)
                                     <div class="col-md-4 col-sm-6">
-                                        <div class="photo-card" onclick="abrirModalFoto('{{ asset('storage/' . $foto->photo_url) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
+                                        <div class="photo-card" onclick="abrirModalFoto('{{ asset('storage/' . $foto->url) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
                                             <div class="photo-image">
-                                                <img src="{{ asset('storage/' . $foto->photo_url) }}" 
+                                                <img src="{{ asset('storage/' . $foto->url) }}" 
                                                      alt="Foto de limpieza - {{ $categoria }}"
                                                      class="img-fluid">
                                                 <div class="photo-overlay">
@@ -467,181 +360,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Estilos para amenities de consumo */
-.amenity-category {
-    margin-bottom: 30px;
-}
-
-.amenity-category .category-title {
-    color: #007AFF;
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #F2F2F7;
-    display: flex;
-    align-items: center;
-}
-
-.amenities-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    padding: 20px 0;
-}
-
-.amenity-item {
-    display: flex;
-    align-items: flex-start;
-    padding: 20px;
-    background: #F8F9FA;
-    border-radius: 16px;
-    border: 1px solid #E9ECEF;
-    transition: all 0.3s ease;
-}
-
-.amenity-item:hover {
-    background: #E9ECEF;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-}
-
-/* Estados de amenities */
-.amenity-puesto {
-    background: #F0F8FF;
-    border-color: #28A745;
-}
-
-.amenity-no-puesto {
-    background: #FFF8F0;
-    border-color: #FFC107;
-}
-
-.amenity-icon {
-    margin-right: 16px;
-    padding: 12px;
-    background: #007AFF;
-    border-radius: 12px;
-    color: white;
-    font-size: 18px;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.icon-puesto {
-    background: #28A745;
-}
-
-.icon-no-puesto {
-    background: #FFC107;
-}
-
-.amenity-content {
-    flex: 1;
-}
-
-.amenity-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.amenity-name {
-    color: #1D1D1F;
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    flex: 1;
-}
-
-.amenity-status {
-    margin-left: 12px;
-}
-
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-puesto {
-    background: #28A745;
-    color: white;
-}
-
-.status-no-puesto {
-    background: #FFC107;
-    color: #1D1D1F;
-}
-
-.amenity-type {
-    margin: 0 0 12px 0;
-}
-
-.badge-info {
-    background: #007AFF;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-}
-
-.amenity-details {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.detail-item {
-    color: #6E6E73;
-    font-size: 13px;
-}
-
-.detail-item strong {
-    color: #1D1D1F;
-}
-
-.detail-puesto {
-    color: #28A745;
-}
-
-.warning-text {
-    color: #FFC107;
-    font-weight: 500;
-    margin-left: 8px;
-}
-
-.success-text {
-    color: #28A745;
-    font-weight: 500;
-    margin-left: 8px;
-}
-
-/* Estilos para mensaje de no amenities */
-.no-amenities {
-    padding: 40px 20px;
-    text-align: center;
-}
-
-.no-amenities p {
-    color: #8E8E93;
-    font-size: 16px;
-    margin: 0;
-}
-
-.no-amenities i {
-    color: #007AFF;
-    font-size: 18px;
-}
 
 /* Estilos para mensaje de no fotos */
 .no-photos {
@@ -850,10 +568,6 @@
     
     .checklist-item {
         padding: 12px 16px;
-    }
-    
-    .amenities-grid {
-        grid-template-columns: 1fr;
     }
 }
 

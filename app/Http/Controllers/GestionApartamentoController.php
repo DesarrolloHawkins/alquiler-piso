@@ -2539,27 +2539,9 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             }
         ])->findOrFail($id);
 
-        // Obtener fotos desde ApartamentoLimpiezaItem
-        $fotos = \App\Models\ApartamentoLimpiezaItem::where('id_limpieza', $id)
-            ->whereNotNull('photo_url')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Las fotos ya están cargadas en la relación
+        $todasLasFotos = $apartamentoLimpieza->fotos;
 
-        // Combinar fotos de ambas fuentes
-        $todasLasFotos = $apartamentoLimpieza->fotos->merge($fotos);
-
-        // Obtener amenities de consumo para esta limpieza
-        $amenities = \App\Models\Amenity::activos()
-            ->orderBy('categoria')
-            ->orderBy('nombre')
-            ->get()
-            ->groupBy('categoria');
-        
-        // Obtener consumos existentes para esta limpieza
-        $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
-            ->with('amenity')
-            ->get()
-            ->keyBy('amenity_id');
 
         // Obtener checklists con sus items si existen
         $checklists = [];
@@ -2577,9 +2559,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             'apartamentoLimpieza', 
             'checklists', 
             'itemsExistentes', 
-            'todasLasFotos',
-            'amenities',
-            'consumosExistentes'
+            'todasLasFotos'
         ));
     }
 
