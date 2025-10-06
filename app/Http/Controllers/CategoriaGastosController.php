@@ -28,6 +28,7 @@ class CategoriaGastosController extends Controller
     public function store(Request $request){
         $rules = [
             'nombre' => 'required|string|max:255',
+            'contabilizar_misma_empresa' => 'boolean',
         ];
 
         // Validar los datos del formulario
@@ -45,13 +46,12 @@ class CategoriaGastosController extends Controller
     public function update(Request $request, CategoriaGastos $categoria){
         $rules = [
             'nombre' => 'required|string|max:255',
+            'contabilizar_misma_empresa' => 'boolean',
         ];
 
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        $categoria->update([
-            'nombre' => $validatedData['nombre']
-        ]);
+        $categoria->update($validatedData);
 
         return redirect()->route('admin.categoriaGastos.index')->with('status', 'Categoria de gasto actualizado con éxito!');
 

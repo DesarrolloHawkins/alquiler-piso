@@ -24,6 +24,7 @@ class CategoriaIngresos extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'nombre'
+        'nombre',
+        'contabilizar_misma_empresa'
     ];
 }

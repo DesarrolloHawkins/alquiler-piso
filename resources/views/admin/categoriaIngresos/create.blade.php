@@ -58,6 +58,27 @@
                     @enderror
                 </div>
 
+                <div class="form-group mt-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="contabilizar_misma_empresa" 
+                               id="contabilizar_misma_empresa" value="1">
+                        <label class="form-check-label fw-semibold" for="contabilizar_misma_empresa">
+                            <i class="fas fa-building me-2 text-warning"></i>
+                            Contabilizar Misma Empresa
+                        </label>
+                        <small class="form-text text-muted d-block mt-1">
+                            Marca esta opción si esta categoría debe contabilizarse por separado (no aparecerá en el dashboard principal)
+                        </small>
+                    </div>
+                    @error('contabilizar_misma_empresa')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @enderror
+                </div>
+
                 <!-- Botones de Acción -->
                 <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
                     <a href="{{ route('admin.categoriaIngresos.index') }}" class="btn btn-outline-secondary btn-lg">

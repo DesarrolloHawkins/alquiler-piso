@@ -28,6 +28,7 @@ class CategoriaIngresosController extends Controller
     public function store(Request $request){
         $rules = [
             'nombre' => 'required|string|max:255',
+            'contabilizar_misma_empresa' => 'boolean',
         ];
 
         // Validar los datos del formulario
@@ -45,13 +46,12 @@ class CategoriaIngresosController extends Controller
     public function update(Request $request, CategoriaIngresos $categoria){
         $rules = [
             'nombre' => 'required|string|max:255',
+            'contabilizar_misma_empresa' => 'boolean',
         ];
 
         // Validar los datos del formulario
         $validatedData = $request->validate($rules);
-        $categoria->update([
-            'nombre' => $validatedData['nombre']
-        ]);
+        $categoria->update($validatedData);
 
         return redirect()->route('admin.categoriaIngresos.index')->with('status', 'Categoria de ingreso actualizado con éxito!');
 

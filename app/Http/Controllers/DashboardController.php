@@ -185,13 +185,23 @@ class DashboardController extends Controller
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
         $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
 
-        $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
-            ->where('categoria_id', '!=', 12)
-            ->sum('quantity');
+        // **Obtener categorías que se contabilizan por separado**
+        $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+        $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
 
-        $gastosBeneficio = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
-            ->whereNotIn('categoria_id', [53, 45])
-            ->sum('quantity'));
+        // **Calcular ingresos para beneficio (excluyendo categorías de contabilización separada)**
+        $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasIngresosSeparadas)) {
+            $ingresosBeneficio = $ingresosBeneficio->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        }
+        $ingresosBeneficio = $ingresosBeneficio->sum('quantity');
+
+        // **Calcular gastos para beneficio (excluyendo categorías de contabilización separada)**
+        $gastosBeneficio = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasGastosSeparadas)) {
+            $gastosBeneficio = $gastosBeneficio->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        }
+        $gastosBeneficio = abs($gastosBeneficio->sum('quantity'));
 
         // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
         $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
@@ -484,25 +494,34 @@ class DashboardController extends Controller
             $nochesMesAnterior = $this->calculateNochesReservadas($fechaInicioMesAnterior, $fechaFinMesAnterior);
             $nochesReservadasAnioAnterior[] = $nochesMesAnterior;
 
-            // **Beneficios**
-            $ingresosMesActual = Ingresos::whereYear('date', $anioActual)
-                ->whereMonth('date', $mes)
-                ->where('categoria_id', '!=', 12)
-                ->sum('quantity');
-            $gastosMesActual = abs(Gastos::whereYear('date', $anioActual)
-                ->whereMonth('date', $mes)
-                ->whereNotIn('categoria_id', [53, 45])
-                ->sum('quantity'));
+            // **Beneficios - Usar lógica dinámica**
+            $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+            $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+
+            $ingresosMesActual = Ingresos::whereYear('date', $anioActual)->whereMonth('date', $mes);
+            if (!empty($categoriasIngresosSeparadas)) {
+                $ingresosMesActual = $ingresosMesActual->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+            }
+            $ingresosMesActual = $ingresosMesActual->sum('quantity');
+
+            $gastosMesActual = Gastos::whereYear('date', $anioActual)->whereMonth('date', $mes);
+            if (!empty($categoriasGastosSeparadas)) {
+                $gastosMesActual = $gastosMesActual->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+            }
+            $gastosMesActual = abs($gastosMesActual->sum('quantity'));
             $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
-            $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)
-                ->whereMonth('date', $mes)
-                ->where('categoria_id', '!=', 12)
-                ->sum('quantity');
-            $gastosMesAnterior = abs(Gastos::whereYear('date', $anioAnterior)
-                ->whereMonth('date', $mes)
-                ->whereNotIn('categoria_id', [53, 45])
-                ->sum('quantity'));
+            $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)->whereMonth('date', $mes);
+            if (!empty($categoriasIngresosSeparadas)) {
+                $ingresosMesAnterior = $ingresosMesAnterior->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+            }
+            $ingresosMesAnterior = $ingresosMesAnterior->sum('quantity');
+
+            $gastosMesAnterior = Gastos::whereYear('date', $anioAnterior)->whereMonth('date', $mes);
+            if (!empty($categoriasGastosSeparadas)) {
+                $gastosMesAnterior = $gastosMesAnterior->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+            }
+            $gastosMesAnterior = abs($gastosMesAnterior->sum('quantity'));
             $beneficiosAnioAnterior[] = $ingresosMesAnterior - $gastosMesAnterior;
         }
 

@@ -105,6 +105,9 @@
                                     @endif
                                 </a>
                             </th>
+                            <th scope="col" class="border-0 text-center">
+                                <i class="fas fa-building me-1"></i>Contabilizar Misma Empresa
+                            </th>
                             <th scope="col" class="border-0 text-center" style="width: 200px;">
                                 <i class="fas fa-cogs me-1"></i>Acciones
                             </th>
@@ -129,6 +132,19 @@
                                 </div>
                             </td>
                             <td class="align-middle text-center">
+                                @if($categoria->contabilizar_misma_empresa)
+                                    <span class="badge bg-warning-subtle text-warning fs-6">
+                                        <i class="fas fa-building me-1"></i>
+                                        Sí
+                                    </span>
+                                @else
+                                    <span class="badge bg-success-subtle text-success fs-6">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        No
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="align-middle text-center">
                                 <div class="btn-group" role="group">
                                     <a href="{{route('admin.categoriaIngresos.edit', $categoria->id)}}" 
                                        class="btn btn-outline-warning btn-sm" 
@@ -151,7 +167,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center py-5">
+                            <td colspan="4" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
                                     <h5 class="text-muted">No se encontraron categorías</h5>
