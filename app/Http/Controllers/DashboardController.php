@@ -203,6 +203,22 @@ class DashboardController extends Controller
         }
         $gastosBeneficio = abs($gastosBeneficio->sum('quantity'));
 
+        // **Calcular ingresos y gastos de categorías marcadas para contabilización separada**
+        $ingresosMismaEmpresa = 0;
+        $gastosMismaEmpresa = 0;
+        
+        if (!empty($categoriasIngresosSeparadas)) {
+            $ingresosMismaEmpresa = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
+                ->whereIn('categoria_id', $categoriasIngresosSeparadas)
+                ->sum('quantity');
+        }
+        
+        if (!empty($categoriasGastosSeparadas)) {
+            $gastosMismaEmpresa = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+                ->whereIn('categoria_id', $categoriasGastosSeparadas)
+                ->sum('quantity'));
+        }
+
         // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
         $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
         $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
@@ -226,6 +242,8 @@ class DashboardController extends Controller
             'gastos' => $gastos,
             'ingresosBeneficio' => $ingresosBeneficio,
             'gastosBeneficio' => $gastosBeneficio,
+            'ingresosMismaEmpresa' => $ingresosMismaEmpresa,
+            'gastosMismaEmpresa' => $gastosMismaEmpresa,
             'ingresosLista' => $ingresosLista,
             'gastosLista' => $gastosLista,
             'categoriasGastos' => $categoriasGastos,

@@ -282,6 +282,51 @@
                     </div>
                 </div>
             </div>
+            
+            @if(isset($ingresosMismaEmpresa) && isset($gastosMismaEmpresa) && ($ingresosMismaEmpresa > 0 || $gastosMismaEmpresa > 0))
+            <div class="row justify-content-start align-items-stretch mt-4">
+                <h5 class="text-left mt-1 text-warning">
+                    <i class="fas fa-building me-2"></i>Contabilización Separada (Misma Empresa)
+                </h5>
+                <hr>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-warning">
+                                <i class="fas fa-arrow-up me-1"></i>Ingresos Separados
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-warning"><strong>{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #f8d7da; border-left: 4px solid #dc3545;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>Gastos Separados
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-danger"><strong>{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #d1ecf1; border-left: 4px solid #17a2b8;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-info">
+                                <i class="fas fa-calculator me-1"></i>Balance Separado
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-info"><strong>{{ number_format(($ingresosMismaEmpresa ?? 0) - ($gastosMismaEmpresa ?? 0), 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
         {{-- <div class="col-md-3">
             <div class="row mx-1 bg-primero p-3 rounded-4">
