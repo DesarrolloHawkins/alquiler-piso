@@ -341,6 +341,15 @@ class LimpiadoraTurnosController extends Controller
         try {
             $tarea->completarTarea($request->observaciones);
             
+            // Buscar y actualizar el ApartamentoLimpieza asociado
+            $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+            if ($apartamentoLimpieza) {
+                $apartamentoLimpieza->update([
+                    'status_id' => 3, // Limpio
+                    'fecha_fin' => now()
+                ]);
+            }
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Tarea completada exitosamente'
