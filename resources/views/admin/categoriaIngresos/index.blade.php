@@ -179,6 +179,13 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Enlaces de paginación -->
+        @if($categorias->hasPages())
+            <div class="d-flex justify-content-center mt-4">
+                {{ $categorias->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection
@@ -249,21 +256,27 @@
             });
         }
     });
-</script>
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "¡No podrás revertir esto!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+
+    // Confirmar eliminación con SweetAlert
+    const deleteButtons = document.querySelectorAll('.delete-categoria');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            const form = this.closest('form');
+            
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
         });
     });

@@ -22,8 +22,11 @@ class GastosController extends Controller
         $perPage = $request->get('perPage', 10); // Predeterminado a 10
         $estado_id = $request->get('estado_id');
 
+        // Obtener categorías que se contabilizan por separado
+        $categoriasGastosSeparadas = CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+        
         // Construcción de la consulta con filtros
-        $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id) {
+        $query = Gastos::where(function ($query) use ($search, $month, $category, $estado_id, $categoriasGastosSeparadas) {
             if ($search) {
                 $query->where('title', 'like', '%'.$search.'%');
             }
@@ -35,6 +38,11 @@ class GastosController extends Controller
             }
             if ($estado_id) {
                 $query->where('estado_id', $estado_id);
+            }
+            
+            // Excluir categorías que se contabilizan por separado
+            if (!empty($categoriasGastosSeparadas)) {
+                $query->whereNotIn('categoria_id', $categoriasGastosSeparadas);
             }
         });
 

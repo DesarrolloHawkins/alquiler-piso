@@ -181,13 +181,22 @@ class DashboardController extends Controller
             return is_numeric($precio) ? floatval($precio) : 0;
         });
 
-        // **Optimización: Usar consultas agregadas para ingresos y gastos**
-        $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity');
-        $gastos = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->sum('quantity'));
-
         // **Obtener categorías que se contabilizan por separado**
         $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
         $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+
+        // **Optimización: Usar consultas agregadas para ingresos y gastos (EXCLUYENDO categorías separadas)**
+        $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasIngresosSeparadas)) {
+            $ingresos = $ingresos->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        }
+        $ingresos = $ingresos->sum('quantity');
+        
+        $gastos = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasGastosSeparadas)) {
+            $gastos = $gastos->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        }
+        $gastos = abs($gastos->sum('quantity'));
 
         // **Calcular ingresos para beneficio (excluyendo categorías de contabilización separada)**
         $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
@@ -220,8 +229,18 @@ class DashboardController extends Controller
         }
 
         // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
-        $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
-        $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])->get();
+        // Excluir categorías que se contabilizan por separado de las listas
+        $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasIngresosSeparadas)) {
+            $ingresosLista = $ingresosLista->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        }
+        $ingresosLista = $ingresosLista->get();
+        
+        $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
+        if (!empty($categoriasGastosSeparadas)) {
+            $gastosLista = $gastosLista->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        }
+        $gastosLista = $gastosLista->get();
         $categoriasGastos = CategoriaGastos::all();
 
         // **Calcular reservas no facturadas**
