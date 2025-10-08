@@ -132,7 +132,7 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         // Tarea comprobacion del estado del PC
-        $schedule->command('check:comprobacion')->everyFifteenMinutes();
+        //$schedule->command('check:comprobacion')->everyFifteenMinutes();
 
         // Limpiar logs antiguos cada día a las 2:00 AM
         $schedule->command('logs:clean --days=30')->dailyAt('02:00');
