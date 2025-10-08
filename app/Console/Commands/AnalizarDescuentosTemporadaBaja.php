@@ -79,11 +79,12 @@ class AnalizarDescuentosTemporadaBaja extends Command
         
         $this->line("   📅 ¿Es {$this->getNombreDia($diaConfigurado)}? " . ($esDiaConfigurado ? '✅ SÍ' : '❌ NO'));
 
-        if (!$esDiaConfigurado) {
-            $this->line("   ℹ️  No es el día configurado, no se aplica la lógica");
-            $this->line('');
-            return;
-        }
+        // COMENTADO PARA PRUEBAS - Verificación de día configurado
+        // if (!$esDiaConfigurado) {
+        //     $this->line("   ℹ️  No es el día configurado, no se aplica la lógica");
+        //     $this->line('');
+        //     return;
+        // }
 
         // Calcular la semana que viene (lunes a jueves)
         $lunesSiguiente = $fechaAnalisis->copy()->addDays(3); // Viernes + 3 = Lunes
