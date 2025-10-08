@@ -281,7 +281,34 @@
                         </div>
                     </div>
                 </div>
+                
+                @if(isset($categoria45) && $categoria45)
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalCategoria45" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">{{ $categoria45->nombre ?? 'Categoría 45' }}</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastosCategoria45, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
+                @if(isset($categoria53) && $categoria53)
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalCategoria53" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">{{ $categoria53->nombre ?? 'Categoría 53' }}</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastosCategoria53, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
+            
             
             @if(isset($ingresosMismaEmpresa) && isset($gastosMismaEmpresa) && ($ingresosMismaEmpresa > 0 || $gastosMismaEmpresa > 0))
             <div class="row justify-content-start align-items-stretch mt-4">
@@ -290,7 +317,7 @@
                 </h5>
                 <hr>
                 <div class="col-xl-3 col-md-6">
-                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalIngresosSeparados" style="background-color: #fff3cd; border-left: 4px solid #ffc107; cursor: pointer;">
                         <div class="col-6">
                             <h4 class="text-start mb-0 fs-6 text-warning">
                                 <i class="fas fa-arrow-up me-1"></i>Ingresos Separados
@@ -302,7 +329,7 @@
                     </div>
                 </div>
                 <div class="col-xl-3 col-md-6">
-                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #f8d7da; border-left: 4px solid #dc3545;">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalGastosSeparados" style="background-color: #f8d7da; border-left: 4px solid #dc3545; cursor: pointer;">
                         <div class="col-6">
                             <h4 class="text-start mb-0 fs-6 text-danger">
                                 <i class="fas fa-arrow-down me-1"></i>Gastos Separados
@@ -314,7 +341,7 @@
                     </div>
                 </div>
                 <div class="col-xl-3 col-md-6">
-                    <div class="row p-3 card m-3 flex-row align-items-center" style="background-color: #d1ecf1; border-left: 4px solid #17a2b8;">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalBalanceSeparado" style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; cursor: pointer;">
                         <div class="col-6">
                             <h4 class="text-start mb-0 fs-6 text-info">
                                 <i class="fas fa-calculator me-1"></i>Balance Separado
@@ -1308,6 +1335,338 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 
+<!-- Modal de Gastos Categoría 45 -->
+@if(isset($categoria45) && $categoria45)
+<div class="modal fade" id="modalCategoria45" tabindex="-1" aria-labelledby="modalCategoria45Label" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalCategoria45Label">
+                    <i class="fas fa-receipt me-2"></i>{{ $categoria45->nombre }} - Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="searchCategoria45" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchCategoria45" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total {{ $categoria45->nombre }}: <span id="totalFiltradoCategoria45">{{ number_format($gastosCategoria45, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countCategoria45">{{ $gastosListaCategoria45->count() }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaCategoria45" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">NOTAS</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaCategoria45 as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->notes ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Modal de Gastos Categoría 53 -->
+@if(isset($categoria53) && $categoria53)
+<div class="modal fade" id="modalCategoria53" tabindex="-1" aria-labelledby="modalCategoria53Label" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalCategoria53Label">
+                    <i class="fas fa-receipt me-2"></i>{{ $categoria53->nombre }} - Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="searchCategoria53" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchCategoria53" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total {{ $categoria53->nombre }}: <span id="totalFiltradoCategoria53">{{ number_format($gastosCategoria53, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countCategoria53">{{ $gastosListaCategoria53->count() }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaCategoria53" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">NOTAS</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaCategoria53 as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->notes ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Modal de Ingresos Separados -->
+<div class="modal fade" id="modalIngresosSeparados" tabindex="-1" aria-labelledby="modalIngresosSeparadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalIngresosSeparadosLabel">
+                    <i class="fas fa-arrow-up me-2"></i>Ingresos Separados - Contabilización Separada entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="filtroCategoriaIngresosSeparados" class="form-label fw-bold">Filtrar por Categoría:</label>
+                        <select id="filtroCategoriaIngresosSeparados" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach($ingresosListaSeparados ?? [] as $ingreso)
+                                @if($ingreso->categoriaIngresos)
+                                    <option value="{{ $ingreso->categoriaIngresos->nombre }}">{{ $ingreso->categoriaIngresos->nombre }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="searchIngresosSeparados" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchIngresosSeparados" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total Ingresos Separados: <span id="totalFiltradoIngresosSeparados">{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</span></strong>
+                        <br>
+                        <small>Ingresos: <span id="countIngresosSeparados">{{ count($ingresosListaSeparados ?? []) }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaIngresosSeparados" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($ingresosListaSeparados ?? [] as $ingreso)
+                                <tr>
+                                    <td>{{ $ingreso->id }}</td>
+                                    <td>{{ $ingreso->description ?? 'Sin descripción' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
+                                    <td>{{ $ingreso->categoriaIngresos->nombre ?? 'Sin categoría' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ingreso->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gastos Separados -->
+<div class="modal fade" id="modalGastosSeparados" tabindex="-1" aria-labelledby="modalGastosSeparadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalGastosSeparadosLabel">
+                    <i class="fas fa-arrow-down me-2"></i>Gastos Separados - Contabilización Separada entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="filtroCategoriaGastosSeparados" class="form-label fw-bold">Filtrar por Categoría:</label>
+                        <select id="filtroCategoriaGastosSeparados" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach(collect($gastosListaSeparados ?? [])->pluck('categoria')->unique()->filter() as $categoria)
+                                <option value="{{ $categoria->nombre }}">{{ $categoria->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="searchGastosSeparados" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchGastosSeparados" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total Gastos Separados: <span id="totalFiltradoGastosSeparados">{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countGastosSeparados">{{ count($gastosListaSeparados ?? []) }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaGastosSeparados" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaSeparados ?? [] as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->categoria->nombre ?? 'Sin categoría' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Balance Separado -->
+<div class="modal fade" id="modalBalanceSeparado" tabindex="-1" aria-labelledby="modalBalanceSeparadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalBalanceSeparadoLabel">
+                    <i class="fas fa-calculator me-2"></i>Balance Separado - Resumen entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Ingresos Separados</h5>
+                                <h3 class="card-text">{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Gastos Separados</h5>
+                                <h3 class="card-text">{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Balance Final</h5>
+                                <h3 class="card-text">{{ number_format(($ingresosMismaEmpresa ?? 0) - ($gastosMismaEmpresa ?? 0), 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="text-warning"><i class="fas fa-arrow-up me-2"></i>Ingresos Separados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-white">Descripción</th>
+                                        <th class="text-white">Fecha</th>
+                                        <th class="text-white">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($ingresosListaSeparados ?? [] as $ingreso)
+                                        <tr>
+                                            <td>{{ $ingreso->description ?? 'Sin descripción' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                            <td>{{ number_format($ingreso->quantity, 2) }} €</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="text-danger"><i class="fas fa-arrow-down me-2"></i>Gastos Separados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-white">Descripción</th>
+                                        <th class="text-white">Fecha</th>
+                                        <th class="text-white">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($gastosListaSeparados ?? [] as $gasto)
+                                        <tr>
+                                            <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                            <td>{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Configurar DataTable para reservas no facturadas
@@ -1353,6 +1712,158 @@ document.addEventListener('DOMContentLoaded', function () {
             maximumFractionDigits: 2
         }) + ' €');
         $('#countNoFacturadas').text(count);
+    });
+
+    // Configurar DataTable para categoría 45
+    @if(isset($categoria45) && $categoria45)
+    const tableCategoria45 = $('#tablaCategoria45').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla categoría 45
+    $('#searchCategoria45').on('keyup', function () {
+        tableCategoria45.search(this.value).draw();
+    });
+
+    // Actualizar totales cuando se filtren los datos categoría 45
+    tableCategoria45.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableCategoria45.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoCategoria45').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countCategoria45').text(count);
+    });
+    @endif
+
+    // Configurar DataTable para categoría 53
+    @if(isset($categoria53) && $categoria53)
+    const tableCategoria53 = $('#tablaCategoria53').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla categoría 53
+    $('#searchCategoria53').on('keyup', function () {
+        tableCategoria53.search(this.value).draw();
+    });
+
+    // Actualizar totales cuando se filtren los datos categoría 53
+    tableCategoria53.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableCategoria53.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoCategoria53').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countCategoria53').text(count);
+    });
+    @endif
+
+    // Configurar DataTable para ingresos separados
+    const tableIngresosSeparados = $('#tablaIngresosSeparados').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla ingresos separados
+    $('#searchIngresosSeparados').on('keyup', function () {
+        tableIngresosSeparados.search(this.value).draw();
+    });
+
+    // Filtro por categoría en ingresos separados
+    $('#filtroCategoriaIngresosSeparados').on('change', function () {
+        const categoria = this.value;
+        if (categoria) {
+            tableIngresosSeparados.column(4).search(categoria).draw();
+        } else {
+            tableIngresosSeparados.column(4).search('').draw();
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos ingresos separados
+    tableIngresosSeparados.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableIngresosSeparados.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoIngresosSeparados').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countIngresosSeparados').text(count);
+    });
+
+    // Configurar DataTable para gastos separados
+    const tableGastosSeparados = $('#tablaGastosSeparados').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla gastos separados
+    $('#searchGastosSeparados').on('keyup', function () {
+        tableGastosSeparados.search(this.value).draw();
+    });
+
+    // Filtro por categoría en gastos separados
+    $('#filtroCategoriaGastosSeparados').on('change', function () {
+        const categoria = this.value;
+        if (categoria) {
+            tableGastosSeparados.column(4).search(categoria).draw();
+        } else {
+            tableGastosSeparados.column(4).search('').draw();
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos gastos separados
+    tableGastosSeparados.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableGastosSeparados.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoGastosSeparados').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countGastosSeparados').text(count);
     });
 });
 </script>

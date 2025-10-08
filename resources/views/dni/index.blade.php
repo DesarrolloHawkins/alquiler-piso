@@ -33,9 +33,10 @@
     .step.completed{background:#28a745}
     .spinner-border-sm{width:1rem;height:1rem}
     .file-input{display:none}
-    .select2-container .select2-selection--single{height:55px}
-    .select2-container--default .select2-selection--single .select2-selection__rendered{line-height:55px}
+    .select2-container .select2-selection--single{height:55px;min-height:55px}
+    .select2-container--default .select2-selection--single .select2-selection__rendered{line-height:55px;padding:0 15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .select2-container--default .select2-search--dropdown .select2-search__field{height:37px}
+    .select2-dropdown{max-height:300px;overflow-y:auto}
     .transition-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);z-index:9999;display:none;justify-content:center;align-items:center}
     .transition-overlay::after{content:'';width:50px;height:50px;border:3px solid rgba(255,255,255,.3);border-top:3px solid #fff;border-radius:50%;animation:spin 1s linear infinite}
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
@@ -252,11 +253,12 @@
                                         <div class="col-md-6">
                                             <div class="form-floating">
                                                 <select name="nacionalidad_{{ $i }}" id="nacionalidad_{{ $i }}" class="form-select js-example-basic-single{{ $i }} nacionalidad" placeholder="{{ $textos['Pais'] ?? 'País' }}">
+                                                    <option value="">Seleccionar país</option>
                                                     @foreach ($paises as $pais)
                                                         <option value="{{ $pais }}"
                                                             {{
                                                                 (old('nacionalidad_'.$i) == $pais) ||
-                                                                (empty(old('nacionalidad_'.$i)) && $data[$i]->nacionalidad ?? '' == $pais) ||
+                                                                (empty(old('nacionalidad_'.$i)) && !empty($data[$i]->nacionalidad ?? '') && ($data[$i]->nacionalidad ?? '') == $pais) ||
                                                                 (empty(old('nacionalidad_'.$i)) && empty($data[$i]->nacionalidad ?? '') && $pais == 'España')
                                                                 ? 'selected' : ''
                                                             }}>
@@ -634,7 +636,13 @@
         function initSelect2(){
             if(typeof $.fn.select2 === 'undefined'){ setTimeout(initSelect2,100); return; }
             for(let i=0;i<totalPersons;i++){
-                try{ $('.js-example-basic-single'+i).select2({width:'100%'}); }catch(e){}
+                try{ 
+                    $('.js-example-basic-single'+i).select2({
+                        width:'100%',
+                        placeholder: 'Seleccionar país',
+                        allowClear: true
+                    }); 
+                }catch(e){}
             }
             
             // Después de inicializar Select2, configurar uploads

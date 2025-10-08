@@ -184,6 +184,27 @@ class DashboardController extends Controller
         // **Obtener categorías que se contabilizan por separado**
         $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
         $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+        
+        // **Categorías específicas a excluir (45 y 53) - solo para el cálculo principal**
+        $categoriasExcluidasEspecificas = [45, 53];
+        $categoriasGastosSeparadasParaExclusion = array_merge($categoriasGastosSeparadas, $categoriasExcluidasEspecificas);
+        
+        // **Para gastos separados SOLO categorías de obra (con check activo), EXCLUYENDO 45 y 53**
+        $categoriasExcluidasDeSeparados = [45, 53]; // Forzar exclusión de estas categorías
+        
+        // Buscar categorías por nombre para excluir también
+        $categoriaDevolucionSocio = \App\Models\CategoriaGastos::where('nombre', 'like', '%DEVOLUCION%SOCIO%')->first();
+        $categoriaPrestamos = \App\Models\CategoriaGastos::where('nombre', 'like', '%PRESTAMO%')->first();
+        
+        if ($categoriaDevolucionSocio) {
+            $categoriasExcluidasDeSeparados[] = $categoriaDevolucionSocio->id;
+        }
+        if ($categoriaPrestamos) {
+            $categoriasExcluidasDeSeparados[] = $categoriaPrestamos->id;
+        }
+        
+        // Excluir las categorías específicas de los gastos separados
+        $categoriasGastosSeparadasObra = array_diff($categoriasGastosSeparadas, $categoriasExcluidasDeSeparados);
 
         // **Optimización: Usar consultas agregadas para ingresos y gastos (EXCLUYENDO categorías separadas)**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
@@ -193,8 +214,8 @@ class DashboardController extends Controller
         $ingresos = $ingresos->sum('quantity');
         
         $gastos = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasGastosSeparadas)) {
-            $gastos = $gastos->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        if (!empty($categoriasGastosSeparadasParaExclusion)) {
+            $gastos = $gastos->whereNotIn('categoria_id', $categoriasGastosSeparadasParaExclusion);
         }
         $gastos = abs($gastos->sum('quantity'));
 
@@ -207,8 +228,8 @@ class DashboardController extends Controller
 
         // **Calcular gastos para beneficio (excluyendo categorías de contabilización separada)**
         $gastosBeneficio = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasGastosSeparadas)) {
-            $gastosBeneficio = $gastosBeneficio->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        if (!empty($categoriasGastosSeparadasParaExclusion)) {
+            $gastosBeneficio = $gastosBeneficio->whereNotIn('categoria_id', $categoriasGastosSeparadasParaExclusion);
         }
         $gastosBeneficio = abs($gastosBeneficio->sum('quantity'));
 
@@ -222,10 +243,53 @@ class DashboardController extends Controller
                 ->sum('quantity');
         }
         
-        if (!empty($categoriasGastosSeparadas)) {
+        // **Gastos separados SOLO para categorías de obra (con check activo), EXCLUYENDO 45 y 53**
+        if (!empty($categoriasGastosSeparadasObra)) {
             $gastosMismaEmpresa = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
-                ->whereIn('categoria_id', $categoriasGastosSeparadas)
+                ->whereIn('categoria_id', $categoriasGastosSeparadasObra)
+                ->whereNotIn('categoria_id', [45, 53]) // Forzar exclusión de 45 y 53
                 ->sum('quantity'));
+        }
+
+        // **Calcular categorías específicas 45 y 53 por separado**
+        $categoria45 = \App\Models\CategoriaGastos::find(45);
+        $categoria53 = \App\Models\CategoriaGastos::find(53);
+        
+        $gastosCategoria45 = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', 45)
+            ->sum('quantity'));
+            
+        $gastosCategoria53 = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', 53)
+            ->sum('quantity'));
+
+            
+        // **Obtener listas de gastos para las categorías específicas**
+        $gastosListaCategoria45 = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', 45)
+            ->get();
+            
+        $gastosListaCategoria53 = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            ->where('categoria_id', 53)
+            ->get();
+
+        // **Obtener listas de ingresos y gastos separados para contabilización separada**
+        $ingresosListaSeparados = [];
+        $gastosListaSeparados = [];
+        
+        if (!empty($categoriasIngresosSeparadas)) {
+            $ingresosListaSeparados = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
+                ->whereIn('categoria_id', $categoriasIngresosSeparadas)
+                ->with('categoriaIngresos')
+                ->get();
+        }
+        
+        if (!empty($categoriasGastosSeparadasObra)) {
+            $gastosListaSeparados = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+                ->whereIn('categoria_id', $categoriasGastosSeparadasObra)
+                ->whereNotIn('categoria_id', [45, 53]) // Forzar exclusión de 45 y 53
+                ->with('categoria')
+                ->get();
         }
 
         // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
@@ -237,8 +301,8 @@ class DashboardController extends Controller
         $ingresosLista = $ingresosLista->get();
         
         $gastosLista = Gastos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasGastosSeparadas)) {
-            $gastosLista = $gastosLista->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+        if (!empty($categoriasGastosSeparadasParaExclusion)) {
+            $gastosLista = $gastosLista->whereNotIn('categoria_id', $categoriasGastosSeparadasParaExclusion);
         }
         $gastosLista = $gastosLista->get();
         $categoriasGastos = CategoriaGastos::all();
@@ -268,6 +332,17 @@ class DashboardController extends Controller
             'categoriasGastos' => $categoriasGastos,
             'countReservasNoFacturadas' => $reservasNoFacturadas->count(),
             'sumPrecioNoFacturado' => $sumPrecioNoFacturado,
+            // **Categorías específicas 45 y 53**
+            'categoria45' => $categoria45,
+            'categoria53' => $categoria53,
+            'gastosCategoria45' => $gastosCategoria45,
+            'gastosCategoria53' => $gastosCategoria53,
+            'gastosListaCategoria45' => $gastosListaCategoria45,
+            'gastosListaCategoria53' => $gastosListaCategoria53,
+            // **Contabilización separada**
+            'ingresosListaSeparados' => $ingresosListaSeparados,
+            'gastosListaSeparados' => $gastosListaSeparados,
+            
         ];
     }
 
@@ -693,4 +768,5 @@ class DashboardController extends Controller
         
         return $disponibilidad;
     }
+
 }
