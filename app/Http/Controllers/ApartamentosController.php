@@ -464,26 +464,34 @@ class ApartamentosController extends Controller
                     '2_personas' => 0,
                     '3_personas' => 0,
                     '4_personas' => 0
-                ]
+                ],
+                'total_con_datos' => 0
             ];
         }
         
-        // Usar numero_personas_plataforma si está disponible, sino numero_personas
-        $personasPorReserva = $reservas->map(function($reserva) {
-            return $reserva->numero_personas_plataforma ?? $reserva->numero_personas ?? 0;
-        })->filter(function($numero) {
-            return $numero > 0; // Solo contar reservas con número de personas válido
-        });
-        
-        $mediaAdultos = $personasPorReserva->avg();
-        
-        // Contar reservas por número de personas
+        // Contar directamente desde la colección de reservas (convertir strings a enteros)
         $conteos = [
-            '1_persona' => $personasPorReserva->where(1)->count(),
-            '2_personas' => $personasPorReserva->where(2)->count(),
-            '3_personas' => $personasPorReserva->where(3)->count(),
-            '4_personas' => $personasPorReserva->where(4)->count()
+            '1_persona' => $reservas->where('numero_personas', '1')->count(),
+            '2_personas' => $reservas->where('numero_personas', '2')->count(),
+            '3_personas' => $reservas->where('numero_personas', '3')->count(),
+            '4_personas' => $reservas->where('numero_personas', '4')->count()
         ];
+        
+        // Calcular total de reservas con datos de personas
+        $totalConDatos = $reservas->filter(function($reserva) {
+            return !empty($reserva->numero_personas) && $reserva->numero_personas !== '0';
+        })->count();
+        
+        // Calcular media de adultos
+        $mediaAdultos = 0;
+        if ($totalConDatos > 0) {
+            $sumaPersonas = $reservas->filter(function($reserva) {
+                return !empty($reserva->numero_personas) && $reserva->numero_personas !== '0';
+            })->sum(function($reserva) {
+                return (int)$reserva->numero_personas;
+            });
+            $mediaAdultos = $sumaPersonas / $totalConDatos;
+        }
         
         // Calcular porcentajes
         $porcentajes = [
@@ -497,7 +505,7 @@ class ApartamentosController extends Controller
             'media_adultos' => round($mediaAdultos, 1),
             'porcentajes' => $porcentajes,
             'conteos' => $conteos,
-            'total_con_datos' => $personasPorReserva->count()
+            'total_con_datos' => $totalConDatos
         ];
     }
 
