@@ -108,6 +108,13 @@ class DiarioCaja extends Model
     }
     public function estado(){
         return $this->belongsTo(EstadosDiario::class, 'estado_id');
-        
+    }
+    
+    public function gasto(){
+        return $this->belongsTo(\App\Models\Gastos::class, 'gasto_id');
+    }
+    
+    public function ingreso(){
+        return $this->belongsTo(\App\Models\Ingresos::class, 'ingreso_id');
     }
 }

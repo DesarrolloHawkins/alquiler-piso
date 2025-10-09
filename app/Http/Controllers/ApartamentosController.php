@@ -422,6 +422,9 @@ class ApartamentosController extends Controller
         
         $reservas = $query->get();
         
+        // Calcular estadísticas de número de personas
+        $estadisticasPersonas = $this->calcularEstadisticasPersonas($reservas);
+        
         return [
             'total_reservas' => $reservas->count(),
             'total_ingresos' => $reservas->sum('precio'),
@@ -434,7 +437,67 @@ class ApartamentosController extends Controller
             'reservas_canceladas' => $reservas->where('estado_id', 5)->count(),
             'promedio_por_reserva' => $reservas->count() > 0 ? $reservas->avg('precio') : 0,
             'mes_mas_ocupado' => $this->obtenerMesMasOcupado($apartamento, $año),
-            'reservas_por_mes' => $this->obtenerReservasPorMes($apartamento, $año)
+            'reservas_por_mes' => $this->obtenerReservasPorMes($apartamento, $año),
+            // Estadísticas de personas
+            'estadisticas_personas' => $estadisticasPersonas
+        ];
+    }
+
+    /**
+     * Calcular estadísticas de número de personas por reserva
+     */
+    private function calcularEstadisticasPersonas($reservas)
+    {
+        $totalReservas = $reservas->count();
+        
+        if ($totalReservas === 0) {
+            return [
+                'media_adultos' => 0,
+                'porcentajes' => [
+                    '1_persona' => 0,
+                    '2_personas' => 0,
+                    '3_personas' => 0,
+                    '4_personas' => 0
+                ],
+                'conteos' => [
+                    '1_persona' => 0,
+                    '2_personas' => 0,
+                    '3_personas' => 0,
+                    '4_personas' => 0
+                ]
+            ];
+        }
+        
+        // Usar numero_personas_plataforma si está disponible, sino numero_personas
+        $personasPorReserva = $reservas->map(function($reserva) {
+            return $reserva->numero_personas_plataforma ?? $reserva->numero_personas ?? 0;
+        })->filter(function($numero) {
+            return $numero > 0; // Solo contar reservas con número de personas válido
+        });
+        
+        $mediaAdultos = $personasPorReserva->avg();
+        
+        // Contar reservas por número de personas
+        $conteos = [
+            '1_persona' => $personasPorReserva->where(1)->count(),
+            '2_personas' => $personasPorReserva->where(2)->count(),
+            '3_personas' => $personasPorReserva->where(3)->count(),
+            '4_personas' => $personasPorReserva->where(4)->count()
+        ];
+        
+        // Calcular porcentajes
+        $porcentajes = [
+            '1_persona' => $totalReservas > 0 ? round(($conteos['1_persona'] / $totalReservas) * 100, 1) : 0,
+            '2_personas' => $totalReservas > 0 ? round(($conteos['2_personas'] / $totalReservas) * 100, 1) : 0,
+            '3_personas' => $totalReservas > 0 ? round(($conteos['3_personas'] / $totalReservas) * 100, 1) : 0,
+            '4_personas' => $totalReservas > 0 ? round(($conteos['4_personas'] / $totalReservas) * 100, 1) : 0
+        ];
+        
+        return [
+            'media_adultos' => round($mediaAdultos, 1),
+            'porcentajes' => $porcentajes,
+            'conteos' => $conteos,
+            'total_con_datos' => $personasPorReserva->count()
         ];
     }
 

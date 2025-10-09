@@ -119,6 +119,72 @@
                         </div>
                     </div>
                     
+                    <!-- Estadísticas de Ocupación por Personas -->
+                    @if($estadisticas['estadisticas_personas']['total_con_datos'] > 0)
+                    <div class="row g-3 mt-3">
+                        <div class="col-12">
+                            <h6 class="fw-semibold text-dark mb-3">
+                                <i class="fas fa-users me-2 text-primary"></i>
+                                Estadísticas de Ocupación por Número de Personas
+                            </h6>
+                        </div>
+                        
+                        <!-- Media de Adultos -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-primary-subtle rounded-3">
+                                <i class="fas fa-user-friends text-primary fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-primary">{{ $estadisticas['estadisticas_personas']['media_adultos'] }}</h4>
+                                <small class="text-muted">Media Adultos/Reserva</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 1 Persona -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-info-subtle rounded-3">
+                                <i class="fas fa-user text-info fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-info">{{ $estadisticas['estadisticas_personas']['porcentajes']['1_persona'] }}%</h4>
+                                <small class="text-muted">1 Persona ({{ $estadisticas['estadisticas_personas']['conteos']['1_persona'] }})</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 2 Personas -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-success-subtle rounded-3">
+                                <i class="fas fa-user-friends text-success fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-success">{{ $estadisticas['estadisticas_personas']['porcentajes']['2_personas'] }}%</h4>
+                                <small class="text-muted">2 Personas ({{ $estadisticas['estadisticas_personas']['conteos']['2_personas'] }})</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 3 Personas -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-warning-subtle rounded-3">
+                                <i class="fas fa-users text-warning fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-warning">{{ $estadisticas['estadisticas_personas']['porcentajes']['3_personas'] }}%</h4>
+                                <small class="text-muted">3 Personas ({{ $estadisticas['estadisticas_personas']['conteos']['3_personas'] }})</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 4 Personas -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-danger-subtle rounded-3">
+                                <i class="fas fa-users text-danger fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-danger">{{ $estadisticas['estadisticas_personas']['porcentajes']['4_personas'] }}%</h4>
+                                <small class="text-muted">4 Personas ({{ $estadisticas['estadisticas_personas']['conteos']['4_personas'] }})</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Total con Datos -->
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="text-center p-3 bg-secondary-subtle rounded-3">
+                                <i class="fas fa-chart-pie text-secondary fa-2x mb-2"></i>
+                                <h4 class="mb-1 fw-bold text-secondary">{{ $estadisticas['estadisticas_personas']['total_con_datos'] }}</h4>
+                                <small class="text-muted">Reservas con Datos</small>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
                     <!-- Gráfico de reservas por mes -->
                     @if($estadisticas['total_reservas'] > 0)
                     <div class="row mt-4">
@@ -224,6 +290,63 @@
                                 <label class="form-label fw-semibold text-muted">País</label>
                                 <div class="info-value">
                                     {{ $apartamento->country ?? 'No especificado' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Plataforma del Estado -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold text-dark">
+                        <i class="fas fa-government me-2 text-primary"></i>Plataforma del Estado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="form-label fw-semibold text-muted">Código del Establecimiento</label>
+                                <div class="info-value">
+                                    {{ $apartamento->codigo_establecimiento ?? 'No especificado' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="form-label fw-semibold text-muted">País (ISO3)</label>
+                                <div class="info-value">
+                                    <span class="badge bg-info">{{ $apartamento->pais_iso3 ?? 'No especificado' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="form-label fw-semibold text-muted">Código Municipio INE</label>
+                                <div class="info-value">
+                                    {{ $apartamento->codigo_municipio_ine ?? 'No especificado' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="form-label fw-semibold text-muted">Nombre del Municipio</label>
+                                <div class="info-value">
+                                    {{ $apartamento->nombre_municipio ?? 'No especificado' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="form-label fw-semibold text-muted">Tipo de Establecimiento</label>
+                                <div class="info-value">
+                                    @if($apartamento->tipo_establecimiento)
+                                        <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $apartamento->tipo_establecimiento)) }}</span>
+                                    @else
+                                        No especificado
+                                    @endif
                                 </div>
                             </div>
                         </div>

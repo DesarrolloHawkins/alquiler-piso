@@ -320,7 +320,7 @@
 
                                 <!-- Tesorería -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*', 'metalicos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*', 'informes-ai*', 'informe-ai*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-cash-register me-1"></i>Tesorería
                                     </a>
                                     <ul class="dropdown-menu">
@@ -358,6 +358,10 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.upload.files') }}">
                                             <i class="fas fa-upload me-2"></i>Subida Ficheros
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('informes.ai.index') }}">
+                                            <i class="fas fa-robot me-2"></i>Informes AI
                                         </a></li>
                                     </ul>
                                 </li>

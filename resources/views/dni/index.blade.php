@@ -282,12 +282,10 @@
                                                     required>
                                                     <option value="">{{ $textos['Tipo.Documento'] ?? 'Tipo de Documento' }}</option>
                                                     <option value="D" {{ 
-                                                        (old('tipo_documento_'.$i)=='D' ? 'selected':'') || 
-                                                        (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'D' ? 'selected' : '') 
+                                                        (old('tipo_documento_'.$i)=='D' || (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'D')) ? 'selected' : '' 
                                                     }}>{{ $textos['Dni'] ?? 'DNI' }}</option>
                                                     <option value="P" {{ 
-                                                        (old('tipo_documento_'.$i)=='P' ? 'selected':'') || 
-                                                        (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'P' ? 'selected' : '') 
+                                                        (old('tipo_documento_'.$i)=='P' || (empty(old('tipo_documento_'.$i)) && ($data[$i]->tipo_documento ?? '') == 'P')) ? 'selected' : '' 
                                                     }}>{{ $textos['Pasaporte'] ?? 'Pasaporte' }}</option>
                                                     {{-- Otras letras si las necesitas:
                                                     <option value="C">Permiso Conducir</option>

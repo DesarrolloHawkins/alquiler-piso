@@ -66,8 +66,18 @@ class MetalicoController extends Controller
             'importe' => 'required|numeric',
             'fecha_ingreso' => 'required|date',
             'tipo' => 'required|in:ingreso,gasto',
-            'observaciones' => 'nullable|string|max:500'
+            'observaciones' => 'nullable|string|max:500',
+            'pin' => 'required_if:tipo,gasto|string|size:4'
         ]);
+
+        // Validar PIN si es un gasto
+        if ($request->tipo === 'gasto') {
+            if ($request->pin !== '1970') {
+                return redirect()->route('metalicos.create')
+                    ->withInput()
+                    ->with('error', 'PIN incorrecto. No se puede crear el gasto.');
+            }
+        }
 
         // Verificar duplicados (mismo título, importe y fecha en los últimos 5 minutos)
         $duplicado = Metalico::where('titulo', $request->titulo)
@@ -83,7 +93,9 @@ class MetalicoController extends Controller
                 ->with('error', 'Ya existe un movimiento idéntico creado recientemente. Por favor, verifica los datos.');
         }
 
-        Metalico::create($request->all());
+        // Crear el registro sin incluir el PIN en la base de datos
+        $data = $request->except('pin');
+        Metalico::create($data);
 
         return redirect()->route('metalicos.index')->with('success', 'Registro creado correctamente.');
     }

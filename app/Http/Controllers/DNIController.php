@@ -299,6 +299,8 @@ class DNIController extends Controller
         }
         
         if($cliente != null){
+            // Convertir el tipo_documento numérico a letra para el formulario
+            $cliente->tipo_documento = $this->obtenerTipoDocumentoFromNumber($cliente->tipo_documento);
 
             if ($cliente->tipo_documento == 'D') {
                 $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
@@ -318,6 +320,9 @@ class DNIController extends Controller
 
         if (count($huespedes)>0) {
             foreach($huespedes as $huesped){
+                // Convertir el tipo_documento numérico a letra para el formulario
+                $huesped->tipo_documento = $this->obtenerTipoDocumentoFromNumber($huesped->tipo_documento);
+                
                 if ($huesped->tipo_documento == 'D') {
                     $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 13)->first();
                     $huesped['frontal'] = $photoFrontal;
@@ -1046,6 +1051,32 @@ class DNIController extends Controller
 
             default:
                 # code...
+                break;
+        }
+    }
+
+    public function obtenerTipoDocumentoFromNumber($numero){
+        switch ($numero) {
+            case 1:
+                return "D"; // DNI
+                break;
+            case 2:
+                return "P"; // Pasaporte
+                break;
+            case 3:
+                return "C"; // Permiso conducir
+                break;
+            case 4:
+                return "X"; // Permiso residencia UE
+                break;
+            case 5:
+                return "N"; // NIE/TIE
+                break;
+            case 6:
+                return "I"; // ID extranjera
+                break;
+            default:
+                return "D"; // Por defecto DNI
                 break;
         }
     }

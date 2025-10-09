@@ -1075,11 +1075,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="modal-body p-4">
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <label for="filtroConceptoCobrado" class="form-label fw-bold">Filtrar por Concepto</label>
-                        <select id="filtroConceptoCobrado" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                        <label for="filtroCategoriaCobrado" class="form-label fw-bold">Filtrar por Categoría</label>
+                        <select id="filtroCategoriaCobrado" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach($ingresosLista->pluck('categoria.nombre')->unique()->filter()->sort() as $categoria)
+                                <option value="{{ $categoria }}">{{ $categoria }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -1098,9 +1098,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaCobrado" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 20%;">FECHA</th>
-                                <th style="width: 50%;">CONCEPTO</th>
-                                <th style="width: 30%;">CANTIDAD</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
+                                <th style="width: 25%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1108,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
                                     <td>{{ $ingreso->title }}</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -1143,11 +1145,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="modal-body p-4">
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <label for="filtroConceptoIngresos" class="form-label fw-bold">Filtrar por Concepto</label>
-                        <select id="filtroConceptoIngresos" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                        <label for="filtroCategoriaIngresos" class="form-label fw-bold">Filtrar por Categoría</label>
+                        <select id="filtroCategoriaIngresos" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach($ingresosLista->pluck('categoria.nombre')->unique()->filter()->sort() as $categoria)
+                                <option value="{{ $categoria }}">{{ $categoria }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -1166,9 +1168,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaIngresos" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 20%;">FECHA</th>
-                                <th style="width: 50%;">CONCEPTO</th>
-                                <th style="width: 30%;">CANTIDAD</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
+                                <th style="width: 25%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1176,6 +1179,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
                                     <td>{{ $ingreso->title }}</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -1235,17 +1239,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         <thead class="table-dark">
                             <tr>
                                 <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
                                 <th style="width: 25%;">CATEGORÍA</th>
-                                <th style="width: 35%;">CONCEPTO</th>
-                                <th style="width: 25%;">CANTIDAD</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($gastosLista as $gasto)
                                 <tr data-id="{{ $gasto->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
-                                    <td>{{ $gasto->categoria->nombre ?? 'N/A' }}</td>
                                     <td>{{ $gasto->title }}</td>
+                                    <td>{{ $gasto->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -2035,8 +2039,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
       }
 
-      $('#filtroConceptoCobrado').on('change', function () {
-        tablaCobrado.column(1).search(this.value).draw();
+      $('#filtroCategoriaCobrado').on('change', function () {
+        tablaCobrado.column(2).search(this.value).draw();
       });
 
       $('#searchCobrado').on('keyup', function () {
@@ -2072,8 +2076,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
       }
 
-      $('#filtroConceptoIngresos').on('change', function () {
-        tablaIngresos.column(1).search(this.value).draw();
+      $('#filtroCategoriaIngresos').on('change', function () {
+        tablaIngresos.column(2).search(this.value).draw();
       });
 
       $('#searchIngresos').on('keyup', function () {

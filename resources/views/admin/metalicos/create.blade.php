@@ -136,6 +136,37 @@
                     @enderror
                 </div>
 
+                <!-- PIN de Verificación (solo para gastos) -->
+                <div class="col-12" id="pinSection" style="display: none;">
+                    <label for="pin" class="form-label fw-semibold">
+                        <i class="fas fa-lock text-danger me-1"></i>
+                        PIN de Verificación
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text">
+                            <i class="fas fa-key text-danger"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control {{ $errors->has('pin') ? 'is-invalid' : '' }}" 
+                               name="pin" 
+                               id="pin"
+                               placeholder="Ingrese el PIN para crear un gasto"
+                               maxlength="4"
+                               autocomplete="off"
+                               value="">
+                    </div>
+                    <div class="form-text text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Se requiere PIN para crear gastos por seguridad.
+                    </div>
+                    @error('pin')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
                 <!-- Observaciones -->
                 <div class="col-12">
                     <label for="observaciones" class="form-label fw-semibold">
@@ -178,45 +209,85 @@
         </form>
     </div>
 </div>
-@endsection
 
-@include('sweetalert::alert')
-
-@section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Establecer fecha actual por defecto si no hay valor
-        const fechaInput = document.getElementById('fecha_ingreso');
-        if (!fechaInput.value) {
-            fechaInput.value = new Date().toISOString().split('T')[0];
+console.log('Script cargado directamente');
+
+// Función simple para mostrar/ocultar PIN
+function togglePin() {
+    console.log('togglePin ejecutado');
+    var tipo = document.getElementById('tipo');
+    var pinSection = document.getElementById('pinSection');
+    var pinInput = document.getElementById('pin');
+    
+    if (tipo && pinSection && pinInput) {
+        console.log('Tipo seleccionado:', tipo.value);
+        if (tipo.value === 'gasto') {
+            pinSection.style.display = 'block';
+            pinInput.required = true;
+            console.log('PIN mostrado');
+        } else {
+            pinSection.style.display = 'none';
+            pinInput.required = false;
+            pinInput.value = '';
+            pinInput.blur(); // Quitar el foco del campo
+            console.log('PIN ocultado');
         }
+    } else {
+        console.log('Elementos no encontrados');
+    }
+}
 
-        // Prevenir múltiples clics en el botón de envío
-        const form = document.querySelector('form');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const btnLoading = submitBtn.querySelector('.btn-loading');
-        let isSubmitting = false;
-
+// Cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM listo');
+    
+    // Establecer fecha actual
+    var fechaInput = document.getElementById('fecha_ingreso');
+    if (fechaInput && !fechaInput.value) {
+        fechaInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Configurar el evento del select
+    var tipoSelect = document.getElementById('tipo');
+    if (tipoSelect) {
+        console.log('tipoSelect encontrado');
+        tipoSelect.addEventListener('change', togglePin);
+        togglePin(); // Ejecutar una vez al cargar
+    } else {
+        console.log('tipoSelect NO encontrado');
+    }
+    
+    // Prevenir múltiples envíos
+    var form = document.querySelector('form');
+    var submitBtn = document.getElementById('submitBtn');
+    
+    if (form && submitBtn) {
+        var btnText = submitBtn.querySelector('.btn-text');
+        var btnLoading = submitBtn.querySelector('.btn-loading');
+        var isSubmitting = false;
+        
         form.addEventListener('submit', function(e) {
             if (isSubmitting) {
                 e.preventDefault();
                 return false;
             }
-
             isSubmitting = true;
             submitBtn.disabled = true;
-            btnText.classList.add('d-none');
-            btnLoading.classList.remove('d-none');
+            if (btnText) btnText.classList.add('d-none');
+            if (btnLoading) btnLoading.classList.remove('d-none');
         });
-
-        // Si hay errores de validación, restaurar el botón
+        
         if (document.querySelector('.is-invalid')) {
             isSubmitting = false;
             submitBtn.disabled = false;
-            btnText.classList.remove('d-none');
-            btnLoading.classList.add('d-none');
+            if (btnText) btnText.classList.remove('d-none');
+            if (btnLoading) btnLoading.classList.add('d-none');
         }
-    });
+    }
+});
 </script>
+
 @endsection
+
+@include('sweetalert::alert')

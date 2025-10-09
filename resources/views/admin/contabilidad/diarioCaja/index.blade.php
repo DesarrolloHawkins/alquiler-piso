@@ -63,8 +63,13 @@
                         <input type="text" name="concepto" class="form-control" value="{{ request('concepto') }}" placeholder="Buscar concepto...">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100 me-2">
                             <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-success w-100" onclick="generarInforme()">
+                            <i class="fas fa-robot me-2"></i>Generar Informe
                         </button>
                     </div>
                 </div>
@@ -248,6 +253,89 @@
           });
       });
   });
+
+      // Función para generar informe AI
+      function generarInforme() {
+          const fechaInicio = document.querySelector('input[name="start_date"]').value;
+          const fechaFin = document.querySelector('input[name="end_date"]').value;
+          
+          console.log('Fechas seleccionadas:', fechaInicio, fechaFin);
+          
+          if (!fechaInicio || !fechaFin) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Fechas requeridas',
+                  text: 'Por favor, selecciona fecha de inicio y fecha de fin para generar el informe.',
+                  confirmButtonText: 'Entendido'
+              });
+              return;
+          }
+      
+      if (new Date(fechaInicio) > new Date(fechaFin)) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Fechas inválidas',
+              text: 'La fecha de inicio no puede ser posterior a la fecha de fin.',
+              confirmButtonText: 'Entendido'
+          });
+          return;
+      }
+      
+      Swal.fire({
+          title: 'Generando informe...',
+          text: 'Esto puede tomar unos momentos',
+          icon: 'info',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+              Swal.showLoading();
+          }
+      });
+      
+      // Usar fetch para hacer la petición AJAX
+      fetch('{{ route("informe.ai.generar") }}', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+              fecha_inicio: fechaInicio,
+              fecha_fin: fechaFin
+          })
+      })
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('Error en la respuesta del servidor: ' + response.status);
+          }
+          return response.json();
+      })
+      .then(data => {
+          if (data.success && data.redirect_url) {
+              // Abrir el informe en nueva pestaña
+              window.open(data.redirect_url, '_blank');
+              Swal.fire({
+                  icon: 'success',
+                  title: '¡Informe generado!',
+                  text: 'El informe se ha abierto en una nueva pestaña',
+                  timer: 3000,
+                  showConfirmButton: false
+              });
+          } else {
+              throw new Error(data.error || 'Error desconocido');
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Error al generar el informe: ' + error.message,
+              confirmButtonText: 'Entendido'
+          });
+      });
+  }
 </script>
 @endsection
 @endsection

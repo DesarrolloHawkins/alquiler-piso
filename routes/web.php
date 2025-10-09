@@ -88,9 +88,15 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
 
     Route::get('/admin', [App\Http\Controllers\DashboardController::class, 'index'])->name('inicio');
 
+    // Rutas para Informes AI
+    Route::get('/informes-ai', [App\Http\Controllers\InformeAiController::class, 'index'])->name('informes.ai.index');
+    Route::post('/informe-ai/generar', [App\Http\Controllers\InformeAiController::class, 'generarInforme'])->name('informe.ai.generar');
+    Route::get('/informe-ai/{id}', [App\Http\Controllers\InformeAiController::class, 'verInforme'])->name('informe.ai.ver');
+    Route::delete('/informe-ai/{id}/eliminar', [App\Http\Controllers\InformeAiController::class, 'eliminar'])->name('informe.ai.eliminar');
+
     Route::resource('metalicos', MetalicoController::class);
-    // Route::get('/metalico/create-gasto', [App\Http\Controllers\MetalicoController::class, 'createGasto'])->name('metalicos.createGasto');
-    // Route::post('/metalico/store', [App\Http\Controllers\MetalicoController::class, 'storeGasto'])->name('metalicos.storeGasto');
+    Route::get('/metalico/create-gasto', [App\Http\Controllers\MetalicoController::class, 'createGasto'])->name('metalicos.createGasto');
+    Route::post('/metalico/store', [App\Http\Controllers\MetalicoController::class, 'storeGasto'])->name('metalicos.storeGasto');
 
     // Apartamentos
     Route::get('/apartamentos', [App\Http\Controllers\ApartamentosController::class, 'indexAdmin'])->name('apartamentos.admin.index');
