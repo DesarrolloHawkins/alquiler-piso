@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryEmailController;
+use App\Http\Controllers\CerrarApartamentoController;
 use App\Http\Controllers\CuentasContableController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\GestionApartamentoController;
@@ -191,6 +192,11 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
     Route::delete('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
     Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
+    
+    // Cerrar Apartamento
+    Route::get('/cerrar-apartamento', [CerrarApartamentoController::class, 'index'])->name('admin.cerrar-apartamento.index');
+    Route::get('/cerrar-apartamento/create', [CerrarApartamentoController::class, 'create'])->name('admin.cerrar-apartamento.create');
+    Route::post('/cerrar-apartamento', [CerrarApartamentoController::class, 'store'])->name('admin.cerrar-apartamento.store');
 
 
 

@@ -238,7 +238,7 @@
 
                                 <!-- Reservas -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('reservas*') || request()->is('tabla-reservas*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('reservas*') || request()->is('tabla-reservas*') || request()->is('cerrar-apartamento*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-calendar-plus me-1"></i>Reservas
                                     </a>
                                     <ul class="dropdown-menu">
@@ -247,6 +247,10 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.tablaReservas.index') }}">
                                             <i class="fas fa-table me-2"></i>Tabla de Reservas
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cerrar-apartamento.index') }}">
+                                            <i class="fas fa-door-closed me-2"></i>Cerrar Apartamento
                                         </a></li>
                                     </ul>
                                 </li>
