@@ -21,7 +21,7 @@ class AddVacaciones extends Command
         $value = 1.83;
         $value2 = 1.83;
         $adminUserId = 101;
-        DB::update('UPDATE holidays SET quantity = quantity + CASE WHEN users  = ? THEN ? ELSE ? END', [$adminUserId, $value2, $value]);
+        DB::update('UPDATE holidays SET quantity = quantity + CASE WHEN admin_user_id  = ? THEN ? ELSE ? END', [$adminUserId, $value2, $value]);
 
         $this->info('Comando completado: Vacaciones');
     }
