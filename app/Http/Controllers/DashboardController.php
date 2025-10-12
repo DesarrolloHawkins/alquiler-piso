@@ -282,7 +282,7 @@ class DashboardController extends Controller
         if (!empty($categoriasIngresosSeparadas)) {
             $ingresosListaSeparados = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin])
                 ->whereIn('categoria_id', $categoriasIngresosSeparadas)
-                ->with('categoriaIngresos')
+                ->with('categoria')
                 ->get();
         }
         
