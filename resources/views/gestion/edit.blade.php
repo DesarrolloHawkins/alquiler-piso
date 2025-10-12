@@ -134,14 +134,10 @@
                     <i class="fas fa-child text-primary me-2"></i>
                     <strong class="text-primary">Edades de los niños:</strong>
                     <span class="text-dark ms-2">
-                        @php
-                            $edadesNinos = json_decode($siguienteReserva->edades_ninos, true);
-                            $edadesNinos = is_array($edadesNinos) ? $edadesNinos : [];
-                        @endphp
-                        @if(!empty($edadesNinos))
-                            @foreach($edadesNinos as $index => $edad)
+                        @if(is_array($siguienteReserva->edades_ninos) && !empty($siguienteReserva->edades_ninos))
+                            @foreach($siguienteReserva->edades_ninos as $index => $edad)
                                 {{ $edad }} años
-                                @if($index < count($edadesNinos) - 1)
+                                @if($index < count($siguienteReserva->edades_ninos) - 1)
                                     , 
                                 @endif
                             @endforeach
