@@ -268,16 +268,23 @@ document.addEventListener('DOMContentLoaded', function() {
         var isSubmitting = false;
         
         form.addEventListener('submit', function(e) {
+            // Solo prevenir si ya se está enviando
             if (isSubmitting) {
                 e.preventDefault();
                 return false;
             }
+            
+            // Marcar como enviando
             isSubmitting = true;
             submitBtn.disabled = true;
             if (btnText) btnText.classList.add('d-none');
             if (btnLoading) btnLoading.classList.remove('d-none');
+            
+            // Permitir que el formulario se envíe normalmente
+            // No llamar e.preventDefault() aquí
         });
         
+        // Resetear estado si hay errores de validación
         if (document.querySelector('.is-invalid')) {
             isSubmitting = false;
             submitBtn.disabled = false;

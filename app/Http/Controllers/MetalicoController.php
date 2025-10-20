@@ -63,11 +63,24 @@ class MetalicoController extends Controller
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
-            'importe' => 'required|numeric',
+            'importe' => 'required|numeric|min:0.01',
             'fecha_ingreso' => 'required|date',
             'tipo' => 'required|in:ingreso,gasto',
             'observaciones' => 'nullable|string|max:500',
             'pin' => 'required_if:tipo,gasto|string|size:4'
+        ], [
+            'titulo.required' => 'El título es obligatorio.',
+            'titulo.max' => 'El título no puede tener más de 255 caracteres.',
+            'importe.required' => 'El importe es obligatorio.',
+            'importe.numeric' => 'El importe debe ser un número válido.',
+            'importe.min' => 'El importe debe ser mayor a 0.',
+            'fecha_ingreso.required' => 'La fecha de ingreso es obligatoria.',
+            'fecha_ingreso.date' => 'La fecha de ingreso debe ser una fecha válida.',
+            'tipo.required' => 'El tipo es obligatorio.',
+            'tipo.in' => 'El tipo debe ser ingreso o gasto.',
+            'observaciones.max' => 'Las observaciones no pueden tener más de 500 caracteres.',
+            'pin.required_if' => 'El PIN es obligatorio para crear gastos.',
+            'pin.size' => 'El PIN debe tener exactamente 4 dígitos.'
         ]);
 
         // Validar PIN si es un gasto
