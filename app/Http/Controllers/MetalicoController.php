@@ -61,6 +61,10 @@ class MetalicoController extends Controller
 
     public function store(Request $request)
     {
+        // Log de depuración
+        \Log::info('MetalicoController::store - MÉTODO LLAMADO');
+        \Log::info('MetalicoController::store - Datos recibidos:', $request->all());
+        
         $request->validate([
             'titulo' => 'required|string|max:255',
             'importe' => 'required|numeric|min:0.01',
@@ -108,7 +112,16 @@ class MetalicoController extends Controller
 
         // Crear el registro sin incluir el PIN en la base de datos
         $data = $request->except('pin');
-        Metalico::create($data);
+        
+        // Asegurar que reserva_id sea null si no se proporciona
+        if (!isset($data['reserva_id']) || empty($data['reserva_id'])) {
+            $data['reserva_id'] = null;
+        }
+        
+        \Log::info('MetalicoController::store - Datos para crear:', $data);
+        
+        $metalico = Metalico::create($data);
+        \Log::info('MetalicoController::store - Metálico creado con ID:', ['id' => $metalico->id]);
 
         return redirect()->route('metalicos.index')->with('success', 'Registro creado correctamente.');
     }

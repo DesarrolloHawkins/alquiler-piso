@@ -258,39 +258,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('tipoSelect NO encontrado');
     }
     
-    // Prevenir múltiples envíos
+    // Prevenir múltiples envíos - VERSIÓN SIMPLIFICADA
     var form = document.querySelector('form');
     var submitBtn = document.getElementById('submitBtn');
     
     if (form && submitBtn) {
-        var btnText = submitBtn.querySelector('.btn-text');
-        var btnLoading = submitBtn.querySelector('.btn-loading');
         var isSubmitting = false;
         
         form.addEventListener('submit', function(e) {
-            // Solo prevenir si ya se está enviando
             if (isSubmitting) {
                 e.preventDefault();
                 return false;
             }
-            
-            // Marcar como enviando
             isSubmitting = true;
             submitBtn.disabled = true;
-            if (btnText) btnText.classList.add('d-none');
-            if (btnLoading) btnLoading.classList.remove('d-none');
-            
-            // Permitir que el formulario se envíe normalmente
-            // No llamar e.preventDefault() aquí
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
         });
-        
-        // Resetear estado si hay errores de validación
-        if (document.querySelector('.is-invalid')) {
-            isSubmitting = false;
-            submitBtn.disabled = false;
-            if (btnText) btnText.classList.remove('d-none');
-            if (btnLoading) btnLoading.classList.add('d-none');
-        }
     }
 });
 </script>
