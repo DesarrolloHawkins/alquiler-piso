@@ -172,28 +172,35 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Botones de eliminar
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function (event) {
-            event.preventDefault();
-            const form = this.closest('form');
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "¡No podrás revertir esto!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar!',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-            });
-        });
+	// Botones de eliminar
+	const deleteButtons = document.querySelectorAll('.delete-btn');
+	deleteButtons.forEach(button => {
+		button.addEventListener('click', function (event) {
+			event.preventDefault();
+			const form = this.closest('form');
+			if (window.Swal && typeof Swal.fire === 'function') {
+				Swal.fire({
+					title: '¿Estás seguro?',
+					text: "¡No podrás revertir esto!",
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonColor: '#3085d6',
+					cancelButtonColor: '#d33',
+					confirmButtonText: 'Sí, eliminar!',
+					cancelButtonText: 'Cancelar'
+				}).then((result) => {
+					if (result.isConfirmed) {
+						form.submit();
+					}
+				});
+			} else {
+				// Fallback nativo si SweetAlert no está disponible
+				if (confirm('¿Estás seguro? ¡No podrás revertir esto!')) {
+					form.submit();
+				}
+			}
+		});
+	});
 });
 </script>
 @endsection

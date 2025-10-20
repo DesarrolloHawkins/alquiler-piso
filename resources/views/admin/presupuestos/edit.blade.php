@@ -116,16 +116,18 @@
                             <tbody>
                                 @foreach($presupuesto->conceptos as $index => $concepto)
                                 <tr>
-                                    <td><input type="text" name="conceptos[{{ $index }}][descripcion]" class="form-control" value="{{ old("conceptos.$index.descripcion", $concepto->concepto) }}"></td>
+                                    <td><input type="text" name="conceptos[{{ $index }}][concepto]" class="form-control" value="{{ old("conceptos.$index.concepto", $concepto->concepto) }}"></td>
                                     <td><input type="date" name="conceptos[{{ $index }}][fecha_entrada]" class="form-control fecha-entrada" value="{{ old("conceptos.$index.fecha_entrada") }}"></td>
                                     <td><input type="date" name="conceptos[{{ $index }}][fecha_salida]" class="form-control fecha-salida" value="{{ old("conceptos.$index.fecha_salida") }}"></td>
-                                    <td><input type="number" name="conceptos[{{ $index }}][precio_por_dia]" class="form-control precio-por-dia" step="0.01" value="{{ old("conceptos.$index.precio_por_dia") }}"></td>
+                                    <td><input type="number" name="conceptos[{{ $index }}][precio]" class="form-control precio-por-dia" step="0.01" value="{{ old("conceptos.$index.precio", $concepto->precio) }}"></td>
                                     <td><input type="number" name="conceptos[{{ $index }}][dias_totales]" class="form-control dias-totales" readonly></td>
-                                    <td><input type="number" name="conceptos[{{ $index }}][precio_total]" class="form-control precio-total" step="0.01" readonly></td>
+                                    <td><input type="number" name="conceptos[{{ $index }}][subtotal]" class="form-control precio-total" step="0.01" value="{{ old("conceptos.$index.subtotal", $concepto->subtotal) }}"></td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-outline-danger btn-sm removeConcepto">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        <!-- Campo oculto para IVA -->
+                                        <input type="hidden" name="conceptos[{{ $index }}][iva]" value="{{ old("conceptos.$index.iva", $concepto->iva ?? 0) }}">
                                     </td>
                                 </tr>
                                 @endforeach
@@ -264,13 +266,16 @@
             const tr = document.createElement('tr');
 
             tr.innerHTML = `
-                <td><input type="text" name="conceptos[${index}][descripcion]" class="form-control"></td>
+                <td><input type="text" name="conceptos[${index}][concepto]" class="form-control"></td>
                 <td><input type="date" name="conceptos[${index}][fecha_entrada]" class="form-control fecha-entrada"></td>
                 <td><input type="date" name="conceptos[${index}][fecha_salida]" class="form-control fecha-salida"></td>
-                <td><input type="number" name="conceptos[${index}][precio_por_dia]" class="form-control precio-por-dia" step="0.01"></td>
+                <td><input type="number" name="conceptos[${index}][precio]" class="form-control precio-por-dia" step="0.01"></td>
                 <td><input type="number" name="conceptos[${index}][dias_totales]" class="form-control dias-totales" readonly></td>
-                <td><input type="number" name="conceptos[${index}][precio_total]" class="form-control precio-total" step="0.01" readonly></td>
-                <td><button type="button" class="btn btn-danger btn-sm removeConcepto">X</button></td>
+                <td><input type="number" name="conceptos[${index}][subtotal]" class="form-control precio-total" step="0.01" readonly></td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm removeConcepto">X</button>
+                    <input type="hidden" name="conceptos[${index}][iva]" value="0">
+                </td>
             `;
 
             tbody.appendChild(tr);
@@ -298,7 +303,7 @@
 
                     const resumen = [];
                     document.querySelectorAll('#conceptosTable tbody tr').forEach(tr => {
-                        const d = tr.querySelector('[name*="[descripcion]"]').value;
+                        const d = tr.querySelector('[name*="[concepto]"]').value;
                         const e = tr.querySelector('[name*="[fecha_entrada]"]').value;
                         const s = tr.querySelector('[name*="[fecha_salida]"]').value;
                         const dias = tr.querySelector('.dias-totales').value;

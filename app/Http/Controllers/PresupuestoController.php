@@ -195,7 +195,7 @@ class PresupuestoController extends Controller
         $request->validate([
             'conceptos.*.concepto' => 'required|string|max:255',
             'conceptos.*.precio' => 'required|numeric|min:0',
-            'conceptos.*.iva' => 'required|numeric|min:0',
+            'conceptos.*.iva' => 'nullable|numeric|min:0',
             'conceptos.*.subtotal' => 'required|numeric|min:0',
             'cliente_id' => 'nullable|exists:clientes,id',
         ]);
@@ -229,7 +229,7 @@ class PresupuestoController extends Controller
                 'presupuesto_id' => $presupuesto->id,
                 'concepto' => $concepto['concepto'],
                 'precio' => $concepto['precio'],
-                'iva' => $concepto['iva'],
+                'iva' => $concepto['iva'] ?? 0, // Default a 0 si no se proporciona
                 'subtotal' => $concepto['subtotal'],
             ]);
         }
