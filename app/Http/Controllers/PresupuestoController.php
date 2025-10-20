@@ -56,7 +56,7 @@ class PresupuestoController extends Controller
         ]);
 
         foreach ($validated['conceptos'] as $conceptoData) {
-            // Concatenar concepto completo
+            // Concatenar concepto completo (se mantiene para visualización)
             $conceptoTexto = $conceptoData['descripcion']
                 . ' (Del ' . $conceptoData['fecha_entrada']
                 . ' al ' . $conceptoData['fecha_salida']
@@ -67,6 +67,12 @@ class PresupuestoController extends Controller
                 'precio' => $conceptoData['precio_por_dia'],
                 'iva' => 0, // Puedes calcularlo si lo deseas
                 'subtotal' => $conceptoData['precio_total'],
+                // Guardar también los campos de detalle para posterior edición
+                'fecha_entrada' => $conceptoData['fecha_entrada'],
+                'fecha_salida' => $conceptoData['fecha_salida'],
+                'precio_por_dia' => $conceptoData['precio_por_dia'],
+                'dias_totales' => $conceptoData['dias_totales'],
+                'precio_total' => $conceptoData['precio_total'],
             ]);
         }
 
@@ -231,6 +237,8 @@ class PresupuestoController extends Controller
                 'precio' => $concepto['precio'],
                 'iva' => $concepto['iva'] ?? 0, // Default a 0 si no se proporciona
                 'subtotal' => $concepto['subtotal'],
+                'fecha_entrada' => $concepto['fecha_entrada'] ?? null,
+                'fecha_salida' => $concepto['fecha_salida'] ?? null,
             ]);
         }
 

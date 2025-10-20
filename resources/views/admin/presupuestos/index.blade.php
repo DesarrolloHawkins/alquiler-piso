@@ -130,8 +130,8 @@
                                             <form action="{{ route('presupuestos.destroy',$p->id) }}"
                                                   method="POST" class="d-inline delete-form">
                                                 @csrf @method('DELETE')
-                                                <button type="button" class="btn btn-outline-danger btn-sm delete-btn" 
-                                                        title="Eliminar Presupuesto">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm delete-btn" 
+                                                        title="Eliminar Presupuesto" onclick="return window.Swal ? true : confirm('¿Estás seguro? ¡No podrás revertir esto!')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>

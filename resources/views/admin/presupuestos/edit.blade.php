@@ -117,8 +117,8 @@
                                 @foreach($presupuesto->conceptos as $index => $concepto)
                                 <tr>
                                     <td><input type="text" name="conceptos[{{ $index }}][concepto]" class="form-control" value="{{ old("conceptos.$index.concepto", $concepto->concepto) }}"></td>
-                                    <td><input type="date" name="conceptos[{{ $index }}][fecha_entrada]" class="form-control fecha-entrada" value="{{ old("conceptos.$index.fecha_entrada") }}"></td>
-                                    <td><input type="date" name="conceptos[{{ $index }}][fecha_salida]" class="form-control fecha-salida" value="{{ old("conceptos.$index.fecha_salida") }}"></td>
+                                    <td><input type="date" name="conceptos[{{ $index }}][fecha_entrada]" class="form-control fecha-entrada" value="{{ old("conceptos.$index.fecha_entrada", optional($concepto->fecha_entrada)->format('Y-m-d')) }}"></td>
+                                    <td><input type="date" name="conceptos[{{ $index }}][fecha_salida]" class="form-control fecha-salida" value="{{ old("conceptos.$index.fecha_salida", optional($concepto->fecha_salida)->format('Y-m-d')) }}"></td>
                                     <td><input type="number" name="conceptos[{{ $index }}][precio]" class="form-control precio-por-dia" step="0.01" value="{{ old("conceptos.$index.precio", $concepto->precio) }}"></td>
                                     <td><input type="number" name="conceptos[{{ $index }}][dias_totales]" class="form-control dias-totales" readonly></td>
                                     <td><input type="number" name="conceptos[{{ $index }}][subtotal]" class="form-control precio-total" step="0.01" value="{{ old("conceptos.$index.subtotal", $concepto->subtotal) }}"></td>
