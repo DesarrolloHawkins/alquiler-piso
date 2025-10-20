@@ -128,10 +128,10 @@
                                             </a>
 
                                             <form action="{{ route('presupuestos.destroy',$p->id) }}"
-                                                  method="POST" class="d-inline delete-form">
+                                                  method="POST" class="d-inline delete-form" onsubmit="return handleDeleteSubmit(event)">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="btn btn-outline-danger btn-sm delete-btn" 
-                                                        title="Eliminar Presupuesto" onclick="return window.Swal ? true : confirm('¿Estás seguro? ¡No podrás revertir esto!')">
+                                                        title="Eliminar Presupuesto">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
@@ -171,37 +171,27 @@
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-	// Botones de eliminar
-	const deleteButtons = document.querySelectorAll('.delete-btn');
-	deleteButtons.forEach(button => {
-		button.addEventListener('click', function (event) {
-			event.preventDefault();
-			const form = this.closest('form');
-			if (window.Swal && typeof Swal.fire === 'function') {
-				Swal.fire({
-					title: '¿Estás seguro?',
-					text: "¡No podrás revertir esto!",
-					icon: 'warning',
-					showCancelButton: true,
-					confirmButtonColor: '#3085d6',
-					cancelButtonColor: '#d33',
-					confirmButtonText: 'Sí, eliminar!',
-					cancelButtonText: 'Cancelar'
-				}).then((result) => {
-					if (result.isConfirmed) {
-						form.submit();
-					}
-				});
-			} else {
-				// Fallback nativo si SweetAlert no está disponible
-				if (confirm('¿Estás seguro? ¡No podrás revertir esto!')) {
-					form.submit();
-				}
-			}
-		});
-	});
-});
+function handleDeleteSubmit(e){
+    e.preventDefault();
+    const form = e.target;
+    if (window.Swal && typeof Swal.fire === 'function') {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: '¡No podrás revertir esto!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar!',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) form.submit();
+        });
+    } else {
+        if (confirm('¿Estás seguro? ¡No podrás revertir esto!')) form.submit();
+    }
+    return false;
+}
 </script>
 @endsection
 @endsection

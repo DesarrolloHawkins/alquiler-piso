@@ -96,18 +96,20 @@ class MetalicoController extends Controller
             }
         }
 
-        // Verificar duplicados (mismo título, importe y fecha en los últimos 5 minutos)
-        $duplicado = Metalico::where('titulo', $request->titulo)
-            ->where('importe', $request->importe)
-            ->where('fecha_ingreso', $request->fecha_ingreso)
-            ->where('tipo', $request->tipo)
-            ->where('created_at', '>=', now()->subMinutes(5))
-            ->first();
+        // Verificar duplicados (solo para gastos). Para ingresos permitimos repetición.
+        if ($request->tipo === 'gasto') {
+            $duplicado = Metalico::where('titulo', $request->titulo)
+                ->where('importe', $request->importe)
+                ->where('fecha_ingreso', $request->fecha_ingreso)
+                ->where('tipo', 'gasto')
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->first();
 
-        if ($duplicado) {
-            return redirect()->route('metalicos.create')
-                ->withInput()
-                ->with('error', 'Ya existe un movimiento idéntico creado recientemente. Por favor, verifica los datos.');
+            if ($duplicado) {
+                return redirect()->route('metalicos.create')
+                    ->withInput()
+                    ->with('error', 'Ya existe un gasto idéntico creado recientemente. Por favor, verifica los datos.');
+            }
         }
 
         // Crear el registro sin incluir el PIN en la base de datos
@@ -123,7 +125,8 @@ class MetalicoController extends Controller
         $metalico = Metalico::create($data);
         \Log::info('MetalicoController::store - Metálico creado con ID:', ['id' => $metalico->id]);
 
-        return redirect()->route('metalicos.index')->with('success', 'Registro creado correctamente.');
+        $msg = $request->tipo === 'ingreso' ? 'Ingreso creado correctamente.' : 'Gasto creado correctamente.';
+        return redirect()->route('metalicos.index')->with('success', $msg);
     }
 
 
