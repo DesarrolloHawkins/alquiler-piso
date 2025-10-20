@@ -652,6 +652,22 @@ class GestionApartamentoController extends Controller
                 'fecha_fin_real' => now()
             ]);
             
+            // Buscar y actualizar el ApartamentoLimpieza asociado
+            $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+            if ($apartamentoLimpieza) {
+                $apartamentoLimpieza->update([
+                    'status_id' => 3, // Limpio
+                    'fecha_fin' => now()
+                ]);
+                
+                Log::info('ApartamentoLimpieza actualizado desde finalizarTarea', [
+                    'limpieza_id' => $apartamentoLimpieza->id,
+                    'tarea_id' => $tarea->id,
+                    'status_id' => 3,
+                    'fecha_fin' => now()
+                ]);
+            }
+            
             // Log de la acción
             Log::info('Tarea finalizada', [
                 'tarea_id' => $tarea->id,
@@ -1358,6 +1374,22 @@ class GestionApartamentoController extends Controller
                 'fecha_fin_real' => now(),
                 'observaciones' => $request->input('observaciones', '')
             ]);
+            
+            // Buscar y actualizar el ApartamentoLimpieza asociado
+            $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+            if ($apartamentoLimpieza) {
+                $apartamentoLimpieza->update([
+                    'status_id' => 3, // Limpio
+                    'fecha_fin' => now()
+                ]);
+                
+                Log::info('ApartamentoLimpieza actualizado desde finalizarChecklistTarea', [
+                    'limpieza_id' => $apartamentoLimpieza->id,
+                    'tarea_id' => $tarea->id,
+                    'status_id' => 3,
+                    'fecha_fin' => now()
+                ]);
+            }
             
             // Log de la acción
             Log::info('Tarea completada con checklist', [
