@@ -171,7 +171,8 @@
 
 @section('scripts')
 <script>
-function handleDeleteSubmit(e){
+// Hacemos la función explícitamente global, como en Metálicos
+window.handleDeleteSubmit = function(e){
     e.preventDefault();
     const form = e.target;
     if (window.Swal && typeof Swal.fire === 'function') {
