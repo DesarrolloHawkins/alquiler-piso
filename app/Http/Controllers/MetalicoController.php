@@ -71,7 +71,8 @@ class MetalicoController extends Controller
             'fecha_ingreso' => 'required|date',
             'tipo' => 'required|in:ingreso,gasto',
             'observaciones' => 'nullable|string|max:500',
-            'pin' => 'required_if:tipo,gasto|string|size:4'
+            // PIN solo requerido para gastos; para ingresos permitimos null
+            'pin' => 'nullable|required_if:tipo,gasto|string|size:4'
         ], [
             'titulo.required' => 'El título es obligatorio.',
             'titulo.max' => 'El título no puede tener más de 255 caracteres.',
