@@ -126,8 +126,19 @@
                                                         <div>
                                                             <div class="fw-medium">Limpieza #{{ $consumo->limpieza->id }}</div>
                                                             <small class="text-muted">
-                                                                {{ $consumo->limpieza->fecha_entrada->format('d/m/Y') }} - 
-                                                                {{ $consumo->limpieza->fecha_salida->format('d/m/Y') }}
+                                                                @if($consumo->limpieza->fecha_entrada)
+                                                                    {{ $consumo->limpieza->fecha_entrada->format('d/m/Y') }}
+                                                                @else
+                                                                    Sin fecha entrada
+                                                                @endif
+                                                                @if($consumo->limpieza->fecha_entrada && $consumo->limpieza->fecha_salida)
+                                                                    - 
+                                                                @endif
+                                                                @if($consumo->limpieza->fecha_salida)
+                                                                    {{ $consumo->limpieza->fecha_salida->format('d/m/Y') }}
+                                                                @else
+                                                                    Sin fecha salida
+                                                                @endif
                                                             </small>
                                                         </div>
                                                     </div>
