@@ -253,6 +253,7 @@ class AmenityController extends Controller
             ->findOrFail($id);
 
         $consumosRecientes = $amenity->consumos()
+            ->with(['limpieza.apartamento', 'limpieza.tareaAsignada'])
             ->orderBy('fecha_consumo', 'desc')
             ->limit(10)
             ->get();
@@ -281,6 +282,21 @@ class AmenityController extends Controller
             'valorStockActual',
             'valorConsumido'
         ));
+    }
+
+    /**
+     * Mostrar todos los consumos de un amenity
+     */
+    public function consumos(string $id)
+    {
+        $amenity = Amenity::findOrFail($id);
+        
+        $consumos = $amenity->consumos()
+            ->with(['user', 'reserva', 'apartamento', 'limpieza.apartamento', 'limpieza.tareaAsignada'])
+            ->orderBy('fecha_consumo', 'desc')
+            ->paginate(20);
+
+        return view('admin.amenities.consumos', compact('amenity', 'consumos'));
     }
 
     /**

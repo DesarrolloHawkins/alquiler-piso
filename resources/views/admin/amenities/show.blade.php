@@ -441,11 +441,15 @@
         <!-- Consumos Recientes -->
         <div class="col-lg-6">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-semibold text-dark">
                         <i class="fas fa-minus-circle me-2 text-warning"></i>
                         Consumos Recientes
                     </h5>
+                    <a href="{{ route('amenities.consumos', $amenity->id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>
+                        Ver todos los registros
+                    </a>
                 </div>
                 <div class="card-body">
                     @if($consumosRecientes->count() > 0)

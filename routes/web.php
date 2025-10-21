@@ -893,6 +893,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/amenities/{id}/reposicion', [App\Http\Controllers\Admin\AmenityController::class, 'registrarReposicion'])->name('amenities.reposicion');
     Route::post('/amenities/calcular-consumo', [App\Http\Controllers\Admin\AmenityController::class, 'calcularConsumoReserva'])->name('amenities.calcular-consumo');
     Route::get('/amenities/{id}', [App\Http\Controllers\Admin\AmenityController::class, 'show'])->name('amenities.show');
+    Route::get('/amenities/{id}/consumos', [App\Http\Controllers\Admin\AmenityController::class, 'consumos'])->name('amenities.consumos');
     
     // Sistema de Inventario - Gestión de Proveedores
     Route::resource('proveedores', App\Http\Controllers\Admin\ProveedorController::class);
