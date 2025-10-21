@@ -666,6 +666,9 @@ class GestionApartamentoController extends Controller
                     'status_id' => 3,
                     'fecha_fin' => now()
                 ]);
+                
+                // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
+                $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
             }
             
             // Log de la acción
@@ -1389,6 +1392,9 @@ class GestionApartamentoController extends Controller
                     'status_id' => 3,
                     'fecha_fin' => now()
                 ]);
+                
+                // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
+                $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
             }
             
             // Log de la acción
@@ -2603,18 +2609,17 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         try {
             \Log::info('Iniciando descuento automático de amenities para limpieza ID: ' . $apartamentoLimpieza->id);
             
-            // Obtener amenities de limpieza activos
-            $amenitiesLimpieza = \App\Models\Amenity::where('categoria', 'Limpieza')
-                ->where('activo', true)
+            // Obtener TODOS los amenities activos (no solo los de limpieza)
+            $amenitiesLimpieza = \App\Models\Amenity::where('activo', true)
                 ->get();
 
-            \Log::info('Amenities de limpieza encontrados: ' . $amenitiesLimpieza->count());
+            \Log::info('Amenities activos encontrados: ' . $amenitiesLimpieza->count());
             
             $totalGasto = 0;
             $amenitiesUsados = [];
 
             foreach ($amenitiesLimpieza as $amenity) {
-                \Log::info('Procesando amenity: ' . $amenity->nombre . ' (Stock: ' . $amenity->stock_actual . ')');
+                \Log::info('Procesando amenity: ' . $amenity->nombre . ' (Categoría: ' . $amenity->categoria . ', Stock: ' . $amenity->stock_actual . ')');
                 
                 // Calcular cantidad recomendada para esta limpieza
                 $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $apartamentoLimpieza->reserva, $apartamentoLimpieza->apartamento);
@@ -2681,7 +2686,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
 
             // Mostrar resumen de amenities utilizados
             if (!empty($amenitiesUsados)) {
-                $mensaje = "Amenities de limpieza utilizados:\n";
+                $mensaje = "Amenities utilizados automáticamente:\n";
                 foreach ($amenitiesUsados as $amenity) {
                     $mensaje .= "• {$amenity['nombre']}: {$amenity['cantidad']} {$amenity['unidad']} (€{$amenity['costo']})\n";
                 }
