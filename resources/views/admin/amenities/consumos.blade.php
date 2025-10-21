@@ -16,7 +16,7 @@
                     <p class="text-muted mb-0">Historial completo de consumos del amenity</p>
                 </div>
                 <div>
-                    <a href="{{ route('amenities.show', $amenity->id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('admin.amenities.show', $amenity->id) }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
                         Volver al amenity
                     </a>

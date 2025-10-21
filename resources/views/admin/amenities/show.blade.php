@@ -446,7 +446,7 @@
                         <i class="fas fa-minus-circle me-2 text-warning"></i>
                         Consumos Recientes
                     </h5>
-                    <a href="{{ route('amenities.consumos', $amenity->id) }}" class="btn btn-outline-primary btn-sm">
+                    <a href="{{ route('admin.amenities.consumos', $amenity->id) }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-list me-1"></i>
                         Ver todos los registros
                     </a>
