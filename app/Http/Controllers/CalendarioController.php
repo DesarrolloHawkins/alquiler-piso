@@ -14,7 +14,7 @@ class CalendarioController extends Controller
     // Solo enviamos reservas de OTAs, NO reservas web ni presenciales
     $reservas = Reserva::where('apartamento_id', $id)
         ->whereNotIn('estado_id', [4, 7])
-        ->whereNotIn('origen', ['Web', 'Presencial'])
+        ->whereNotIn('origen', ['Web'])
         ->get();
 
     $calendario = "BEGIN:VCALENDAR\r\n";
