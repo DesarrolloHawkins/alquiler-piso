@@ -1467,10 +1467,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label for="filtroCategoriaIngresosSeparados" class="form-label fw-bold">Filtrar por Categoría:</label>
                         <select id="filtroCategoriaIngresosSeparados" class="form-select">
                             <option value="">Todas las categorías</option>
-                            @foreach($ingresosListaSeparados ?? [] as $ingreso)
-                                @if($ingreso->categoriaIngresos)
-                                    <option value="{{ $ingreso->categoriaIngresos->nombre }}">{{ $ingreso->categoriaIngresos->nombre }}</option>
-                                @endif
+                            @foreach(collect($ingresosListaSeparados ?? [])->pluck('categoria')->unique('id')->filter() as $categoria)
+                                <option value="{{ $categoria->nombre }}">{{ $categoria->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -1489,23 +1487,32 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaIngresosSeparados" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 10%;">ID</th>
-                                <th style="width: 20%;">DESCRIPCIÓN</th>
-                                <th style="width: 15%;">FECHA</th>
-                                <th style="width: 15%;">CANTIDAD</th>
-                                <th style="width: 20%;">CATEGORÍA</th>
-                                <th style="width: 20%;">CREADO</th>
+                                <th style="width: 8%;">ID</th>
+                                <th style="width: 18%;">DESCRIPCIÓN</th>
+                                <th style="width: 12%;">FECHA</th>
+                                <th style="width: 12%;">CANTIDAD</th>
+                                <th style="width: 18%;">CATEGORÍA</th>
+                                <th style="width: 15%;">CREADO</th>
+                                <th style="width: 17%;">ACCIÓN</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($ingresosListaSeparados ?? [] as $ingreso)
                                 <tr>
                                     <td>{{ $ingreso->id }}</td>
-                                    <td>{{ $ingreso->description ?? 'Sin descripción' }}</td>
+                                    <td>{{ $ingreso->title ?? 'Sin descripción' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
                                     <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
-                                    <td>{{ $ingreso->categoriaIngresos->nombre ?? 'Sin categoría' }}</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($ingreso->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.ingresos.edit', $ingreso->id) }}" 
+                                           class="btn btn-sm btn-primary" 
+                                           title="Editar ingreso"
+                                           target="_blank">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </a>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -1552,12 +1559,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaGastosSeparados" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 10%;">ID</th>
-                                <th style="width: 20%;">DESCRIPCIÓN</th>
-                                <th style="width: 15%;">FECHA</th>
-                                <th style="width: 15%;">CANTIDAD</th>
-                                <th style="width: 20%;">CATEGORÍA</th>
-                                <th style="width: 20%;">CREADO</th>
+                                <th style="width: 8%;">ID</th>
+                                <th style="width: 18%;">DESCRIPCIÓN</th>
+                                <th style="width: 12%;">FECHA</th>
+                                <th style="width: 12%;">CANTIDAD</th>
+                                <th style="width: 18%;">CATEGORÍA</th>
+                                <th style="width: 15%;">CREADO</th>
+                                <th style="width: 17%;">ACCIÓN</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1569,6 +1577,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
                                     <td>{{ $gasto->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.gastos.edit', $gasto->id) }}" 
+                                           class="btn btn-sm btn-primary" 
+                                           title="Editar gasto"
+                                           target="_blank">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </a>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
