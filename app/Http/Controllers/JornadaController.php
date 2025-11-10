@@ -45,12 +45,23 @@ class JornadaController extends Controller
             // Ejecutar la consulta y asignar resultados
             $user->jornada = $query->get();
     
-            // Añadir los datos de ApartamentoLimpieza a cada jornada
+            // Añadir los datos de ApartamentoLimpieza y TurnoTrabajo con tareas asignadas a cada jornada
             foreach ($user->jornada as $jornada) {
                 $jornada->limpiezas = ApartamentoLimpieza::where('user_id', $user->id)
                                                          ->whereDate('created_at', '=', $jornada->created_at)
                                                          ->get();
 
+                // Buscar TurnoTrabajo para esta fecha y usuario
+                $fechaJornada = \Carbon\Carbon::parse($jornada->created_at)->format('Y-m-d');
+                $turnoTrabajo = \App\Models\TurnoTrabajo::where('user_id', $user->id)
+                                                         ->whereDate('fecha', $fechaJornada)
+                                                         ->with(['tareasAsignadas' => function($query) {
+                                                             $query->with(['tipoTarea', 'apartamento', 'zonaComun'])
+                                                                   ->orderBy('orden_ejecucion');
+                                                         }])
+                                                         ->first();
+                
+                $jornada->turnoTrabajo = $turnoTrabajo;
             }
 
             

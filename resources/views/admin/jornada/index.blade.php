@@ -186,6 +186,140 @@
                                          class="accordion-collapse collapse" 
                                          data-bs-parent="#accordion_{{ $user->id }}">
                                         <div class="accordion-body">
+                                            <!-- Tareas Asignadas -->
+                                            @if ($itemJornada->turnoTrabajo && $itemJornada->turnoTrabajo->tareasAsignadas->isNotEmpty())
+                                                <div class="mb-4">
+                                                    <h6 class="fw-bold text-success mb-3">
+                                                        <i class="fas fa-tasks me-2"></i>
+                                                        Tareas Asignadas
+                                                    </h6>
+                                                    
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover align-middle">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width: 5%;">#</th>
+                                                                    <th style="width: 25%;">Tarea</th>
+                                                                    <th style="width: 30%;">Elemento</th>
+                                                                    <th style="width: 15%;">Estado</th>
+                                                                    <th style="width: 15%;">Tiempo Estimado</th>
+                                                                    <th style="width: 15%;">Tiempo Real</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($itemJornada->turnoTrabajo->tareasAsignadas as $index => $tarea)
+                                                                    @php
+                                                                        $tiempoEstimado = $tarea->tipoTarea ? $tarea->tipoTarea->tiempo_estimado_minutos : 0;
+                                                                        $horasEstimadas = floor($tiempoEstimado / 60);
+                                                                        $minsEstimadas = $tiempoEstimado % 60;
+                                                                        $tiempoEstimadoFormateado = ($horasEstimadas > 0 && $minsEstimadas > 0) ? "{$horasEstimadas}h {$minsEstimadas}m" : (($horasEstimadas > 0) ? "{$horasEstimadas}h" : "{$minsEstimadas}m");
+                                                                        
+                                                                        // Usar el accessor que calcula desde fecha_inicio_real y fecha_fin_real
+                                                                        $tiempoRealFormateado = $tarea->tiempo_real_formateado;
+                                                                    @endphp
+                                                                    <tr>
+                                                                        <td class="text-muted">{{ $tarea->orden_ejecucion ?? ($index + 1) }}</td>
+                                                                        <td>
+                                                                            <strong>{{ $tarea->tipoTarea->nombre ?? 'Sin tipo' }}</strong>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($tarea->apartamento)
+                                                                                <i class="fas fa-building text-primary me-1"></i>
+                                                                                <strong>{{ $tarea->apartamento->nombre ?? $tarea->apartamento->titulo }}</strong>
+                                                                                @if ($tarea->apartamento->edificioName)
+                                                                                    <br><small class="text-muted">{{ $tarea->apartamento->edificioName->nombre }}</small>
+                                                                                @endif
+                                                                            @elseif ($tarea->zonaComun)
+                                                                                <i class="fas fa-users text-info me-1"></i>
+                                                                                <strong>{{ $tarea->zonaComun->nombre }}</strong>
+                                                                            @else
+                                                                                <span class="text-muted">Sin elemento específico</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($tarea->estado === 'completada')
+                                                                                <span class="badge bg-success">
+                                                                                    <i class="fas fa-check me-1"></i>Completada
+                                                                                </span>
+                                                                            @elseif ($tarea->estado === 'en_progreso')
+                                                                                <span class="badge bg-warning">
+                                                                                    <i class="fas fa-spinner me-1"></i>En Progreso
+                                                                                </span>
+                                                                            @elseif ($tarea->estado === 'pendiente')
+                                                                                <span class="badge bg-secondary">
+                                                                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="badge bg-danger">
+                                                                                    <i class="fas fa-times me-1"></i>Cancelada
+                                                                                </span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            <i class="fas fa-clock text-muted me-1"></i>
+                                                                            <span class="text-muted">{{ $tiempoEstimadoFormateado }}</span>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($tarea->tiempo_real_minutos)
+                                                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                                                <strong>{{ $tiempoRealFormateado }}</strong>
+                                                                                @php
+                                                                                    // Obtener fechas reales, o desde ApartamentoLimpieza si no existen
+                                                                                    $fechaInicio = $tarea->fecha_inicio_real;
+                                                                                    $fechaFin = $tarea->fecha_fin_real;
+                                                                                    
+                                                                                    if (!$fechaInicio) {
+                                                                                        $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+                                                                                        if ($apartamentoLimpieza && $apartamentoLimpieza->created_at) {
+                                                                                            $fechaInicio = $apartamentoLimpieza->created_at;
+                                                                                        }
+                                                                                    }
+                                                                                    
+                                                                                    if (!$fechaFin) {
+                                                                                        $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+                                                                                        if ($apartamentoLimpieza) {
+                                                                                            $fechaFin = $apartamentoLimpieza->fecha_fin ?? $apartamentoLimpieza->updated_at;
+                                                                                        }
+                                                                                    }
+                                                                                @endphp
+                                                                                @if ($fechaInicio && $fechaFin)
+                                                                                    <br><small class="text-muted">
+                                                                                        {{ $fechaInicio->format('H:i') }} - {{ $fechaFin->format('H:i') }}
+                                                                                    </small>
+                                                                                @endif
+                                                                            @elseif ($tarea->estado === 'en_progreso')
+                                                                                <i class="fas fa-spinner text-warning me-1"></i>
+                                                                                <span class="text-warning">{{ $tiempoRealFormateado }}</span>
+                                                                                @php
+                                                                                    $fechaInicio = $tarea->fecha_inicio_real;
+                                                                                    if (!$fechaInicio) {
+                                                                                        $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+                                                                                        if ($apartamentoLimpieza && $apartamentoLimpieza->created_at) {
+                                                                                            $fechaInicio = $apartamentoLimpieza->created_at;
+                                                                                        }
+                                                                                    }
+                                                                                @endphp
+                                                                                @if ($fechaInicio)
+                                                                                    <br><small class="text-muted">
+                                                                                        Inicio: {{ $fechaInicio->format('H:i') }}
+                                                                                    </small>
+                                                                                @endif
+                                                                            @elseif ($tarea->estado === 'completada')
+                                                                                <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                                                                <span class="text-warning">{{ $tiempoRealFormateado }}</span>
+                                                                            @else
+                                                                                <span class="text-muted">{{ $tiempoRealFormateado }}</span>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            <!-- Limpiezas Realizadas (mantener compatibilidad) -->
                                             @if ($limpiezasDelDia->isNotEmpty())
                                                 <div class="mb-3">
                                                     <h6 class="fw-bold text-primary mb-3">
@@ -241,10 +375,13 @@
                                                         @endforeach
                                                     </div>
                                                 </div>
-                                            @else
+                                            @endif
+
+                                            <!-- Mensaje si no hay tareas ni limpiezas -->
+                                            @if ((!$itemJornada->turnoTrabajo || $itemJornada->turnoTrabajo->tareasAsignadas->isEmpty()) && $limpiezasDelDia->isEmpty())
                                                 <div class="text-center py-4">
                                                     <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
-                                                    <p class="text-muted mb-0">No se registraron limpiezas en este día</p>
+                                                    <p class="text-muted mb-0">No se registraron tareas asignadas ni limpiezas en este día</p>
                                                 </div>
                                             @endif
                                         </div>

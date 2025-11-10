@@ -241,12 +241,97 @@ class TareaAsignada extends Model
         return $this->tipoTarea->tiempo_estimado_minutos;
     }
 
+    /**
+     * Accessor para calcular tiempo real desde fechas reales si no está guardado
+     */
+    public function getTiempoRealMinutosAttribute($value)
+    {
+        // Si ya tiene valor guardado en la BD, usarlo
+        if ($value !== null && $value !== 0) {
+            return $value;
+        }
+        
+        // Si no tiene valor pero tiene fechas reales, calcularlo dinámicamente
+        if ($this->fecha_inicio_real && $this->fecha_fin_real) {
+            $inicio = Carbon::parse($this->fecha_inicio_real);
+            $fin = Carbon::parse($this->fecha_fin_real);
+            return $fin->diffInMinutes($inicio);
+        }
+        
+        // Si está completada pero no tiene fecha_inicio_real, intentar usar ApartamentoLimpieza
+        // como alternativa, ya que su created_at es más representativo del inicio real
+        if ($this->estado === 'completada' && !$this->fecha_inicio_real) {
+            $inicio = null;
+            $fin = null;
+            
+            // Intentar obtener fecha de inicio desde ApartamentoLimpieza
+            $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $this->id)->first();
+            if ($apartamentoLimpieza && $apartamentoLimpieza->created_at) {
+                $inicio = Carbon::parse($apartamentoLimpieza->created_at);
+            }
+            
+            // Determinar fecha de fin
+            if ($this->fecha_fin_real) {
+                $fin = Carbon::parse($this->fecha_fin_real);
+            } elseif ($apartamentoLimpieza && $apartamentoLimpieza->fecha_fin) {
+                $fin = Carbon::parse($apartamentoLimpieza->fecha_fin);
+            } elseif ($apartamentoLimpieza && $apartamentoLimpieza->updated_at) {
+                $fin = Carbon::parse($apartamentoLimpieza->updated_at);
+            }
+            
+            // Si tenemos ambas fechas, calcular el tiempo
+            if ($inicio && $fin) {
+                return $fin->diffInMinutes($inicio);
+            }
+        }
+        
+        return null;
+    }
+
     public function getTiempoRealFormateadoAttribute()
     {
-        if (!$this->tiempo_real_minutos) return 'No completada';
+        $tiempoReal = $this->tiempo_real_minutos;
         
-        $horas = floor($this->tiempo_real_minutos / 60);
-        $minutos = $this->tiempo_real_minutos % 60;
+        if (!$tiempoReal) {
+            // Si está en progreso, mostrar tiempo parcial
+            if ($this->estado === 'en_progreso') {
+                $inicio = null;
+                if ($this->fecha_inicio_real) {
+                    $inicio = Carbon::parse($this->fecha_inicio_real);
+                } else {
+                    // Intentar usar ApartamentoLimpieza como alternativa
+                    $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $this->id)->first();
+                    if ($apartamentoLimpieza && $apartamentoLimpieza->created_at) {
+                        $inicio = Carbon::parse($apartamentoLimpieza->created_at);
+                    }
+                }
+                
+                if ($inicio) {
+                    $ahora = now();
+                    $minutos = $ahora->diffInMinutes($inicio);
+                    $horas = floor($minutos / 60);
+                    $mins = $minutos % 60;
+                    
+                    if ($horas > 0 && $mins > 0) {
+                        return "{$horas}h {$mins}m (en curso)";
+                    } elseif ($horas > 0) {
+                        return "{$horas}h (en curso)";
+                    } else {
+                        return "{$mins}m (en curso)";
+                    }
+                }
+            }
+            
+            // Si está completada pero no tiene tiempo, mostrar mensaje apropiado
+            if ($this->estado === 'completada') {
+                return 'Sin tiempo registrado';
+            }
+            
+            return 'No iniciada';
+        }
+        
+        $horas = floor($tiempoReal / 60);
+        $minutos = $tiempoReal % 60;
         
         if ($horas > 0 && $minutos > 0) {
             return "{$horas}h {$minutos}m";
