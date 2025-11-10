@@ -97,18 +97,32 @@
                         </div>
                         
                         <div class="text-end">
-                            @php $totalHorasMes = 0; @endphp
+                            @php 
+                                $totalMinutosMes = 0;
+                                // Función helper para formatear tiempo
+                                $formatearTiempo = function($minutos) {
+                                    $horas = floor($minutos / 60);
+                                    $mins = $minutos % 60;
+                                    if ($horas > 0 && $mins > 0) {
+                                        return "{$horas}h {$mins}m";
+                                    } elseif ($horas > 0) {
+                                        return "{$horas}h";
+                                    } else {
+                                        return "{$mins}m";
+                                    }
+                                };
+                            @endphp
                             @foreach ($user->jornada as $itemJornada)
                                 @php
                                     $entrada = \Carbon\Carbon::parse($itemJornada->hora_entrada);
                                     $salida = \Carbon\Carbon::parse($itemJornada->hora_salida);
-                                    $horasTrabajadas = $salida->diffInHours($entrada, true);
-                                    $totalHorasMes += $horasTrabajadas;
+                                    $minutosTrabajados = $salida->diffInMinutes($entrada, true);
+                                    $totalMinutosMes += $minutosTrabajados;
                                 @endphp
                             @endforeach
                             
                             <div class="bg-white bg-opacity-25 rounded p-3">
-                                <div class="h3 mb-0 text-white fw-bold">{{ $totalHorasMes }}</div>
+                                <div class="h3 mb-0 text-white fw-bold">{{ $formatearTiempo($totalMinutosMes) }}</div>
                                 <small class="text-white-50">Horas del Mes</small>
                             </div>
                         </div>
@@ -122,7 +136,10 @@
                                 @php
                                     $entrada = \Carbon\Carbon::parse($itemJornada->hora_entrada);
                                     $salida = \Carbon\Carbon::parse($itemJornada->hora_salida);
-                                    $horasTrabajadas = $salida->diffInHours($entrada, true);
+                                    $minutosTrabajados = $salida->diffInMinutes($entrada, true);
+                                    $horas = floor($minutosTrabajados / 60);
+                                    $mins = $minutosTrabajados % 60;
+                                    $tiempoFormateado = ($horas > 0 && $mins > 0) ? "{$horas}h {$mins}m" : (($horas > 0) ? "{$horas}h" : "{$mins}m");
                                     $limpiezasDelDia = $itemJornada->limpiezas;
                                 @endphp
                                 
@@ -158,7 +175,7 @@
                                                 <div class="d-flex align-items-center gap-3">
                                                     <div class="badge bg-primary fs-6 px-3 py-2">
                                                         <i class="fas fa-clock me-1"></i>
-                                                        {{ $horasTrabajadas }}h
+                                                        {{ $tiempoFormateado }}
                                                     </div>
                                                 </div>
                                             </div>
