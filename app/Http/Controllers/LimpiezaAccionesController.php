@@ -219,6 +219,19 @@ class LimpiezaAccionesController extends Controller
                 Auth::user()->name
             );
 
+            // Notificar automáticamente a técnicos (es reparación desde limpieza)
+            if ($incidencia->apartamento_limpieza_id !== null) {
+                try {
+                    \App\Services\TecnicoNotificationService::notifyTechniciansAboutIncident($incidencia);
+                    Log::info('Técnicos notificados automáticamente sobre la incidencia', [
+                        'incidencia_id' => $incidencia->id
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error notificando técnicos automáticamente: ' . $e->getMessage());
+                    // No fallar la creación de la incidencia si falla la notificación
+                }
+            }
+
             // Log de la acción
             Log::info('Avería reportada desde limpieza', [
                 'user_id' => Auth::id(),

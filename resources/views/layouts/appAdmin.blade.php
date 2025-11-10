@@ -46,6 +46,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
         <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
         @yield('styles')
+        @stack('styles')
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 @if(session('swal_success'))
@@ -93,6 +94,32 @@
             }
 
             /* ...fin de los estilos scroll */
+
+            /* Estilos para dropdown items activos en navbar */
+            .navbar-dark .dropdown-menu .dropdown-item.active {
+                background-color: #3B3F64;
+                color: #fff;
+                font-weight: 600;
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-item:hover {
+                background-color: rgba(59, 63, 100, 0.2);
+                color: #fff;
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-item {
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            .navbar-dark .dropdown-menu {
+                background-color: #0F1739;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-divider {
+                border-top-color: rgba(255, 255, 255, 0.1);
+            }
         </style>
 
     </head>
@@ -127,7 +154,7 @@
 
                                 <!-- Gestión de Propiedades -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('apartamentos*') || request()->is('edificios*') || request()->is('checklists*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('apartamentos*', 'admin/edificios*', 'admin/checklists*', 'admin/normas-casa*', 'admin/servicios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-building me-1"></i>Propiedades
                                     </a>
                                     <ul class="dropdown-menu">
@@ -139,6 +166,13 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.checklists.index') }}">
                                             <i class="fas fa-clipboard-list me-2"></i>Categorías de Limpieza
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.normas-casa.index') }}">
+                                            <i class="fas fa-gavel me-2"></i>Normas de la Casa
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.servicios.index') }}">
+                                            <i class="fas fa-concierge-bell me-2"></i>Servicios
                                         </a></li>
                                     </ul>
                                 </li>
@@ -393,10 +427,47 @@
                                 </li>
 
                                 <!-- Configuración -->
-                                <li class="nav-item">
-                                    <a class="nav-link {{ request()->is('configuracion*') ? 'active' : '' }}" href="{{ route('configuracion.index') }}">
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion*') || request()->is('admin/servicios-tecnicos*') || request()->is('admin/tecnicos-servicios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-cogs me-1"></i>Configuración
                                     </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.portal-publico.*') ? 'active' : '' }}" href="{{ route('configuracion.portal-publico.index') }}">
+                                            <i class="fas fa-globe me-2"></i>Portal Público
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.credenciales.*') ? 'active' : '' }}" href="{{ route('configuracion.credenciales.index') }}">
+                                            <i class="fas fa-key me-2"></i>Credenciales
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.contabilidad.*') ? 'active' : '' }}" href="{{ route('configuracion.contabilidad.index') }}">
+                                            <i class="fas fa-calculator me-2"></i>Contabilidad
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.reparaciones.*') ? 'active' : '' }}" href="{{ route('configuracion.reparaciones.index') }}">
+                                            <i class="fas fa-tools me-2"></i>Reparaciones
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('admin.servicios-tecnicos.*') ? 'active' : '' }}" href="{{ route('admin.servicios-tecnicos.index') }}">
+                                            <i class="fas fa-wrench me-2"></i>Servicios Técnicos
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('admin.tecnicos-servicios.*') ? 'active' : '' }}" href="{{ route('admin.tecnicos-servicios.index') }}">
+                                            <i class="fas fa-user-cog me-2"></i>Técnicos y Servicios
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.limpiadoras.*') ? 'active' : '' }}" href="{{ route('configuracion.limpiadoras.index') }}">
+                                            <i class="fas fa-broom me-2"></i>Limpiadoras
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.notificaciones.*') ? 'active' : '' }}" href="{{ route('configuracion.notificaciones.index') }}">
+                                            <i class="fas fa-bell me-2"></i>Notificaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.prompt-ia.*') ? 'active' : '' }}" href="{{ route('configuracion.prompt-ia.index') }}">
+                                            <i class="fas fa-robot me-2"></i>Prompt IA
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.plataforma-estado.*') ? 'active' : '' }}" href="{{ route('configuracion.plataforma-estado.index') }}">
+                                            <i class="fas fa-server me-2"></i>Plataforma Estado
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.mir.*') ? 'active' : '' }}" href="{{ route('configuracion.mir.index') }}">
+                                            <i class="fas fa-shield-alt me-2"></i>MIR Hospedajes
+                                        </a></li>
+                                    </ul>
                                 </li>
                             </ul>
 
@@ -796,6 +867,7 @@
 
         <!-- Scripts personalizados de las vistas -->
         @yield('scripts')
+        @stack('scripts')
 
     </body>
 </html>

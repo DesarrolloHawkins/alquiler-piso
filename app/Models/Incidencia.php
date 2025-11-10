@@ -35,7 +35,11 @@ class Incidencia extends Model
         'origen',
         'hash_identificador',
         'apartamento_nombre',
-        'reserva_id'
+        'reserva_id',
+        'tecnico_notificado_at',
+        'tecnicos_notificados',
+        'metodo_notificacion',
+        'tecnico_asignado_id'
     ];
 
     /**
@@ -71,7 +75,7 @@ class Incidencia extends Model
      * @var array
      */
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 'fecha_resolucion'
+        'created_at', 'updated_at', 'deleted_at', 'fecha_resolucion', 'tecnico_notificado_at'
     ];
 
     /**
@@ -120,6 +124,14 @@ class Incidencia extends Model
     public function reserva()
     {
         return $this->belongsTo(Reserva::class, 'reserva_id');
+    }
+
+    /**
+     * Relación con Técnico asignado
+     */
+    public function tecnicoAsignado()
+    {
+        return $this->belongsTo(Reparaciones::class, 'tecnico_asignado_id');
     }
 
     /**
@@ -199,5 +211,34 @@ class Incidencia extends Model
     public function getEstaPendienteAttribute()
     {
         return $this->estado === 'pendiente';
+    }
+
+    /**
+     * Verificar si fue notificada a técnicos
+     */
+    public function fueNotificadaATecnicos()
+    {
+        return $this->tecnico_notificado_at !== null;
+    }
+
+    /**
+     * Obtener array de IDs de técnicos notificados
+     */
+    public function getTecnicosNotificadosArrayAttribute()
+    {
+        if (empty($this->tecnicos_notificados)) {
+            return [];
+        }
+        
+        $decoded = json_decode($this->tecnicos_notificados, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Verificar si es incidencia de reparación (desde limpieza)
+     */
+    public function esReparacion()
+    {
+        return $this->apartamento_limpieza_id !== null;
     }
 }

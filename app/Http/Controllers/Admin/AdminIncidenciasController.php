@@ -91,7 +91,7 @@ class AdminIncidenciasController extends Controller
      */
     public function show(Incidencia $incidencia)
     {
-        $incidencia->load(['apartamento', 'zonaComun', 'empleada', 'adminResuelve', 'limpieza']);
+        $incidencia->load(['apartamento', 'zonaComun', 'empleada', 'adminResuelve', 'limpieza', 'tecnicoAsignado']);
 
         return view('admin.incidencias.show', compact('incidencia'));
     }
@@ -249,5 +249,38 @@ class AdminIncidenciasController extends Controller
             ->get();
 
         return response()->json($incidencias);
+    }
+
+    /**
+     * Notificar técnicos sobre una incidencia (manual desde admin)
+     */
+    public function notificarTecnicos(Incidencia $incidencia)
+    {
+        try {
+            // Verificar que la incidencia existe
+            $incidencia->load(['apartamento', 'empleada', 'tecnicoAsignado']);
+
+            // Notificar a técnicos
+            $resultado = \App\Services\TecnicoNotificationService::notifyTechniciansAboutIncident($incidencia);
+
+            if ($resultado['success']) {
+                $mensaje = $resultado['message'];
+                if (!empty($resultado['errores'])) {
+                    $mensaje .= '. Algunos técnicos no pudieron ser notificados.';
+                }
+
+                return redirect()->route('admin.incidencias.show', $incidencia)
+                    ->with('success', $mensaje);
+            } else {
+                return redirect()->route('admin.incidencias.show', $incidencia)
+                    ->with('error', $resultado['message']);
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error notificando técnicos manualmente: ' . $e->getMessage());
+            
+            return redirect()->route('admin.incidencias.show', $incidencia)
+                ->with('error', 'Error al notificar técnicos: ' . $e->getMessage());
+        }
     }
 }

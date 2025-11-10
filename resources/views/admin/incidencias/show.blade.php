@@ -330,6 +330,40 @@
                             <i class="fas fa-lock me-2"></i>Cerrar Incidencia
                         </button>
                     @endif
+
+                    <!-- Botón para notificar técnicos -->
+                    @if($incidencia->esReparacion() || $incidencia->tipo === 'averia' || $incidencia->tipo === 'reparacion')
+                        @if($incidencia->fueNotificadaATecnicos())
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Notificada a técnicos</strong>
+                                <br>
+                                <small class="text-muted">
+                                    Fecha: {{ $incidencia->tecnico_notificado_at->format('d/m/Y H:i') }}
+                                    @if($incidencia->tecnicos_notificados_array)
+                                        | Técnicos: {{ count($incidencia->tecnicos_notificados_array) }}
+                                    @endif
+                                </small>
+                            </div>
+                            <form action="{{ route('admin.incidencias.notificar-tecnicos', $incidencia) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" 
+                                        class="btn btn-outline-primary w-100 mb-3" 
+                                        onclick="return confirm('¿Reenviar notificación a técnicos?')">
+                                    <i class="fas fa-bell me-2"></i>Reenviar Notificación
+                                </button>
+                            </form>
+                        @else
+                            <form action="{{ route('admin.incidencias.notificar-tecnicos', $incidencia) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" 
+                                        class="btn btn-primary w-100 mb-3" 
+                                        onclick="return confirm('¿Notificar a técnicos sobre esta incidencia?')">
+                                    <i class="fas fa-bell me-2"></i>Notificar a Técnicos
+                                </button>
+                            </form>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>

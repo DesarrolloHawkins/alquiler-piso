@@ -288,6 +288,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::resource('admin/incidencias', AdminIncidenciasController::class)->names('admin.incidencias');
     Route::post('/admin/incidencias/{incidencia}/resolver', [AdminIncidenciasController::class, 'resolver'])->name('admin.incidencias.resolver');
     Route::post('/admin/incidencias/{incidencia}/cambiar-prioridad', [AdminIncidenciasController::class, 'cambiarPrioridad'])->name('admin.incidencias.cambiar-prioridad');
+    Route::post('/admin/incidencias/{incidencia}/notificar-tecnicos', [AdminIncidenciasController::class, 'notificarTecnicos'])->name('admin.incidencias.notificar-tecnicos');
     Route::get('/admin/incidencias-pendientes', [AdminIncidenciasController::class, 'getPendientes'])->name('admin.incidencias.pendientes');
 
     // Alertas del Sistema
