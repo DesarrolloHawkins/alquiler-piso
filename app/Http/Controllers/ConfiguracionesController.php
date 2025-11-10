@@ -9,6 +9,7 @@ use App\Models\FormasPago;
 use App\Models\LimpiadoraGuardia;
 use App\Models\PromptAsistente;
 use App\Models\Reparaciones;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,47 +17,44 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class ConfiguracionesController extends Controller
 {
+    /**
+     * Mostrar la página principal de configuración con todas las pestañas
+     * Mantiene compatibilidad con rutas legacy que apuntan a /configuracion
+     */
     public function index(){
+        // Cargar todas las variables necesarias para las diferentes pestañas
         $configuraciones = Configuraciones::all();
-        $reparaciones = Reparaciones::all();
-        $anio = app('anio'); // Obtiene el año global
-
-        // Obtener el año actual
+        
+        // Variables para Contabilidad
+        $anio = app('anio');
         $anioActual = date('Y');
-
-        // Inicializar el array de años
         $anios = [];
-        $formasPago = FormasPago::all();
-        // Añadir el año actual y los cinco años anteriores al array
         for ($i = 0; $i <= 5; $i++) {
             $anios[] = strval($anioActual - $i);
         }
-        // Prompr del Asistente IA
-        $prompt =  PromptAsistente::all();
-
-        // Emails para notificaciones
-        $emailsNotificaciones = EmailNotificaciones::all();
-
+        
+        // Variables para Limpiadoras
         $limpiadorasUsers = User::where('inactive', null)->where('role', 'USER')->get();
-        $limpiadorasGuardia = LimpiadoraGuardia::all();
-        $saldo = Anio::where('anio', $anio)->where('is_close', null)->first();
+        $limpiadorasGuardia = LimpiadoraGuardia::with('usuario')->get();
+        
+        // Variables para Prompt IA
+        $prompt = PromptAsistente::all();
+        
         return view('admin.configuraciones.index', compact(
             'configuraciones',
-            'reparaciones',
             'anio',
             'anios',
-            'formasPago',
-            'prompt',
-            'emailsNotificaciones',
             'limpiadorasUsers',
             'limpiadorasGuardia',
-            'saldo'
+            'prompt'
         ));
     }
 
+    /**
+     * Método legacy - redirigir a credenciales
+     */
     public function edit($id, Request $request){
-        $configuraciones = Configuraciones::all();
-        return view('admin.configuraciones.index', compact('configuraciones'));
+        return redirect()->route('configuracion.credenciales.index');
     }
 
     // Actualizar usuarios de AIRBNB y BOOKING
@@ -68,7 +66,8 @@ class ConfiguracionesController extends Controller
         $confi->user_airbnb = $request->user_airbnb;
         $confi->save();
         
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Credenciales actualizadas correctamente.');
+        return redirect()->route('configuracion.credenciales.index');
     }
 
     // Crear reparador
@@ -90,8 +89,8 @@ class ConfiguracionesController extends Controller
 
         $tecnicoNuevo = Reparaciones::create($data);
 
-        Alert::toast('Tecnico de reparaciones creado correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Técnico de reparaciones creado correctamente.');
+        return redirect()->route('configuracion.reparaciones.index');
     }
     // Actualizar los reparadores
     public function updateReparaciones($id, Request $request){
@@ -111,8 +110,8 @@ class ConfiguracionesController extends Controller
 
         $reparaciones = Reparaciones::find($id);
         $reparaciones->update($data);
-        Alert::toast('Tecnico de reparaciones actualizado correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Técnico de reparaciones actualizado correctamente.');
+        return redirect()->route('configuracion.reparaciones.index');
     }
     // Crear reparador
     public function storeLimpiadora(Request $request){
@@ -133,8 +132,8 @@ class ConfiguracionesController extends Controller
 
         $limpiadoraNueva = LimpiadoraGuardia::create($data);
 
-        Alert::toast('Limpiadora de guardia creado correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Limpiadora de guardia creada correctamente.');
+        return redirect()->route('configuracion.limpiadoras.index');
     }
     // Actualizar los reparadores
     public function updateLimpiadora($id, Request $request){
@@ -154,24 +153,64 @@ class ConfiguracionesController extends Controller
 
         $limpiadora = LimpiadoraGuardia::find($id);
         $limpiadora->update($data);
-        Alert::toast('Limpiadora de guardia actualizado correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Limpiadora de guardia actualizada correctamente.');
+        return redirect()->route('configuracion.limpiadoras.index');
     }
 
     // Obtener User y Pass de Booking
     public function deleteLimpiadora($id){
-        $limpiadora = LimpiadoraGuardia::find($id);
-        $limpiadora->delete();
-        Alert::toast('Limpiadora de guardia eliminada correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        try {
+            $limpiadora = LimpiadoraGuardia::findOrFail($id);
+            $limpiadora->delete();
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Limpiadora de guardia eliminada correctamente.'
+                ]);
+            }
+            
+            Alert::success('Éxito', 'Limpiadora de guardia eliminada correctamente.');
+            return redirect()->route('configuracion.limpiadoras.index');
+        } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar la limpiadora: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            Alert::error('Error', 'No se pudo eliminar la limpiadora.');
+            return redirect()->route('configuracion.limpiadoras.index');
+        }
     }
 
     // Obtener User y Pass de Booking
     public function deleteReparaciones($id){
-        $reparaciones = Reparaciones::find($id);
-        $reparaciones->delete();
-        Alert::toast('Tecnico de reparaciones eliminada correctamente', 'success');
-        return redirect()->route('configuracion.index');
+        try {
+            $reparaciones = Reparaciones::findOrFail($id);
+            $reparaciones->delete();
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Técnico de reparaciones eliminado correctamente.'
+                ]);
+            }
+            
+            Alert::success('Éxito', 'Técnico de reparaciones eliminado correctamente.');
+            return redirect()->route('configuracion.reparaciones.index');
+        } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar el técnico: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            Alert::error('Error', 'No se pudo eliminar el técnico.');
+            return redirect()->route('configuracion.reparaciones.index');
+        }
     }
     // Obtener User y Pass de Booking
     public function passBooking(){
@@ -197,9 +236,8 @@ class ConfiguracionesController extends Controller
         $anio->anio = $request->anio;
         $anio->save();
 
-        Alert::toast('Actualizado', 'success');
-
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Año actualizado correctamente.');
+        return redirect()->route('configuracion.contabilidad.index');
     }
 
     // Cierre del año
@@ -233,8 +271,8 @@ class ConfiguracionesController extends Controller
             $anio->save();
         }
 
-        Alert::toast('Actualizado', 'success');
-        return redirect()->route('configuracion.index');
+        Alert::success('Éxito', 'Saldo inicial actualizado correctamente.');
+        return redirect()->route('configuracion.contabilidad.index');
     }
 
     // Actualizar Prompt
@@ -243,15 +281,15 @@ class ConfiguracionesController extends Controller
         if ($prompt != null) {
             $prompt->prompt = $request->prompt;
             $prompt->save();
-            Alert::toast('Actualizado', 'success');
-            return redirect()->route('configuracion.index');
+            Alert::success('Éxito', 'Prompt actualizado correctamente.');
+            return redirect()->route('configuracion.prompt-ia.index');
 
         }else {
             $promprNew = PromptAsistente::create([
                 'prompt' => $request->prompt
             ]);
-            Alert::toast('Actualizado', 'success');
-            return redirect()->route('configuracion.index');
+            Alert::success('Éxito', 'Prompt creado correctamente.');
+            return redirect()->route('configuracion.prompt-ia.index');
         }
     }
 
@@ -266,20 +304,27 @@ class ConfiguracionesController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Guardado con correctamente',
-            'redirect_url' => route('configuracion.index')
+            'message' => 'Email guardado correctamente',
+            'redirect_url' => route('configuracion.notificaciones.index')
         ]);
     }
 
     // Borrar Persona de Notificaciones
     public function deleteEmailNotificaciones($id) {
-        $persona = EmailNotificaciones::find($id);
-        $persona ->delete();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Eliminada con correctamente',
-            'redirect_url' => route('configuracion.index')
-        ]);
+        try {
+            $persona = EmailNotificaciones::findOrFail($id);
+            $persona->delete();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Email eliminado correctamente',
+                'redirect_url' => route('configuracion.notificaciones.index')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al eliminar el email: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Actualizar persona de notificaciones
@@ -298,8 +343,8 @@ class ConfiguracionesController extends Controller
         //$persona ->delete();
         return response()->json([
             'status' => 'success',
-            'message' => 'Eliminada con correctamente',
-            'redirect_url' => route('configuracion.index')
+            'message' => 'Email actualizado correctamente',
+            'redirect_url' => route('configuracion.notificaciones.index')
         ]);
     }
 
@@ -313,5 +358,242 @@ class ConfiguracionesController extends Controller
         return $phone;
     }
 
+    /**
+     * Actualizar configuración de la plataforma del estado
+     */
+    public function updateEstado(Request $request)
+    {
+        try {
+            $request->validate([
+                'codigo_arrendador' => 'nullable|string|max:255',
+                'aplicacion' => 'nullable|string|max:255',
+                'credenciales' => 'nullable|string',
+                'ca_path' => 'nullable|string|max:500'
+            ]);
+
+            // Actualizar cada setting
+            Setting::set('codigo_arrendador', $request->codigo_arrendador, 'Código del arrendador para la plataforma del estado');
+            Setting::set('aplicacion', $request->aplicacion, 'Nombre de la aplicación para identificación en plataforma del estado');
+            Setting::set('credenciales', $request->credenciales, 'Credenciales de acceso a la plataforma del estado (JSON)');
+            Setting::set('ca_path', $request->ca_path, 'Ruta del certificado CA para conexión segura con plataforma del estado');
+
+            Alert::success('Éxito', 'Configuración de la plataforma del estado actualizada correctamente.');
+            
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo actualizar la configuración: ' . $e->getMessage());
+        }
+
+        return redirect()->route('configuracion.plataforma-estado.index');
+    }
     
+    /**
+     * Actualizar configuración MIR
+     */
+    public function updateMIR(Request $request)
+    {
+        try {
+            $request->validate([
+                'mir_arrendador' => 'nullable|string|max:255',
+                'mir_aplicacion' => 'nullable|string|max:255',
+                'mir_usuario' => 'nullable|string|max:255',
+                'mir_password' => 'nullable|string|max:255',
+                'mir_entorno' => 'nullable|in:sandbox,production',
+            ]);
+
+            // Actualizar cada setting
+            Setting::set('mir_arrendador', $request->mir_arrendador, 'Código arrendador para API MIR');
+            Setting::set('mir_aplicacion', $request->mir_aplicacion, 'Nombre de la aplicación para MIR');
+            Setting::set('mir_usuario', $request->mir_usuario, 'Usuario para autenticación MIR');
+            Setting::set('mir_password', $request->mir_password, 'Contraseña para autenticación MIR');
+            Setting::set('mir_entorno', $request->mir_entorno ?? 'sandbox', 'Entorno MIR (sandbox/production)');
+
+            Alert::success('Éxito', 'Configuración MIR actualizada correctamente.');
+            
+        } catch (\Exception $e) {
+            Alert::error('Error', 'No se pudo actualizar la configuración MIR: ' . $e->getMessage());
+        }
+
+        return redirect()->route('configuracion.mir.index');
+    }
+    
+    /**
+     * Actualizar configuración del portal público (host/host)
+     */
+    public function updatePortalPublico(Request $request)
+    {
+        \Log::info('updatePortalPublico called', ['request' => $request->all(), 'method' => $request->method()]);
+        
+        try {
+            // Validar antes de procesar
+            $validated = $request->validate([
+                'host_nombre' => 'nullable|string|max:255',
+                'host_iniciales' => 'nullable|string|max:4',
+                'host_descripcion' => 'nullable|string|max:5000',
+                'host_idiomas' => 'nullable|array',
+                'host_rating' => 'nullable|numeric|min:0|max:10',
+                'host_reviews_count' => 'nullable|integer|min:0',
+                'host_alojamientos_count' => 'nullable|integer|min:0',
+            ], [
+                'host_nombre.max' => 'El nombre no puede exceder 255 caracteres.',
+                'host_iniciales.max' => 'Las iniciales no pueden exceder 4 caracteres.',
+                'host_descripcion.max' => 'La descripción no puede exceder 5000 caracteres.',
+                'host_rating.numeric' => 'La puntuación debe ser un número.',
+                'host_rating.min' => 'La puntuación debe ser mayor o igual a 0.',
+                'host_rating.max' => 'La puntuación debe ser menor o igual a 10.',
+                'host_reviews_count.integer' => 'El número de comentarios debe ser un número entero.',
+                'host_reviews_count.min' => 'El número de comentarios debe ser mayor o igual a 0.',
+                'host_alojamientos_count.integer' => 'El número de alojamientos debe ser un número entero.',
+                'host_alojamientos_count.min' => 'El número de alojamientos debe ser mayor o igual a 0.',
+            ]);
+
+            // Guardar cada setting - guardar EXACTAMENTE lo que viene del request
+            $hostNombre = trim($request->input('host_nombre', ''));
+            $hostNombre = $hostNombre === '' ? 'Apartamentos Algeciras' : $hostNombre;
+            $result1 = Setting::set('host_nombre', $hostNombre, 'Nombre de la empresa/host');
+            \Log::info('host_nombre guardado', ['valor' => $hostNombre, 'id' => $result1->id]);
+            
+            $hostIniciales = trim($request->input('host_iniciales', ''));
+            $hostIniciales = $hostIniciales === '' ? 'HA' : $hostIniciales;
+            $result2 = Setting::set('host_iniciales', $hostIniciales, 'Iniciales del logo');
+            \Log::info('host_iniciales guardado', ['valor' => $hostIniciales, 'id' => $result2->id]);
+            
+            $hostDescripcion = trim($request->input('host_descripcion', ''));
+            $hostDescripcion = $hostDescripcion === '' ? 'Alojamientos de calidad en el corazón de Algeciras' : $hostDescripcion;
+            $result3 = Setting::set('host_descripcion', $hostDescripcion, 'Descripción del host');
+            \Log::info('host_descripcion guardado', ['valor' => $hostDescripcion, 'id' => $result3->id, 'input_raw' => $request->input('host_descripcion')]);
+            
+            $hostIdiomas = $request->input('host_idiomas', []);
+            Setting::set('host_idiomas', json_encode(!empty($hostIdiomas) ? $hostIdiomas : ['Español', 'Inglés']), 'Idiomas hablados (JSON array)');
+            
+            if ($request->has('host_rating')) {
+                Setting::set('host_rating', $request->input('host_rating'), 'Puntuación promedio del host');
+            }
+            if ($request->has('host_reviews_count')) {
+                Setting::set('host_reviews_count', $request->input('host_reviews_count'), 'Número total de comentarios');
+            }
+            if ($request->has('host_alojamientos_count')) {
+                Setting::set('host_alojamientos_count', $request->input('host_alojamientos_count'), 'Número de alojamientos gestionados');
+            }
+
+            \Log::info('Todos los settings guardados correctamente');
+            
+            // Verificar que se guardaron
+            $verificacion = Setting::whereIn('key', ['host_nombre', 'host_descripcion'])->get();
+            \Log::info('Verificación después de guardar', ['settings' => $verificacion->pluck('value', 'key')->toArray()]);
+            
+            Alert::success('Éxito', 'Configuración del portal público actualizada correctamente.');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Error de validación al actualizar portal público', [
+                'errors' => $e->errors(),
+                'request' => $request->all()
+            ]);
+            // Redirigir con los errores de validación (sin Alert::error para evitar el modal)
+            return redirect()->route('configuracion.portal-publico.index')
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar portal público', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            Alert::error('Error', 'No se pudo actualizar la configuración: ' . $e->getMessage());
+        }
+
+        return redirect()->route('configuracion.portal-publico.index');
+    }
+    
+    /**
+     * ============================================
+     * MÉTODOS PARA VISTAS SEPARADAS (REFACTORIZADAS)
+     * ============================================
+     */
+    
+    /**
+     * Portal Público - Vista separada
+     */
+    public function portalPublico()
+    {
+        return view('admin.configuraciones.portal-publico');
+    }
+    
+    /**
+     * Credenciales - Vista separada
+     */
+    public function credenciales()
+    {
+        $configuraciones = Configuraciones::all();
+        return view('admin.configuraciones.credenciales', compact('configuraciones'));
+    }
+    
+    /**
+     * Contabilidad - Vista separada
+     */
+    public function contabilidad()
+    {
+        $anio = app('anio');
+        $anioActual = date('Y');
+        $anios = [];
+        for ($i = 0; $i <= 5; $i++) {
+            $anios[] = strval($anioActual - $i);
+        }
+        $saldo = Anio::where('anio', $anio)->where('is_close', null)->first();
+        $formasPago = FormasPago::all();
+        
+        return view('admin.configuraciones.contabilidad', compact('anio', 'anios', 'saldo', 'formasPago'));
+    }
+    
+    /**
+     * Reparaciones - Vista separada
+     */
+    public function reparaciones()
+    {
+        $reparaciones = Reparaciones::all();
+        return view('admin.configuraciones.reparaciones', compact('reparaciones'));
+    }
+    
+    /**
+     * Limpiadoras - Vista separada
+     */
+    public function limpiadoras()
+    {
+        $limpiadorasUsers = User::where('inactive', null)->where('role', 'USER')->get();
+        $limpiadorasGuardia = LimpiadoraGuardia::with('usuario')->get();
+        return view('admin.configuraciones.limpiadoras', compact('limpiadorasUsers', 'limpiadorasGuardia'));
+    }
+    
+    /**
+     * Notificaciones - Vista separada
+     */
+    public function notificaciones()
+    {
+        $emailsNotificaciones = EmailNotificaciones::all();
+        return view('admin.configuraciones.notificaciones', compact('emailsNotificaciones'));
+    }
+    
+    /**
+     * Prompt IA - Vista separada
+     */
+    public function promptIa()
+    {
+        $prompt = PromptAsistente::all();
+        return view('admin.configuraciones.prompt-ia', compact('prompt'));
+    }
+    
+    /**
+     * Plataforma Estado - Vista separada
+     */
+    public function plataformaEstado()
+    {
+        return view('admin.configuraciones.plataforma-estado');
+    }
+    
+    /**
+     * MIR Hospedajes - Vista separada
+     */
+    public function mirHospedajes()
+    {
+        return view('admin.configuraciones.mir-hospedajes');
+    }
 }
