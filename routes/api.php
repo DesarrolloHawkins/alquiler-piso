@@ -20,6 +20,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Rutas para proxy de IA Ollama (sin CSRF)
+Route::get('/ollama-proxy/health', [App\Http\Controllers\OllamaProxyController::class, 'health']);
+Route::post('/ollama-proxy/analyze-image', [App\Http\Controllers\OllamaProxyController::class, 'analyzeImage']);
+
 // WhatsApp Tools API Routes
 Route::prefix('whatsapp-tools')->group(function () {
     Route::post('/obtener-claves', [App\Http\Controllers\Api\WhatsappToolsController::class, 'obtenerClaves']);

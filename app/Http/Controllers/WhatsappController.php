@@ -31,6 +31,10 @@ use App\Models\WhatsappLog;
 use App\Models\WhatsappMensaje;
 use Carbon\Carbon;
 use App\Models\WhatsappEstadoMensaje;
+use App\Models\Incidencia;
+use App\Models\User;
+use App\Services\AlertService;
+use App\Services\NotificationService;
 
 class WhatsappController extends Controller
 {
@@ -540,9 +544,14 @@ class WhatsappController extends Controller
     {
         Log::info("🚨 GESTIONAR AVERÍA - Iniciando para teléfono: {$phone}");
         
-        // Registrar la avería en la base de datos
-        Log::info("📝 Registrando avería en logs...");
-        $this->registrarAveria($phone, $mensaje);
+        // Registrar la avería en la base de datos como incidencia
+        Log::info("📝 Registrando avería como incidencia...");
+        $registrada = $this->registrarAveria($phone, $mensaje);
+        
+        if (!$registrada) {
+            Log::info("⚠️ La incidencia ya fue registrada anteriormente");
+            return "La incidencia ya fue registrada anteriormente. Nuestro equipo técnico ya ha sido notificado y te contactará pronto.";
+        }
         
         // Enviar mensaje al técnico
         Log::info("👨‍🔧 Enviando mensaje al técnico...");
@@ -556,9 +565,14 @@ class WhatsappController extends Controller
     {
         Log::info("🧹 GESTIONAR LIMPIEZA - Iniciando para teléfono: {$phone}");
         
-        // Registrar la solicitud de limpieza en la base de datos
-        Log::info("📝 Registrando solicitud de limpieza en logs...");
-        $this->registrarLimpieza($phone, $mensaje);
+        // Registrar la solicitud de limpieza en la base de datos como incidencia
+        Log::info("📝 Registrando solicitud de limpieza como incidencia...");
+        $registrada = $this->registrarLimpieza($phone, $mensaje);
+        
+        if (!$registrada) {
+            Log::info("⚠️ La incidencia ya fue registrada anteriormente");
+            return "La solicitud de limpieza ya fue registrada anteriormente. Nuestro equipo de limpieza ya ha sido notificado y te avisaremos cuando esté confirmado.";
+        }
         
         // Enviar mensaje a la limpiadora
         Log::info("👩‍🔧 Enviando mensaje a la limpiadora...");
@@ -581,23 +595,410 @@ class WhatsappController extends Controller
     }
 
     /**
-     * Registrar una avería en la base de datos
+     * Obtener reserva activa del cliente por teléfono
+     * Busca tanto en el cliente principal como en los huéspedes (acompañantes)
      */
-    private function registrarAveria($phone, $mensaje)
+    private function obtenerReservaActivaCliente($phone)
     {
-        // Aquí puedes implementar el registro en la base de datos
-        // Por ejemplo, crear un registro en una tabla de averías
-        Log::info("Avería registrada - Teléfono: {$phone}, Mensaje: {$mensaje}");
+        Log::info("🔍 OBTENER RESERVA ACTIVA - Buscando para teléfono: {$phone}");
+        
+        try {
+            // 1. Buscar cliente principal por teléfono (telefono o telefono_movil)
+            $cliente = Cliente::where(function($query) use ($phone) {
+                $query->where('telefono', $phone)
+                      ->orWhere('telefono_movil', $phone);
+            })->first();
+            
+            if ($cliente) {
+                Log::info("✅ Cliente principal encontrado: {$cliente->nombre} {$cliente->apellido1}");
+                
+                // Buscar reserva activa del cliente principal
+                $reserva = Reserva::with(['cliente', 'apartamento'])
+                    ->where('cliente_id', $cliente->id)
+                    ->where('estado_id', '!=', 4) // No cancelada
+                    ->where('fecha_entrada', '<=', now())
+                    ->where('fecha_salida', '>=', now())
+                    ->first();
+                
+                if ($reserva) {
+                    Log::info("✅ Reserva activa encontrada por cliente principal: ID {$reserva->id}");
+                    return $reserva;
+                }
+            }
+            
+            // 2. Si no se encontró, buscar en huéspedes (acompañantes)
+            Log::info("🔍 Buscando en huéspedes (acompañantes)...");
+            $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
+                $query->where('telefono_movil', $phone)
+                      ->orWhere('telefono2', $phone);
+            })->first();
+            
+            if ($huesped && $huesped->reserva_id) {
+                Log::info("✅ Huésped encontrado: {$huesped->nombre} {$huesped->primer_apellido}");
+                
+                // Buscar reserva activa del huésped
+                $reserva = Reserva::with(['cliente', 'apartamento'])
+                    ->where('id', $huesped->reserva_id)
+                    ->where('estado_id', '!=', 4) // No cancelada
+                    ->where('fecha_entrada', '<=', now())
+                    ->where('fecha_salida', '>=', now())
+                    ->first();
+                
+                if ($reserva) {
+                    Log::info("✅ Reserva activa encontrada por huésped: ID {$reserva->id}");
+                    return $reserva;
+                }
+            }
+            
+            Log::warning("⚠️ No se encontró reserva activa para el teléfono: {$phone}");
+            return null;
+        } catch (\Exception $e) {
+            Log::error("❌ Error obteniendo reserva activa: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
-     * Registrar una solicitud de limpieza en la base de datos
+     * Verificar si existe una incidencia duplicada
+     */
+    private function verificarIncidenciaDuplicada($hash)
+    {
+        Log::info("🔍 VERIFICAR DUPLICADO - Hash: {$hash}");
+        
+        try {
+            $existe = Incidencia::where('hash_identificador', $hash)
+                ->where('created_at', '>=', now()->subHours(24))
+                ->exists();
+            
+            if ($existe) {
+                Log::warning("⚠️ Incidencia duplicada encontrada con hash: {$hash}");
+                return true;
+            }
+            
+            Log::info("✅ No se encontró incidencia duplicada");
+            return false;
+        } catch (\Exception $e) {
+            Log::error("❌ Error verificando duplicado: " . $e->getMessage());
+            return false; // En caso de error, permitir crear la incidencia
+        }
+    }
+
+    /**
+     * Obtener o crear usuario sistema para incidencias de WhatsApp
+     */
+    private function obtenerUsuarioSistema()
+    {
+        Log::info("🔍 OBTENER USUARIO SISTEMA - Buscando usuario 'Sistema WhatsApp'");
+        
+        try {
+            $usuario = User::where('name', 'Sistema WhatsApp')->first();
+            
+            if ($usuario) {
+                Log::info("✅ Usuario sistema encontrado: ID {$usuario->id}");
+                return $usuario;
+            }
+            
+            // Crear usuario sistema si no existe
+            Log::info("📝 Creando usuario sistema...");
+            $usuario = User::create([
+                'name' => 'Sistema WhatsApp',
+                'email' => 'sistema.whatsapp@apartamentosalgeciras.com',
+                'password' => bcrypt(uniqid()), // Password aleatorio, no se usará
+                'role' => 'ADMIN',
+                'inactive' => false
+            ]);
+            
+            Log::info("✅ Usuario sistema creado: ID {$usuario->id}");
+            return $usuario;
+        } catch (\Exception $e) {
+            Log::error("❌ Error obteniendo/creando usuario sistema: " . $e->getMessage());
+            // Retornar null si hay error, la incidencia se creará sin empleada_id
+            return null;
+        }
+    }
+
+    /**
+     * Detectar prioridad basada en palabras clave del mensaje
+     */
+    private function detectarPrioridad($mensaje, $tipoIncidencia = 'averia')
+    {
+        $mensajeLower = strtolower($mensaje);
+        $palabrasUrgentes = ['urgente', 'roto', 'no funciona', 'no hay', 'sin', 'emergencia', 'grave', 'importante'];
+        
+        foreach ($palabrasUrgentes as $palabra) {
+            if (strpos($mensajeLower, $palabra) !== false) {
+                Log::info("🚨 Palabra clave '{$palabra}' detectada - Prioridad: urgente");
+                return 'urgente';
+            }
+        }
+        
+        // Para averías, prioridad alta por defecto
+        if ($tipoIncidencia === 'averia') {
+            return 'alta';
+        }
+        
+        // Para limpieza, prioridad media por defecto
+        return 'media';
+    }
+
+    /**
+     * Registrar una avería en la base de datos como incidencia
+     */
+    private function registrarAveria($phone, $mensaje)
+    {
+        Log::info("🚨 REGISTRAR AVERÍA - Iniciando para teléfono: {$phone}");
+        
+        try {
+            // 1. Obtener cliente y reserva activa
+            // Esta función busca tanto en cliente principal como en huéspedes
+            $reserva = $this->obtenerReservaActivaCliente($phone);
+            
+            // Variables para cliente y huésped
+            $cliente = null;
+            $huesped = null;
+            
+            // Obtener cliente: si hay reserva, usar el cliente de la reserva
+            // Si no hay reserva, buscar en clientes o huéspedes
+            if ($reserva) {
+                $cliente = $reserva->cliente;
+            } else {
+                $cliente = Cliente::where(function($query) use ($phone) {
+                    $query->where('telefono', $phone)
+                          ->orWhere('telefono_movil', $phone);
+                })->first();
+                
+                // Si no se encuentra cliente, buscar en huéspedes
+                if (!$cliente) {
+                    $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
+                        $query->where('telefono_movil', $phone)
+                              ->orWhere('telefono2', $phone);
+                    })->first();
+                    
+                    // Si encontramos huésped pero no hay reserva, no podemos crear incidencia con apartamento
+                    // pero al menos tenemos información del huésped
+                }
+            }
+            
+            // 2. Generar hash único basado en reserva (no en teléfono)
+            // Esto permite detectar duplicados aunque escriba el acompañante desde otro teléfono
+            $mensajeCorto = substr($mensaje, 0, 50);
+            if ($reserva) {
+                // Si hay reserva, usar reserva_id para que funcione aunque cambie el teléfono
+                $hash = md5($reserva->id . 'averia' . $mensajeCorto . date('Y-m-d'));
+                Log::info("🔑 Hash generado basado en reserva ID {$reserva->id}: {$hash}");
+            } else {
+                // Si no hay reserva, usar teléfono como fallback
+                $hash = md5($phone . 'averia' . $mensajeCorto . date('Y-m-d'));
+                Log::info("🔑 Hash generado basado en teléfono (sin reserva): {$hash}");
+            }
+            
+            // 3. Verificar duplicado
+            if ($this->verificarIncidenciaDuplicada($hash)) {
+                Log::warning("⚠️ Incidencia duplicada detectada - No se creará");
+                return false;
+            }
+            
+            // 4. Obtener información del apartamento
+            $apartamentoNombre = 'Apartamento no identificado';
+            
+            if ($reserva && $reserva->apartamento) {
+                $apartamentoNombre = $reserva->apartamento->nombre;
+                // NO usamos apartamento_id para evitar problemas
+            }
+            
+            // 5. Obtener usuario sistema
+            $usuarioSistema = $this->obtenerUsuarioSistema();
+            
+            // 6. Detectar prioridad
+            $prioridad = $this->detectarPrioridad($mensaje, 'averia');
+            
+            // 7. Crear descripción completa
+            $descripcionCompleta = $mensaje;
+            if ($apartamentoNombre !== 'Apartamento no identificado') {
+                $descripcionCompleta .= "\n\nApartamento: {$apartamentoNombre}";
+            }
+            if ($cliente) {
+                $descripcionCompleta .= "\nCliente: {$cliente->nombre} {$cliente->apellido1}";
+            } elseif (isset($huesped) && $huesped) {
+                // Si no hay cliente pero sí huésped, incluir información del huésped
+                $descripcionCompleta .= "\nReportado por: {$huesped->nombre} {$huesped->primer_apellido} (Huésped)";
+            }
+            if ($reserva) {
+                $descripcionCompleta .= "\nReserva ID: {$reserva->id}";
+            }
+            
+            // 8. Crear la incidencia
+            $incidencia = Incidencia::create([
+                'titulo' => 'Avería reportada vía WhatsApp',
+                'descripcion' => $descripcionCompleta,
+                'tipo' => 'apartamento',
+                'apartamento_id' => null, // NO usar apartamento_id
+                'zona_comun_id' => null,
+                'apartamento_limpieza_id' => null,
+                'empleada_id' => $usuarioSistema ? $usuarioSistema->id : null,
+                'prioridad' => $prioridad,
+                'estado' => 'pendiente',
+                'fotos' => null,
+                'telefono_cliente' => $phone,
+                'origen' => 'whatsapp',
+                'hash_identificador' => $hash,
+                'apartamento_nombre' => $apartamentoNombre,
+                'reserva_id' => $reserva ? $reserva->id : null
+            ]);
+            
+            Log::info("✅ Incidencia creada: ID {$incidencia->id}");
+            
+            // 9. Crear alerta para administradores
+            AlertService::createIncidentAlert(
+                $incidencia->id,
+                $incidencia->titulo,
+                'Apartamento',
+                $apartamentoNombre,
+                $prioridad,
+                $usuarioSistema ? $usuarioSistema->name : 'Sistema WhatsApp'
+            );
+            
+            // 10. Crear notificación
+            NotificationService::notifyNewIncident($incidencia);
+            
+            Log::info("✅ AVERÍA REGISTRADA EXITOSAMENTE - ID: {$incidencia->id}");
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Error registrando avería: " . $e->getMessage());
+            Log::error("Stack trace: " . $e->getTraceAsString());
+            return false;
+        }
+    }
+
+    /**
+     * Registrar una solicitud de limpieza en la base de datos como incidencia
      */
     private function registrarLimpieza($phone, $mensaje)
     {
-        // Aquí puedes implementar el registro en la base de datos
-        // Por ejemplo, crear un registro en una tabla de solicitudes de limpieza
-        Log::info("Limpieza registrada - Teléfono: {$phone}, Mensaje: {$mensaje}");
+        Log::info("🧹 REGISTRAR LIMPIEZA - Iniciando para teléfono: {$phone}");
+        
+        try {
+            // 1. Obtener cliente y reserva activa
+            // Esta función busca tanto en cliente principal como en huéspedes
+            $reserva = $this->obtenerReservaActivaCliente($phone);
+            
+            // Variables para cliente y huésped
+            $cliente = null;
+            $huesped = null;
+            
+            // Obtener cliente: si hay reserva, usar el cliente de la reserva
+            // Si no hay reserva, buscar en clientes o huéspedes
+            if ($reserva) {
+                $cliente = $reserva->cliente;
+            } else {
+                $cliente = Cliente::where(function($query) use ($phone) {
+                    $query->where('telefono', $phone)
+                          ->orWhere('telefono_movil', $phone);
+                })->first();
+                
+                // Si no se encuentra cliente, buscar en huéspedes
+                if (!$cliente) {
+                    $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
+                        $query->where('telefono_movil', $phone)
+                              ->orWhere('telefono2', $phone);
+                    })->first();
+                    
+                    // Si encontramos huésped pero no hay reserva, no podemos crear incidencia con apartamento
+                    // pero al menos tenemos información del huésped
+                }
+            }
+            
+            // 2. Generar hash único basado en reserva (no en teléfono)
+            // Esto permite detectar duplicados aunque escriba el acompañante desde otro teléfono
+            $mensajeCorto = substr($mensaje, 0, 50);
+            if ($reserva) {
+                // Si hay reserva, usar reserva_id para que funcione aunque cambie el teléfono
+                $hash = md5($reserva->id . 'limpieza' . $mensajeCorto . date('Y-m-d'));
+                Log::info("🔑 Hash generado basado en reserva ID {$reserva->id}: {$hash}");
+            } else {
+                // Si no hay reserva, usar teléfono como fallback
+                $hash = md5($phone . 'limpieza' . $mensajeCorto . date('Y-m-d'));
+                Log::info("🔑 Hash generado basado en teléfono (sin reserva): {$hash}");
+            }
+            
+            // 3. Verificar duplicado
+            if ($this->verificarIncidenciaDuplicada($hash)) {
+                Log::warning("⚠️ Incidencia duplicada detectada - No se creará");
+                return false;
+            }
+            
+            // 4. Obtener información del apartamento
+            $apartamentoNombre = 'Apartamento no identificado';
+            
+            if ($reserva && $reserva->apartamento) {
+                $apartamentoNombre = $reserva->apartamento->nombre;
+                // NO usamos apartamento_id para evitar problemas
+            }
+            
+            // 5. Obtener usuario sistema
+            $usuarioSistema = $this->obtenerUsuarioSistema();
+            
+            // 6. Detectar prioridad (limpieza siempre media, a menos que tenga palabras urgentes)
+            $prioridad = $this->detectarPrioridad($mensaje, 'limpieza');
+            
+            // 7. Crear descripción completa
+            $descripcionCompleta = $mensaje;
+            if ($apartamentoNombre !== 'Apartamento no identificado') {
+                $descripcionCompleta .= "\n\nApartamento: {$apartamentoNombre}";
+            }
+            if ($cliente) {
+                $descripcionCompleta .= "\nCliente: {$cliente->nombre} {$cliente->apellido1}";
+            } elseif (isset($huesped) && $huesped) {
+                // Si no hay cliente pero sí huésped, incluir información del huésped
+                $descripcionCompleta .= "\nReportado por: {$huesped->nombre} {$huesped->primer_apellido} (Huésped)";
+            }
+            if ($reserva) {
+                $descripcionCompleta .= "\nReserva ID: {$reserva->id}";
+            }
+            
+            // 8. Crear la incidencia
+            $incidencia = Incidencia::create([
+                'titulo' => 'Solicitud de limpieza vía WhatsApp',
+                'descripcion' => $descripcionCompleta,
+                'tipo' => 'apartamento',
+                'apartamento_id' => null, // NO usar apartamento_id
+                'zona_comun_id' => null,
+                'apartamento_limpieza_id' => null,
+                'empleada_id' => $usuarioSistema ? $usuarioSistema->id : null,
+                'prioridad' => $prioridad,
+                'estado' => 'pendiente',
+                'fotos' => null,
+                'telefono_cliente' => $phone,
+                'origen' => 'whatsapp',
+                'hash_identificador' => $hash,
+                'apartamento_nombre' => $apartamentoNombre,
+                'reserva_id' => $reserva ? $reserva->id : null
+            ]);
+            
+            Log::info("✅ Incidencia creada: ID {$incidencia->id}");
+            
+            // 9. Crear alerta para administradores
+            AlertService::createIncidentAlert(
+                $incidencia->id,
+                $incidencia->titulo,
+                'Apartamento',
+                $apartamentoNombre,
+                $prioridad,
+                $usuarioSistema ? $usuarioSistema->name : 'Sistema WhatsApp'
+            );
+            
+            // 10. Crear notificación
+            NotificationService::notifyNewIncident($incidencia);
+            
+            Log::info("✅ LIMPIEZA REGISTRADA EXITOSAMENTE - ID: {$incidencia->id}");
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Error registrando limpieza: " . $e->getMessage());
+            Log::error("Stack trace: " . $e->getTraceAsString());
+            return false;
+        }
     }
 
     /**

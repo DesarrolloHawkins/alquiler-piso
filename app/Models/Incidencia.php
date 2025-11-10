@@ -30,7 +30,12 @@ class Incidencia extends Model
         'solucion',
         'admin_resuelve_id',
         'fecha_resolucion',
-        'observaciones_admin'
+        'observaciones_admin',
+        'telefono_cliente',
+        'origen',
+        'hash_identificador',
+        'apartamento_nombre',
+        'reserva_id'
     ];
 
     /**
@@ -107,6 +112,14 @@ class Incidencia extends Model
     public function adminResuelve()
     {
         return $this->belongsTo(User::class, 'admin_resuelve_id');
+    }
+
+    /**
+     * Relación con Reserva (para incidencias desde WhatsApp)
+     */
+    public function reserva()
+    {
+        return $this->belongsTo(Reserva::class, 'reserva_id');
     }
 
     /**

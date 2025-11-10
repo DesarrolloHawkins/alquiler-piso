@@ -67,7 +67,68 @@ Route::get('/whatsapp/mensajes/{remitente}', [WhatsappController::class, 'mensaj
 
 Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ics'])->name('calendario.ics');
 
+// ============================================
+// RUTAS PÚBLICAS WEB (SIN AUTENTICACIÓN)
+// ============================================
+Route::prefix('web')->name('web.')->group(function () {
+    // Página inicial del portal público
+    Route::get('/', [App\Http\Controllers\PublicReservasController::class, 'index'])->name('index');
+    
+    // Lista de apartamentos
+    Route::get('/apartamentos', [App\Http\Controllers\PublicReservasController::class, 'apartamentos'])->name('apartamentos');
+    
+    // Rutas de reservas públicas
+    Route::prefix('reservas')->name('reservas.')->group(function () {
+        Route::get('/buscador', [App\Http\Controllers\PublicReservasController::class, 'iframe'])->name('iframe');
+        Route::get('/buscar', [App\Http\Controllers\PublicReservasController::class, 'buscar'])->name('buscar');
+        Route::post('/buscar', [App\Http\Controllers\PublicReservasController::class, 'buscar'])->name('buscar.post');
+        Route::get('/portal', [App\Http\Controllers\PublicReservasController::class, 'portal'])->name('portal');
+        Route::get('/apartamento/{id}', [App\Http\Controllers\PublicReservasController::class, 'show'])->name('show');
+    });
+    
+    // Aquí puedes añadir más rutas públicas en el futuro
+    // Ejemplo:
+    // Route::prefix('contacto')->name('contacto.')->group(function () {
+    //     Route::get('/', [ContactoController::class, 'index'])->name('index');
+    //     Route::post('/enviar', [ContactoController::class, 'enviar'])->name('enviar');
+    // });
+});
 
+// Rutas legacy para compatibilidad (redirigen a las nuevas rutas web)
+Route::prefix('reservas-publicas')->name('public.reservas.')->group(function () {
+    Route::get('/buscador', function () {
+        return redirect()->route('web.reservas.iframe');
+    })->name('iframe');
+    Route::get('/buscar', function () {
+        return redirect()->route('web.reservas.buscar', request()->all());
+    })->name('buscar');
+    Route::post('/buscar', [App\Http\Controllers\PublicReservasController::class, 'buscar'])->name('buscar.post');
+    Route::get('/portal', function () {
+        return redirect()->route('web.reservas.portal', request()->all());
+    })->name('portal');
+    Route::get('/apartamento/{id}', function ($id) {
+        return redirect()->route('web.reservas.show', ['id' => $id] + request()->all());
+    })->name('show');
+});
+
+// Redirigir rutas incorrectas web/reservas-publicas/* a web/reservas/*
+Route::prefix('web/reservas-publicas')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('web.reservas.portal', request()->all());
+    });
+    Route::get('/apartamento/{id}', function ($id) {
+        return redirect()->route('web.reservas.show', ['id' => $id] + request()->all());
+    });
+    Route::get('/buscador', function () {
+        return redirect()->route('web.reservas.iframe');
+    });
+    Route::get('/buscar', function () {
+        return redirect()->route('web.reservas.buscar', request()->all());
+    });
+    Route::get('/portal', function () {
+        return redirect()->route('web.reservas.portal', request()->all());
+    });
+});
 
 Route::get('/regenerate-invoices', [App\Http\Controllers\InvoicesController::class, 'regenerateInvoicesForOctober']);
 Route::get('/registrar-webhooks/{id}', [App\Http\Controllers\ApartamentosController::class, 'registrarWebhooks']);
@@ -108,6 +169,74 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::put('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
+
+    // Servicios
+    Route::resource('servicios', App\Http\Controllers\Admin\AdminServiciosController::class)->names([
+        'index' => 'admin.servicios.index',
+        'create' => 'admin.servicios.create',
+        'store' => 'admin.servicios.store',
+        'show' => 'admin.servicios.show',
+        'edit' => 'admin.servicios.edit',
+        'update' => 'admin.servicios.update',
+        'destroy' => 'admin.servicios.destroy',
+    ]);
+
+    // Servicios Técnicos
+    Route::prefix('admin/servicios-tecnicos')->name('admin.servicios-tecnicos.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'store'])->name('store');
+        Route::get('/{serviciosTecnico}/edit', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'edit'])->name('edit');
+        Route::put('/{serviciosTecnico}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'update'])->name('update');
+        Route::delete('/{serviciosTecnico}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'destroy'])->name('destroy');
+        
+        // Rutas para categorías
+        Route::post('/categorias', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'storeCategoria'])->name('storeCategoria');
+        Route::put('/categorias/{categoria}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'updateCategoria'])->name('updateCategoria');
+        Route::delete('/categorias/{categoria}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'destroyCategoria'])->name('destroyCategoria');
+    });
+
+    // Técnicos y Servicios (Asignación de precios)
+    Route::prefix('admin/tecnicos-servicios')->name('admin.tecnicos-servicios.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\TecnicosServiciosController::class, 'index'])->name('index');
+        Route::get('/{tecnicoId}', [App\Http\Controllers\Admin\TecnicosServiciosController::class, 'show'])->name('show');
+        Route::post('/{tecnicoId}', [App\Http\Controllers\Admin\TecnicosServiciosController::class, 'store'])->name('store');
+        Route::delete('/{tecnicoId}/{servicioId}', [App\Http\Controllers\Admin\TecnicosServiciosController::class, 'destroy'])->name('destroy');
+    });
+
+    // Normas de la Casa
+    Route::resource('normas-casa', App\Http\Controllers\Admin\AdminNormasController::class)->names([
+        'index' => 'admin.normas-casa.index',
+        'create' => 'admin.normas-casa.create',
+        'store' => 'admin.normas-casa.store',
+        'show' => 'admin.normas-casa.show',
+        'edit' => 'admin.normas-casa.edit',
+        'update' => 'admin.normas-casa.update',
+        'destroy' => 'admin.normas-casa.destroy',
+    ]);
+
+    // Lugares Cercanos (nested bajo apartamentos)
+    Route::prefix('apartamentos/{apartamentoId}/lugares-cercanos')->name('admin.lugares-cercanos.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'index'])->name('index');
+        Route::delete('/borrar-todos', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'borrarTodos'])->name('borrar-todos');
+        Route::get('/generar-automatico', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'mostrarGeneracionAutomatica'])->name('generar-automatico');
+        Route::post('/generar-automaticamente', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'generarAutomaticamente'])->name('generar-automaticamente');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\AdminLugaresCercanosController::class, 'destroy'])->name('destroy');
+    });
+
+    // FAQs de Apartamentos (nested bajo apartamentos)
+    Route::prefix('apartamentos/{apartamentoId}/faq-apartamentos')->name('admin.faq-apartamentos.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\AdminFaqApartamentosController::class, 'destroy'])->name('destroy');
+    });
 
     // Tarifas
     Route::resource('tarifas', TarifaController::class);
@@ -181,6 +310,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     // Reservas
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/{reserva}/show', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
+    Route::post('/reservas/{reserva}/enviar-mir', [App\Http\Controllers\ReservasController::class, 'enviarMIR'])->name('reservas.enviar-mir');
     Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
     Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
     Route::post('/reservas/update/{id}', [App\Http\Controllers\ReservasController::class, 'update'])->name('reservas.update');
@@ -210,9 +340,9 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::delete('/huespedes/{id}', [App\Http\Controllers\HuespedesController::class, 'destroy'])->name('huespedes.destroy');
 
     // Configuraciones
+    // Ruta legacy - redirige a portal público
     Route::get('/configuracion', [App\Http\Controllers\ConfiguracionesController::class, 'index'])->name('configuracion.index');
-    Route::get('/configuracion/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('configuracion.edit');
-    Route::post('/configuracion/{id}/update', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('configuracion.update');
+    // Las rutas genéricas /{id}/edit y /{id}/update están ahora dentro del grupo configuracion.*
 
     // Bancos
     Route::get('/bancos', [App\Http\Controllers\BancosController::class, 'index'])->name('admin.bancos.index');
@@ -329,10 +459,11 @@ Route::get('/test-datos-momento/{id}', function($id) {
     // Ver usuario
     Route::get('/jornada', [App\Http\Controllers\JornadaController::class, 'index'])->name('admin.jornada.index');
 
-    // Configuraciones
+    // Configuraciones - Mantener rutas legacy para compatibilidad
+    // Ruta legacy - redirige a portal público
     Route::get('/configuracion', [App\Http\Controllers\ConfiguracionesController::class, 'index'])->name('configuracion.index');
-    Route::get('/configuracion/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('configuracion.edit');
-    Route::post('/configuracion/{id}/update', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('configuracion.update');
+    // Las rutas genéricas /{id}/edit y /{id}/update están ahora dentro del grupo configuracion.* al final
+    // Legacy routes - mantener para compatibilidad con código existente
     Route::post('/configuracion/store-reparaciones', [App\Http\Controllers\ConfiguracionesController::class, 'storeReparaciones'])->name('configuracion.storeReparaciones');
     Route::post('/configuracion/update-reparaciones/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateReparaciones'])->name('configuracion.updateReparaciones');
     Route::post('/configuracion/delete-reparaciones/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteReparaciones'])->name('configuracion.deleteReparaciones');
@@ -342,6 +473,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/configuracion/update-limpiadora/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateLimpiadora'])->name('configuracion.updateLimpiadora');
     Route::post('/configuracion/delete-limpiadora/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteLimpiadora'])->name('configuracion.deleteLimpiadora');
     Route::post('/configuracion/update-saldo', [App\Http\Controllers\ConfiguracionesController::class, 'saldoInicial'])->name('configuracion.saldoInicial');
+    Route::post('/configuracion/update-estado', [App\Http\Controllers\ConfiguracionesController::class, 'updateEstado'])->name('configuracion.updateEstado');
 
     // Formas de Pago
     Route::post('/forma-pago/store', [App\Http\Controllers\FormasDePagoController::class, 'store'])->name('formaPago.store');
@@ -360,13 +492,84 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/plan-contable', [App\Http\Controllers\PlanContableController::class, 'index'])->name('admin.planContable.index');
     Route::get('/plan-contable/json', [App\Http\Controllers\PlanContableController::class, 'json']);
 
+    // Legacy routes para compatibilidad (redirigen a nuevas rutas anidadas)
     Route::post('/actualizar-prompt', [App\Http\Controllers\ConfiguracionesController::class, 'actualizarPrompt'])->name('configuracion.actualizarPrompt');
     Route::post('/add-emails', [App\Http\Controllers\ConfiguracionesController::class, 'addEmailNotificaciones'])->name('configuracion.emails.add');
     Route::post('/delete-emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteEmailNotificaciones'])->name('configuracion.emails.delete');
     Route::post('/update-emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateEmailNotificaciones'])->name('configuracion.emails.update');
-    Route::post('/configuracion/update-estado', [App\Http\Controllers\ConfiguracionesController::class, 'updateEstado'])->name('configuracion.updateEstado');
 
-
+    // ============================================
+    // RUTAS ANIDADAS DE CONFIGURACIÓN (REFACTORIZADAS)
+    // ============================================
+    Route::prefix('configuracion')->name('configuracion.')->group(function () {
+        // IMPORTANTE: Las rutas específicas deben ir ANTES de las genéricas con {id}
+        
+        // Sección: MIR Hospedajes (debe ir antes de las rutas genéricas)
+        Route::prefix('mir')->name('mir.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'mirHospedajes'])->name('index');
+            Route::post('/update', [App\Http\Controllers\ConfiguracionesController::class, 'updateMIR'])->name('update');
+        });
+        
+        // Sección: Portal Público
+        Route::prefix('portal-publico')->name('portal-publico.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'portalPublico'])->name('index');
+            Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'updatePortalPublico'])->name('update');
+        });
+        
+        // Sección: Credenciales
+        Route::prefix('credenciales')->name('credenciales.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'credenciales'])->name('index');
+            Route::get('/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('update');
+        });
+        
+        // Sección: Contabilidad
+        Route::prefix('contabilidad')->name('contabilidad.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'contabilidad'])->name('index');
+            Route::post('/saldo-inicial', [App\Http\Controllers\ConfiguracionesController::class, 'saldoInicial'])->name('saldo-inicial');
+            Route::post('/update-anio', [App\Http\Controllers\ConfiguracionesController::class, 'updateAnio'])->name('update-anio');
+        });
+        
+        // Sección: Reparaciones
+        Route::prefix('reparaciones')->name('reparaciones.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'reparaciones'])->name('index');
+            Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'storeReparaciones'])->name('store');
+            Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateReparaciones'])->name('update');
+            Route::delete('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteReparaciones'])->name('destroy');
+        });
+        
+        // Sección: Limpiadoras
+        Route::prefix('limpiadoras')->name('limpiadoras.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'limpiadoras'])->name('index');
+            Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'storeLimpiadora'])->name('store');
+            Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateLimpiadora'])->name('update');
+            Route::delete('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteLimpiadora'])->name('destroy');
+        });
+        
+        // Sección: Notificaciones
+        Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'notificaciones'])->name('index');
+            Route::post('/emails', [App\Http\Controllers\ConfiguracionesController::class, 'addEmailNotificaciones'])->name('emails.add');
+            Route::put('/emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateEmailNotificaciones'])->name('emails.update');
+            Route::delete('/emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteEmailNotificaciones'])->name('emails.destroy');
+        });
+        
+        // Sección: Prompt IA
+        Route::prefix('prompt-ia')->name('prompt-ia.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'promptIa'])->name('index');
+            Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'actualizarPrompt'])->name('update');
+        });
+        
+        // Sección: Plataforma Estado
+        Route::prefix('plataforma-estado')->name('plataforma-estado.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'plataformaEstado'])->name('index');
+            Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'updateEstado'])->name('update');
+        });
+        
+        // Rutas genéricas legacy (deben ir AL FINAL para no interferir con rutas específicas)
+        Route::get('/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('update');
+    });
 
     // Checklists - Limpieza
     Route::get('/checklists', [App\Http\Controllers\ChecklistController::class, 'index'])->name('admin.checklists.index');
@@ -705,6 +908,22 @@ Route::get('/pasaporte-user-subir/{id}', [App\Http\Controllers\DNIController::cl
 Route::get('/dni/{token}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
 Route::get('/pasaporte/{token}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
 
+// Nuevo sistema de escaneo de DNI con cámara
+Route::get('/dni-scanner/{token}', [App\Http\Controllers\DNIScannerController::class, 'index'])->name('dni.scanner.index');
+Route::get('/dni-scanner/{token}/camera', [App\Http\Controllers\DNIScannerController::class, 'showScanner'])->name('dni.scanner.show');
+Route::get('/dni-scanner/{token}/upload', [App\Http\Controllers\DNIScannerController::class, 'showUpload'])->name('dni.scanner.upload');
+Route::post('/dni-scanner/process', [App\Http\Controllers\DNIScannerController::class, 'processImage'])->name('dni.scanner.process');
+Route::post('/dni-scanner/{token}/upload', [App\Http\Controllers\DNIScannerController::class, 'processUpload'])->name('dni.scanner.process.upload');
+Route::post('/dni-scanner/{token}/process-single-image', [App\Http\Controllers\DNIScannerController::class, 'processSingleImage'])->name('dni.scanner.process.single');
+Route::post('/dni-scanner/{token}/save-additional-data', [App\Http\Controllers\DNIScannerController::class, 'saveAdditionalData'])->name('dni.scanner.save.additional');
+Route::post('/dni-scanner/complete', [App\Http\Controllers\DNIScannerController::class, 'completeVerification'])->name('dni.scanner.complete');
+
+// Versiones HTML del scanner con mejor diseño (fondo negro)
+Route::get('/dni-scanner-simple', function() { return response()->file(public_path('dni-scanner-simple.html')); })->name('dni.scanner.simple');
+Route::get('/dni-scanner-fixed', function() { return response()->file(public_path('dni-scanner-fixed.html')); })->name('dni.scanner.fixed');
+Route::get('/dni-scanner-fixed-detection', function() { return response()->file(public_path('dni-scanner-fixed-detection.html')); })->name('dni.scanner.fixed.detection');
+Route::get('/dni-scanner-no-padding', function() { return response()->file(public_path('dni-scanner-no-padding.html')); })->name('dni.scanner.no.padding');
+
 
 
 // AI whatsapp
@@ -720,6 +939,7 @@ Route::post('/whatsapp-envio', [App\Http\Controllers\WhatsappController::class, 
 // Rutas varias
 Route::get('/gracias/{idioma}', [App\Http\Controllers\GraciasController::class, 'index'])->name('gracias.index');
 Route::get('/contacto', [App\Http\Controllers\GraciasController::class, 'contacto'])->name('gracias.contacto');
+Route::get('/apartamento-limpio/{token}', [App\Http\Controllers\ApartamentoLimpioController::class, 'show'])->name('apartamento.limpio.show');
 
 Route::get('/mensajes-whatsapp', [App\Http\Controllers\WhatsappController::class, 'whatsapp'])->name('whatsapp.mensajes');
 Route::post('/pass-booking', [App\Http\Controllers\ConfiguracionesController::class, 'passBooking'])->name('comprobacion.passBooking');

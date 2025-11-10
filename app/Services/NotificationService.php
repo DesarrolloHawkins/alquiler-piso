@@ -236,10 +236,13 @@ class NotificationService
         $empleada = $incidencia->empleada;
         
         $title = "Nueva Incidencia - {$incidencia->titulo}";
-        $message = "Incidencia reportada por {$empleada->name}";
+        $empleadaNombre = $empleada ? $empleada->name : ($incidencia->origen === 'whatsapp' ? 'Sistema WhatsApp' : 'Sistema');
+        $message = "Incidencia reportada por {$empleadaNombre}";
         
         if ($apartamento) {
             $message .= " en {$apartamento->titulo}";
+        } elseif ($incidencia->apartamento_nombre) {
+            $message .= " en {$incidencia->apartamento_nombre}";
         }
         
         $data = [
@@ -248,8 +251,8 @@ class NotificationService
             'descripcion' => $incidencia->descripcion,
             'tipo' => $incidencia->tipo,
             'prioridad' => $incidencia->prioridad,
-            'apartamento' => $apartamento ? $apartamento->titulo : null,
-            'empleada' => $empleada->name,
+            'apartamento' => $apartamento ? $apartamento->titulo : ($incidencia->apartamento_nombre ?? null),
+            'empleada' => $empleadaNombre,
             'estado' => $incidencia->estado
         ];
         
