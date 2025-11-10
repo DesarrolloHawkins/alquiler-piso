@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Auth; // Añade esta línea
 use App\Models\Checklist;
 use App\Models\ApartamentoLimpiezaItem;
 use App\Services\AlertService;
+use App\Services\ArticuloStockService;
 
 class GestionApartamentoController extends Controller
 {
@@ -291,6 +292,16 @@ class GestionApartamentoController extends Controller
                 // Es una tarea de apartamento
                 $apartamento = $tarea->apartamento;
                 if ($apartamento) {
+                    // Buscar la próxima reserva del apartamento después de hoy
+                    $proximaReserva = \App\Models\Reserva::where('apartamento_id', $apartamento->id)
+                        ->where('fecha_entrada', '>', $hoy->toDateString())
+                        ->where(function($query) {
+                            $query->where('estado_id', '!=', 4)
+                                  ->orWhereNull('estado_id');
+                        })
+                        ->orderBy('fecha_entrada', 'asc')
+                        ->first();
+                    
                     // Crear un objeto similar a Reserva para compatibilidad
                     $reserva = new \stdClass();
                     $reserva->id = $tarea->id;
@@ -307,6 +318,8 @@ class GestionApartamentoController extends Controller
                     $reserva->orden_ejecucion = $tarea->orden_ejecucion;
                     $reserva->estado = $tarea->estado;
                     $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                    // Información de la próxima reserva
+                    $reserva->proximaReserva = $proximaReserva;
                     
                     // Agregar a la colección apropiada según el estado
                     if ($tarea->estado === 'pendiente') {
@@ -391,8 +404,9 @@ class GestionApartamentoController extends Controller
             ['orden_ejecucion', 'asc']
         ])->values();
         
-        // Obtener amenities
+        // Obtener solo amenities de categoría "Otros" para el modal de limpiadoras
         $amenities = \App\Models\Amenity::activos()
+            ->where('categoria', 'Otros')
             ->orderBy('categoria')
             ->orderBy('nombre')
             ->get()
@@ -595,14 +609,11 @@ class GestionApartamentoController extends Controller
                 return response()->json(['error' => 'La tarea no está en estado pendiente'], 400);
             }
             
-            // Actualizar estado de la tarea
-            $tarea->update([
-                'estado' => 'en_progreso',
-                'fecha_inicio' => now()
-            ]);
+            // Actualizar estado de la tarea usando el método del modelo que guarda fecha_inicio_real
+            $tarea->iniciarTarea();
             
-            // Si es una tarea de apartamento, crear ApartamentoLimpieza real
-            if ($tarea->apartamento_id) {
+            // Si es una tarea de apartamento o zona común, crear ApartamentoLimpieza real
+            if ($tarea->apartamento_id || $tarea->zona_comun_id) {
                 $this->crearApartamentoLimpiezaParaTarea($tarea);
             }
             
@@ -611,7 +622,7 @@ class GestionApartamentoController extends Controller
                 'tarea_id' => $tarea->id,
                 'usuario_id' => Auth::id(),
                 'tipo_tarea' => $tarea->tipoTarea->nombre,
-                'fecha_inicio' => now()
+                'fecha_inicio_real' => $tarea->fecha_inicio_real
             ]);
             
             return response()->json([
@@ -620,7 +631,7 @@ class GestionApartamentoController extends Controller
                 'data' => [
                     'tarea_id' => $tarea->id,
                     'estado' => $tarea->estado,
-                    'fecha_inicio' => $tarea->fecha_inicio ? $tarea->fecha_inicio->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
+                    'fecha_inicio_real' => $tarea->fecha_inicio_real ? $tarea->fecha_inicio_real->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
                 ]
             ]);
             
@@ -655,20 +666,52 @@ class GestionApartamentoController extends Controller
             // Buscar y actualizar el ApartamentoLimpieza asociado
             $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
             if ($apartamentoLimpieza) {
+                $hoy = Carbon::now();
                 $apartamentoLimpieza->update([
                     'status_id' => 3, // Limpio
-                    'fecha_fin' => now()
+                    'fecha_fin' => $hoy
                 ]);
                 
                 Log::info('ApartamentoLimpieza actualizado desde finalizarTarea', [
                     'limpieza_id' => $apartamentoLimpieza->id,
                     'tarea_id' => $tarea->id,
                     'status_id' => 3,
-                    'fecha_fin' => now()
+                    'fecha_fin' => $hoy
                 ]);
+                
+                // Actualizar fecha_limpieza en la reserva si existe
+                $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
+                if ($reserva != null) {
+                    $reserva->fecha_limpieza = $hoy;
+                    $reserva->save();
+                    
+                    Log::info('Reserva actualizada desde finalizarTarea', [
+                        'reserva_id' => $reserva->id,
+                        'fecha_limpieza' => $hoy
+                ]);
+                }
                 
                 // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
                 $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
+                
+                // Crear alerta si hay observaciones al finalizar la limpieza
+                if (!empty($apartamentoLimpieza->observacion)) {
+                    $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
+                    if ($apartamentoLimpieza->zona_comun_id) {
+                        $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
+                    }
+                    
+                    AlertService::createCleaningObservationAlert(
+                        $apartamentoLimpieza->id,
+                        $apartamentoNombre,
+                        $apartamentoLimpieza->observacion
+                    );
+                    
+                    Log::info('Alerta de observación creada desde finalizarTarea', [
+                        'limpieza_id' => $apartamentoLimpieza->id,
+                        'apartamento' => $apartamentoNombre
+                    ]);
+                }
             }
             
             // Log de la acción
@@ -963,18 +1006,23 @@ class GestionApartamentoController extends Controller
                     foreach ($amenities as $amenityId => $amenityData) {
                         $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
                         if ($cantidad > 0) {
+                            // Descontar stock de forma atómica y registrar consumo con cantidades reales
+                            $amenity = \App\Models\Amenity::find($amenityId);
+                            if ($amenity) {
+                                $resultado = $amenity->descontarStock($cantidad);
                             \App\Models\AmenityConsumo::create([
                                 'limpieza_id' => $apartamentoLimpieza->id,
                                 'amenity_id' => $amenityId,
                                 'cantidad_consumida' => $cantidad,
-                                'cantidad_anterior' => 0,
-                                'cantidad_actual' => $cantidad,
+                                    'cantidad_anterior' => $resultado['stock_anterior'],
+                                    'cantidad_actual' => $resultado['stock_actual'],
                                 'tipo_consumo' => 'limpieza',
                                 'fecha_consumo' => now()->toDateString(),
                                 'user_id' => auth()->id(),
                                 'reserva_id' => $apartamentoLimpieza->reserva_id,
                                 'apartamento_id' => $apartamentoLimpieza->apartamento_id
                             ]);
+                            }
                         }
                     }
                 }
@@ -1228,6 +1276,12 @@ class GestionApartamentoController extends Controller
         // Obtener mensaje de amenities del session flash si existe
         $mensajeAmenities = session('mensajeAmenities');
         
+        // Artículos activos con stock para el modal simple de reposición 1:1
+        $articulosActivos = \App\Models\Articulo::activos()
+            ->where('stock_actual', '>', 0)
+            ->orderBy('nombre')
+            ->get();
+        
         // Usar la vista de gestion/edit pero adaptada para tareas
         return view('gestion.edit-tarea', compact(
             'tarea',
@@ -1238,7 +1292,8 @@ class GestionApartamentoController extends Controller
             'checklistsExistentes',
             'amenitiesConRecomendaciones',
             'siguienteReserva',
-            'mensajeAmenities'
+            'mensajeAmenities',
+            'articulosActivos'
         ));
     }
 
@@ -1255,11 +1310,15 @@ class GestionApartamentoController extends Controller
                 return $limpiezaExistente;
             }
             
+            // Determinar tipo de limpieza
+            $tipoLimpieza = $tarea->apartamento_id ? 'apartamento' : 'zona_comun';
+            
             // Crear nueva limpieza
             $limpieza = ApartamentoLimpieza::create([
                 'apartamento_id' => $tarea->apartamento_id,
+                'zona_comun_id' => $tarea->zona_comun_id,
                 'empleada_id' => $tarea->turno->user_id,
-                'tipo_limpieza' => 'apartamento',
+                'tipo_limpieza' => $tipoLimpieza,
                 'status_id' => 1, // En progreso
                 'fecha_comienzo' => now(),
                 'tarea_asignada_id' => $tarea->id, // Relación con la tarea
@@ -1270,6 +1329,8 @@ class GestionApartamentoController extends Controller
                 'tarea_id' => $tarea->id,
                 'limpieza_id' => $limpieza->id,
                 'apartamento_id' => $tarea->apartamento_id,
+                'zona_comun_id' => $tarea->zona_comun_id,
+                'tipo_limpieza' => $tipoLimpieza,
                 'empleada_id' => $tarea->turno->user_id
             ]);
             
@@ -1381,20 +1442,52 @@ class GestionApartamentoController extends Controller
             // Buscar y actualizar el ApartamentoLimpieza asociado
             $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
             if ($apartamentoLimpieza) {
+                $hoy = Carbon::now();
                 $apartamentoLimpieza->update([
                     'status_id' => 3, // Limpio
-                    'fecha_fin' => now()
+                    'fecha_fin' => $hoy
                 ]);
                 
                 Log::info('ApartamentoLimpieza actualizado desde finalizarChecklistTarea', [
                     'limpieza_id' => $apartamentoLimpieza->id,
                     'tarea_id' => $tarea->id,
                     'status_id' => 3,
-                    'fecha_fin' => now()
+                    'fecha_fin' => $hoy
                 ]);
+                
+                // Actualizar fecha_limpieza en la reserva si existe
+                $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
+                if ($reserva != null) {
+                    $reserva->fecha_limpieza = $hoy;
+                    $reserva->save();
+                    
+                    Log::info('Reserva actualizada desde finalizarChecklistTarea', [
+                        'reserva_id' => $reserva->id,
+                        'fecha_limpieza' => $hoy
+                ]);
+                }
                 
                 // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
                 $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
+                
+                // Crear alerta si hay observaciones al finalizar la limpieza
+                if (!empty($apartamentoLimpieza->observacion)) {
+                    $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
+                    if ($apartamentoLimpieza->zona_comun_id) {
+                        $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
+                    }
+                    
+                    AlertService::createCleaningObservationAlert(
+                        $apartamentoLimpieza->id,
+                        $apartamentoNombre,
+                        $apartamentoLimpieza->observacion
+                    );
+                    
+                    Log::info('Alerta de observación creada desde finalizarChecklistTarea', [
+                        'limpieza_id' => $apartamentoLimpieza->id,
+                        'apartamento' => $apartamentoNombre
+                    ]);
+                }
             }
             
             // Log de la acción
@@ -1442,12 +1535,19 @@ class GestionApartamentoController extends Controller
                 $apartamentoId = $reserva->apartamento_id;
             }
             if ($apartamentoLimpio == null) {
+                // Verificar que el usuario autenticado está activo
+                $usuarioActual = Auth::user();
+                if ($usuarioActual->inactive) {
+                    Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
+                    return redirect()->route('gestion.index');
+                }
+                
                 $apartamentoLimpieza = ApartamentoLimpieza::create([
                     'apartamento_id' => $apartamentoId,
                     'fecha_comienzo' => Carbon::now(),
                     'status_id' => 2,
                     'reserva_id' => $id,
-                    'user_id' => Auth::user()->id
+                    'user_id' => $usuarioActual->id
                 ]);
                 $apartamentoLimpieza->save();
                 if ($reserva != null) {
@@ -1507,7 +1607,21 @@ class GestionApartamentoController extends Controller
             }
         }
 
-        return view('gestion.edit', compact('apartamentoLimpieza', 'id', 'checklists', 'itemsExistentes', 'amenitiesConRecomendaciones', 'consumosExistentes'));
+        // Artículos activos con stock para el modal simple de reposición 1:1
+        $articulosActivos = \App\Models\Articulo::activos()
+            ->where('stock_actual', '>', 0)
+            ->orderBy('nombre')
+            ->get();
+
+        return view('gestion.edit', compact(
+            'apartamentoLimpieza',
+            'id',
+            'checklists',
+            'itemsExistentes',
+            'amenitiesConRecomendaciones',
+            'consumosExistentes',
+            'articulosActivos'
+        ));
     }
 
     public function create($id)
@@ -1527,12 +1641,19 @@ class GestionApartamentoController extends Controller
             ->first();
 
         if ($apartamentoLimpio == null) {
+            // Verificar que el usuario autenticado está activo
+            $usuarioActual = Auth::user();
+            if ($usuarioActual->inactive) {
+                Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
+                return redirect()->route('gestion.index');
+            }
+            
             $apartamentoLimpieza = ApartamentoLimpieza::create([
                 'apartamento_id' => $reserva->apartamento_id,
                 'fecha_comienzo' => Carbon::now(),
                 'status_id' => 2,
                 'reserva_id' => $id,
-                'user_id' => Auth::user()->id
+                'user_id' => $usuarioActual->id
             ]);
             $reserva->fecha_limpieza = Carbon::now();
             $reserva->save();
@@ -1902,41 +2023,52 @@ class GestionApartamentoController extends Controller
                     
                     if ($consumoExistente) {
                         // ACTUALIZAR el consumo existente
-                        $cantidadAnterior = $consumoExistente->cantidad_consumida;
-                        $diferencia = $cantidadDejada - $cantidadAnterior;
+                        // Obtener el amenity primero para tener el stock actual
+                        $amenity = \App\Models\Amenity::find($amenityId);
+                        if (!$amenity) {
+                            \Log::error("No se pudo encontrar el amenity {$amenityId} para actualizar stock");
+                            continue;
+                        }
                         
+                        // Stock antes del ajuste
+                        $stockAnterior = $amenity->stock_actual;
+                        $cantidadConsumoAnterior = $consumoExistente->cantidad_consumida;
+                        
+                        // Ajustar el stock basado en la diferencia de consumo
+                        \Log::info("ANTES de ajustar stock - Amenity {$amenityId}: stock_actual = {$stockAnterior}, consumo anterior = {$cantidadConsumoAnterior}, consumo nuevo = {$cantidadDejada}");
+                        
+                        $stockActual = $amenity->ajustarStock($cantidadConsumoAnterior, $cantidadDejada);
+                        
+                        \Log::info("DESPUÉS de ajustar stock - Amenity {$amenityId}: stock_actual = {$stockActual}");
+                        \Log::info("Stock del amenity {$amenityId} ajustado: diferencia " . ($cantidadDejada - $cantidadConsumoAnterior) . " (de {$cantidadConsumoAnterior} a {$cantidadDejada})");
+                        
+                        // Actualizar el consumo con los valores reales del stock
                         $consumoExistente->update([
                             'cantidad_consumida' => $cantidadDejada,
-                            'cantidad_anterior' => $cantidadAnterior,
-                            'cantidad_actual' => $consumoExistente->cantidad_actual + $diferencia,
+                            'cantidad_anterior' => $stockAnterior,
+                            'cantidad_actual' => $stockActual,
                             'observaciones' => $observaciones,
                             'fecha_consumo' => now()
                         ]);
-                        
-                        // Actualizar el stock del amenity usando el método del modelo
-                        $amenity = \App\Models\Amenity::find($amenityId);
-                        if ($amenity) {
-                            \Log::info("ANTES de ajustar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
-                            
-                            // Siempre ajustar el stock basado en la diferencia
-                            $amenity->ajustarStock($cantidadAnterior, $cantidadDejada);
-                            
-                            \Log::info("DESPUÉS de ajustar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
-                            \Log::info("Stock del amenity {$amenityId} ajustado: diferencia {$diferencia} (de {$cantidadAnterior} a {$cantidadDejada})");
                             
                             // Verificar si el stock está bajo después del ajuste
                             if ($amenity->verificarStockBajo()) {
                                 Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual})");
-                            }
-                        } else {
-                            \Log::error("No se pudo encontrar el amenity {$amenityId} para actualizar stock");
                         }
                         
                         $amenitiesActualizados++;
-                        \Log::info("Amenity {$amenityId} ACTUALIZADO con cantidad {$cantidadDejada}");
+                        \Log::info("Amenity {$amenityId} ACTUALIZADO con cantidad {$cantidadDejada} (stock: {$stockAnterior} -> {$stockActual})");
                     } else {
-                        // CREAR nuevo consumo solo si no existe
-                        \App\Models\AmenityConsumo::create([
+                        // CREAR nuevo consumo solo si no existe: descontar stock y registrar con cantidades reales
+                        $amenity = \App\Models\Amenity::find($amenityId);
+                        if ($amenity) {
+                            try {
+                                \Log::info("ANTES de descontar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
+                                $resultadoDescuento = $amenity->descontarStock($cantidadDejada);
+                                \Log::info("DESPUÉS de descontar stock - Amenity {$amenityId}: stock_actual = {$resultadoDescuento['stock_actual']}");
+                                \Log::info("Stock del amenity {$amenityId} descontado: -{$cantidadDejada} (nuevo consumo)");
+
+                                $nuevoConsumo = \App\Models\AmenityConsumo::create([
                             'amenity_id' => $amenityId,
                             'limpieza_id' => $apartamentoLimpieza->id,
                             'reserva_id' => $apartamentoLimpieza->reserva_id,
@@ -1944,25 +2076,21 @@ class GestionApartamentoController extends Controller
                             'user_id' => auth()->id(),
                             'tipo_consumo' => 'limpieza',
                             'cantidad_consumida' => $cantidadDejada,
-                            'cantidad_anterior' => 0,
-                            'cantidad_actual' => $cantidadDejada,
+                                    'cantidad_anterior' => $resultadoDescuento['stock_anterior'],
+                                    'cantidad_actual' => $resultadoDescuento['stock_actual'],
                             'costo_unitario' => 0,
                             'costo_total' => 0,
                             'observaciones' => $observaciones,
                             'fecha_consumo' => now()
-                        ]);
-                        
-                        // Actualizar el stock del amenity usando el método del modelo
-                        $amenity = \App\Models\Amenity::find($amenityId);
-                        if ($amenity) {
-                            \Log::info("ANTES de descontar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
-                            $amenity->descontarStock($cantidadDejada);
-                            \Log::info("DESPUÉS de descontar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
-                            \Log::info("Stock del amenity {$amenityId} descontado: -{$cantidadDejada} (nuevo consumo)");
-                            
-                            // Verificar si el stock está bajo después del descuento
-                            if ($amenity->verificarStockBajo()) {
-                                Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual})");
+                                ]);
+                                
+                                // Verificar si el stock está bajo después del descuento
+                                if ($amenity->verificarStockBajo()) {
+                                    Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual})");
+                                }
+                            } catch (\Exception $e) {
+                                \Log::error("Error descontando stock del amenity {$amenityId}: " . $e->getMessage());
+                                Alert::error('Error de Stock', "Error al descontar stock del amenity '{$amenity->nombre}': {$e->getMessage()}");
                             }
                         } else {
                             \Log::error("No se pudo encontrar el amenity {$amenityId} para descontar stock");
@@ -2181,6 +2309,46 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         Alert::success('Finalizado con Éxito', 'Apartamento Finalizado correctamente');
 
         return redirect()->route('gestion.index');
+    }
+
+    /**
+     * Registrar descuento de artículo roto y reposición automática 1:1 del mismo artículo si hay stock.
+     */
+    public function registrarDescuentoArticulo(
+        Request $request,
+        ApartamentoLimpieza $apartamentoLimpieza,
+        ArticuloStockService $articuloStockService
+    ) {
+        $request->validate([
+            'articulo_id' => 'required|exists:articulos,id',
+            'motivo' => 'required|string|in:roto,danado,perdido,desgastado,otro',
+            'observaciones' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $resultados = $articuloStockService->salidaAutoReposicionMismoArticulo(
+                articuloId: (int) $request->input('articulo_id'),
+                apartamentoLimpiezaId: $apartamentoLimpieza->id,
+                motivoRoto: (string) $request->input('motivo'),
+                observaciones: $request->input('observaciones')
+            );
+
+            $reposHecha = $resultados['reposicion'] !== null;
+
+            return response()->json([
+                'success' => true,
+                'message' => $reposHecha
+                    ? 'Artículo roto descontado y reposición automática realizada'
+                    : 'Artículo roto descontado (sin stock para reposición)',
+                'reposicion_realizada' => $reposHecha,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error registrarDescuentoArticulo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
     
     /**
@@ -2461,13 +2629,19 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         }
 
         // Crear nueva limpieza para zona común
+        $usuarioActual = Auth::user();
+        if ($usuarioActual->inactive) {
+            Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
+            return redirect()->route('gestion.index');
+        }
+        
         $apartamentoLimpieza = ApartamentoLimpieza::create([
             'zona_comun_id' => $id,
             'tipo_limpieza' => 'zona_comun',
             'fecha_comienzo' => Carbon::now(),
             'status_id' => 2, // En proceso
-            'empleada_id' => Auth::user()->id,
-            'user_id' => Auth::user()->id
+            'empleada_id' => $usuarioActual->id,
+            'user_id' => $usuarioActual->id
         ]);
 
         Alert::success('Éxito', 'Limpieza de zona común iniciada correctamente.');
@@ -2629,16 +2803,13 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 if ($cantidadRecomendada > 0) {
                     \Log::info('Cantidad > 0, verificando stock...');
                     
-                    // Verificar stock disponible
-                    if ($amenity->stock_actual >= $cantidadRecomendada) {
+                    try {
+                        // Usar el método estándar para descontar stock
                         \Log::info('Stock suficiente, procediendo con descuento...');
                         
-                        // Descontar del stock
-                        $stockAnterior = $amenity->stock_actual;
-                        $amenity->stock_actual -= $cantidadRecomendada;
-                        $amenity->save();
+                        $resultadoDescuento = $amenity->descontarStock($cantidadRecomendada);
                         
-                        \Log::info('Stock actualizado: ' . $stockAnterior . ' -> ' . $amenity->stock_actual);
+                        \Log::info('Stock actualizado: ' . $resultadoDescuento['stock_anterior'] . ' -> ' . $resultadoDescuento['stock_actual']);
 
                         // Calcular costo
                         $costoTotal = $cantidadRecomendada * $amenity->precio_compra;
@@ -2646,7 +2817,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         
                         \Log::info('Costo calculado: €' . $costoTotal);
 
-                        // Registrar el consumo
+                        // Registrar el consumo con datos reales
                         \Log::info('Creando registro de consumo...');
                         \App\Models\AmenityConsumo::create([
                             'amenity_id' => $amenity->id,
@@ -2656,8 +2827,8 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                             'user_id' => auth()->id(),
                             'tipo_consumo' => 'limpieza',
                             'cantidad_consumida' => $cantidadRecomendada,
-                            'cantidad_anterior' => $stockAnterior,
-                            'cantidad_actual' => $amenity->stock_actual,
+                            'cantidad_anterior' => $resultadoDescuento['stock_anterior'],
+                            'cantidad_actual' => $resultadoDescuento['stock_actual'],
                             'costo_unitario' => $amenity->precio_compra,
                             'costo_total' => $costoTotal,
                             'observaciones' => 'Descuento automático al finalizar limpieza',
@@ -2674,12 +2845,14 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         ];
 
                         // Verificar si el stock está bajo después del descuento
-                        if ($amenity->stock_actual <= $amenity->stock_minimo) {
+                        if ($amenity->verificarStockBajo()) {
                             \Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual} {$amenity->unidad_medida})");
                         }
-                    } else {
+                        
+                    } catch (\Exception $e) {
                         // Stock insuficiente
-                        \Alert::error('Stock Insuficiente', "No hay suficiente stock de '{$amenity->nombre}' para esta limpieza. Stock disponible: {$amenity->stock_actual} {$amenity->unidad_medida}, Necesario: {$cantidadRecomendada} {$amenity->unidad_medida}");
+                        \Log::warning('Stock insuficiente: ' . $e->getMessage());
+                        \Alert::error('Stock Insuficiente', "No hay suficiente stock de '{$amenity->nombre}' para esta limpieza. {$e->getMessage()}");
                     }
                 }
             }
