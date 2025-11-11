@@ -1016,14 +1016,33 @@ class GestionApartamentoController extends Controller
                     
                     // Guardar nuevos consumos
                     foreach ($amenities as $amenityId => $amenityData) {
-                        $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
-                        if ($cantidad > 0) {
-                            // Refrescar el modelo para obtener el stock actualizado
-                            $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
-                            if ($amenity) {
-                                try {
+                        try {
+                            // Validar que amenityId sea válido
+                            $amenityId = (int) $amenityId;
+                            if ($amenityId <= 0) {
+                                \Log::warning("amenityId inválido: {$amenityId}");
+                                continue;
+                            }
+                            
+                            // Validar que amenityData sea un array
+                            if (!is_array($amenityData)) {
+                                \Log::warning("amenityData no es un array para amenity {$amenityId}: " . gettype($amenityData) . " - Valor: " . var_export($amenityData, true));
+                                continue;
+                            }
+                            
+                            $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
+                            if ($cantidad > 0) {
+                                // Refrescar el modelo para obtener el stock actualizado
+                                $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
+                                if ($amenity) {
                                     // Descontar stock de forma atómica y registrar consumo con cantidades reales
                                     $resultado = $amenity->descontarStock($cantidad);
+                                    
+                                    // Validar que resultado sea un array
+                                    if (!is_array($resultado)) {
+                                        \Log::error("descontarStock no retornó un array para amenity {$amenityId}: " . gettype($resultado));
+                                        throw new \Exception("Error al descontar stock: resultado inválido");
+                                    }
                                     
                                     \App\Models\AmenityConsumo::create([
                                         'limpieza_id' => $apartamentoLimpieza->id,
@@ -1039,11 +1058,15 @@ class GestionApartamentoController extends Controller
                                     ]);
                                     
                                     \Log::info("Consumo creado para amenity {$amenityId}: cantidad {$cantidad}, stock {$resultado['stock_anterior']} -> {$resultado['stock_actual']}");
-                                } catch (\Exception $e) {
-                                    \Log::error("Error descontando stock del amenity {$amenityId}: " . $e->getMessage());
-                                    throw $e;
+                                } else {
+                                    \Log::warning("Amenity {$amenityId} no encontrado");
                                 }
                             }
+                        } catch (\Exception $e) {
+                            \Log::error("Error procesando amenity {$amenityId}: " . $e->getMessage());
+                            \Log::error("Stack trace: " . $e->getTraceAsString());
+                            // No hacer throw aquí para que continúe con los demás amenities
+                            // Solo loguear el error
                         }
                     }
                 }
