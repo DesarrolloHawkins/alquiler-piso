@@ -999,29 +999,50 @@ class GestionApartamentoController extends Controller
                 $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
                 
                 if ($apartamentoLimpieza) {
-                    // Limpiar consumos existentes
+                    // IMPORTANTE: Antes de eliminar consumos, reponer el stock que ya fue descontado
+                    $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->get();
+                    
+                    foreach ($consumosExistentes as $consumoExistente) {
+                        $amenity = \App\Models\Amenity::find($consumoExistente->amenity_id);
+                        if ($amenity) {
+                            // Reponer el stock que fue descontado por este consumo
+                            $amenity->reponerStock($consumoExistente->cantidad_consumida);
+                            \Log::info("Stock repuesto para amenity {$amenity->id}: +{$consumoExistente->cantidad_consumida} (antes de eliminar consumo ID {$consumoExistente->id})");
+                        }
+                    }
+                    
+                    // Ahora sí, eliminar los consumos existentes (el stock ya fue repuesto)
                     \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->delete();
                     
                     // Guardar nuevos consumos
                     foreach ($amenities as $amenityId => $amenityData) {
                         $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
                         if ($cantidad > 0) {
-                            // Descontar stock de forma atómica y registrar consumo con cantidades reales
-                            $amenity = \App\Models\Amenity::find($amenityId);
+                            // Refrescar el modelo para obtener el stock actualizado
+                            $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
                             if ($amenity) {
-                                $resultado = $amenity->descontarStock($cantidad);
-                            \App\Models\AmenityConsumo::create([
-                                'limpieza_id' => $apartamentoLimpieza->id,
-                                'amenity_id' => $amenityId,
-                                'cantidad_consumida' => $cantidad,
-                                    'cantidad_anterior' => $resultado['stock_anterior'],
-                                    'cantidad_actual' => $resultado['stock_actual'],
-                                'tipo_consumo' => 'limpieza',
-                                'fecha_consumo' => now()->toDateString(),
-                                'user_id' => auth()->id(),
-                                'reserva_id' => $apartamentoLimpieza->reserva_id,
-                                'apartamento_id' => $apartamentoLimpieza->apartamento_id
-                            ]);
+                                try {
+                                    // Descontar stock de forma atómica y registrar consumo con cantidades reales
+                                    $resultado = $amenity->descontarStock($cantidad);
+                                    
+                                    \App\Models\AmenityConsumo::create([
+                                        'limpieza_id' => $apartamentoLimpieza->id,
+                                        'amenity_id' => $amenityId,
+                                        'cantidad_consumida' => $cantidad,
+                                        'cantidad_anterior' => $resultado['stock_anterior'],
+                                        'cantidad_actual' => $resultado['stock_actual'],
+                                        'tipo_consumo' => 'limpieza',
+                                        'fecha_consumo' => now()->toDateString(),
+                                        'user_id' => auth()->id(),
+                                        'reserva_id' => $apartamentoLimpieza->reserva_id,
+                                        'apartamento_id' => $apartamentoLimpieza->apartamento_id
+                                    ]);
+                                    
+                                    \Log::info("Consumo creado para amenity {$amenityId}: cantidad {$cantidad}, stock {$resultado['stock_anterior']} -> {$resultado['stock_actual']}");
+                                } catch (\Exception $e) {
+                                    \Log::error("Error descontando stock del amenity {$amenityId}: " . $e->getMessage());
+                                    throw $e;
+                                }
                             }
                         }
                     }
@@ -2023,12 +2044,15 @@ class GestionApartamentoController extends Controller
                     
                     if ($consumoExistente) {
                         // ACTUALIZAR el consumo existente
-                        // Obtener el amenity primero para tener el stock actual
-                        $amenity = \App\Models\Amenity::find($amenityId);
+                        // Usar lockForUpdate para evitar condiciones de carrera
+                        $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
                         if (!$amenity) {
                             \Log::error("No se pudo encontrar el amenity {$amenityId} para actualizar stock");
                             continue;
                         }
+                        
+                        // Refrescar el modelo para obtener el stock más reciente
+                        $amenity->refresh();
                         
                         // Stock antes del ajuste
                         $stockAnterior = $amenity->stock_actual;
@@ -2060,28 +2084,32 @@ class GestionApartamentoController extends Controller
                         \Log::info("Amenity {$amenityId} ACTUALIZADO con cantidad {$cantidadDejada} (stock: {$stockAnterior} -> {$stockActual})");
                     } else {
                         // CREAR nuevo consumo solo si no existe: descontar stock y registrar con cantidades reales
-                        $amenity = \App\Models\Amenity::find($amenityId);
+                        // Usar lockForUpdate para evitar condiciones de carrera
+                        $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
                         if ($amenity) {
                             try {
+                                // Refrescar el modelo para obtener el stock más reciente
+                                $amenity->refresh();
+                                
                                 \Log::info("ANTES de descontar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
                                 $resultadoDescuento = $amenity->descontarStock($cantidadDejada);
                                 \Log::info("DESPUÉS de descontar stock - Amenity {$amenityId}: stock_actual = {$resultadoDescuento['stock_actual']}");
                                 \Log::info("Stock del amenity {$amenityId} descontado: -{$cantidadDejada} (nuevo consumo)");
 
                                 $nuevoConsumo = \App\Models\AmenityConsumo::create([
-                            'amenity_id' => $amenityId,
-                            'limpieza_id' => $apartamentoLimpieza->id,
-                            'reserva_id' => $apartamentoLimpieza->reserva_id,
-                            'apartamento_id' => $apartamentoLimpieza->apartamento_id,
-                            'user_id' => auth()->id(),
-                            'tipo_consumo' => 'limpieza',
-                            'cantidad_consumida' => $cantidadDejada,
+                                    'amenity_id' => $amenityId,
+                                    'limpieza_id' => $apartamentoLimpieza->id,
+                                    'reserva_id' => $apartamentoLimpieza->reserva_id,
+                                    'apartamento_id' => $apartamentoLimpieza->apartamento_id,
+                                    'user_id' => auth()->id(),
+                                    'tipo_consumo' => 'limpieza',
+                                    'cantidad_consumida' => $cantidadDejada,
                                     'cantidad_anterior' => $resultadoDescuento['stock_anterior'],
                                     'cantidad_actual' => $resultadoDescuento['stock_actual'],
-                            'costo_unitario' => 0,
-                            'costo_total' => 0,
-                            'observaciones' => $observaciones,
-                            'fecha_consumo' => now()
+                                    'costo_unitario' => 0,
+                                    'costo_total' => 0,
+                                    'observaciones' => $observaciones,
+                                    'fecha_consumo' => now()
                                 ]);
                                 
                                 // Verificar si el stock está bajo después del descuento
