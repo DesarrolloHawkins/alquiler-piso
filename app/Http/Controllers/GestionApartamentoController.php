@@ -1030,11 +1030,21 @@ class GestionApartamentoController extends Controller
                                 continue;
                             }
                             
-                            $cantidad = intval($amenityData['cantidad_dejada'] ?? 0);
-                            if ($cantidad > 0) {
-                                // Refrescar el modelo para obtener el stock actualizado
-                                $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
-                                if ($amenity) {
+                            // Para amenities tipo "por_reserva", usar consumo_por_reserva en lugar de cantidad_dejada
+                            $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
+                            if ($amenity) {
+                                if ($amenity->tipo_consumo === 'por_reserva') {
+                                    // Usar consumo_por_reserva configurado
+                                    $cantidad = $amenity->consumo_por_reserva ?? 0;
+                                } else {
+                                    // Para otros tipos, usar cantidad_dejada manual
+                                    $cantidad = floatval($amenityData['cantidad_dejada'] ?? 0);
+                                }
+                                
+                                if ($cantidad > 0) {
+                                    // Refrescar el modelo para obtener el stock actualizado
+                                    $amenity->refresh();
+                                    
                                     // Descontar stock de forma atómica y registrar consumo con cantidades reales
                                     $resultado = $amenity->descontarStock($cantidad);
                                     
@@ -1057,10 +1067,12 @@ class GestionApartamentoController extends Controller
                                         'apartamento_id' => $apartamentoLimpieza->apartamento_id
                                     ]);
                                     
-                                    \Log::info("Consumo creado para amenity {$amenityId}: cantidad {$cantidad}, stock {$resultado['stock_anterior']} -> {$resultado['stock_actual']}");
+                                    \Log::info("Consumo creado para amenity {$amenityId}: cantidad {$cantidad} (tipo: {$amenity->tipo_consumo}), stock {$resultado['stock_anterior']} -> {$resultado['stock_actual']}");
                                 } else {
-                                    \Log::warning("Amenity {$amenityId} no encontrado");
+                                    \Log::warning("Amenity {$amenityId} no encontrado o cantidad <= 0");
                                 }
+                            } else {
+                                \Log::warning("Amenity {$amenityId} no encontrado");
                             }
                         } catch (\Exception $e) {
                             \Log::error("Error procesando amenity {$amenityId}: " . $e->getMessage());

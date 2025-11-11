@@ -187,6 +187,10 @@ class DashboardController extends Controller
         $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
         $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
         
+        // **Categorías específicas a excluir de ingresos: 12 (EXCLUIDO) siempre debe excluirse**
+        $categoriasIngresosExcluidas = [12]; // EXCLUIDO - nunca debe contabilizarse
+        $categoriasIngresosParaExclusion = array_merge($categoriasIngresosSeparadas, $categoriasIngresosExcluidas);
+        
         // **Categorías específicas a excluir (45 y 53) - solo para el cálculo principal**
         $categoriasExcluidasEspecificas = [45, 53];
         $categoriasGastosSeparadasParaExclusion = array_merge($categoriasGastosSeparadas, $categoriasExcluidasEspecificas);
@@ -208,10 +212,10 @@ class DashboardController extends Controller
         // Excluir las categorías específicas de los gastos separados
         $categoriasGastosSeparadasObra = array_diff($categoriasGastosSeparadas, $categoriasExcluidasDeSeparados);
 
-        // **Optimización: Usar consultas agregadas para ingresos y gastos (EXCLUYENDO categorías separadas)**
+        // **Optimización: Usar consultas agregadas para ingresos y gastos (EXCLUYENDO categorías separadas y EXCLUIDO)**
         $ingresos = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasIngresosSeparadas)) {
-            $ingresos = $ingresos->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        if (!empty($categoriasIngresosParaExclusion)) {
+            $ingresos = $ingresos->whereNotIn('categoria_id', $categoriasIngresosParaExclusion);
         }
         $ingresos = $ingresos->sum('quantity');
         
@@ -221,10 +225,10 @@ class DashboardController extends Controller
         }
         $gastos = abs($gastos->sum('quantity'));
 
-        // **Calcular ingresos para beneficio (excluyendo categorías de contabilización separada)**
+        // **Calcular ingresos para beneficio (excluyendo categorías de contabilización separada y EXCLUIDO)**
         $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasIngresosSeparadas)) {
-            $ingresosBeneficio = $ingresosBeneficio->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        if (!empty($categoriasIngresosParaExclusion)) {
+            $ingresosBeneficio = $ingresosBeneficio->whereNotIn('categoria_id', $categoriasIngresosParaExclusion);
         }
         $ingresosBeneficio = $ingresosBeneficio->sum('quantity');
 
@@ -295,10 +299,10 @@ class DashboardController extends Controller
         }
 
         // **Optimización: Obtener listas de ingresos y gastos solo si son necesarias**
-        // Excluir categorías que se contabilizan por separado de las listas
+        // Excluir categorías que se contabilizan por separado y EXCLUIDO de las listas
         $ingresosLista = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
-        if (!empty($categoriasIngresosSeparadas)) {
-            $ingresosLista = $ingresosLista->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+        if (!empty($categoriasIngresosParaExclusion)) {
+            $ingresosLista = $ingresosLista->whereNotIn('categoria_id', $categoriasIngresosParaExclusion);
         }
         $ingresosLista = $ingresosLista->with('categoria')->get();
         
@@ -608,13 +612,17 @@ class DashboardController extends Controller
             $nochesMesAnterior = $this->calculateNochesReservadas($fechaInicioMesAnterior, $fechaFinMesAnterior);
             $nochesReservadasAnioAnterior[] = $nochesMesAnterior;
 
-            // **Beneficios - Usar lógica dinámica**
+            // **Beneficios - Usar lógica dinámica (excluyendo EXCLUIDO - categoría 12)**
             $categoriasIngresosSeparadas = \App\Models\CategoriaIngresos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
             $categoriasGastosSeparadas = \App\Models\CategoriaGastos::where('contabilizar_misma_empresa', true)->pluck('id')->toArray();
+            
+            // Excluir categoría 12 (EXCLUIDO) siempre
+            $categoriasIngresosExcluidasMensual = [12]; // EXCLUIDO - nunca debe contabilizarse
+            $categoriasIngresosParaExclusionMensual = array_merge($categoriasIngresosSeparadas, $categoriasIngresosExcluidasMensual);
 
             $ingresosMesActual = Ingresos::whereYear('date', $anioActual)->whereMonth('date', $mes);
-            if (!empty($categoriasIngresosSeparadas)) {
-                $ingresosMesActual = $ingresosMesActual->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+            if (!empty($categoriasIngresosParaExclusionMensual)) {
+                $ingresosMesActual = $ingresosMesActual->whereNotIn('categoria_id', $categoriasIngresosParaExclusionMensual);
             }
             $ingresosMesActual = $ingresosMesActual->sum('quantity');
 
@@ -626,8 +634,8 @@ class DashboardController extends Controller
             $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
             $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)->whereMonth('date', $mes);
-            if (!empty($categoriasIngresosSeparadas)) {
-                $ingresosMesAnterior = $ingresosMesAnterior->whereNotIn('categoria_id', $categoriasIngresosSeparadas);
+            if (!empty($categoriasIngresosParaExclusionMensual)) {
+                $ingresosMesAnterior = $ingresosMesAnterior->whereNotIn('categoria_id', $categoriasIngresosParaExclusionMensual);
             }
             $ingresosMesAnterior = $ingresosMesAnterior->sum('quantity');
 
