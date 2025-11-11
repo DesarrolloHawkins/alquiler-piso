@@ -45,7 +45,7 @@ class ArticuloController extends Controller
             $query->where('activo', $request->activo);
         }
 
-        $articulos = $query->orderBy('nombre')->paginate(15);
+        $articulos = $query->orderBy('nombre')->paginate(15)->appends($request->except('page'));
 
         // Datos para filtros
         $proveedores = Proveedor::activos()->orderBy('nombre')->get();
