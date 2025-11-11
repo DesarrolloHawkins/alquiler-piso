@@ -1099,13 +1099,13 @@ class GestionApartamentoController extends Controller
                 $totalItems += $checklist->items->count();
             }
             
-            $elementosCompletados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
-                ->whereNotNull('item_id')
-                ->where('estado', 1)
-                ->pluck('item_id')
+            // Obtener items completados desde tarea_checklist_completados (no desde ApartamentoLimpiezaItem)
+            $itemsCompletadosIds = \DB::table('tarea_checklist_completados')
+                ->where('tarea_asignada_id', $tarea->id)
+                ->pluck('item_checklist_id')
                 ->toArray();
             
-            $itemsCompletados = count($elementosCompletados);
+            $itemsCompletados = count($itemsCompletadosIds);
             $porcentajeCompletado = $totalItems > 0 ? ($itemsCompletados / $totalItems) * 100 : 100;
             
             // Si no está completo, verificar consentimiento
@@ -1134,6 +1134,57 @@ class GestionApartamentoController extends Controller
                 'fecha_fin_real' => now(),
                 'porcentaje_completado' => $porcentajeCompletado
             ]);
+            
+            // Buscar y actualizar el ApartamentoLimpieza asociado
+            $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
+            if ($apartamentoLimpieza) {
+                $hoy = Carbon::now();
+                $apartamentoLimpieza->update([
+                    'status_id' => 3, // Limpio
+                    'fecha_fin' => $hoy
+                ]);
+                
+                Log::info('ApartamentoLimpieza actualizado desde finalizarTareaChecklist', [
+                    'limpieza_id' => $apartamentoLimpieza->id,
+                    'tarea_id' => $tarea->id,
+                    'status_id' => 3,
+                    'fecha_fin' => $hoy
+                ]);
+                
+                // Actualizar fecha_limpieza en la reserva si existe
+                $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
+                if ($reserva != null) {
+                    $reserva->fecha_limpieza = $hoy;
+                    $reserva->save();
+                    
+                    Log::info('Reserva actualizada desde finalizarTareaChecklist', [
+                        'reserva_id' => $reserva->id,
+                        'fecha_limpieza' => $hoy
+                    ]);
+                }
+                
+                // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
+                $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
+                
+                // Crear alerta si hay observaciones al finalizar la limpieza
+                if (!empty($apartamentoLimpieza->observacion)) {
+                    $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
+                    if ($apartamentoLimpieza->zona_comun_id) {
+                        $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
+                    }
+                    
+                    AlertService::createCleaningObservationAlert(
+                        $apartamentoLimpieza->id,
+                        $apartamentoNombre,
+                        $apartamentoLimpieza->observacion
+                    );
+                    
+                    Log::info('Alerta de observación creada desde finalizarTareaChecklist', [
+                        'limpieza_id' => $apartamentoLimpieza->id,
+                        'apartamento' => $apartamentoNombre
+                    ]);
+                }
+            }
             
             // Crear nueva tarea si es necesario (para tareas recurrentes)
             if ($tarea->tipoTarea->es_recurrente) {
