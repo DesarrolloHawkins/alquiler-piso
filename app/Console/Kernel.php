@@ -143,12 +143,14 @@ class Kernel extends ConsoleKernel
         // Limpiar notificaciones antiguas cada día a las 3:00 AM
         $schedule->command('notifications:clean --days=30')->dailyAt('03:00');
         
-        // Aplicar descuento del 20% a apartamentos libres (lunes a jueves a las 10:00)
+        // Aplicar descuento del 20% a apartamentos libres (SOLO lunes a jueves a las 10:00)
+        // NO se ejecuta viernes, sábado ni domingo
         $schedule->command('aplicar:descuento-apartamentos-libres')
-            ->weekdays() // Lunes a viernes
             ->at('10:00')
             ->when(function () {
-                // Solo ejecutar de lunes a jueves (0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves)
+                // Solo ejecutar de lunes a jueves
+                // 0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves
+                // Excluye: 4=Viernes, 5=Sábado, 6=Domingo
                 $dayOfWeek = Carbon::now()->dayOfWeek;
                 return in_array($dayOfWeek, [0, 1, 2, 3]);
             });
