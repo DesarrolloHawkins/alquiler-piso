@@ -39,6 +39,8 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\CleanOldLogs::class,
         \App\Console\Commands\GenerateLogReport::class,
         \App\Console\Commands\CleanOldNotifications::class,
+        \App\Console\Commands\FixAmenityMovements::class,
+        \App\Console\Commands\FixAllAmenitiesMovements::class,
     ];
 
 
@@ -140,6 +142,16 @@ class Kernel extends ConsoleKernel
         
         // Limpiar notificaciones antiguas cada día a las 3:00 AM
         $schedule->command('notifications:clean --days=30')->dailyAt('03:00');
+        
+        // Aplicar descuento del 20% a apartamentos libres (lunes a jueves a las 10:00)
+        $schedule->command('aplicar:descuento-apartamentos-libres')
+            ->weekdays() // Lunes a viernes
+            ->at('10:00')
+            ->when(function () {
+                // Solo ejecutar de lunes a jueves (0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves)
+                $dayOfWeek = Carbon::now()->dayOfWeek;
+                return in_array($dayOfWeek, [0, 1, 2, 3]);
+            });
 
         // Tarea de Generacion de Factura
         $schedule->call(function () {
