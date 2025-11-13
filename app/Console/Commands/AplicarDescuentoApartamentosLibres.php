@@ -56,10 +56,24 @@ class AplicarDescuentoApartamentosLibres extends Command
         $this->line("Fecha de análisis: {$fechaAnalisis->format('d/m/Y')} (" . $this->getNombreDia($fechaAnalisis->dayOfWeek) . ")");
         $this->line('');
 
+        // Log de inicio de ejecución
+        Log::info("Inicio de ejecución: Aplicar descuento a apartamentos libres", [
+            'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+            'dia_semana' => $this->getNombreDia($fechaAnalisis->dayOfWeek),
+            'dry_run' => $dryRun,
+            'force' => $force
+        ]);
+
         // Verificar que sea lunes-jueves (0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves)
         if (!$force && !in_array($fechaAnalisis->dayOfWeek, [0, 1, 2, 3])) {
             $this->warn('⚠️  Este comando solo se ejecuta de lunes a jueves');
             $this->warn('   Usa --force para forzar la ejecución');
+            
+            Log::warning("Comando cancelado: no es día válido (lunes-jueves)", [
+                'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+                'dia_semana' => $this->getNombreDia($fechaAnalisis->dayOfWeek)
+            ]);
+            
             return 0;
         }
 
@@ -72,6 +86,13 @@ class AplicarDescuentoApartamentosLibres extends Command
         // Verificar si hay más de 3 apartamentos libres
         if ($apartamentosLibres->count() <= self::MIN_APARTAMENTOS_LIBRES) {
             $this->info("✅ No se aplica descuento: hay {$apartamentosLibres->count()} apartamentos libres (máximo {$this->MIN_APARTAMENTOS_LIBRES})");
+            
+            Log::info("No se aplica descuento: insuficientes apartamentos libres", [
+                'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+                'apartamentos_libres' => $apartamentosLibres->count(),
+                'minimo_requerido' => self::MIN_APARTAMENTOS_LIBRES
+            ]);
+            
             return 0;
         }
 
@@ -130,10 +151,26 @@ class AplicarDescuentoApartamentosLibres extends Command
             return 0;
         }
 
+        // Log antes de aplicar descuentos
+        Log::info("Aplicando descuentos a apartamentos libres", [
+            'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+            'total_apartamentos_libres' => $apartamentosLibres->count(),
+            'apartamentos_sin_descuento' => $apartamentosSinDescuento->count(),
+            'apartamentos_con_descuento' => $apartamentosConDescuento->count(),
+            'descuento_porcentaje' => self::DESCUENTO_PORCENTAJE,
+            'apartamentos_sin_descuento_lista' => $apartamentosSinDescuento->pluck('nombre')->toArray(),
+            'apartamentos_con_descuento_lista' => $apartamentosConDescuento->pluck('nombre')->toArray()
+        ]);
+
         // Confirmar antes de aplicar (a menos que se use --confirmar)
         $confirmar = $this->option('confirmar');
         if (!$confirmar && !$this->confirm('¿Deseas aplicar el descuento del 20% a los apartamentos seleccionados?')) {
             $this->info('❌ Operación cancelada');
+            
+            Log::info("Operación cancelada por el usuario", [
+                'fecha_analisis' => $fechaAnalisis->format('Y-m-d')
+            ]);
+            
             return 0;
         }
 
@@ -290,6 +327,13 @@ class AplicarDescuentoApartamentosLibres extends Command
         $this->info("📊 RESUMEN FINAL:");
         $this->line("   ✅ Exitosos: {$exitosos}");
         $this->line("   ❌ Errores: {$errores}");
+        
+        // Log del resumen final
+        Log::info("Resumen final: Aplicar descuento a apartamentos libres", [
+            'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+            'exitosos' => $exitosos,
+            'errores' => $errores
+        ]);
     }
 
     /**
