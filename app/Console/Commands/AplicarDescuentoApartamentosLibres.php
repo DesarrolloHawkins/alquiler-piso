@@ -64,8 +64,9 @@ class AplicarDescuentoApartamentosLibres extends Command
             'force' => $force
         ]);
 
-        // Verificar que sea lunes-jueves (0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves)
-        if (!$force && !in_array($fechaAnalisis->dayOfWeek, [0, 1, 2, 3])) {
+        // Verificar que sea lunes-jueves
+        // En Carbon: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+        if (!$force && !in_array($fechaAnalisis->dayOfWeek, [1, 2, 3, 4])) {
             $this->warn('⚠️  Este comando solo se ejecuta de lunes a jueves');
             $this->warn('   Usa --force para forzar la ejecución');
             
@@ -341,14 +342,15 @@ class AplicarDescuentoApartamentosLibres extends Command
      */
     private function getNombreDia($dayOfWeek)
     {
+        // Mapeo correcto de Carbon dayOfWeek: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
         $dias = [
-            0 => 'Lunes',
-            1 => 'Martes',
-            2 => 'Miércoles',
-            3 => 'Jueves',
-            4 => 'Viernes',
-            5 => 'Sábado',
-            6 => 'Domingo'
+            0 => 'Domingo',
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado'
         ];
 
         return $dias[$dayOfWeek] ?? 'Desconocido';

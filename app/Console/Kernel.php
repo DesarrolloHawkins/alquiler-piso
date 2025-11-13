@@ -149,10 +149,10 @@ class Kernel extends ConsoleKernel
             ->at('10:00')
             ->when(function () {
                 // Solo ejecutar de lunes a jueves
-                // 0=Lunes, 1=Martes, 2=Miércoles, 3=Jueves
-                // Excluye: 4=Viernes, 5=Sábado, 6=Domingo
+                // En Carbon: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+                // Excluye: 0=Domingo, 5=Viernes, 6=Sábado
                 $dayOfWeek = Carbon::now()->dayOfWeek;
-                return in_array($dayOfWeek, [0, 1, 2, 3]);
+                return in_array($dayOfWeek, [1, 2, 3, 4]);
             });
 
         // Tarea de Generacion de Factura
