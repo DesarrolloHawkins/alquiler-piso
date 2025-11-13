@@ -163,16 +163,27 @@ class AplicarDescuentoApartamentosLibres extends Command
             'apartamentos_con_descuento_lista' => $apartamentosConDescuento->pluck('nombre')->toArray()
         ]);
 
-        // Confirmar antes de aplicar (a menos que se use --confirmar)
+        // Confirmar antes de aplicar
+        // Si está en modo no-interactivo (cron) o se usa --confirmar, confirmar automáticamente
         $confirmar = $this->option('confirmar');
-        if (!$confirmar && !$this->confirm('¿Deseas aplicar el descuento del 20% a los apartamentos seleccionados?')) {
-            $this->info('❌ Operación cancelada');
-            
-            Log::info("Operación cancelada por el usuario", [
-                'fecha_analisis' => $fechaAnalisis->format('Y-m-d')
-            ]);
-            
-            return 0;
+        $esNoInteractivo = !$this->input->isInteractive(); // Detecta si está en modo cron/no-interactivo
+        
+        if (!$confirmar && !$esNoInteractivo) {
+            // Solo preguntar si NO está en modo no-interactivo y NO se usó --confirmar
+            if (!$this->confirm('¿Deseas aplicar el descuento del 20% a los apartamentos seleccionados?')) {
+                $this->info('❌ Operación cancelada');
+                
+                Log::info("Operación cancelada por el usuario", [
+                    'fecha_analisis' => $fechaAnalisis->format('Y-m-d')
+                ]);
+                
+                return 0;
+            }
+        } else {
+            // Modo automático (cron o --confirmar)
+            if ($esNoInteractivo) {
+                $this->line('🤖 Modo no-interactivo detectado: confirmación automática');
+            }
         }
 
         // Aplicar descuentos
