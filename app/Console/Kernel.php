@@ -145,7 +145,8 @@ class Kernel extends ConsoleKernel
         
         // Aplicar descuento del 20% a apartamentos libres (SOLO lunes a jueves a las 10:00)
         // NO se ejecuta viernes, sábado ni domingo
-        $schedule->command('aplicar:descuento-apartamentos-libres')
+        // Se ejecuta con --confirmar para evitar interacción en modo cron
+        $schedule->command('aplicar:descuento-apartamentos-libres --confirmar')
             ->at('10:00')
             ->when(function () {
                 // Solo ejecutar de lunes a jueves
