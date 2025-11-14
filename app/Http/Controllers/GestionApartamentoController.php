@@ -2923,6 +2923,18 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         
                         $resultadoDescuento = $amenity->descontarStock($cantidadRecomendada);
                         
+                        // Validar que el resultado sea un array
+                        if (!is_array($resultadoDescuento)) {
+                            \Log::error('Error: descontarStock no devolvió un array. Tipo: ' . gettype($resultadoDescuento) . ', Valor: ' . var_export($resultadoDescuento, true));
+                            throw new \Exception("Error al descontar stock: resultado inválido del método descontarStock()");
+                        }
+                        
+                        // Validar que tenga las claves necesarias
+                        if (!isset($resultadoDescuento['stock_anterior']) || !isset($resultadoDescuento['stock_actual'])) {
+                            \Log::error('Error: descontarStock no devolvió las claves esperadas. Claves: ' . implode(', ', array_keys($resultadoDescuento)));
+                            throw new \Exception("Error al descontar stock: resultado incompleto del método descontarStock()");
+                        }
+                        
                         \Log::info('Stock actualizado: ' . $resultadoDescuento['stock_anterior'] . ' -> ' . $resultadoDescuento['stock_actual']);
 
                         // Calcular costo

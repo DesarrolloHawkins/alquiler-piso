@@ -342,7 +342,7 @@ class AplicarDescuentoApartamentosLibres extends Command
         
         // Log del resumen final
         Log::info("Resumen final: Aplicar descuento a apartamentos libres", [
-            'fecha_analisis' => $fechaAnalisis->format('Y-m-d'),
+            'fecha_analisis' => $fecha->format('Y-m-d'),
             'exitosos' => $exitosos,
             'errores' => $errores
         ]);
