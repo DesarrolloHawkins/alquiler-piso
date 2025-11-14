@@ -930,11 +930,23 @@ class WebhookController extends Controller
         // Convertir a minúsculas y eliminar espacios extra
         $normalizado = trim(strtolower($mensaje));
         
+        // Eliminar prefijos comunes de Channex/email
+        $normalizado = preg_replace('/\[request received\].*?from.*?suite.*?hawkins.*?exterior.*?\d+[a-z]/i', '', $normalizado);
+        $normalizado = preg_replace('/##-.*?por favor.*?escriba.*?respuesta.*?por encima.*?esta.*?línea.*?##/i', '', $normalizado);
+        $normalizado = preg_replace('/<img[^>]*>/i', '', $normalizado);
+        $normalizado = preg_replace('/reply after this/i', '', $normalizado);
+        
         // Eliminar códigos de solicitud como (39386268), (39386265), etc.
         $normalizado = preg_replace('/\([0-9]{6,}\)/i', '', $normalizado);
         
         // Eliminar códigos alfanuméricos al final como [Y7EG4J-PPLRK], [ND0PR5-05YP7], etc.
         $normalizado = preg_replace('/\[[A-Z0-9\-]+\]/i', '', $normalizado);
+        
+        // Eliminar líneas de separación como "--------------------------------"
+        $normalizado = preg_replace('/-{3,}/', '', $normalizado);
+        
+        // Eliminar texto de servicio como "Este correo electrónico es un servicio de TravelPerk."
+        $normalizado = preg_replace('/este.*?correo.*?electrónico.*?es.*?un.*?servicio.*?de.*?travelperk/i', '', $normalizado);
         
         // Eliminar URLs y enlaces
         $normalizado = preg_replace('/https?:\/\/[^\s]+/i', '', $normalizado);
@@ -948,7 +960,8 @@ class WebhookController extends Controller
         
         // Eliminar múltiples espacios, saltos de línea y caracteres especiales repetidos
         $normalizado = preg_replace('/\s+/', ' ', $normalizado);
-        $normalizado = preg_replace('/[^\w\sáéíóúñü]/u', '', $normalizado);
+        // NO eliminar todos los caracteres especiales, solo normalizar espacios
+        // $normalizado = preg_replace('/[^\w\sáéíóúñü]/u', '', $normalizado);
         
         // Eliminar espacios al inicio y final
         $normalizado = trim($normalizado);
@@ -972,45 +985,67 @@ class WebhookController extends Controller
             // Normalizar el contenido eliminando códigos, IDs y elementos variables
             $contenidoNormalizado = $this->normalizarMensajeParaComparacion($contenido);
             
+            Log::info("🔍 Verificando mensaje repetido", [
+                'booking_id' => $bookingId,
+                'sender' => $sender,
+                'contenido_original_length' => strlen($contenido),
+                'contenido_normalizado_length' => strlen($contenidoNormalizado),
+                'contenido_normalizado_preview' => substr($contenidoNormalizado, 0, 150)
+            ]);
+            
             // Si el mensaje normalizado es muy corto, no aplicar la detección (podría ser un saludo simple)
-            if (strlen($contenidoNormalizado) < 20) {
+            if (strlen($contenidoNormalizado) < 30) {
+                Log::info("⚠️ Mensaje normalizado muy corto, no se aplica detección", [
+                    'length' => strlen($contenidoNormalizado)
+                ]);
                 return null;
             }
             
-            // Buscar mensajes del mismo booking_id en los últimos 10 minutos
-            $fechaLimite = Carbon::now()->subMinutes(10);
+            // Buscar mensajes del mismo booking_id en los últimos 15 minutos (aumentado de 10)
+            $fechaLimite = Carbon::now()->subMinutes(15);
             
             $mensajesRecientes = MensajeChat::where('booking_id', $bookingId)
                 ->where('sender', $sender)
                 ->where('received_at', '>=', $fechaLimite)
                 ->orderBy('received_at', 'desc')
-                ->limit(10) // Revisar los últimos 10 mensajes
+                ->limit(15) // Revisar los últimos 15 mensajes
                 ->get();
             
+            Log::info("📊 Mensajes recientes encontrados", [
+                'count' => $mensajesRecientes->count(),
+                'booking_id' => $bookingId
+            ]);
+            
+            $mensajeAnterior = null;
             foreach ($mensajesRecientes as $mensaje) {
                 $mensajeNormalizado = $this->normalizarMensajeParaComparacion($mensaje->message ?? '');
                 
                 // Si el mensaje normalizado es muy corto, saltarlo
-                if (strlen($mensajeNormalizado) < 20) {
+                if (strlen($mensajeNormalizado) < 30) {
                     continue;
                 }
                 
                 // Comparar mensajes normalizados
                 if ($mensajeNormalizado === $contenidoNormalizado) {
                     // Mensaje idéntico después de normalización
+                    Log::info("✅ Mensaje idéntico encontrado", [
+                        'mensaje_id' => $mensaje->id,
+                        'received_at' => $mensaje->received_at
+                    ]);
                     $mensajeAnterior = $mensaje;
                     break;
                 }
                 
-                // Verificar similitud alta (más del 90% de similitud)
+                // Verificar similitud alta (más del 85% de similitud - más agresivo)
                 // para capturar variaciones menores del contestador automático
-                if (strlen($contenidoNormalizado) > 20 && strlen($mensajeNormalizado) > 20) {
+                if (strlen($contenidoNormalizado) > 30 && strlen($mensajeNormalizado) > 30) {
                     $similitud = similar_text($contenidoNormalizado, $mensajeNormalizado, $percent);
-                    if ($percent > 90) {
+                    if ($percent > 85) {
                         Log::info("🔍 Mensaje similar detectado", [
                             'similitud' => round($percent, 2) . '%',
-                            'mensaje_actual' => substr($contenidoNormalizado, 0, 100),
-                            'mensaje_anterior' => substr($mensajeNormalizado, 0, 100)
+                            'mensaje_id' => $mensaje->id,
+                            'mensaje_actual_preview' => substr($contenidoNormalizado, 0, 100),
+                            'mensaje_anterior_preview' => substr($mensajeNormalizado, 0, 100)
                         ]);
                         $mensajeAnterior = $mensaje;
                         break;
@@ -1018,60 +1053,50 @@ class WebhookController extends Controller
                 }
             }
             
-            // Si encontramos un mensaje anterior, verificar que ya se haya respondido
-            if (isset($mensajeAnterior)) {
+            // Si encontramos un mensaje anterior similar, verificar que ya se haya respondido
+            if ($mensajeAnterior) {
                 // Buscar respuesta en ChatGpt usando el sender como remitente
-                // y verificando que haya una respuesta reciente
-                // Usar el mensaje normalizado para buscar respuestas similares
+                // Verificar si hay alguna respuesta reciente (últimos 15 minutos)
                 $respuestaExistente = ChatGpt::where('remitente', $sender)
                     ->where('date', '>=', $fechaLimite)
                     ->where('status', 1) // Respondido
                     ->whereNotNull('respuesta')
                     ->where('respuesta', '!=', '')
                     ->orderBy('date', 'desc')
-                    ->limit(5) // Revisar las últimas 5 respuestas
+                    ->limit(10) // Revisar las últimas 10 respuestas
                     ->get();
                 
-                // Verificar si alguna respuesta corresponde a un mensaje similar
-                foreach ($respuestaExistente as $respuesta) {
-                    $mensajeRespuestaNormalizado = $this->normalizarMensajeParaComparacion($respuesta->mensaje ?? '');
-                    
-                    // Comparar con el contenido normalizado actual
-                    if ($mensajeRespuestaNormalizado === $contenidoNormalizado) {
-                        Log::info("✅ Mensaje repetido encontrado en Channex y ya respondido", [
-                            'booking_id' => $bookingId,
-                            'sender' => $sender,
-                            'mensaje_anterior_id' => $mensajeAnterior->id,
-                            'fecha_anterior' => $mensajeAnterior->received_at,
-                            'respuesta_id' => $respuesta->id,
-                            'tiempo_transcurrido' => Carbon::now()->diffInSeconds($mensajeAnterior->received_at) . ' segundos',
-                            'contenido_normalizado' => substr($contenidoNormalizado, 0, 100)
-                        ]);
-                        return $mensajeAnterior;
-                    }
-                    
-                    // También verificar similitud
-                    if (strlen($contenidoNormalizado) > 20 && strlen($mensajeRespuestaNormalizado) > 20) {
-                        $similitud = similar_text($contenidoNormalizado, $mensajeRespuestaNormalizado, $percent);
-                        if ($percent > 90) {
-                            Log::info("✅ Mensaje similar encontrado en Channex y ya respondido", [
-                                'booking_id' => $bookingId,
-                                'sender' => $sender,
-                                'mensaje_anterior_id' => $mensajeAnterior->id,
-                                'fecha_anterior' => $mensajeAnterior->received_at,
-                                'respuesta_id' => $respuesta->id,
-                                'similitud' => round($percent, 2) . '%',
-                                'tiempo_transcurrido' => Carbon::now()->diffInSeconds($mensajeAnterior->received_at) . ' segundos'
-                            ]);
-                            return $mensajeAnterior;
-                        }
-                    }
+                Log::info("📨 Respuestas encontradas en ChatGpt", [
+                    'count' => $respuestaExistente->count(),
+                    'sender' => $sender
+                ]);
+                
+                // Si hay al menos una respuesta reciente, considerar que ya se respondió
+                // No necesitamos comparar el contenido exacto, solo verificar que hay respuesta
+                if ($respuestaExistente->count() > 0) {
+                    Log::info("✅ Mensaje repetido encontrado en Channex y ya respondido", [
+                        'booking_id' => $bookingId,
+                        'sender' => $sender,
+                        'mensaje_anterior_id' => $mensajeAnterior->id,
+                        'fecha_anterior' => $mensajeAnterior->received_at,
+                        'respuestas_encontradas' => $respuestaExistente->count(),
+                        'tiempo_transcurrido' => Carbon::now()->diffInSeconds($mensajeAnterior->received_at) . ' segundos',
+                        'contenido_normalizado' => substr($contenidoNormalizado, 0, 150)
+                    ]);
+                    return $mensajeAnterior;
+                } else {
+                    Log::info("⚠️ Mensaje similar encontrado pero sin respuesta aún", [
+                        'mensaje_anterior_id' => $mensajeAnterior->id,
+                        'fecha_anterior' => $mensajeAnterior->received_at
+                    ]);
                 }
             }
             
             return null;
         } catch (\Exception $e) {
-            Log::error("❌ Error verificando mensaje repetido en Channex: " . $e->getMessage());
+            Log::error("❌ Error verificando mensaje repetido en Channex: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             // En caso de error, no bloquear el mensaje (mejor responder que no responder)
             return null;
         }
