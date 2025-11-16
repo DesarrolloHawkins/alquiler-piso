@@ -84,6 +84,11 @@ class WebhookController extends Controller
             if (!MensajeChat::where('channex_message_id', $messageId)->exists() && $payload['sender'] != 'property') {
                 // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
                 // Buscar mensajes idénticos del mismo booking_id en los últimos 10 minutos
+
+                if($payload['booking_id']=='6866255b-fab0-4cb2-8414-21563a291d6a'){
+                    return;
+                    }
+                          
                 $mensajeRepetido = $this->verificarMensajeRepetidoChannex(
                     $payload['booking_id'],
                     $payload['message'],
