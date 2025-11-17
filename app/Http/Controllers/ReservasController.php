@@ -16,6 +16,7 @@ use App\Models\Reserva;
 use App\Models\RoomType;
 use App\Services\ChatGptService;
 use App\Services\NotificationService;
+use App\Services\MIRService;
 use Carbon\Carbon;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
@@ -286,6 +287,100 @@ class ReservasController extends Controller
         $factura = Invoices::where('reserva_id', $reserva->id)->first();
         
         return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes', 'factura'));
+    }
+
+    /**
+     * Enviar reserva a MIR (Servicio de Hospedajes)
+     */
+    public function enviarMIR(Reserva $reserva)
+    {
+        try {
+            $mirService = new MIRService();
+            $resultado = $mirService->enviarReserva($reserva);
+            
+            // Actualizar la reserva con el resultado
+            $reserva->mir_enviado = $resultado['success'];
+            $reserva->mir_estado = $resultado['estado'];
+            $reserva->mir_respuesta = json_encode($resultado);
+            $reserva->mir_fecha_envio = now();
+            $reserva->mir_codigo_referencia = $resultado['codigo_referencia'] ?? null;
+            $reserva->save();
+            
+            if ($resultado['success']) {
+                Log::info('Reserva enviada exitosamente a MIR', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_referencia' => $resultado['codigo_referencia'],
+                ]);
+                
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('success', 'Reserva enviada exitosamente a MIR. Código de referencia: ' . ($resultado['codigo_referencia'] ?? 'N/A'));
+            } else {
+                Log::error('Error al enviar reserva a MIR', [
+                    'reserva_id' => $reserva->id,
+                    'error' => $resultado['mensaje'],
+                ]);
+                
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('error', 'Error al enviar la reserva a MIR: ' . $resultado['mensaje']);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Excepción al enviar reserva a MIR', [
+                'reserva_id' => $reserva->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error inesperado al enviar la reserva a MIR: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Toggle el estado de conversacion_plataforma de una reserva
+     */
+    public function toggleConversacionPlataforma(Reserva $reserva)
+    {
+        try {
+            // Cambiar el estado (toggle)
+            $reserva->conversacion_plataforma = !$reserva->conversacion_plataforma;
+            $reserva->save();
+            
+            $estadoTexto = $reserva->conversacion_plataforma ? 'desactivadas' : 'activadas';
+            
+            Log::info('Estado de conversacion_plataforma actualizado', [
+                'reserva_id' => $reserva->id,
+                'nuevo_estado' => $reserva->conversacion_plataforma,
+            ]);
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Contestaciones por plataforma {$estadoTexto} correctamente",
+                    'conversacion_plataforma' => $reserva->conversacion_plataforma
+                ]);
+            }
+            
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('success', "Contestaciones por plataforma {$estadoTexto} correctamente");
+                
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar conversacion_plataforma', [
+                'reserva_id' => $reserva->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al actualizar el estado: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
+        }
     }
 
     /**

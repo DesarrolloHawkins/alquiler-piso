@@ -82,13 +82,42 @@ class WebhookController extends Controller
             $messageId = $payload['ota_message_id'];
 
             if (!MensajeChat::where('channex_message_id', $messageId)->exists() && $payload['sender'] != 'property') {
+                // VALIDACIÓN: Verificar si las contestaciones están desactivadas para esta reserva
+                // Si conversacion_plataforma = true, significa que las contestaciones están desactivadas
+                $reserva = Reserva::where('id_channex', $payload['booking_id'])->first();
+                
+                if ($reserva && $reserva->conversacion_plataforma === true) {
+                    Log::info("🚫 Contestaciones desactivadas para esta reserva - No se responderá al mensaje", [
+                        'booking_id' => $payload['booking_id'],
+                        'reserva_id' => $reserva->id,
+                        'codigo_reserva' => $reserva->codigo_reserva,
+                        'sender' => $payload['sender'],
+                        'conversacion_plataforma' => $reserva->conversacion_plataforma
+                    ]);
+                    
+                    // Guardar el mensaje pero sin responder
+                    MensajeChat::create([
+                        'channex_message_id' => $messageId,
+                        'booking_id' => $payload['booking_id'],
+                        'thread_id' => $payload['message_thread_id'],
+                        'property_id' => $payload['property_id'],
+                        'sender' => $payload['sender'],
+                        'message' => $payload['message'],
+                        'attachments' => $payload['attachments'] ?? [],
+                        'have_attachment' => $payload['have_attachment'] ?? false,
+                        'received_at' => Carbon::parse($request->input('timestamp')),
+                        'openai_thread_id' => null,
+                    ]);
+                    
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Contestaciones desactivadas para esta reserva - No se responde',
+                        'ignored' => true
+                    ]);
+                }
+                
                 // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
                 // Buscar mensajes idénticos del mismo booking_id en los últimos 10 minutos
-
-                if($payload['booking_id']=='6866255b-fab0-4cb2-8414-21563a291d6a'){
-                    return;
-                    }
-                          
                 $mensajeRepetido = $this->verificarMensajeRepetidoChannex(
                     $payload['booking_id'],
                     $payload['message'],

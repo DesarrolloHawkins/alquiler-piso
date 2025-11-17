@@ -43,7 +43,21 @@ class Reserva extends Model
         'numero_ninos',
         'edades_ninos',
         'notas_ninos',
-        'no_facturar'
+        'no_facturar',
+        // Campos para plataforma del estado
+        'referencia_contrato',
+        'fecha_contrato',
+        'fecha_hora_entrada',
+        'fecha_hora_salida',
+        'numero_habitaciones',
+        'conexion_internet',
+        // Campos MIR
+        'mir_enviado',
+        'mir_estado',
+        'mir_respuesta',
+        'mir_fecha_envio',
+        'mir_codigo_referencia',
+        'conversacion_plataforma',
     ];
 
     /**
@@ -63,6 +77,13 @@ class Reserva extends Model
     protected $casts = [
         'edades_ninos' => 'array',
         'no_facturar' => 'boolean',
+        'fecha_contrato' => 'date',
+        'fecha_hora_entrada' => 'datetime',
+        'fecha_hora_salida' => 'datetime',
+        'conexion_internet' => 'boolean',
+        'mir_enviado' => 'boolean',
+        'mir_fecha_envio' => 'datetime',
+        'conversacion_plataforma' => 'boolean',
     ];
 
     /**

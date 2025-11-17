@@ -312,6 +312,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/{reserva}/show', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
     Route::post('/reservas/{reserva}/enviar-mir', [App\Http\Controllers\ReservasController::class, 'enviarMIR'])->name('reservas.enviar-mir');
+    Route::post('/reservas/{reserva}/toggle-conversacion-plataforma', [App\Http\Controllers\ReservasController::class, 'toggleConversacionPlataforma'])->name('reservas.toggle-conversacion-plataforma');
     Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
     Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
     Route::post('/reservas/update/{id}', [App\Http\Controllers\ReservasController::class, 'update'])->name('reservas.update');
