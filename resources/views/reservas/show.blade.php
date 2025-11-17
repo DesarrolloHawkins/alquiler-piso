@@ -327,6 +327,37 @@
             
             <div class="col-md-6">
                 <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                    <div class="avatar-sm bg-{{ $reserva->conversacion_plataforma ? 'success' : 'danger' }}-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-{{ $reserva->conversacion_plataforma ? 'comment-slash' : 'comment' }} text-{{ $reserva->conversacion_plataforma ? 'success' : 'danger' }}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 fw-semibold">Contestaciones por Plataforma</h6>
+                        <p class="mb-0">
+                            @if($reserva->conversacion_plataforma)
+                                <span class="badge bg-success-subtle text-success mb-2 d-inline-block">
+                                    <i class="fas fa-check me-1"></i>Desactivadas
+                                </span>
+                            @else
+                                <span class="badge bg-danger-subtle text-danger mb-2 d-inline-block">
+                                    <i class="fas fa-times me-1"></i>Activas
+                                </span>
+                            @endif
+                            <br>
+                            <button 
+                                id="toggle-conversacion-plataforma" 
+                                class="btn btn-{{ $reserva->conversacion_plataforma ? 'success' : 'danger' }} btn-sm mt-1" 
+                                data-reserva-id="{{ $reserva->id }}"
+                                data-estado-actual="{{ $reserva->conversacion_plataforma ? '1' : '0' }}">
+                                <i class="fas fa-{{ $reserva->conversacion_plataforma ? 'toggle-on' : 'toggle-off' }} me-1"></i>
+                                {{ $reserva->conversacion_plataforma ? 'Activar Contestaciones' : 'Desactivar Contestaciones' }}
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="d-flex align-items-center p-3 bg-light rounded-3">
                     <div class="avatar-sm bg-warning-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
                         <i class="fas fa-file-invoice text-warning"></i>
                     </div>
@@ -492,6 +523,131 @@
         @endif
     </div>
 </div>
+
+<!-- Sección MIR - Servicio de Hospedajes -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-shield-alt text-primary me-2"></i>
+            Comunicación MIR - Servicio de Hospedajes
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                    <div class="avatar-sm bg-{{ $reserva->mir_enviado ? 'success' : 'danger' }}-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-{{ $reserva->mir_enviado ? 'check' : 'times' }} text-{{ $reserva->mir_enviado ? 'success' : 'danger' }}"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-semibold">Estado de Envío</h6>
+                        <p class="mb-0">
+                            @if($reserva->mir_enviado)
+                                <span class="badge bg-success-subtle text-success">
+                                    <i class="fas fa-check me-1"></i>Enviado
+                                </span>
+                            @else
+                                <span class="badge bg-danger-subtle text-danger">
+                                    <i class="fas fa-times me-1"></i>No enviado
+                                </span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            @if($reserva->mir_enviado)
+            <div class="col-md-6">
+                <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                    <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-info-circle text-info"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-semibold">Estado MIR</h6>
+                        <p class="mb-0">
+                            <span class="badge bg-info-subtle text-info">
+                                {{ ucfirst($reserva->mir_estado ?? 'N/A') }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            @if($reserva->mir_codigo_referencia)
+            <div class="col-md-6">
+                <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                    <div class="avatar-sm bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-barcode text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-semibold">Código de Referencia</h6>
+                        <p class="mb-0 text-muted">{{ $reserva->mir_codigo_referencia }}</p>
+                    </div>
+                </div>
+            </div>
+            @endif
+            
+            @if($reserva->mir_fecha_envio)
+            <div class="col-md-6">
+                <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                    <div class="avatar-sm bg-secondary-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-calendar text-secondary"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-semibold">Fecha de Envío</h6>
+                        <p class="mb-0 text-muted">
+                            {{ \Carbon\Carbon::parse($reserva->mir_fecha_envio)->format('d/m/Y H:i') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @endif
+        </div>
+        
+        @if($reserva->mir_respuesta)
+        <div class="mb-4">
+            <h6 class="fw-semibold mb-2">
+                <i class="fas fa-file-code text-info me-2"></i>
+                Respuesta Completa
+            </h6>
+            <div class="bg-light p-3 rounded-3">
+                <pre class="mb-0 small" style="max-height: 200px; overflow-y: auto;">{{ json_encode(json_decode($reserva->mir_respuesta), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+            </div>
+        </div>
+        @endif
+        
+        <div class="d-flex gap-2">
+            @if(!$reserva->mir_enviado)
+            <form action="{{ route('reservas.enviar-mir', $reserva->id) }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-primary" onclick="return confirm('¿Estás seguro de enviar esta reserva a MIR?')">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Enviar a MIR
+                </button>
+            </form>
+            @else
+            <form action="{{ route('reservas.enviar-mir', $reserva->id) }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Esta reserva ya fue enviada. ¿Deseas reenviarla?')">
+                    <i class="fas fa-redo me-2"></i>
+                    Reenviar a MIR
+                </button>
+            </form>
+            @endif
+            
+            <a href="{{ route('configuracion.mir.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-cog me-2"></i>
+                Configurar MIR
+            </a>
+        </div>
+        
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Nota:</strong> El envío a MIR es obligatorio según el Real Decreto 933/2021 para cumplir con la normativa de turismo de Andalucía.
+        </div>
+    </div>
+</div>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script>
     $(document).ready(function() {
@@ -554,6 +710,101 @@
                             Swal.fire({
                                 title: 'Error',
                                 text: data.message || 'Error al generar la factura.',
+                                icon: 'error',
+                                confirmButtonText: '<i class="fas fa-times me-2"></i>Entendido',
+                                customClass: {
+                                    confirmButton: 'btn btn-danger'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Hubo un error al procesar la solicitud.',
+                            icon: 'error',
+                            confirmButtonText: '<i class="fas fa-times me-2"></i>Entendido',
+                            customClass: {
+                                confirmButton: 'btn btn-danger'
+                            },
+                            buttonsStyling: false
+                        });
+                    });
+                }
+            });
+        });
+
+        // Manejar el toggle de conversacion_plataforma
+        $('#toggle-conversacion-plataforma').on('click', function() {
+            let reservaId = $(this).data('reserva-id');
+            let estadoActual = $(this).data('estado-actual') === '1';
+            // Si estadoActual es true, significa que las contestaciones están desactivadas
+            // Al hacer toggle, las activaremos (nuevoEstado = false)
+            // Si estadoActual es false, significa que las contestaciones están activas
+            // Al hacer toggle, las desactivaremos (nuevoEstado = true)
+            let nuevoEstado = !estadoActual;
+            // nuevoEstado = true significa desactivar contestaciones
+            // nuevoEstado = false significa activar contestaciones
+            let accionTexto = nuevoEstado ? 'desactivar' : 'activar';
+
+            Swal.fire({
+                title: `¿${accionTexto.charAt(0).toUpperCase() + accionTexto.slice(1)} Contestaciones?`,
+                text: `¿Estás seguro de que deseas ${accionTexto} las contestaciones automáticas por plataforma para esta reserva?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: nuevoEstado ? '#198754' : '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `<i class="fas fa-${nuevoEstado ? 'toggle-on' : 'toggle-off'} me-2"></i>Sí, ${accionTexto.charAt(0).toUpperCase() + accionTexto.slice(1)}`,
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
+                customClass: {
+                    confirmButton: `btn btn-${nuevoEstado ? 'success' : 'danger'}`,
+                    cancelButton: 'btn btn-secondary'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Procesando...',
+                        text: 'Actualizando el estado, por favor espere.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Enviar la solicitud POST usando Fetch
+                    fetch(`{{ route('reservas.toggle-conversacion-plataforma', $reserva->id) }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: '¡Estado Actualizado!',
+                                text: data.message || 'El estado se ha actualizado correctamente.',
+                                icon: 'success',
+                                confirmButtonText: '<i class="fas fa-check me-2"></i>Continuar',
+                                customClass: {
+                                    confirmButton: 'btn btn-success'
+                                },
+                                buttonsStyling: false
+                            }).then(() => {
+                                location.reload(); // Recargar la página para actualizar el estado
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.message || 'Error al actualizar el estado.',
                                 icon: 'error',
                                 confirmButtonText: '<i class="fas fa-times me-2"></i>Entendido',
                                 customClass: {
