@@ -16,8 +16,12 @@ class AdminLimpiezasController extends Controller
 {
     public function index(Request $request)
     {
-        // Obtener datos para filtros
+        // Obtener datos para filtros - SOLO USUARIOS ACTIVOS
         $empleadas = User::whereIn('role', ['USER', 'LIMPIEZA', 'ADMIN'])
+            ->where(function($query) {
+                $query->where('inactive', '=', 0)
+                      ->orWhereNull('inactive');
+            })
             ->orderBy('name')
             ->get();
         

@@ -1747,9 +1747,42 @@ class GestionApartamentoController extends Controller
             ->where('apartamento_id', $reserva->apartamento_id)
             ->first();
 
+        // Buscar y actualizar la tarea asignada relacionada con esta reserva
+        $usuarioActual = Auth::user();
+        $tareaAsignada = null;
+        
+        // Buscar la tarea asignada del usuario actual para este apartamento
+        // Primero buscar el turno activo del usuario
+        $turnoActivo = \App\Models\TurnoTrabajo::where('user_id', $usuarioActual->id)
+            ->where('fecha', Carbon::today())
+            ->where('estado', 'activo')
+            ->first();
+        
+        if ($turnoActivo) {
+            // Buscar la tarea asignada para este apartamento en el turno activo
+            $tareaAsignada = TareaAsignada::where('turno_id', $turnoActivo->id)
+                ->where('apartamento_id', $reserva->apartamento_id)
+                ->whereIn('estado', ['pendiente', null])
+                ->first();
+            
+            // Si encontramos la tarea y está pendiente, actualizarla a "en_progreso"
+            if ($tareaAsignada && ($tareaAsignada->estado === 'pendiente' || $tareaAsignada->estado === null)) {
+                $tareaAsignada->estado = 'en_progreso';
+                $tareaAsignada->fecha_inicio_real = $tareaAsignada->fecha_inicio_real ?? now();
+                $tareaAsignada->save();
+                
+                Log::info('Tarea actualizada a "en_progreso" al acceder a la limpieza', [
+                    'tarea_id' => $tareaAsignada->id,
+                    'reserva_id' => $id,
+                    'apartamento_id' => $reserva->apartamento_id,
+                    'usuario_id' => $usuarioActual->id,
+                    'estado_anterior' => $tareaAsignada->getOriginal('estado')
+                ]);
+            }
+        }
+
         if ($apartamentoLimpio == null) {
             // Verificar que el usuario autenticado está activo
-            $usuarioActual = Auth::user();
             if ($usuarioActual->inactive) {
                 Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
                 return redirect()->route('gestion.index');
@@ -1760,12 +1793,19 @@ class GestionApartamentoController extends Controller
                 'fecha_comienzo' => Carbon::now(),
                 'status_id' => 2,
                 'reserva_id' => $id,
-                'user_id' => $usuarioActual->id
+                'user_id' => $usuarioActual->id,
+                'tarea_asignada_id' => $tareaAsignada ? $tareaAsignada->id : null
             ]);
             $reserva->fecha_limpieza = Carbon::now();
             $reserva->save();
         } else {
             $apartamentoLimpieza = $apartamentoLimpio;
+            
+            // Si la limpieza ya existe pero no tiene tarea_asignada_id, actualizarla
+            if (!$apartamentoLimpieza->tarea_asignada_id && $tareaAsignada) {
+                $apartamentoLimpieza->tarea_asignada_id = $tareaAsignada->id;
+                $apartamentoLimpieza->save();
+            }
         }
         $apartamentoId = $reserva->apartamento_id;
 
@@ -2581,25 +2621,61 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $id = $request->input('id');
             $checked = $request->input('checked');
             $limpiezaId = $request->input('limpieza_id');
+            $tareaId = $request->input('tarea_id'); // Aceptar tarea_id directamente
 
             Log::info('updateCheckbox llamado', [
                 'type' => $type,
                 'id' => $id,
                 'checked' => $checked,
-                'limpieza_id' => $limpiezaId
+                'limpieza_id' => $limpiezaId,
+                'tarea_id' => $tareaId
             ]);
 
-            // Obtener la tarea desde la limpieza
-            $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
-            if (!$apartamentoLimpieza) {
-                Log::error('Limpieza no encontrada', ['limpieza_id' => $limpiezaId]);
-                return response()->json(['success' => false, 'message' => 'Limpieza no encontrada'], 404);
+            // Intentar obtener la tarea de diferentes formas
+            if ($tareaId) {
+                // Si se envía tarea_id directamente, usarlo
+                $tarea = TareaAsignada::find($tareaId);
+                if (!$tarea) {
+                    Log::error('Tarea no encontrada por ID', ['tarea_id' => $tareaId]);
+                    return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                }
+                $tareaId = $tarea->id;
+            } elseif ($limpiezaId) {
+                // Si se envía limpieza_id, buscar la tarea a través de la limpieza
+                $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
+                if (!$apartamentoLimpieza) {
+                    Log::error('Limpieza no encontrada', ['limpieza_id' => $limpiezaId]);
+                    return response()->json(['success' => false, 'message' => 'Limpieza no encontrada'], 404);
+                }
+
+                $tareaId = $apartamentoLimpieza->tarea_asignada_id;
+                if (!$tareaId) {
+                    Log::error('Tarea no encontrada en limpieza', [
+                        'limpieza_id' => $limpiezaId, 
+                        'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
+                    ]);
+                    return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                }
+            } else {
+                Log::error('No se proporcionó tarea_id ni limpieza_id');
+                return response()->json(['success' => false, 'message' => 'Se requiere tarea_id o limpieza_id'], 400);
             }
 
-            $tareaId = $apartamentoLimpieza->tarea_asignada_id;
-            if (!$tareaId) {
-                Log::error('Tarea no encontrada', ['limpieza_id' => $limpiezaId, 'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id]);
+            // Obtener la tarea para verificar permisos y actualizar estado
+            $tarea = TareaAsignada::find($tareaId);
+            if (!$tarea) {
+                Log::error('Tarea no encontrada', ['tarea_id' => $tareaId]);
                 return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+            }
+
+            // Verificar que la tarea pertenece al usuario autenticado
+            if ($tarea->turno && $tarea->turno->user_id !== Auth::id()) {
+                Log::error('Usuario no autorizado para esta tarea', [
+                    'tarea_id' => $tareaId,
+                    'user_id' => Auth::id(),
+                    'tarea_user_id' => $tarea->turno->user_id
+                ]);
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
 
             if ($type === 'item') {
@@ -2619,6 +2695,14 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         ]
                     );
                     Log::info('Item marcado como completado', ['tarea_id' => $tareaId, 'item_id' => $id]);
+                    
+                    // Actualizar estado de la tarea a "en_progreso" si está pendiente
+                    if ($tarea->estado === 'pendiente' || $tarea->estado === null) {
+                        $tarea->estado = 'en_progreso';
+                        $tarea->fecha_inicio_real = $tarea->fecha_inicio_real ?? now();
+                        $tarea->save();
+                        Log::info('Tarea actualizada a "en_progreso"', ['tarea_id' => $tareaId]);
+                    }
                 } else {
                     // Eliminar de tarea_checklist_completados
                     DB::table('tarea_checklist_completados')
@@ -2813,14 +2897,13 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         switch ($amenity->tipo_consumo) {
             case 'por_reserva':
                 // Para amenities por reserva (ej: gafas, toallas, etc.)
-                $cantidad = $amenity->consumo_por_reserva ?? 1;
+                // SIEMPRE usar consumo_por_reserva directamente, sin aplicar mínimo/máximo
+                // El consumo_por_reserva es el valor exacto que se debe consumir por cada reserva
+                $cantidad = $amenity->consumo_por_reserva ?? 0;
                 
-                // Aplicar límites mínimo y máximo si están configurados
-                if ($amenity->consumo_minimo_reserva) {
-                    $cantidad = max($cantidad, $amenity->consumo_minimo_reserva);
-                }
-                if ($amenity->consumo_maximo_reserva) {
-                    $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
+                // Si no está configurado consumo_por_reserva, usar 1 como fallback
+                if ($cantidad <= 0) {
+                    $cantidad = 1;
                 }
                 
                 return $cantidad;
@@ -2829,7 +2912,14 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 // Para amenities por tiempo (ej: ambientador cada X días)
                 if ($amenity->duracion_dias && $amenity->duracion_dias > 0) {
                     $cantidad = ceil($dias / $amenity->duracion_dias);
-                    return max(1, $cantidad); // Mínimo 1
+                    $cantidad = max(1, $cantidad); // Mínimo 1
+                    
+                    // Aplicar límites máximo si está configurado (para evitar consumos excesivos)
+                    if ($amenity->consumo_maximo_reserva) {
+                        $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
+                    }
+                    
+                    return $cantidad;
                 }
                 return 1;
                 
