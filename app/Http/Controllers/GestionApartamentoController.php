@@ -12,6 +12,7 @@ use App\Models\Reserva;
 use App\Models\TurnoTrabajo;
 use App\Models\TareaAsignada;
 use Carbon\Carbon;
+use App\Services\AmenityConsumptionService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -2891,56 +2892,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
      */
     private function calcularCantidadRecomendadaAmenity($amenity, $reserva, $apartamento)
     {
-        $numeroPersonas = $reserva ? $reserva->numero_personas : 1;
-        $dias = $reserva ? \Carbon\Carbon::parse($reserva->fecha_entrada)->diffInDays($reserva->fecha_salida) : 1;
-        
-        switch ($amenity->tipo_consumo) {
-            case 'por_reserva':
-                // Para amenities por reserva (ej: gafas, toallas, etc.)
-                // SIEMPRE usar consumo_por_reserva directamente, sin aplicar mínimo/máximo
-                // El consumo_por_reserva es el valor exacto que se debe consumir por cada reserva
-                $cantidad = $amenity->consumo_por_reserva ?? 0;
-                
-                // Si no está configurado consumo_por_reserva, usar 1 como fallback
-                if ($cantidad <= 0) {
-                    $cantidad = 1;
-                }
-                
-                return $cantidad;
-                
-            case 'por_tiempo':
-                // Para amenities por tiempo (ej: ambientador cada X días)
-                if ($amenity->duracion_dias && $amenity->duracion_dias > 0) {
-                    $cantidad = ceil($dias / $amenity->duracion_dias);
-                    $cantidad = max(1, $cantidad); // Mínimo 1
-                    
-                    // Aplicar límites máximo si está configurado (para evitar consumos excesivos)
-                    if ($amenity->consumo_maximo_reserva) {
-                        $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
-                    }
-                    
-                    return $cantidad;
-                }
-                return 1;
-                
-            case 'por_persona':
-                // Para amenities por persona por día (ej: champú, gel, etc.)
-                $cantidadPorPersonaPorDia = $amenity->consumo_por_persona ?? 1;
-                $cantidad = $cantidadPorPersonaPorDia * $numeroPersonas * $dias;
-                
-                // Aplicar límites mínimo y máximo si están configurados
-                if ($amenity->consumo_minimo_reserva) {
-                    $cantidad = max($cantidad, $amenity->consumo_minimo_reserva);
-                }
-                if ($amenity->consumo_maximo_reserva) {
-                    $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
-                }
-                
-                return ceil($cantidad);
-                
-            default:
-                return 1;
-        }
+        return AmenityConsumptionService::calculateRecommendedQuantity($amenity, $reserva, $apartamento);
     }
 
     /**
