@@ -27,9 +27,9 @@ class AmenityReposicion extends Model
     ];
 
     protected $casts = [
-        'cantidad_reponida' => 'integer',
-        'stock_anterior' => 'integer',
-        'stock_nuevo' => 'integer',
+        'cantidad_reponida' => 'decimal:2',
+        'stock_anterior' => 'decimal:2',
+        'stock_nuevo' => 'decimal:2',
         'precio_unitario' => 'decimal:2',
         'precio_total' => 'decimal:2',
         'fecha_reposicion' => 'date'

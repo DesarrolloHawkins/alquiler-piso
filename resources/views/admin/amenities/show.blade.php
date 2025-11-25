@@ -559,7 +559,7 @@
                             Cantidad a Reponer <span class="text-danger">*</span>
                         </label>
                         <input type="number" class="form-control" id="cantidad_reponida" name="cantidad_reponida" 
-                               required min="1" max="999999" placeholder="Ingresa la cantidad">
+                               required step="0.01" min="0.01" max="999999.99" placeholder="Ingresa la cantidad">
                     </div>
                     <div class="mb-3">
                         <label for="precio_unitario" class="form-label fw-semibold">
