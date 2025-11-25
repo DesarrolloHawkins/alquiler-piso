@@ -488,18 +488,15 @@ class AmenityController extends Controller
             'observaciones.max' => 'Las observaciones no pueden tener más de 500 caracteres.'
         ];
 
+        $validatedData = $request->validate($rules, $messages);
+        
         try {
-            $validatedData = $request->validate($rules, $messages);
-            
             DB::beginTransaction();
 
-            $cantidadAnterior = $amenity->stock_actual;
-            $cantidadActual = $cantidadAnterior - $request->cantidad_consumida;
+            // Usar el método estándar para descontar stock
+            $resultadoDescuento = $amenity->descontarStock($request->cantidad_consumida);
 
-            // Actualizar stock
-            $amenity->update(['stock_actual' => $cantidadActual]);
-
-            // Registrar consumo
+            // Registrar consumo con datos reales
             AmenityConsumo::create([
                 'amenity_id' => $amenity->id,
                 'reserva_id' => $request->reserva_id,
@@ -507,8 +504,8 @@ class AmenityController extends Controller
                 'user_id' => auth()->id(),
                 'tipo_consumo' => $request->tipo_consumo,
                 'cantidad_consumida' => $request->cantidad_consumida,
-                'cantidad_anterior' => $cantidadAnterior,
-                'cantidad_actual' => $cantidadActual,
+                'cantidad_anterior' => $resultadoDescuento['stock_anterior'],
+                'cantidad_actual' => $resultadoDescuento['stock_actual'],
                 'costo_unitario' => $amenity->precio_compra,
                 'costo_total' => $amenity->precio_compra * $request->cantidad_consumida,
                 'observaciones' => $request->observaciones,
@@ -536,7 +533,7 @@ class AmenityController extends Controller
         $amenity = Amenity::findOrFail($id);
 
         $rules = [
-            'cantidad_reponida' => 'required|integer|min:1|max:999999',
+            'cantidad_reponida' => 'required|numeric|min:0.01|max:999999.99',
             'precio_unitario' => 'required|numeric|min:0|max:999999.99',
             'proveedor' => 'nullable|string|max:255',
             'numero_factura' => 'nullable|string|max:255',
@@ -545,9 +542,9 @@ class AmenityController extends Controller
 
         $messages = [
             'cantidad_reponida.required' => 'La cantidad reponida es obligatoria.',
-            'cantidad_reponida.integer' => 'La cantidad debe ser un número entero.',
-            'cantidad_reponida.min' => 'La cantidad debe ser al menos 1.',
-            'cantidad_reponida.max' => 'La cantidad no puede ser mayor a 999,999.',
+            'cantidad_reponida.numeric' => 'La cantidad debe ser un número válido.',
+            'cantidad_reponida.min' => 'La cantidad debe ser mayor a 0.',
+            'cantidad_reponida.max' => 'La cantidad no puede ser mayor a 999,999.99.',
             'precio_unitario.required' => 'El precio unitario es obligatorio.',
             'precio_unitario.numeric' => 'El precio debe ser un número.',
             'precio_unitario.min' => 'El precio no puede ser negativo.',
