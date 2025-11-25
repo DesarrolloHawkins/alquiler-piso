@@ -157,12 +157,26 @@ class Amenity extends Model
     public function descontarStock($cantidad)
     {
         \Log::info("Descontando stock del amenity {$this->id}: stock_actual = {$this->stock_actual}, cantidad = {$cantidad}");
-        $this->stock_actual = max(0, $this->stock_actual - $cantidad);
-        \Log::info("Nuevo stock calculado: {$this->stock_actual}");
+        
+        // Validar que hay stock suficiente
+        if ($this->stock_actual < $cantidad) {
+            \Log::warning("Stock insuficiente para amenity {$this->id}: disponible = {$this->stock_actual}, solicitado = {$cantidad}");
+            throw new \Exception("Stock insuficiente. Disponible: {$this->stock_actual} {$this->unidad_medida}, Solicitado: {$cantidad} {$this->unidad_medida}");
+        }
+        
+        $stockAnterior = $this->stock_actual;
+        $this->stock_actual = $this->stock_actual - $cantidad;
+        \Log::info("Nuevo stock calculado: {$stockAnterior} - {$cantidad} = {$this->stock_actual}");
+        
         $resultado = $this->save();
         \Log::info("Resultado del save(): " . ($resultado ? 'true' : 'false'));
         \Log::info("Stock final después de save(): {$this->stock_actual}");
-        return $this->stock_actual;
+        
+        return [
+            'stock_anterior' => $stockAnterior,
+            'stock_actual' => $this->stock_actual,
+            'cantidad_descontada' => $cantidad
+        ];
     }
 
     public function reponerStock($cantidad)
