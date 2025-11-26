@@ -2130,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       $('#filtroCategoriaGastos').on('change', function () {
-        tablaGastos.column(1).search(this.value).draw();
+        tablaGastos.column(2).search(this.value).draw();
       });
 
       $('#searchGastos').on('keyup', function () {

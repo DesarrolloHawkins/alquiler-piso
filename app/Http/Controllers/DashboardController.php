@@ -24,8 +24,8 @@ class DashboardController extends Controller
         $now = Carbon::now();
 
         // **Fechas predeterminadas si no se seleccionan**
-        $fechaInicio = Carbon::parse($request->input('fecha_inicio', $now->startOfMonth()->toDateString()));
-        $fechaFin = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()));
+        $fechaInicio = Carbon::parse($request->input('fecha_inicio', $now->startOfMonth()->toDateString()))->startOfDay();
+        $fechaFin = Carbon::parse($request->input('fecha_fin', $now->endOfMonth()->toDateString()))->endOfDay();
 
         // **Crear clave de caché única para este rango de fechas**
         $cacheKey = 'dashboard_' . $fechaInicio->format('Y-m-d') . '_' . $fechaFin->format('Y-m-d');
