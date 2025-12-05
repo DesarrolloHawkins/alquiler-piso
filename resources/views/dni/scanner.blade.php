@@ -3237,7 +3237,7 @@
                     this.disabled = true;
                     this.style.opacity = '0.6';
                     
-                    fetch('{{ route("dni.cambiarIdioma") }}', {
+                    fetch('/dni/cambiar-idioma', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
