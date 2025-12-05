@@ -60,7 +60,9 @@ Route::get('/', function () {
             return redirect('/home');
         }
     }
-    return view('welcome');
+    
+    // Si no está autenticado, redirigir al portal web público
+    return redirect()->route('web.index');
 })->name('inicio.welcome');
 // routes/web.php
 Route::get('/whatsapp/mensajes/{remitente}', [WhatsappController::class, 'mensajes']);
