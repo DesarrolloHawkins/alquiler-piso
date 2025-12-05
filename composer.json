@@ -46,7 +46,8 @@
         },
         "files": [
             "app/Helpers/MarkdownHelper.php",
-            "app/Helpers/TranslationHelper.php"
+            "app/Helpers/TranslationHelper.php",
+            "app/Helpers/SeoHelper.php"
         ]
     },
     "autoload-dev": {

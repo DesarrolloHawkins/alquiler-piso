@@ -9,6 +9,7 @@ use App\Models\FormasPago;
 use App\Models\LimpiadoraGuardia;
 use App\Models\PromptAsistente;
 use App\Models\Reparaciones;
+use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -599,5 +600,117 @@ class ConfiguracionesController extends Controller
     public function mirHospedajes()
     {
         return view('admin.configuraciones.mir-hospedajes');
+    }
+    
+    /**
+     * SEO y SEM - Vista separada
+     */
+    public function seo()
+    {
+        // Obtener todas las rutas públicas principales
+        $routes = [
+            'web.index' => 'Inicio',
+            'web.apartamentos' => 'Apartamentos',
+            'web.reservas.portal' => 'Portal de Reservas',
+            'web.reservas.show' => 'Detalle de Apartamento',
+            'web.sobre-nosotros' => 'Sobre Nosotros',
+            'web.contacto' => 'Contacto',
+            'web.servicios' => 'Servicios',
+            'web.preguntas-frecuentes' => 'Preguntas Frecuentes',
+            'web.politica-cancelaciones' => 'Política de Cancelaciones',
+        ];
+        
+        // Obtener todos los meta tags existentes
+        $seoMetas = SeoMeta::whereIn('route_name', array_keys($routes))
+            ->get()
+            ->keyBy('route_name');
+        
+        return view('admin.configuraciones.seo', compact('routes', 'seoMetas'));
+    }
+    
+    /**
+     * Guardar o actualizar meta tags SEO
+     */
+    public function updateSeo(Request $request)
+    {
+        $request->validate([
+            'route_name' => 'required|string',
+            'page_title' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keywords' => 'nullable|string|max:500',
+            'og_title' => 'nullable|string|max:255',
+            'og_description' => 'nullable|string|max:500',
+            'og_image' => 'nullable|url|max:500',
+            'og_type' => 'nullable|string|max:50',
+            'twitter_card' => 'nullable|string|max:50',
+            'twitter_title' => 'nullable|string|max:255',
+            'twitter_description' => 'nullable|string|max:500',
+            'twitter_image' => 'nullable|url|max:500',
+            'canonical_url' => 'nullable|url|max:500',
+            'robots' => 'nullable|string|max:100',
+            'hreflang_es' => 'nullable|url|max:500',
+            'hreflang_en' => 'nullable|url|max:500',
+            'hreflang_fr' => 'nullable|url|max:500',
+            'hreflang_de' => 'nullable|url|max:500',
+            'hreflang_it' => 'nullable|url|max:500',
+            'hreflang_pt' => 'nullable|url|max:500',
+            'structured_data' => 'nullable|string',
+            'active' => 'nullable|boolean',
+        ]);
+        
+        try {
+            $data = $request->only([
+                'page_title',
+                'meta_description',
+                'meta_keywords',
+                'og_title',
+                'og_description',
+                'og_image',
+                'og_type',
+                'twitter_card',
+            'twitter_title',
+                'twitter_description',
+                'twitter_image',
+                'canonical_url',
+                'robots',
+                'hreflang_es',
+                'hreflang_en',
+                'hreflang_fr',
+                'hreflang_de',
+                'hreflang_it',
+                'hreflang_pt',
+                'active',
+            ]);
+            
+            // Procesar structured_data (JSON string a array)
+            if ($request->filled('structured_data')) {
+                $structuredData = json_decode($request->structured_data, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data['structured_data'] = $structuredData;
+                } else {
+                    throw new \Exception('JSON-LD inválido: ' . json_last_error_msg());
+                }
+            }
+            
+            // Convertir active a boolean
+            $data['active'] = $request->has('active') ? true : false;
+            
+            $seoMeta = SeoMeta::updateOrCreate(
+                ['route_name' => $request->route_name],
+                $data
+            );
+            
+            Alert::success('Éxito', 'Meta tags SEO actualizados correctamente.');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar SEO', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            Alert::error('Error', 'No se pudo actualizar los meta tags: ' . $e->getMessage());
+        }
+        
+        return redirect()->route('configuracion.seo.index');
     }
 }

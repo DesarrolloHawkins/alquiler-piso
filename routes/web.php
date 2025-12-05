@@ -597,6 +597,12 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::prefix('configuracion')->name('configuracion.')->group(function () {
         // IMPORTANTE: Las rutas específicas deben ir ANTES de las genéricas con {id}
         
+        // Sección: SEO y SEM
+        Route::prefix('seo')->name('seo.')->group(function () {
+            Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'seo'])->name('index');
+            Route::post('/update', [App\Http\Controllers\ConfiguracionesController::class, 'updateSeo'])->name('update');
+        });
+        
         // Sección: MIR Hospedajes (debe ir antes de las rutas genéricas)
         Route::prefix('mir')->name('mir.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'mirHospedajes'])->name('index');

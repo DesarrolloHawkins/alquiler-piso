@@ -2856,7 +2856,6 @@
                 submitBtn.textContent = originalBtnText;
                 showError(translations.errorConnection + ': ' + error.message);
             }
-            }
         });
         
         function showProcessingModal(message) {

@@ -452,6 +452,9 @@
                                         <i class="fas fa-cogs me-1"></i>Configuración
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.seo.*') ? 'active' : '' }}" href="{{ route('configuracion.seo.index') }}">
+                                            <i class="fas fa-search me-2"></i>SEO y SEM
+                                        </a></li>
                                         <li><a class="dropdown-item {{ request()->routeIs('configuracion.portal-publico.*') ? 'active' : '' }}" href="{{ route('configuracion.portal-publico.index') }}">
                                             <i class="fas fa-globe me-2"></i>Portal Público
                                         </a></li>
