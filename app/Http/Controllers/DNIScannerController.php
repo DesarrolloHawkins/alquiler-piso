@@ -251,6 +251,9 @@ class DNIScannerController extends Controller
      */
     public function processSingleImage(Request $request, $token)
     {
+        // Forzar respuesta JSON siempre
+        $request->headers->set('Accept', 'application/json');
+        
         try {
             // Obtener la reserva por token
             $reserva = Reserva::where('token', $token)->with('cliente')->first();
@@ -281,6 +284,23 @@ class DNIScannerController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Archivo inválido'
+                ], 400);
+            }
+            
+            // Validar tamaño del archivo (máximo 10MB)
+            if ($file->getSize() > 10 * 1024 * 1024) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo es demasiado grande. Máximo 10MB.'
+                ], 400);
+            }
+            
+            // Validar tipo de archivo
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!in_array($file->getMimeType(), $allowedMimes)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipo de archivo no permitido. Solo se permiten imágenes JPEG, PNG o WEBP.'
                 ], 400);
             }
             
@@ -317,7 +337,19 @@ class DNIScannerController extends Controller
             
             // Guardar imagen (usar ID temporal si es huésped nuevo)
             $imagePersonaId = $esHuespedNuevo ? $personaId : $persona->id;
-            $imagePath = $this->guardarImagen($file, $imagePersonaId, $side, $personaTipo);
+            
+            try {
+                $imagePath = $this->guardarImagen($file, $imagePersonaId, $side, $personaTipo);
+            } catch (\Exception $e) {
+                Log::error('Error guardando imagen temporal', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al guardar la imagen: ' . $e->getMessage()
+                ], 500);
+            }
             
             // Procesar con IA
             $result = $this->sendToAI($imagePath, $side);
@@ -458,12 +490,44 @@ class DNIScannerController extends Controller
         } catch (\Exception $e) {
             Log::error('Error procesando imagen individual: ' . $e->getMessage(), [
                 'token' => $token,
-                'error' => $e->getTraceAsString()
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Obtener información del modelo de IA para debugging
+            $model = env('HAWKINS_AI_MODEL', 'qwen2.5vl:latest');
+            $baseUrl = env('HAWKINS_AI_URL', 'https://192.168.1.45');
+            $aiUrl = rtrim($baseUrl, '/') . '/chat/analyze-image';
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
+                'error_type' => 'server_error',
+                'debug_info' => config('app.debug') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'ai_model' => $model,
+                    'ai_url' => $aiUrl
+                ] : null
+            ], 500);
+        } catch (\Throwable $e) {
+            // Capturar también errores fatales de PHP
+            Log::error('Error fatal procesando imagen individual: ' . $e->getMessage(), [
+                'token' => $token,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Error interno del servidor: ' . $e->getMessage()
+                'message' => 'Error interno del servidor. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
+                'error_type' => 'fatal_error'
             ], 500);
         }
     }
@@ -974,18 +1038,45 @@ class DNIScannerController extends Controller
      */
     private function guardarImagen($file, $personaId, $side, $tipo = 'cliente')
     {
-        $prefix = $tipo === 'cliente' ? 'cliente' : 'huesped';
-        $filename = 'dni_' . $prefix . '_' . $side . '_' . time() . '_' . $personaId . '.' . $file->getClientOriginalExtension();
-        $path = storage_path('app/temp/' . $filename);
-        
-        // Crear directorio si no existe
-        if (!file_exists(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
+        try {
+            $prefix = $tipo === 'cliente' ? 'cliente' : 'huesped';
+            $filename = 'dni_' . $prefix . '_' . $side . '_' . time() . '_' . $personaId . '.' . $file->getClientOriginalExtension();
+            $path = storage_path('app/temp/' . $filename);
+            
+            // Crear directorio si no existe
+            $dir = dirname($path);
+            if (!file_exists($dir)) {
+                if (!mkdir($dir, 0755, true)) {
+                    throw new \Exception('No se pudo crear el directorio temporal: ' . $dir);
+                }
+            }
+            
+            // Verificar permisos de escritura
+            if (!is_writable($dir)) {
+                throw new \Exception('El directorio temporal no tiene permisos de escritura: ' . $dir);
+            }
+            
+            // Mover archivo
+            if (!$file->move($dir, $filename)) {
+                throw new \Exception('No se pudo mover el archivo al directorio temporal');
+            }
+            
+            // Verificar que el archivo se guardó correctamente
+            if (!file_exists($path)) {
+                throw new \Exception('El archivo no se guardó correctamente: ' . $path);
+            }
+            
+            return $path;
+        } catch (\Exception $e) {
+            Log::error('Error en guardarImagen', [
+                'error' => $e->getMessage(),
+                'persona_id' => $personaId,
+                'side' => $side,
+                'tipo' => $tipo,
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e; // Re-lanzar para que el método que llama pueda manejarlo
         }
-        
-        $file->move(dirname($path), $filename);
-        
-        return $path;
     }
     
     /**
@@ -1123,11 +1214,13 @@ class DNIScannerController extends Controller
             ]);
             
             // Configuración de IA Hawkins (Ollama)
-            $baseUrl = env('HAWKINS_AI_URL', 'https://192.168.1.45/chat');
+            // HAWKINS_AI_URL debe ser la URL base sin /chat (ej: https://192.168.1.45)
+            $baseUrl = env('HAWKINS_AI_URL', 'https://192.168.1.45');
             $apiKey = env('HAWKINS_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM');
             $model = env('HAWKINS_AI_MODEL', 'qwen2.5vl:latest');
             
-            $aiEndpoint = $baseUrl . '/analyze-image';
+            // Construir la URL completa: baseUrl/chat/analyze-image
+            $aiEndpoint = rtrim($baseUrl, '/') . '/chat/analyze-image';
             
             Log::info('Configuración IA Hawkins', [
                 'base_url' => $baseUrl,
@@ -1204,8 +1297,8 @@ INSTRUCCIONES ESPECÍFICAS:
 5. LUGAR DE NACIMIENTO: Busca el campo "LUGAR DE NACIMIENTO" en el reverso del DNI. Este campo es OBLIGATORIO y aparece claramente marcado. Extrae la ciudad y provincia de nacimiento (ej: "SEVILLA" o "SEVILLA, SEVILLA").';
             }
             
-            // URL completa de la API
-            $fullUrl = $baseUrl . '/analyze-image';
+            // URL completa de la API: baseUrl/chat/analyze-image
+            $fullUrl = rtrim($baseUrl, '/') . '/chat/analyze-image';
             
             Log::info('Llamando a IA Hawkins', [
                 'url' => $fullUrl,
