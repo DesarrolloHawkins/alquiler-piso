@@ -184,17 +184,6 @@
         </div>
         @endif
         
-        <!-- Botón CRM Completo (fuera de la tarjeta) -->
-        @if($siguienteReserva)
-        <div class="text-center mt-3">
-            <a href="https://crm.apartamentosalgeciras.com/reservas/{{ $siguienteReserva->id }}/show" 
-               target="_blank" 
-               class="btn btn-primary btn-lg" style="border-radius: 8px;">
-                <i class="fas fa-external-link-alt me-2"></i>
-                CRM Completo
-            </a>
-        </div>
-        @endif
         
         <!-- Cartel Informativo -->
         <div class="info-banner mt-3 w-75 mx-auto" style="
@@ -750,6 +739,68 @@
             </div>
         </div>
     </div>
+
+    <!-- Botón para descuento de artículo roto -->
+    @if(isset($articulosActivos) && count($articulosActivos) > 0)
+    <div class="text-center my-3">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalDescontarArticulo">
+            <i class="fas fa-exclamation-triangle"></i> Descontar Artículo Roto
+        </button>
+    </div>
+
+    <!-- Modal Descontar Artículo Roto -->
+    <div class="modal fade" id="modalDescontarArticulo" tabindex="-1" aria-labelledby="modalDescontarArticuloLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
+          <div class="modal-header" style="border-bottom: 1px solid #e9ecef; padding: 1.25rem;">
+            <h5 class="modal-title" id="modalDescontarArticuloLabel">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>Descontar Artículo Roto
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body" style="padding: 1.5rem;">
+            <form id="formDescontarArticulo">
+              <div class="mb-3 text-start">
+                <label class="form-label fw-semibold">Artículo</label>
+                <select name="articulo_id" class="form-select" required style="border-radius: 8px;">
+                  <option value="">Seleccionar artículo...</option>
+                  @foreach($articulosActivos as $articulo)
+                    <option value="{{ $articulo->id }}">{{ $articulo->nombre }} (Stock: {{ $articulo->stock_actual }})</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="mb-3 text-start">
+                <label class="form-label fw-semibold">Motivo</label>
+                <select name="motivo" class="form-select" required style="border-radius: 8px;">
+                  <option value="roto">Roto</option>
+                  <option value="danado">Dañado</option>
+                  <option value="perdido">Perdido</option>
+                  <option value="desgastado">Desgastado</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div class="mb-3 text-start">
+                <label class="form-label fw-semibold">Observaciones (opcional)</label>
+                <textarea name="observaciones" class="form-control" rows="2" placeholder="Detalles (opcional)" style="border-radius: 8px;"></textarea>
+              </div>
+            </form>
+            <div class="alert alert-info mt-3 mb-0" style="border-radius: 8px; font-size: 0.875rem;">
+              <i class="fas fa-info-circle me-2"></i>
+              <small>Se repondrá automáticamente una unidad del mismo artículo si hay stock disponible.</small>
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1rem 1.5rem;">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">
+              <i class="fas fa-times me-2"></i>Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" id="btnRegistrarDescuento" style="border-radius: 8px;">
+              <i class="fas fa-check me-2"></i>Registrar Descuento
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    @endif
 </div>
 
 <form id="formFinalizar" action="{{ route('gestion.finalizar', $apartamentoLimpieza->id) }}" method="POST">
@@ -1431,6 +1482,7 @@
                     id: id,
                     checked: isChecked ? 1 : 0,
                     limpieza_id: limpiezaId,
+                    tarea_id: {{ $apartamentoLimpieza->tarea_asignada_id ?? 'null' }},
                 },
                 success: function(response) {
                     if (response.success) {
@@ -2087,6 +2139,53 @@ document.addEventListener('DOMContentLoaded', function() {
         inicializarSistemaReposicion();
     });
 </script>
+
+@if(isset($articulosActivos) && count($articulosActivos) > 0)
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('btnRegistrarDescuento');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        const form = document.getElementById('formDescontarArticulo');
+        const articuloId = form.querySelector('[name="articulo_id"]').value;
+        const motivo = form.querySelector('[name="motivo"]').value;
+        const observaciones = form.querySelector('[name="observaciones"]').value;
+        if (!articuloId || !motivo) {
+            alert('Selecciona el artículo y el motivo.');
+            return;
+        }
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+        fetch('{{ route('gestion.articulo-descuento', $apartamentoLimpieza->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ articulo_id: articuloId, motivo: motivo, observaciones: observaciones })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                alert(data.message || 'Movimiento registrado');
+                form.reset();
+                const modalEl = document.getElementById('modalDescontarArticulo');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    modal.hide();
+                }
+            } else {
+                alert(data.message || 'Error al registrar el movimiento');
+            }
+        })
+        .catch(() => alert('Error de red'))
+        .finally(() => { btn.disabled = false; btn.innerHTML = originalText; });
+    });
+});
+</script>
+@endif
 
 <style>
 /* Variables CSS Apple */
@@ -2824,20 +2923,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* Modales */
-.modal-content {
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+/* FORZAR LIMPIEZA DEL ESTADO MODAL - SOLUCIÓN CRÍTICA CSS */
+/* Anular overflow:hidden cuando no hay modales visibles */
+body.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
 }
 
-.modal-header {
-    border-radius: 15px 15px 0 0;
-    border-bottom: none;
+/* Permitir scroll siempre */
+body {
+    overflow: auto !important;
 }
 
-.modal-footer {
-    border-radius: 0 0 15px 15px;
-    border-top: none;
+/* Estilos mínimos para el contenido del modal (solo cuando está visible) */
+#modalDescontarArticulo .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border: none;
 }
 
 .list-group-item {
@@ -4120,5 +4222,69 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endif
+
+<script>
+// SOLUCIÓN AGRESIVA: Limpiar estado de modal de forma inmediata y periódica
+(function() {
+    function limpiarEstadoModal() {
+        const modales = document.querySelectorAll('.modal.show');
+        // Si no hay modales visibles, limpiar el estado del body
+        if (modales.length === 0) {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            // También limpiar atributos data de Bootstrap
+            document.body.removeAttribute('data-bs-overflow');
+            document.body.removeAttribute('data-bs-padding-right');
+        }
+    }
+    
+    // Ejecutar inmediatamente (sin esperar DOMContentLoaded)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            limpiarEstadoModal();
+            // Ejecutar varias veces para asegurar
+            setTimeout(limpiarEstadoModal, 50);
+            setTimeout(limpiarEstadoModal, 200);
+            setTimeout(limpiarEstadoModal, 500);
+        });
+    } else {
+        // DOM ya está listo, ejecutar inmediatamente
+        limpiarEstadoModal();
+        setTimeout(limpiarEstadoModal, 50);
+        setTimeout(limpiarEstadoModal, 200);
+        setTimeout(limpiarEstadoModal, 500);
+    }
+    
+    // Limpiar cuando la página está completamente cargada
+    window.addEventListener('load', function() {
+        limpiarEstadoModal();
+        setTimeout(limpiarEstadoModal, 100);
+    });
+    
+    // Agregar listeners a todos los modales para limpiar el estado cuando se cierren
+    function agregarListenersModal() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                limpiarEstadoModal();
+            });
+            modal.addEventListener('hide.bs.modal', function() {
+                // También limpiar cuando comienza a ocultarse
+                setTimeout(limpiarEstadoModal, 100);
+            });
+        });
+    }
+    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', agregarListenersModal);
+    } else {
+        agregarListenersModal();
+    }
+    
+    // Re-agregar listeners si se añaden modales dinámicamente
+    setTimeout(agregarListenersModal, 500);
+})();
+</script>
 
 @endsection

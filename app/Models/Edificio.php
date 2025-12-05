@@ -20,7 +20,8 @@ class Edificio extends Model
      */
     protected $fillable = [
         'nombre',
-        'clave',         
+        'clave',
+        'codigo_establecimiento',         
     ];
 
      /**

@@ -71,11 +71,21 @@ Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ic
 // RUTAS PÚBLICAS WEB (SIN AUTENTICACIÓN)
 // ============================================
 Route::prefix('web')->name('web.')->group(function () {
+    // Cambio de idioma
+    Route::get('/language/{locale}', [App\Http\Controllers\LanguageController::class, 'changeLanguage'])->name('language.change');
+    
     // Página inicial del portal público
     Route::get('/', [App\Http\Controllers\PublicReservasController::class, 'index'])->name('index');
     
     // Lista de apartamentos
     Route::get('/apartamentos', [App\Http\Controllers\PublicReservasController::class, 'apartamentos'])->name('apartamentos');
+    
+    // Página Sobre Nosotros
+    Route::get('/sobre-nosotros', [App\Http\Controllers\PublicReservasController::class, 'sobreNosotros'])->name('sobre-nosotros');
+    
+    // Página Contacto
+    Route::get('/contacto', [App\Http\Controllers\PublicReservasController::class, 'contacto'])->name('contacto');
+    Route::post('/contacto', [App\Http\Controllers\PublicReservasController::class, 'enviarContacto'])->name('contacto.enviar');
     
     // Rutas de reservas públicas
     Route::prefix('reservas')->name('reservas.')->group(function () {
@@ -84,7 +94,60 @@ Route::prefix('web')->name('web.')->group(function () {
         Route::post('/buscar', [App\Http\Controllers\PublicReservasController::class, 'buscar'])->name('buscar.post');
         Route::get('/portal', [App\Http\Controllers\PublicReservasController::class, 'portal'])->name('portal');
         Route::get('/apartamento/{id}', [App\Http\Controllers\PublicReservasController::class, 'show'])->name('show');
+        
+        // Proceso de reserva y pago
+        Route::get('/formulario/{apartamento}', [App\Http\Controllers\ReservaPagoController::class, 'formularioReserva'])->name('formulario');
+        Route::post('/procesar', [App\Http\Controllers\ReservaPagoController::class, 'procesarReserva'])->name('procesar');
+        Route::get('/pago/exito', [App\Http\Controllers\ReservaPagoController::class, 'exito'])->name('pago.exito');
+        Route::get('/pago/cancelado', [App\Http\Controllers\ReservaPagoController::class, 'cancelado'])->name('pago.cancelado');
     });
+    
+    // Servicios y Extras
+    Route::prefix('extras')->name('extras.')->group(function () {
+        Route::get('/buscar', [App\Http\Controllers\ReservaExtrasController::class, 'buscarReserva'])->name('buscar');
+        Route::post('/buscar', [App\Http\Controllers\ReservaExtrasController::class, 'mostrarServicios'])->name('mostrar-servicios');
+        Route::post('/comprar', [App\Http\Controllers\ReservaExtrasController::class, 'procesarCompra'])->name('comprar');
+        Route::get('/pago/exito', [App\Http\Controllers\ReservaExtrasController::class, 'exito'])->name('pago.exito');
+        Route::get('/pago/cancelado', [App\Http\Controllers\ReservaExtrasController::class, 'cancelado'])->name('pago.cancelado');
+    });
+    
+    // Página de servicios
+    Route::get('/servicios', [App\Http\Controllers\ServiciosController::class, 'index'])->name('servicios');
+    
+    // Política de Cancelaciones
+    Route::get('/politica-cancelaciones', [App\Http\Controllers\PublicPoliticaCancelacionController::class, 'index'])->name('politica-cancelaciones');
+    
+    // Páginas Legales
+    Route::get('/pagina-legal/{slug}', [App\Http\Controllers\PublicPaginaLegalController::class, 'show'])->name('pagina-legal.show');
+    
+    // Preguntas Frecuentes
+    Route::get('/preguntas-frecuentes', [App\Http\Controllers\PublicPreguntasFrecuentesController::class, 'index'])->name('preguntas-frecuentes');
+    
+    // Autenticación Pública (Clientes)
+    Route::get('/login', [App\Http\Controllers\PublicAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [App\Http\Controllers\PublicAuthController::class, 'login']);
+    Route::get('/register', [App\Http\Controllers\PublicAuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [App\Http\Controllers\PublicAuthController::class, 'register']);
+    Route::get('/verificar-cuenta', [App\Http\Controllers\PublicAuthController::class, 'showVerificarCuentaForm'])->name('verificar-cuenta');
+    Route::post('/verificar-cuenta', [App\Http\Controllers\PublicAuthController::class, 'verificarCuenta']);
+    Route::get('/establecer-password', [App\Http\Controllers\PublicAuthController::class, 'showEstablecerPasswordForm'])->name('establecer-password');
+    Route::post('/establecer-password', [App\Http\Controllers\PublicAuthController::class, 'establecerPassword']);
+    Route::post('/logout', [App\Http\Controllers\PublicAuthController::class, 'logout'])->name('logout');
+    
+    // Perfil de Cliente (requiere autenticación)
+    Route::middleware('auth:cliente')->group(function () {
+        Route::get('/perfil', [App\Http\Controllers\PublicPerfilController::class, 'index'])->name('perfil');
+        Route::put('/perfil', [App\Http\Controllers\PublicPerfilController::class, 'updatePerfil'])->name('perfil.update');
+        Route::put('/perfil/password', [App\Http\Controllers\PublicPerfilController::class, 'updatePassword'])->name('perfil.password');
+        Route::post('/perfil/metodo-pago', [App\Http\Controllers\PublicPerfilController::class, 'guardarMetodoPago'])->name('perfil.metodo-pago');
+        Route::delete('/perfil/metodo-pago/{paymentMethodId}', [App\Http\Controllers\PublicPerfilController::class, 'eliminarMetodoPago'])->name('perfil.metodo-pago.delete');
+        Route::get('/perfil/reserva/{id}', [App\Http\Controllers\PublicPerfilController::class, 'showReserva'])->name('perfil.reserva.show');
+    });
+    
+    // Webhook de Stripe (sin CSRF)
+    Route::post('/webhooks/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])
+        ->middleware('web')
+        ->name('webhooks.stripe');
     
     // Aquí puedes añadir más rutas públicas en el futuro
     // Ejemplo:
@@ -179,6 +242,32 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         'edit' => 'admin.servicios.edit',
         'update' => 'admin.servicios.update',
         'destroy' => 'admin.servicios.destroy',
+    ]);
+    
+    // Política de Cancelaciones
+    Route::get('/politica-cancelacion/edit', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'edit'])->name('admin.politica-cancelacion.edit');
+    Route::put('/politica-cancelacion', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'update'])->name('admin.politica-cancelacion.update');
+    
+    // Páginas Legales
+    Route::resource('paginas-legales', App\Http\Controllers\Admin\PaginasLegalesController::class)->names([
+        'index' => 'admin.paginas-legales.index',
+        'create' => 'admin.paginas-legales.create',
+        'store' => 'admin.paginas-legales.store',
+        'show' => 'admin.paginas-legales.show',
+        'edit' => 'admin.paginas-legales.edit',
+        'update' => 'admin.paginas-legales.update',
+        'destroy' => 'admin.paginas-legales.destroy',
+    ]);
+    
+    // Preguntas Frecuentes
+    Route::resource('preguntas-frecuentes', App\Http\Controllers\Admin\PreguntasFrecuentesController::class)->names([
+        'index' => 'admin.preguntas-frecuentes.index',
+        'create' => 'admin.preguntas-frecuentes.create',
+        'store' => 'admin.preguntas-frecuentes.store',
+        'show' => 'admin.preguntas-frecuentes.show',
+        'edit' => 'admin.preguntas-frecuentes.edit',
+        'update' => 'admin.preguntas-frecuentes.update',
+        'destroy' => 'admin.preguntas-frecuentes.destroy',
     ]);
 
     // Servicios Técnicos
@@ -1107,6 +1196,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     });
     Route::get('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'manageItems'])->name('checklists-zonas-comunes.items');
     Route::post('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'storeItem'])->name('checklists-zonas-comunes.store-item');
+    
+    // Contactos desde la Web
+    Route::resource('contactos-web', App\Http\Controllers\Admin\ContactosWebController::class);
+    Route::post('/contactos-web/{contactosWeb}/toggle-leido', [App\Http\Controllers\Admin\ContactosWebController::class, 'toggleLeido'])->name('contactos-web.toggle-leido');
+    
+    // Pagos y Reservas
+    Route::resource('pagos', App\Http\Controllers\Admin\PagosController::class);
+    Route::get('/pagos/intentos/listado', [App\Http\Controllers\Admin\PagosController::class, 'intentos'])->name('pagos.intentos');
     
     // Gestión de Amenities
     Route::resource('amenities', App\Http\Controllers\Admin\AmenityController::class);

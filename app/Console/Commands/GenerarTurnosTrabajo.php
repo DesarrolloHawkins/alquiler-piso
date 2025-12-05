@@ -269,6 +269,7 @@ class GenerarTurnosTrabajo extends Command
         // Ordenar por prioridad (mayor primero)
         return $tareas->sortByDesc('prioridad')->values();
     }
+    
     private function obtenerApartamentosPendientesHoy(Carbon $fecha)
     {
         $hoy = $fecha->toDateString();

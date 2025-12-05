@@ -938,7 +938,8 @@ function guardarCheckboxIndividual(checkbox) {
             type: 'item',
             id: itemId,
             checked: isChecked ? 1 : 0,
-            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }}
+            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }},
+            tarea_id: {{ $tarea->id ?? 'null' }}
         })
     })
     .then(response => {
@@ -994,7 +995,8 @@ function guardarCheckboxCategoria(checkbox) {
             type: 'checklist',
             id: checklistId,
             checked: isChecked ? 1 : 0,
-            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }}
+            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }},
+            tarea_id: {{ $tarea->id ?? 'null' }}
         })
     })
     .then(response => response.json())

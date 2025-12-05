@@ -87,6 +87,28 @@
                             </div>
                         </div>
 
+                        <!-- Código de Establecimiento MIR -->
+                        <div class="mb-4">
+                            <label for="codigo_establecimiento" class="form-label fw-semibold text-dark">
+                                <i class="fas fa-building me-2 text-primary"></i>
+                                Código de Establecimiento MIR
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('codigo_establecimiento') is-invalid @enderror" 
+                                   id="codigo_establecimiento" 
+                                   name="codigo_establecimiento" 
+                                   placeholder="Ej: 0000119331"
+                                   value="{{ old('codigo_establecimiento') }}"
+                                   maxlength="50">
+                            <div class="invalid-feedback" id="codigo_establecimiento-error">
+                                @error('codigo_establecimiento') {{ $message }} @enderror
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1 text-muted"></i>
+                                Código asignado por el Sistema de Hospedajes MIR para este establecimiento (Real Decreto 933/2021)
+                            </div>
+                        </div>
+
                         <!-- Botones de acción -->
                         <div class="d-flex gap-3 pt-3">
                             <button type="submit" class="btn btn-primary btn-lg px-4" id="submit-btn">

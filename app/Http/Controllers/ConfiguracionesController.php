@@ -394,6 +394,8 @@ class ConfiguracionesController extends Controller
         try {
             $request->validate([
                 'mir_arrendador' => 'nullable|string|max:255',
+                'mir_codigo_arrendador' => 'nullable|string|max:255',
+                'mir_codigo_establecimiento' => 'nullable|string|max:255',
                 'mir_aplicacion' => 'nullable|string|max:255',
                 'mir_usuario' => 'nullable|string|max:255',
                 'mir_password' => 'nullable|string|max:255',
@@ -401,7 +403,9 @@ class ConfiguracionesController extends Controller
             ]);
 
             // Actualizar cada setting
-            Setting::set('mir_arrendador', $request->mir_arrendador, 'Código arrendador para API MIR');
+            Setting::set('mir_arrendador', $request->mir_arrendador, 'Código arrendador para API MIR'); // Mantener compatibilidad
+            Setting::set('mir_codigo_arrendador', $request->mir_codigo_arrendador ?? $request->mir_arrendador, 'Código arrendador para API MIR (nuevo formato)');
+            Setting::set('mir_codigo_establecimiento', $request->mir_codigo_establecimiento, 'Código de establecimiento para API MIR');
             Setting::set('mir_aplicacion', $request->mir_aplicacion, 'Nombre de la aplicación para MIR');
             Setting::set('mir_usuario', $request->mir_usuario, 'Usuario para autenticación MIR');
             Setting::set('mir_password', $request->mir_password, 'Contraseña para autenticación MIR');

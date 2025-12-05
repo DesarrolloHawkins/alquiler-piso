@@ -1949,22 +1949,35 @@ class DNIController extends Controller
             'idioma_establecido' => true
         ]);
         
-        // Guardar el idioma en la sesión
+        // Guardar el idioma en la sesión (usar ambas claves para compatibilidad)
         session(['locale' => $idioma]);
+        session(['idioma' => $idioma]); // Mantener compatibilidad
         
         // Establecer el idioma para la aplicación
         App::setLocale($idioma);
         
+        // Forzar guardado de la sesión
+        session()->save();
+        
+        // Verificar que se guardó correctamente
+        $sessionLocale = session('locale');
+        $sessionIdioma = session('idioma');
+        
         \Log::info('Idioma cambiado exitosamente', [
             'cliente_id' => $cliente->id,
             'idioma' => $idioma,
-            'token' => $token
+            'token' => $token,
+            'session_locale' => $sessionLocale,
+            'session_idioma' => $sessionIdioma,
+            'app_locale' => \App::getLocale(),
+            'cliente_refreshed_idioma' => $cliente->fresh()->idioma
         ]);
         
         return response()->json([
             'success' => true, 
             'message' => 'Idioma cambiado correctamente',
-            'redirect' => route('dni.index', $token)
+            'redirect' => route('dni.scanner.index', $token),
+            'locale' => $idioma
         ]);
     }
 

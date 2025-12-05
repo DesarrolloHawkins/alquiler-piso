@@ -724,15 +724,9 @@ document.getElementById('formGenerarTurnos').addEventListener('submit', function
     fetch('{{ route("gestion.turnos.generar") }}', {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Content-Type': 'application/json'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify({
-            fecha: fecha,
-            forzar: forzar ? true : false,
-            usar_ia: usarIA ? true : false,
-            tipo_ia: tipoIA || 'real'
-        })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {

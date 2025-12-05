@@ -35,7 +35,7 @@
             </h5>
         </div>
         <div class="card-body">
-            <form id="form" action="{{ route('channex.storeProperty') }}" method="POST" enctype="multipart/form-data">
+            <form id="form" action="{{ route('apartamentos.admin.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 @if ($errors->any())
@@ -223,6 +223,116 @@
                                    placeholder="País del apartamento"
                                    required>
                             @error('country')
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información para Plataforma del Estado -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3 fw-semibold">
+                            <i class="fas fa-government me-2"></i>Plataforma del Estado
+                        </h6>
+                        <p class="text-muted small mb-3">Información requerida para la subida de viajeros a la plataforma del estado.</p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="codigo_establecimiento" class="form-label fw-semibold">
+                                <i class="fas fa-id-card me-1 text-primary"></i>Código del Establecimiento
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('codigo_establecimiento') is-invalid @enderror" 
+                                   id="codigo_establecimiento" 
+                                   name="codigo_establecimiento" 
+                                   value="{{ old('codigo_establecimiento') }}"
+                                   placeholder="Código asignado por la administración">
+                            @error('codigo_establecimiento')
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="pais_iso3" class="form-label fw-semibold">
+                                <i class="fas fa-flag me-1 text-primary"></i>País (ISO3)
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('pais_iso3') is-invalid @enderror" 
+                                   id="pais_iso3" 
+                                   name="pais_iso3" 
+                                   value="{{ old('pais_iso3', 'ESP') }}"
+                                   placeholder="ESP"
+                                   maxlength="3">
+                            @error('pais_iso3')
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="codigo_municipio_ine" class="form-label fw-semibold">
+                                <i class="fas fa-map-pin me-1 text-primary"></i>Código Municipio INE
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('codigo_municipio_ine') is-invalid @enderror" 
+                                   id="codigo_municipio_ine" 
+                                   name="codigo_municipio_ine" 
+                                   value="{{ old('codigo_municipio_ine') }}"
+                                   placeholder="Código INE del municipio">
+                            @error('codigo_municipio_ine')
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="nombre_municipio" class="form-label fw-semibold">
+                                <i class="fas fa-city me-1 text-primary"></i>Nombre del Municipio
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('nombre_municipio') is-invalid @enderror" 
+                                   id="nombre_municipio" 
+                                   name="nombre_municipio" 
+                                   value="{{ old('nombre_municipio') }}"
+                                   placeholder="Nombre del municipio">
+                            @error('nombre_municipio')
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="tipo_establecimiento" class="form-label fw-semibold">
+                                <i class="fas fa-building me-1 text-primary"></i>Tipo de Establecimiento
+                            </label>
+                            <select class="form-select @error('tipo_establecimiento') is-invalid @enderror" 
+                                    id="tipo_establecimiento" 
+                                    name="tipo_establecimiento">
+                                <option value="">Seleccionar tipo (opcional)</option>
+                                <option value="hotel" {{ old('tipo_establecimiento') == 'hotel' ? 'selected' : '' }}>Hotel</option>
+                                <option value="apartamento" {{ old('tipo_establecimiento') == 'apartamento' ? 'selected' : '' }}>Apartamento</option>
+                                <option value="casa_rural" {{ old('tipo_establecimiento') == 'casa_rural' ? 'selected' : '' }}>Casa Rural</option>
+                                <option value="pension" {{ old('tipo_establecimiento') == 'pension' ? 'selected' : '' }}>Pensión</option>
+                                <option value="hostal" {{ old('tipo_establecimiento') == 'hostal' ? 'selected' : '' }}>Hostal</option>
+                            </select>
+                            @error('tipo_establecimiento')
                                 <div class="invalid-feedback">
                                     <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
                                 </div>
@@ -432,7 +542,70 @@
                         </div>
                     </div>
                 </div>
-            </form>
+                        {{-- Campos Booking.com --}}
+                        @php
+                            $apartamento = new \App\Models\Apartamento(); // Crear instancia vacía para el partial
+                        @endphp
+                        @include('admin.apartamentos.partials.booking-fields')
+                        
+                        <!-- Servicios del Apartamento -->
+                        @php $serviciosSeleccionados = []; @endphp
+                        @include('admin.apartamentos.partials.servicios-select')
+                        
+                        <!-- Gestión de Fotos (Opcional en creación) -->
+                        <div class="mb-4">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fas fa-images me-2"></i>
+                                        Galería de Fotos (Opcional)
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Nota:</strong> Puedes subir fotos ahora o hacerlo después de crear el apartamento desde la página de edición.
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-upload me-1 text-primary"></i>
+                                            Subir Fotos (Múltiples)
+                                        </label>
+                                        <input type="file" 
+                                               class="form-control" 
+                                               id="photosInput" 
+                                               name="photos[]" 
+                                               accept="image/jpeg,image/jpg,image/png,image/webp"
+                                               multiple>
+                                        <small class="form-text text-muted">
+                                            Selecciona una o más fotos (máx. 5MB cada una). Formatos: JPG, PNG, WEBP.
+                                            <br>
+                                            <strong>Las fotos se subirán automáticamente al crear el apartamento.</strong>
+                                        </small>
+                                        <div class="mt-2">
+                                            <div id="photosPreview" class="row g-2 mt-2"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <small>Después de crear el apartamento, podrás gestionar las fotos (marcar principal, eliminar, reordenar) desde la página de edición.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- Campos Booking.com --}}
+                        @php
+                            $apartamento = new \App\Models\Apartamento(); // Crear instancia vacía para el partial
+                        @endphp
+                        @include('admin.apartamentos.partials.booking-fields')
+                        
+                        <!-- Servicios del Apartamento -->
+                        @php $serviciosSeleccionados = []; @endphp
+                        @include('admin.apartamentos.partials.servicios-select')
+                    </form>
         </div>
     </div>
 </div>
@@ -531,6 +704,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const countryField = document.getElementById('country');
     if (!countryField.value) {
         countryField.value = 'Spain';
+    }
+    
+    // Preview de fotos antes de subir
+    const photosInput = document.getElementById('photosInput');
+    const photosPreview = document.getElementById('photosPreview');
+    
+    if (photosInput && photosPreview) {
+        photosInput.addEventListener('change', function(e) {
+            photosPreview.innerHTML = '';
+            
+            if (this.files.length > 0) {
+                Array.from(this.files).forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const col = document.createElement('div');
+                            col.className = 'col-md-3 col-lg-2';
+                            col.innerHTML = `
+                                <div class="card">
+                                    <img src="${e.target.result}" 
+                                         class="card-img-top" 
+                                         alt="Preview ${index + 1}"
+                                         style="height: 100px; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted d-block text-truncate" title="${file.name}">
+                                            ${file.name.length > 15 ? file.name.substring(0, 15) + '...' : file.name}
+                                        </small>
+                                        <small class="text-muted">
+                                            ${(file.size / 1024 / 1024).toFixed(2)} MB
+                                        </small>
+                                    </div>
+                                </div>
+                            `;
+                            photosPreview.appendChild(col);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
     }
 });
 </script>

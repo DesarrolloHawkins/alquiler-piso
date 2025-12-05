@@ -493,6 +493,16 @@
         <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
+                    <h2 class="text-center">Ingresos por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
+                    <div id="chartIngresosPorMes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
                     <h2 class="text-center">Disponibilidad Mensual de Apartamentos</h2>
                     <div id="chartDisponibilidadMensual"></div>
                 </div>
@@ -2670,6 +2680,84 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         var chart = new ApexCharts(document.querySelector("#chartBeneficioPorMes"), options);
+        chart.render();
+    });
+
+    // Gráfico de Ingresos por Mes
+    document.addEventListener('DOMContentLoaded', function () {
+        var options = {
+            series: [{
+                name: '{{ $anioActual }}',
+                data: @json($ingresosAnioActual)
+            }, {
+                name: '{{ $anioAnterior }}',
+                data: @json($ingresosAnioAnterior)
+            }],
+            chart: {
+                type: 'line',
+                height: 350,
+                zoom: {
+                    enabled: false
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return val.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' €';
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            colors: ['#10B981', '#8B5CF6'],
+            xaxis: {
+                categories: @json($meses),
+                title: {
+                    text: 'Mes'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Ingresos (€)'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return val.toLocaleString('es-ES', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }) + ' €';
+                    }
+                }
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right'
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val.toLocaleString('es-ES', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }) + ' €';
+                    }
+                }
+            },
+            title: {
+                text: 'Comparativa de Ingresos por Mes',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartIngresosPorMes"), options);
         chart.render();
     });
 

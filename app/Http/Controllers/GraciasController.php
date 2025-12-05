@@ -4,44 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\App;
 
 class GraciasController extends Controller
 {
     //
     public function index($idioma){
-
-        $textos = [
-            'title' => 'Gracias por reservar con nosotros',
-            'subtitle' => 'Gracias por reservar un apartamento en nuestras estancias.',
-            'tenemos' => 'Ya tenemos los datos necesario para poder acceder a nuestras instalaciones, el mismo dia de la fecha de entrada recibira las indicaciones para acceder al apartamento.',
-            'info' => 'Para cualquier informacion o reclamacion puede realizarla atraves de nuestro formulario de',
-            'telefono' => 'o en el telefono:',
-            'horario' => 'en horario de Lunes a Jueves 09:00 a 14:00 horas y de 16:00 a 18:00 horas. Viernes de 08:00 a 15:00 horas.',
-            'horaario2' => 'Para cualquier horario a traves de whatsapp:',
-            'ir' => 'Ir al Whatsapp',
-            'ia' => 'sera atendido por nuestra Inteligencia Artificial.',
-            'contacto' => 'contacto',
-        ];
-
-        $nombreArchivo = 'traducciones_gracias_' . $idioma . '.json';
-        $path = storage_path('app/public/' . $nombreArchivo);
-
-        if (file_exists($path)) {
-            // Leer el contenido del archivo si ya existe
-            $textosTraducidos = json_decode(file_get_contents($path), true);
-        } else {
-            // Si no existe el archivo, hacer la petición a chatGpt
-            $traduccion = $this->chatGpt('Puedes traducirme este array al idioma '. $idioma.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($textos));
-            $textosTraducidos = json_decode($traduccion['messages']['choices'][0]['message']['content'], true);
-
-            // Guardar la traducción en un nuevo archivo
-            file_put_contents($path, json_encode($textosTraducidos));
+        // Validar y establecer el idioma
+        $idiomasPermitidos = ['es', 'en', 'fr', 'de', 'it', 'pt'];
+        if (!in_array($idioma, $idiomasPermitidos)) {
+            $idioma = 'es';
         }
+        
+        // Establecer el locale de la aplicación
+        App::setLocale($idioma);
+        session(['locale' => $idioma]);
+        session()->save();
+        
+        Log::info('Mostrando página de gracias', [
+            'idioma' => $idioma,
+            'locale' => App::getLocale()
+        ]);
 
-        $textos = $textosTraducidos;
-        // dd($textos);
-
-        return view('gracias', compact('textos'));
+        return view('gracias', compact('idioma'));
     }
     public function contacto(){
         return view('contacto');

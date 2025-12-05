@@ -52,6 +52,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'birth_date' => 'date',
+        'stripe_payment_methods' => 'array',
     ];
 
     public function hasRole($role)
@@ -99,6 +100,21 @@ class User extends Authenticatable
             default:
                 abort(403, 'No tienes permiso para acceder a esta página.');
         }
+    }
+
+    /**
+     * Obtener reservas del usuario a través del email del cliente
+     */
+    public function reservas()
+    {
+        return $this->hasManyThrough(
+            Reserva::class,
+            \App\Models\Cliente::class,
+            'email', // Foreign key en clientes
+            'cliente_id', // Foreign key en reservas
+            'email', // Local key en users
+            'id' // Local key en clientes
+        );
     }
 
 }

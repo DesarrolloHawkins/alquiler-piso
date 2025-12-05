@@ -563,6 +563,8 @@ class DashboardController extends Controller
         $beneficiosAnioAnterior = [];
         $nochesReservadasAnioActual = [];
         $nochesReservadasAnioAnterior = [];
+        $ingresosAnioActual = [];
+        $ingresosAnioAnterior = [];
 
         for ($mes = 1; $mes <= 12; $mes++) {
             $fechaInicioMes = Carbon::create($anioActual, $mes, 1)->startOfMonth();
@@ -614,24 +616,28 @@ class DashboardController extends Controller
             $categoriasIngresosExcluidasMensual = [12]; // EXCLUIDO - nunca debe contabilizarse
             $categoriasIngresosParaExclusionMensual = array_merge($categoriasIngresosSeparadas, $categoriasIngresosExcluidasMensual);
 
+            // **Calcular ingresos mensuales (misma lógica que "Cobrado")**
             $ingresosMesActual = Ingresos::whereYear('date', $anioActual)->whereMonth('date', $mes);
             if (!empty($categoriasIngresosParaExclusionMensual)) {
                 $ingresosMesActual = $ingresosMesActual->whereNotIn('categoria_id', $categoriasIngresosParaExclusionMensual);
             }
             $ingresosMesActual = $ingresosMesActual->sum('quantity');
-
-            $gastosMesActual = Gastos::whereYear('date', $anioActual)->whereMonth('date', $mes);
-            if (!empty($categoriasGastosSeparadas)) {
-                $gastosMesActual = $gastosMesActual->whereNotIn('categoria_id', $categoriasGastosSeparadas);
-            }
-            $gastosMesActual = abs($gastosMesActual->sum('quantity'));
-            $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
+            $ingresosAnioActual[] = $ingresosMesActual;
 
             $ingresosMesAnterior = Ingresos::whereYear('date', $anioAnterior)->whereMonth('date', $mes);
             if (!empty($categoriasIngresosParaExclusionMensual)) {
                 $ingresosMesAnterior = $ingresosMesAnterior->whereNotIn('categoria_id', $categoriasIngresosParaExclusionMensual);
             }
             $ingresosMesAnterior = $ingresosMesAnterior->sum('quantity');
+            $ingresosAnioAnterior[] = $ingresosMesAnterior;
+
+            // **Calcular gastos para beneficio**
+            $gastosMesActual = Gastos::whereYear('date', $anioActual)->whereMonth('date', $mes);
+            if (!empty($categoriasGastosSeparadas)) {
+                $gastosMesActual = $gastosMesActual->whereNotIn('categoria_id', $categoriasGastosSeparadas);
+            }
+            $gastosMesActual = abs($gastosMesActual->sum('quantity'));
+            $beneficiosAnioActual[] = $ingresosMesActual - $gastosMesActual;
 
             $gastosMesAnterior = Gastos::whereYear('date', $anioAnterior)->whereMonth('date', $mes);
             if (!empty($categoriasGastosSeparadas)) {
@@ -652,6 +658,8 @@ class DashboardController extends Controller
             'nochesReservadasAnioAnterior' => $nochesReservadasAnioAnterior,
             'beneficiosAnioActual' => $beneficiosAnioActual,
             'beneficiosAnioAnterior' => $beneficiosAnioAnterior,
+            'ingresosAnioActual' => $ingresosAnioActual,
+            'ingresosAnioAnterior' => $ingresosAnioAnterior,
             'anioActual' => $anioActual,
             'anioAnterior' => $anioAnterior,
             'disponibilidadMensual' => $disponibilidadMensual,

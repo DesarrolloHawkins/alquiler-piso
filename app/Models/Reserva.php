@@ -107,6 +107,22 @@ class Reserva extends Model
     }
 
       /**
+     * Relación con pagos
+     */
+    public function pagos()
+    {
+        return $this->hasMany(\App\Models\Pago::class, 'reserva_id');
+    }
+
+    /**
+     * Relación con servicios extras
+     */
+    public function serviciosExtras()
+    {
+        return $this->hasMany(\App\Models\ReservaServicio::class, 'reserva_id');
+    }
+
+      /**
      * Obtener el usuario
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

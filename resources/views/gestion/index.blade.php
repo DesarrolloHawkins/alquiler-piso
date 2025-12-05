@@ -1923,11 +1923,17 @@
                                     <div class="apple-list-subtitle">
                                         @if(isset($reserva->tarea_asignada))
                                             <!-- Información del nuevo sistema -->
-                                            <strong>Tipo:</strong> {{$reserva->tipo_tarea->nombre}}<br>
-                                            <strong>Prioridad:</strong> {{$reserva->prioridad}}/10<br>
-                                            <strong>Orden:</strong> {{$reserva->orden_ejecucion}}<br>
-                                            <strong>Tiempo Est.:</strong> {{$reserva->tiempo_estimado}} min<br>
-                                            <strong>Estado:</strong> 
+                                            @if(isset($reserva->proximaReserva) && $reserva->proximaReserva)
+                                                <strong>Próxima Reserva:</strong> Sí<br>
+                                                <strong>Adultos:</strong> {{$reserva->proximaReserva->numero_personas ?? 0}}
+                                                @if(isset($reserva->proximaReserva->numero_ninos) && $reserva->proximaReserva->numero_ninos > 0)
+                                                    <br><strong>Niños:</strong> {{$reserva->proximaReserva->numero_ninos}}
+                                                @endif
+                                            @else
+                                                <strong>Próxima Reserva:</strong> No<br>
+                                                <em class="text-muted">No hay reservas programadas después de esta limpieza</em>
+                                            @endif
+                                            <br><strong>Estado:</strong> 
                                             <span class="badge @if($reserva->estado === 'completada') bg-success @elseif($reserva->estado === 'en_progreso') bg-warning @else bg-primary @endif">
                                                 {{ucfirst($reserva->estado)}}
                                             </span>
@@ -2058,11 +2064,17 @@
                                     <div class="apple-list-subtitle">
                                         @if(isset($reservaEnLimpieza->tarea_asignada))
                                             <!-- Información del nuevo sistema -->
-                                            <strong>Tipo:</strong> {{$reservaEnLimpieza->tipo_tarea->nombre}}<br>
-                                            <strong>Prioridad:</strong> {{$reservaEnLimpieza->prioridad}}/10<br>
-                                            <strong>Orden:</strong> {{$reservaEnLimpieza->orden_ejecucion}}<br>
-                                            <strong>Tiempo Est.:</strong> {{$reservaEnLimpieza->tiempo_estimado}} min<br>
-                                            <strong>Estado:</strong> 
+                                            @if(isset($reservaEnLimpieza->proximaReserva) && $reservaEnLimpieza->proximaReserva)
+                                                <strong>Próxima Reserva:</strong> Sí<br>
+                                                <strong>Adultos:</strong> {{$reservaEnLimpieza->proximaReserva->numero_personas ?? 0}}
+                                                @if(isset($reservaEnLimpieza->proximaReserva->numero_ninos) && $reservaEnLimpieza->proximaReserva->numero_ninos > 0)
+                                                    <br><strong>Niños:</strong> {{$reservaEnLimpieza->proximaReserva->numero_ninos}}
+                                                @endif
+                                            @else
+                                                <strong>Próxima Reserva:</strong> No<br>
+                                                <em class="text-muted">No hay reservas programadas después de esta limpieza</em>
+                                            @endif
+                                            <br><strong>Estado:</strong> 
                                             <span class="badge @if($reservaEnLimpieza->estado === 'completada') bg-success @elseif($reservaEnLimpieza->estado === 'en_progreso') bg-warning @else bg-primary @endif">
                                                 {{ucfirst($reservaEnLimpieza->estado)}}
                                             </span>

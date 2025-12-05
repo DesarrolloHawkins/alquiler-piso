@@ -90,6 +90,53 @@
                             @enderror
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="precio" class="form-label fw-semibold">
+                                    <i class="fas fa-euro-sign me-1 text-primary"></i>
+                                    Precio (€)
+                                </label>
+                                <input type="number" 
+                                       class="form-control @error('precio') is-invalid @enderror" 
+                                       id="precio" 
+                                       name="precio" 
+                                       value="{{ old('precio') }}"
+                                       step="0.01"
+                                       min="0"
+                                       placeholder="0.00">
+                                <small class="form-text text-muted">
+                                    Precio del servicio extra. Si tiene precio, aparecerá como servicio comprable.
+                                </small>
+                                @error('precio')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label for="imagen" class="form-label fw-semibold">
+                                    <i class="fas fa-image me-1 text-primary"></i>
+                                    Imagen
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('imagen') is-invalid @enderror" 
+                                       id="imagen" 
+                                       name="imagen" 
+                                       value="{{ old('imagen') }}"
+                                       placeholder="check-in.jpeg, check-out.jpeg, etc.">
+                                <small class="form-text text-muted">
+                                    Nombre del archivo de imagen en la carpeta public (ej: check-in.jpeg, mascotas-perro.png).
+                                </small>
+                                @if(old('imagen'))
+                                    <div class="mt-2">
+                                        <img src="{{ asset(old('imagen')) }}" alt="Vista previa" style="max-width: 200px; height: auto; border-radius: 4px;">
+                                    </div>
+                                @endif
+                                @error('imagen')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         <div class="mb-4">
                             <label for="categoria" class="form-label fw-semibold">
                                 <i class="fas fa-folder me-1 text-primary"></i>

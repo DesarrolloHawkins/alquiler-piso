@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Apartamento;
+use App\Models\ApartamentoPhoto;
 use App\Models\Edificio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use RealRashid\SweetAlert\Facades\Alert;
 
 class ApartamentosController extends Controller
 {
@@ -78,14 +81,18 @@ class ApartamentosController extends Controller
     public function createAdmin()
     {
         $edificios = Edificio::all();
-        return view('admin.apartamentos.create', compact('edificios'));
+        $servicios = \App\Models\Servicio::activos()->ordenados()->get();
+        return view('admin.apartamentos.create', compact('edificios', 'servicios'));
     }
 
     public function editAdmin($id)
     {
-        $apartamento = Apartamento::findOrFail($id);
+        $apartamento = Apartamento::with('photos')->findOrFail($id);
         $edificios = Edificio::all();
-        return view('admin.apartamentos.edit', compact('apartamento','edificios'));
+        $servicios = \App\Models\Servicio::activos()->ordenados()->get();
+        $serviciosSeleccionados = $apartamento->servicios->pluck('id')->toArray();
+        $photos = $apartamento->photos()->ordenadas()->get();
+        return view('admin.apartamentos.edit', compact('apartamento', 'edificios', 'servicios', 'serviciosSeleccionados', 'photos'));
     }
 
     public function updateAdmin(Request $request, $id)
@@ -95,7 +102,7 @@ class ApartamentosController extends Controller
         // Log the update attempt
         $this->logUpdate('APARTAMENTO', $id, $apartamento->toArray(), $request->all());
 
-        // Reglas de validación completas para Channex
+        // Reglas de validación completas para Channex + Booking.com
         $rules = [
             'edificio_id' => 'required|exists:edificios,id',
             'title' => 'required|string|max:255',
@@ -113,6 +120,49 @@ class ApartamentosController extends Controller
             'id_booking' => 'nullable|string|max:100',
             'id_airbnb' => 'nullable|string|max:100',
             'id_web' => 'nullable|string|max:100',
+            // Booking.com fields
+            'check_in_time' => 'nullable|date_format:H:i',
+            'check_out_time' => 'nullable|date_format:H:i',
+            'check_in_instructions' => 'nullable|string',
+            'check_out_instructions' => 'nullable|string',
+            'house_rules' => 'nullable|string',
+            'cancellation_policy' => 'nullable|in:flexible,moderate,strict,super_strict',
+            'cancellation_details' => 'nullable|string',
+            'cancellation_deadline' => 'nullable|integer|min:0',
+            'min_age_child' => 'nullable|integer|min:0',
+            'quiet_hours_start' => 'nullable|date_format:H:i',
+            'quiet_hours_end' => 'nullable|date_format:H:i',
+            'wifi_speed' => 'nullable|string|max:50',
+            'wifi_coverage' => 'nullable|in:full,partial,none',
+            'parking_spaces' => 'nullable|integer|min:0',
+            'parking_price_per_day' => 'nullable|numeric|min:0',
+            'extra_bed_price' => 'nullable|numeric|min:0',
+            'security_deposit' => 'nullable|numeric|min:0',
+            'security_deposit_type' => 'nullable|in:cash,credit_card,none',
+            'cleaning_fee' => 'nullable|numeric|min:0',
+            'tourist_tax' => 'nullable|numeric|min:0',
+            'city_tax' => 'nullable|numeric|min:0',
+            'nearest_beach_distance' => 'nullable|numeric|min:0',
+            'nearest_airport_distance' => 'nullable|numeric|min:0',
+            'metro_station_distance' => 'nullable|numeric|min:0',
+            'bus_stop_distance' => 'nullable|numeric|min:0',
+            'floor_number' => 'nullable|integer',
+            'building_year' => 'nullable|integer|min:1800|max:' . date('Y'),
+            'last_renovation_year' => 'nullable|integer|min:1800|max:' . date('Y'),
+            'balcony_size' => 'nullable|numeric|min:0',
+            'terrace_size' => 'nullable|numeric|min:0',
+            'rating_score' => 'nullable|numeric|between:0,10',
+            'reviews_count' => 'nullable|integer|min:0',
+            'cleanliness_rating' => 'nullable|numeric|between:0,10',
+            'location_rating' => 'nullable|numeric|between:0,10',
+            'value_rating' => 'nullable|numeric|between:0,10',
+            'service_rating' => 'nullable|numeric|between:0,10',
+            'payment_options' => 'nullable|array',
+            'languages_spoken' => 'nullable|array',
+            'bed_types' => 'nullable|array',
+            'view_type' => 'nullable|string|max:50',
+            'nearest_beach_name' => 'nullable|string|max:255',
+            'nearest_airport_name' => 'nullable|string|max:255',
         ];
 
         // Mensajes de validación personalizados
@@ -141,61 +191,113 @@ class ApartamentosController extends Controller
         $validatedData = $request->validate($rules, $messages);
 
         try {
-            // Actualizar solo los campos que vienen en la request
-            if ($request->has('title')) {
-                $apartamento->titulo = $validatedData['title'];
+            // Mapear campos del formulario al modelo
+            $dataToUpdate = [
+                'titulo' => $validatedData['title'] ?? null,
+                'claves' => $validatedData['claves'] ?? null,
+                'property_type' => $validatedData['property_type'] ?? null,
+                'country' => $validatedData['country'] ?? null,
+                'city' => $validatedData['city'] ?? null,
+                'address' => $validatedData['address'] ?? null,
+                'zip_code' => $validatedData['zip_code'] ?? null,
+                'description' => $validatedData['description'] ?? null,
+                'bedrooms' => $validatedData['bedrooms'] ?? null,
+                'bathrooms' => $validatedData['bathrooms'] ?? null,
+                'max_guests' => $validatedData['max_guests'] ?? null,
+                'size' => $validatedData['size'] ?? null,
+                'important_information' => $request->input('important_information') ?? null,
+                'email' => $request->input('email') ?? null,
+                'phone' => $request->input('phone') ?? null,
+                'website' => $request->input('website') ?? null,
+                'edificio_id' => $validatedData['edificio_id'],
+            ];
+            
+            // Campos Booking.com - Check-in/Check-out
+            if ($request->has('check_in_time')) {
+                $dataToUpdate['check_in_time'] = $validatedData['check_in_time'] ?? null;
             }
-            if ($request->has('claves')) {
-                $apartamento->claves = $validatedData['claves'];
+            if ($request->has('check_out_time')) {
+                $dataToUpdate['check_out_time'] = $validatedData['check_out_time'] ?? null;
             }
-            if ($request->has('property_type')) {
-                $apartamento->property_type = $validatedData['property_type'];
+            $dataToUpdate['check_in_instructions'] = $request->input('check_in_instructions');
+            $dataToUpdate['check_out_instructions'] = $request->input('check_out_instructions');
+            
+            // Campos Booking.com - Amenities (booleanos)
+            $amenityFields = [
+                'wifi', 'wifi_free', 'parking', 'parking_free', 'air_conditioning', 'heating',
+                'tv', 'cable_tv', 'kitchen', 'kitchen_fully_equipped', 'dishwasher', 'washing_machine',
+                'dryer', 'microwave', 'refrigerator', 'oven', 'coffee_machine', 'balcony',
+                'terrace', 'garden', 'swimming_pool', 'elevator', 'pets_allowed', 'smoking_allowed',
+                'accessible', 'safe', 'hair_dryer', 'iron', 'linen', 'towels', 'workspace',
+                'public_transport_nearby', 'sofa_bed', 'extra_bed_available', 'parking_reservation_required',
+                'fire_extinguisher', 'smoke_detector', 'first_aid_kit', 'tourist_tax_included', 'city_tax_included'
+            ];
+            foreach ($amenityFields as $field) {
+                $dataToUpdate[$field] = $request->has($field) ? true : false;
             }
-            if ($request->has('country')) {
-                $apartamento->country = $validatedData['country'];
+            
+            // Campos Booking.com - Numéricos y texto
+            $numericFields = [
+                'parking_spaces', 'parking_price_per_day', 'extra_bed_price', 'security_deposit',
+                'cleaning_fee', 'tourist_tax', 'city_tax', 'nearest_beach_distance',
+                'nearest_airport_distance', 'metro_station_distance', 'bus_stop_distance',
+                'floor_number', 'building_year', 'last_renovation_year', 'balcony_size',
+                'terrace_size', 'rating_score', 'reviews_count', 'cleanliness_rating',
+                'location_rating', 'value_rating', 'service_rating', 'cancellation_deadline', 'min_age_child'
+            ];
+            foreach ($numericFields as $field) {
+                if ($request->has($field)) {
+                    $dataToUpdate[$field] = $validatedData[$field] ?? null;
+                }
             }
-            if ($request->has('city')) {
-                $apartamento->city = $validatedData['city'];
+            
+            // Campos Booking.com - Texto
+            $textFields = [
+                'house_rules', 'cancellation_details', 'wifi_speed', 'nearest_beach_name',
+                'nearest_airport_name', 'view_type'
+            ];
+            foreach ($textFields as $field) {
+                if ($request->has($field)) {
+                    $dataToUpdate[$field] = $validatedData[$field] ?? null;
+                }
             }
-            if ($request->has('address')) {
-                $apartamento->address = $validatedData['address'];
+            
+            // Campos Booking.com - Enums y arrays
+            if ($request->has('cancellation_policy')) {
+                $dataToUpdate['cancellation_policy'] = $validatedData['cancellation_policy'] ?? null;
             }
-            if ($request->has('zip_code')) {
-                $apartamento->zip_code = $validatedData['zip_code'];
+            if ($request->has('security_deposit_type')) {
+                $dataToUpdate['security_deposit_type'] = $validatedData['security_deposit_type'] ?? null;
             }
-            if ($request->has('description')) {
-                $apartamento->description = $validatedData['description'];
+            if ($request->has('wifi_coverage')) {
+                $dataToUpdate['wifi_coverage'] = $validatedData['wifi_coverage'] ?? null;
             }
-            if ($request->has('bedrooms')) {
-                $apartamento->bedrooms = $validatedData['bedrooms'];
+            if ($request->has('payment_options')) {
+                $dataToUpdate['payment_options'] = $validatedData['payment_options'] ?? null;
             }
-            if ($request->has('bathrooms')) {
-                $apartamento->bathrooms = $validatedData['bathrooms'];
+            if ($request->has('languages_spoken')) {
+                $dataToUpdate['languages_spoken'] = $validatedData['languages_spoken'] ?? null;
             }
-            if ($request->has('max_guests')) {
-                $apartamento->max_guests = $validatedData['max_guests'];
+            if ($request->has('bed_types')) {
+                $dataToUpdate['bed_types'] = $validatedData['bed_types'] ?? null;
             }
-            if ($request->has('size')) {
-                $apartamento->size = $validatedData['size'];
+            if ($request->has('quiet_hours_start')) {
+                $dataToUpdate['quiet_hours_start'] = $validatedData['quiet_hours_start'] ?? null;
             }
-            if ($request->has('important_information')) {
-                $apartamento->important_information = $validatedData['important_information'];
-            }
-            if ($request->has('email')) {
-                $apartamento->email = $validatedData['email'];
-            }
-            if ($request->has('phone')) {
-                $apartamento->phone = $validatedData['phone'];
-            }
-            if ($request->has('website')) {
-                $apartamento->website = $validatedData['website'];
+            if ($request->has('quiet_hours_end')) {
+                $dataToUpdate['quiet_hours_end'] = $validatedData['quiet_hours_end'] ?? null;
             }
 
-            // Actualizar el edificio
-            $apartamento->edificio_id = $validatedData['edificio_id'];
-
-            // Guardar los cambios
+            // Actualizar el modelo
+            $apartamento->fill($dataToUpdate);
             $apartamento->save();
+
+            // Sincronizar servicios (many-to-many)
+            if ($request->has('servicios')) {
+                $apartamento->servicios()->sync($request->input('servicios', []));
+            } else {
+                $apartamento->servicios()->detach();
+            }
 
             return redirect()->route('apartamentos.admin.index')
                 ->with('swal_success', '¡Apartamento actualizado exitosamente!');
@@ -266,8 +368,62 @@ class ApartamentosController extends Controller
             // Crear el apartamento con los datos validados
             $apartamento = Apartamento::create($validatedData);
 
-            return redirect()->route('apartamentos.admin.index')
-                ->with('swal_success', '¡Apartamento creado exitosamente!');
+            // Sincronizar servicios (many-to-many)
+            if ($request->has('servicios')) {
+                $apartamento->servicios()->sync($request->input('servicios', []));
+            }
+
+            // Procesar fotos si se enviaron
+            $fotosSubidas = 0;
+            if ($request->hasFile('photos')) {
+                try {
+                    $files = $request->file('photos');
+                    
+                    foreach ($files as $index => $photo) {
+                        if ($photo && $photo->isValid()) {
+                            $path = $photo->store("apartamentos/{$apartamento->id}", 'public');
+                            
+                            // Primera foto es principal
+                            $isPrimary = ($fotosSubidas === 0);
+                            
+                            // Si esta será la primera foto, quitar principal de todas las existentes
+                            if ($isPrimary) {
+                                $apartamento->photos()->update(['is_primary' => false]);
+                            }
+                            
+                            ApartamentoPhoto::create([
+                                'apartamento_id' => $apartamento->id,
+                                'path' => $path,
+                                'url' => Storage::url($path),
+                                'position' => $fotosSubidas + 1,
+                                'is_primary' => $isPrimary,
+                            ]);
+                            
+                            $fotosSubidas++;
+                        }
+                    }
+                    
+                    if ($fotosSubidas > 0) {
+                        Alert::success('Éxito', "¡Apartamento creado con {$fotosSubidas} foto(s) exitosamente!");
+                    } else {
+                        Alert::success('Éxito', '¡Apartamento creado exitosamente!');
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error al subir fotos en creación de apartamento', [
+                        'apartamento_id' => $apartamento->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // No fallar el proceso si hay error con las fotos
+                    Alert::warning('Advertencia', 'El apartamento se creó correctamente, pero hubo un problema al subir algunas fotos.');
+                }
+            } else {
+                Alert::success('Éxito', '¡Apartamento creado exitosamente!');
+            }
+
+            // Redirigir a edición para poder añadir más fotos o configurar
+            return redirect()->route('apartamentos.admin.edit', $apartamento->id)
+                ->with('swal_success', '¡Apartamento creado exitosamente! Puedes añadir más fotos aquí.');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
@@ -722,6 +878,186 @@ class ApartamentosController extends Controller
             
             return redirect()->back()
                 ->with('swal_error', 'Error al eliminar el apartamento: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Subir fotos del apartamento
+     */
+    public function uploadPhotos(Request $request, $id)
+    {
+        $apartamento = Apartamento::findOrFail($id);
+
+        $request->validate([
+            'photos.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120', // 5MB max, nullable para permitir arrays vacíos
+        ]);
+
+        try {
+            $uploadedPhotos = [];
+            
+            if (!$request->hasFile('photos')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se seleccionaron fotos para subir'
+                ], 400);
+            }
+            
+            $files = $request->file('photos');
+            if (empty($files) || (is_array($files) && count(array_filter($files)) === 0)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontraron archivos válidos'
+                ], 400);
+            }
+            
+            // Contar fotos existentes ANTES de crear nuevas (para is_primary)
+            $photosCountAntes = $apartamento->photos()->count();
+            $lastPosition = $apartamento->photos()->max('position') ?? 0;
+            
+            foreach ($files as $index => $photo) {
+                if ($photo && $photo->isValid()) {
+                    try {
+                        // Guardar en storage/app/public/apartamentos/{id}/
+                        $path = $photo->store("apartamentos/{$id}", 'public');
+                        
+                        // Determinar si es principal (primera foto del lote si no hay fotos previas)
+                        $isPrimary = ($photosCountAntes === 0 && $index === 0);
+                        
+                        // Si esta será la primera foto, quitar principal de todas las existentes
+                        if ($isPrimary) {
+                            $apartamento->photos()->update(['is_primary' => false]);
+                        }
+                        
+                        // Crear registro de foto
+                        $apartamentoPhoto = ApartamentoPhoto::create([
+                            'apartamento_id' => $apartamento->id,
+                            'path' => $path,
+                            'url' => Storage::url($path),
+                            'position' => $lastPosition + $index + 1,
+                            'is_primary' => $isPrimary,
+                        ]);
+
+                        $uploadedPhotos[] = $apartamentoPhoto;
+                    } catch (\Exception $e) {
+                        \Log::error('Error al procesar foto individual', [
+                            'apartamento_id' => $id,
+                            'file_name' => $photo->getClientOriginalName(),
+                            'error' => $e->getMessage()
+                        ]);
+                        // Continuar con las siguientes fotos
+                    }
+                }
+            }
+
+            if (count($uploadedPhotos) > 0) {
+                Alert::success('Éxito', count($uploadedPhotos) . ' foto(s) subida(s) correctamente.');
+                return response()->json([
+                    'success' => true,
+                    'message' => count($uploadedPhotos) . ' foto(s) subida(s) correctamente',
+                    'photos' => $uploadedPhotos
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudieron procesar las fotos. Verifica que sean archivos de imagen válidos.'
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            Alert::error('Error', 'Error al subir las fotos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir las fotos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar foto del apartamento
+     */
+    public function deletePhoto($id, $photoId)
+    {
+        try {
+            $apartamento = Apartamento::findOrFail($id);
+            $photo = ApartamentoPhoto::where('apartamento_id', $id)->findOrFail($photoId);
+
+            // Eliminar archivo físico
+            if ($photo->path && Storage::disk('public')->exists($photo->path)) {
+                Storage::disk('public')->delete($photo->path);
+            }
+
+            // Eliminar registro
+            $photo->delete();
+
+            Alert::success('Éxito', 'Foto eliminada correctamente.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            Alert::error('Error', 'Error al eliminar la foto: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la foto: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Establecer foto principal
+     */
+    public function setPrimaryPhoto($id, $photoId)
+    {
+        try {
+            $apartamento = Apartamento::findOrFail($id);
+            $photo = ApartamentoPhoto::where('apartamento_id', $id)->findOrFail($photoId);
+
+            // Quitar principal de todas las fotos
+            $apartamento->photos()->update(['is_primary' => false]);
+
+            // Establecer esta como principal
+            $photo->update(['is_primary' => true]);
+
+            Alert::success('Éxito', 'Foto principal actualizada.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto principal actualizada'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar orden de fotos
+     */
+    public function updatePhotoOrder(Request $request, $id)
+    {
+        try {
+            $apartamento = Apartamento::findOrFail($id);
+            $order = $request->input('order', []); // Array de IDs en orden
+
+            foreach ($order as $position => $photoId) {
+                ApartamentoPhoto::where('apartamento_id', $id)
+                    ->where('id', $photoId)
+                    ->update(['position' => $position + 1]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden actualizado'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

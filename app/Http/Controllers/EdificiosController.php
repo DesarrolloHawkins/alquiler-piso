@@ -33,6 +33,7 @@ class EdificiosController extends Controller
         $rules = [
             'nombre' => 'required|string|max:255|unique:edificios,nombre',
             'clave' => 'required|string|max:255|unique:edificios,clave',
+            'codigo_establecimiento' => 'nullable|string|max:50',
         ];
 
         $messages = [
@@ -44,7 +45,11 @@ class EdificiosController extends Controller
 
         try {
             $validatedData = $request->validate($rules, $messages);
-            $edificio = Edificio::create($validatedData);
+            $edificio = Edificio::create([
+                'nombre' => $validatedData['nombre'],
+                'clave' => $validatedData['clave'],
+                'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
+            ]);
 
             return redirect()->route('admin.edificios.index')
                 ->with('swal_success', '¡Edificio creado con éxito!');
@@ -76,6 +81,11 @@ class EdificiosController extends Controller
                 'max:255',
                 Rule::unique('edificios')->ignore($edificio->id)
             ],
+            'codigo_establecimiento' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
         ];
 
         $messages = [
@@ -90,7 +100,8 @@ class EdificiosController extends Controller
 
             $edificio->update([
                 'nombre' => $validatedData['nombre'],
-                'clave' => $validatedData['clave']
+                'clave' => $validatedData['clave'],
+                'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
             ]);
 
             return redirect()->route('admin.edificios.index')

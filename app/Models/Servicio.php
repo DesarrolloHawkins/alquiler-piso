@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Traits\Translatable;
 
 class Servicio extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Translatable;
 
     protected $table = 'servicios';
 
@@ -18,6 +19,8 @@ class Servicio extends Model
         'nombre',
         'slug',
         'descripcion',
+        'precio',
+        'imagen',
         'orden',
         'categoria',
         'es_popular',
@@ -25,6 +28,7 @@ class Servicio extends Model
     ];
 
     protected $casts = [
+        'precio' => 'decimal:2',
         'es_popular' => 'boolean',
         'activo' => 'boolean',
         'orden' => 'integer',
@@ -57,6 +61,14 @@ class Servicio extends Model
     {
         return $this->belongsToMany(Apartamento::class, 'apartamento_servicio', 'servicio_id', 'apartamento_id')
                     ->withTimestamps();
+    }
+
+    /**
+     * Relación con reservas (a través de reserva_servicios)
+     */
+    public function reservas()
+    {
+        return $this->hasMany(ReservaServicio::class, 'servicio_id');
     }
 
     /**

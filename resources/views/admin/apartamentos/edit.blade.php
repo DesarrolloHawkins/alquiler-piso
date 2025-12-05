@@ -254,6 +254,116 @@
                             </div>
                         </div>
 
+                        <!-- Información para Plataforma del Estado -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 fw-semibold">
+                                    <i class="fas fa-government me-2"></i>Plataforma del Estado
+                                </h6>
+                                <p class="text-muted small mb-3">Información requerida para la subida de viajeros a la plataforma del estado.</p>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="codigo_establecimiento" class="form-label fw-semibold">
+                                        <i class="fas fa-id-card me-1 text-primary"></i>Código del Establecimiento
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('codigo_establecimiento') is-invalid @enderror" 
+                                           id="codigo_establecimiento" 
+                                           name="codigo_establecimiento" 
+                                           value="{{ old('codigo_establecimiento', $apartamento->codigo_establecimiento) }}"
+                                           placeholder="Código asignado por la administración">
+                                    @error('codigo_establecimiento')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="pais_iso3" class="form-label fw-semibold">
+                                        <i class="fas fa-flag me-1 text-primary"></i>País (ISO3)
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('pais_iso3') is-invalid @enderror" 
+                                           id="pais_iso3" 
+                                           name="pais_iso3" 
+                                           value="{{ old('pais_iso3', $apartamento->pais_iso3 ?? 'ESP') }}"
+                                           placeholder="ESP"
+                                           maxlength="3">
+                                    @error('pais_iso3')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="codigo_municipio_ine" class="form-label fw-semibold">
+                                        <i class="fas fa-map-pin me-1 text-primary"></i>Código Municipio INE
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('codigo_municipio_ine') is-invalid @enderror" 
+                                           id="codigo_municipio_ine" 
+                                           name="codigo_municipio_ine" 
+                                           value="{{ old('codigo_municipio_ine', $apartamento->codigo_municipio_ine) }}"
+                                           placeholder="Código INE del municipio">
+                                    @error('codigo_municipio_ine')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="nombre_municipio" class="form-label fw-semibold">
+                                        <i class="fas fa-city me-1 text-primary"></i>Nombre del Municipio
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('nombre_municipio') is-invalid @enderror" 
+                                           id="nombre_municipio" 
+                                           name="nombre_municipio" 
+                                           value="{{ old('nombre_municipio', $apartamento->nombre_municipio) }}"
+                                           placeholder="Nombre del municipio">
+                                    @error('nombre_municipio')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label for="tipo_establecimiento" class="form-label fw-semibold">
+                                        <i class="fas fa-building me-1 text-primary"></i>Tipo de Establecimiento
+                                    </label>
+                                    <select class="form-select @error('tipo_establecimiento') is-invalid @enderror" 
+                                            id="tipo_establecimiento" 
+                                            name="tipo_establecimiento">
+                                        <option value="">Seleccionar tipo (opcional)</option>
+                                        <option value="hotel" {{ old('tipo_establecimiento', $apartamento->tipo_establecimiento) == 'hotel' ? 'selected' : '' }}>Hotel</option>
+                                        <option value="apartamento" {{ old('tipo_establecimiento', $apartamento->tipo_establecimiento) == 'apartamento' ? 'selected' : '' }}>Apartamento</option>
+                                        <option value="casa_rural" {{ old('tipo_establecimiento', $apartamento->tipo_establecimiento) == 'casa_rural' ? 'selected' : '' }}>Casa Rural</option>
+                                        <option value="pension" {{ old('tipo_establecimiento', $apartamento->tipo_establecimiento) == 'pension' ? 'selected' : '' }}>Pensión</option>
+                                        <option value="hostal" {{ old('tipo_establecimiento', $apartamento->tipo_establecimiento) == 'hostal' ? 'selected' : '' }}>Hostal</option>
+                                    </select>
+                                    @error('tipo_establecimiento')
+                                        <div class="invalid-feedback">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Detalles del Apartamento -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -368,6 +478,142 @@
                                             <i class="fas fa-exclamation-triangle me-1"></i>{{ $message }}
                                         </div>
                                     @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Campos Booking.com - Reglas y Políticas (VISIBLE PRIMERO) --}}
+                        @include('admin.apartamentos.partials.booking-fields')
+                        
+                        <!-- Servicios del Apartamento -->
+                        @include('admin.apartamentos.partials.servicios-select')
+                        
+                        <!-- Gestión de Fotos -->
+                        <div class="mb-4">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fas fa-images me-2"></i>
+                                        Galería de Fotos
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-upload me-1 text-primary"></i>
+                                            Subir Fotos (Múltiples)
+                                        </label>
+                                        <input type="file" 
+                                               class="form-control" 
+                                               id="photosInput" 
+                                               name="photos[]" 
+                                               accept="image/jpeg,image/jpg,image/png,image/webp"
+                                               multiple>
+                                        <small class="form-text text-muted">
+                                            Selecciona una o más fotos (máx. 5MB cada una). Formatos: JPG, PNG, WEBP
+                                        </small>
+                                        <div class="mt-2">
+                                            <button type="button" 
+                                                    class="btn btn-primary btn-sm" 
+                                                    onclick="uploadPhotos()">
+                                                <i class="fas fa-upload me-2"></i>Subir Fotos
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="photosContainer" class="row g-3">
+                                        @if(isset($photos) && $photos->count() > 0)
+                                            @foreach($photos as $photo)
+                                                <div class="col-md-3 col-lg-2 photo-item" data-photo-id="{{ $photo->id }}">
+                                                    <div class="card h-100">
+                                                        <div class="card-img-wrapper position-relative">
+                                                            @if($photo->path)
+                                                                <img src="{{ asset('storage/' . $photo->path) }}" 
+                                                                     class="card-img-top" 
+                                                                     alt="Foto {{ $photo->id }}"
+                                                                     style="height: 150px; object-fit: cover;">
+                                                            @elseif($photo->url)
+                                                                <img src="{{ $photo->url }}" 
+                                                                     class="card-img-top" 
+                                                                     alt="Foto {{ $photo->id }}"
+                                                                     style="height: 150px; object-fit: cover;">
+                                                            @else
+                                                                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 150px;">
+                                                                    <i class="fas fa-image text-muted"></i>
+                                                                </div>
+                                                            @endif
+                                                            @if($photo->is_primary)
+                                                                <span class="badge bg-success position-absolute top-0 end-0 m-2">
+                                                                    <i class="fas fa-star"></i> Principal
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="card-body p-2">
+                                                            <div class="btn-group w-100" role="group">
+                                                                @if(!$photo->is_primary)
+                                                                    <button type="button" 
+                                                                            class="btn btn-sm btn-outline-primary" 
+                                                                            onclick="setPrimaryPhoto({{ $photo->id }})"
+                                                                            title="Marcar como principal">
+                                                                        <i class="fas fa-star"></i>
+                                                                    </button>
+                                                                @endif
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-danger" 
+                                                                        onclick="deletePhoto({{ $photo->id }})"
+                                                                        title="Eliminar">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            <div class="col-12">
+                                                <div class="alert alert-info mb-0">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    No hay fotos subidas. Sube fotos para que aparezcan en la página pública.
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lugares Cercanos y FAQs -->
+                        <div class="mb-4">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-header bg-info text-white py-2">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        Contenido Público
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Lugares cercanos y FAQs:</strong> Gestiona los lugares cercanos y preguntas frecuentes que aparecerán en la página pública del apartamento.
+                                    </div>
+                                    
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <a href="{{ route('admin.lugares-cercanos.index', $apartamento->id) }}" 
+                                           class="btn btn-outline-primary" 
+                                           target="_blank">
+                                            <i class="fas fa-map-marker-alt me-2"></i>
+                                            Gestionar Lugares Cercanos
+                                            <span class="badge bg-primary ms-2">{{ $apartamento->lugaresCercanos()->count() }}</span>
+                                        </a>
+                                        
+                                        <a href="{{ route('admin.faq-apartamentos.index', $apartamento->id) }}" 
+                                           class="btn btn-outline-info" 
+                                           target="_blank">
+                                            <i class="fas fa-question-circle me-2"></i>
+                                            Gestionar Preguntas Frecuentes
+                                            <span class="badge bg-info ms-2">{{ $apartamento->faqs()->count() }}</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -676,6 +922,194 @@
 @endsection
 
 @section('scriptHead')
+<script>
+    const apartamentoId = {{ $apartamento->id }};
+    
+    // Subir fotos
+    function uploadPhotos() {
+        const input = document.getElementById('photosInput');
+        if (!input) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se encontró el input de fotos'
+            });
+            return;
+        }
+        
+        const files = input.files;
+        
+        if (!files || files.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin fotos',
+                text: 'Por favor selecciona al menos una foto para subir.'
+            });
+            return;
+        }
+        
+        // Validar tamaño de archivos
+        let invalidFiles = [];
+        Array.from(files).forEach((file, index) => {
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                invalidFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+            }
+        });
+        
+        if (invalidFiles.length > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Archivos muy grandes',
+                html: `Los siguientes archivos exceden el límite de 5MB:<br>${invalidFiles.join('<br>')}`
+            });
+            return;
+        }
+        
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('photos[]', files[i]);
+        }
+        
+        Swal.fire({
+            title: 'Subiendo fotos...',
+            text: `Subiendo ${files.length} foto(s), por favor espera`,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        fetch(`/apartamentos/${apartamentoId}/photos/upload`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Error al subir las fotos');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: data.message || 'Fotos subidas correctamente',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al subir las fotos'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Error al subir las fotos'
+            });
+        });
+    }
+    
+    // Eliminar foto
+    function deletePhoto(photoId) {
+        Swal.fire({
+            title: '¿Eliminar foto?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/apartamentos/${apartamentoId}/photos/${photoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Eliminada!',
+                            text: 'La foto ha sido eliminada'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Error al eliminar la foto'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al eliminar la foto: ' + error.message
+                    });
+                });
+            }
+        });
+    }
+    
+    // Establecer foto principal
+    function setPrimaryPhoto(photoId) {
+        fetch(`/apartamentos/${apartamentoId}/photos/${photoId}/primary`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Actualizado!',
+                    text: 'Foto principal actualizada',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al actualizar la foto principal'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error: ' + error.message
+            });
+        });
+    }
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Validación del formulario

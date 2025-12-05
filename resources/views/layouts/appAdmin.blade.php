@@ -174,6 +174,15 @@
                                         <li><a class="dropdown-item" href="{{ route('admin.servicios.index') }}">
                                             <i class="fas fa-concierge-bell me-2"></i>Servicios
                                         </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.politica-cancelacion.edit') }}">
+                                            <i class="fas fa-file-contract me-2"></i>Política de Cancelaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.paginas-legales.index') }}">
+                                            <i class="fas fa-file-alt me-2"></i>Páginas Legales
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.preguntas-frecuentes.index') }}">
+                                            <i class="fas fa-question-circle me-2"></i>Preguntas Frecuentes
+                                        </a></li>
                                     </ul>
                                 </li>
 
@@ -358,10 +367,17 @@
 
                                 <!-- Tesorería -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*', 'informes-ai*', 'informe-ai*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*', 'informes-ai*', 'informe-ai*', 'pagos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-cash-register me-1"></i>Tesorería
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.pagos.index') }}">
+                                            <i class="fas fa-credit-card me-2"></i>Pagos Web
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.pagos.intentos') }}">
+                                            <i class="fas fa-history me-2"></i>Intentos de Pago
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.diarioCaja.index') }}">
                                             <i class="fas fa-book me-2"></i>Diario de Caja
                                         </a></li>
@@ -422,6 +438,10 @@
                                         </a></li>
                                         <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">
                                             <i class="fab fa-whatsapp me-2"></i>Conversaciones
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.contactos-web.index') }}">
+                                            <i class="fas fa-envelope-open-text me-2"></i>Contactos desde la Web
                                         </a></li>
                                     </ul>
                                 </li>

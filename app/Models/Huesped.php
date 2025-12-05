@@ -19,16 +19,19 @@ class Huesped extends Model
      */
     protected $fillable = [
         'reserva_id',
+        'cliente_comprador_id',
         'nombre',
         'primer_apellido',
         'segundo_apellido',
         'fecha_nacimiento',
+        'lugar_nacimiento', // Lugar de nacimiento (opcional pero recomendado)
         'pais',
         'tipo_documento',
         'tipo_documento_str',
         'numero_identificacion',
         'numero_soporte_documento', // Nuevo campo
         'fecha_expedicion',
+        'fecha_caducidad', // Fecha de caducidad del documento (obligatorio para verificar validez)
         'sexo',
         'sexo_str',
         'email',
@@ -51,7 +54,12 @@ class Huesped extends Model
         'fecha_pago', // Nuevo campo
         'nacionalidadStr',
         'nacionalidadCode',
-        'nacionalidad'
+        'nacionalidad',
+        // Campos para plataforma del estado
+        'pais_iso3',
+        'codigo_municipio_ine',
+        'nombre_municipio',
+        'telefono2',
     ];
 
     /**
@@ -61,6 +69,14 @@ class Huesped extends Model
      */
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
+        'fecha_nacimiento',
+        'fecha_expedicion',
+        'fecha_caducidad',
+        'fecha_firma_contrato',
+        'fecha_hora_entrada',
+        'fecha_hora_salida',
+        'fecha_caducidad_tarjeta',
+        'fecha_pago',
     ];
 
     /**
@@ -77,5 +93,13 @@ class Huesped extends Model
     public function photos()
     {
         return $this->hasMany(\App\Models\Photo::class, 'huespedes_id');
+    }
+    
+    /**
+     * Relación con Cliente Comprador
+     */
+    public function clienteComprador()
+    {
+        return $this->belongsTo(\App\Models\Cliente::class, 'cliente_comprador_id');
     }
 }

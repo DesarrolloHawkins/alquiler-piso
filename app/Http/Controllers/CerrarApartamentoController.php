@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\CierreApartamento;
 use App\Models\Apartamento;
 use App\Models\Cliente;
@@ -54,7 +55,7 @@ class CerrarApartamentoController extends Controller
     public function store(Request $request)
     {
         // Log de debug
-        \Log::info('Intentando crear cierre de apartamento', [
+        Log::info('Intentando crear cierre de apartamento', [
             'apartamento_id' => $request->apartamento_id,
             'fecha_inicio' => $request->fecha_inicio,
             'fecha_fin' => $request->fecha_fin
@@ -66,7 +67,7 @@ class CerrarApartamentoController extends Controller
             'fecha_fin' => 'required|date|after:fecha_inicio'
         ]);
 
-        \Log::info('Validaciones pasaron correctamente');
+        Log::info('Validaciones pasaron correctamente');
 
         DB::beginTransaction();
         try {
@@ -89,15 +90,24 @@ class CerrarApartamentoController extends Controller
             }
 
             // 4. Verificar que no haya conflictos con reservas existentes
+            // Solo detectamos reservas que realmente se solapan con el período de cierre
+            // Una reserva se solapa si:
+            // - Comienza ANTES de que termine el cierre Y termina DESPUÉS de que empiece el cierre
+            // - O contiene todo el período de cierre
+            // Nota: Si el cierre termina el día X y una reserva empieza el día X, NO hay conflicto
             $conflictoReserva = Reserva::where('apartamento_id', $apartamento->id)
                 ->where('estado_id', '!=', 4) // Excluir canceladas
                 ->where(function($query) use ($request) {
-                    $query->whereBetween('fecha_entrada', [$request->fecha_inicio, $request->fecha_fin])
-                          ->orWhereBetween('fecha_salida', [$request->fecha_inicio, $request->fecha_fin])
-                          ->orWhere(function($q) use ($request) {
-                              $q->where('fecha_entrada', '<=', $request->fecha_inicio)
-                                ->where('fecha_salida', '>=', $request->fecha_fin);
-                          });
+                    $query->where(function($q) use ($request) {
+                        // Reservas que comienzan ANTES de que termine el cierre Y terminan DESPUÉS de que empiece el cierre
+                        // Usamos < en lugar de <= para fecha_entrada para permitir que una reserva empiece el mismo día que termina el cierre
+                        $q->where('fecha_entrada', '<', $request->fecha_fin)
+                          ->where('fecha_salida', '>', $request->fecha_inicio);
+                    })->orWhere(function($q) use ($request) {
+                        // Reservas que contienen todo el período de cierre
+                        $q->where('fecha_entrada', '<=', $request->fecha_inicio)
+                          ->where('fecha_salida', '>=', $request->fecha_fin);
+                    });
                 })
                 ->first();
 
@@ -132,7 +142,7 @@ class CerrarApartamentoController extends Controller
 
             DB::commit();
 
-            \Log::info('Cierre de apartamento creado exitosamente', [
+            Log::info('Cierre de apartamento creado exitosamente', [
                 'cierre_id' => $cierre->id,
                 'reserva_id' => $reserva->id,
                 'apartamento' => $apartamento->nombre
@@ -143,7 +153,7 @@ class CerrarApartamentoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Error al crear cierre de apartamento', [
+            Log::error('Error al crear cierre de apartamento', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

@@ -10,6 +10,7 @@ use App\Models\Apartamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\AmenityConsumptionService;
 
 class AmenityLimpiezaController extends Controller
 {
@@ -88,8 +89,24 @@ class AmenityLimpiezaController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->amenities as $amenityData) {
-                $amenity = Amenity::find($amenityData['amenity_id']);
-                $cantidadDejada = $amenityData['cantidad_dejada'];
+                // Usar lockForUpdate para evitar condiciones de carrera
+                $amenity = Amenity::lockForUpdate()->find($amenityData['amenity_id']);
+                if (!$amenity) {
+                    throw new \Exception("Amenity con ID {$amenityData['amenity_id']} no encontrado");
+                }
+                
+                // Para amenities tipo "por_reserva", usar consumo_por_reserva en lugar de cantidad_dejada
+                if ($amenity->tipo_consumo === 'por_reserva') {
+                    // Usar consumo_por_reserva configurado
+                    $cantidadDejada = $amenity->consumo_por_reserva ?? 0;
+                } else {
+                    // Para otros tipos, usar cantidad_dejada manual
+                    $cantidadDejada = floatval($amenityData['cantidad_dejada'] ?? 0);
+                }
+                
+                if ($cantidadDejada <= 0) {
+                    continue; // Saltar si no hay cantidad válida
+                }
                 
                 // Verificar si ya existe un consumo para este amenity en esta limpieza
                 $consumoExistente = AmenityConsumo::where('limpieza_id', $limpiezaId)
@@ -97,43 +114,58 @@ class AmenityLimpiezaController extends Controller
                     ->first();
                 
                 if ($consumoExistente) {
-                    // Actualizar consumo existente
-                    $cantidadAnterior = $consumoExistente->cantidad_actual;
-                    $cantidadConsumida = $cantidadAnterior - $cantidadDejada;
-                    $costoTotal = $cantidadConsumida * $amenity->precio_compra;
+                    // ACTUALIZAR el consumo existente usando ajustarStock()
+                    // Refrescar el modelo para obtener el stock actualizado
+                    $amenity->refresh();
                     
+                    // Stock antes del ajuste
+                    $stockAnterior = $amenity->stock_actual;
+                    $cantidadConsumoAnterior = $consumoExistente->cantidad_consumida;
+                    
+                    // Ajustar el stock basado en la diferencia de consumo
+                    $stockActual = $amenity->ajustarStock($cantidadConsumoAnterior, $cantidadDejada);
+                    
+                    // Calcular costo
+                    $costoTotal = $cantidadDejada * $amenity->precio_compra;
+                    
+                    // Actualizar el consumo con los valores reales del stock
                     $consumoExistente->update([
-                        'cantidad_consumida' => $cantidadConsumida,
-                        'cantidad_anterior' => $cantidadAnterior,
-                        'cantidad_actual' => $cantidadDejada,
-                        'costo_total' => $costoTotal,
-                        'observaciones' => $amenityData['observaciones'] ?? null,
-                        'fecha_consumo' => now()
-                    ]);
-                } else {
-                    // Crear nuevo consumo
-                    $cantidadConsumida = $cantidadDejada; // Asumimos que se consume lo que se deja
-                    $costoTotal = $cantidadConsumida * $amenity->precio_compra;
-                    
-                    AmenityConsumo::create([
-                        'amenity_id' => $amenity->id,
-                        'reserva_id' => $limpieza->reserva_id,
-                        'apartamento_id' => $limpieza->apartamento_id,
-                        'limpieza_id' => $limpiezaId,
-                        'user_id' => auth()->id(),
-                        'tipo_consumo' => $amenity->tipo_consumo,
-                        'cantidad_consumida' => $cantidadConsumida,
-                        'cantidad_anterior' => 0,
-                        'cantidad_actual' => $cantidadDejada,
+                        'cantidad_consumida' => $cantidadDejada,
+                        'cantidad_anterior' => $stockAnterior,
+                        'cantidad_actual' => $stockActual,
                         'costo_unitario' => $amenity->precio_compra,
                         'costo_total' => $costoTotal,
                         'observaciones' => $amenityData['observaciones'] ?? null,
                         'fecha_consumo' => now()
                     ]);
+                } else {
+                    // Crear nuevo consumo - usar método estándar para descontar stock
+                    try {
+                        // Refrescar el modelo para obtener el stock más reciente
+                        $amenity->refresh();
+                        
+                        $resultadoDescuento = $amenity->descontarStock($cantidadDejada);
+                        $costoTotal = $cantidadDejada * $amenity->precio_compra;
+                        
+                        AmenityConsumo::create([
+                            'amenity_id' => $amenity->id,
+                            'reserva_id' => $limpieza->reserva_id,
+                            'apartamento_id' => $limpieza->apartamento_id,
+                            'limpieza_id' => $limpiezaId,
+                            'user_id' => auth()->id(),
+                            'tipo_consumo' => $amenity->tipo_consumo,
+                            'cantidad_consumida' => $cantidadDejada,
+                            'cantidad_anterior' => $resultadoDescuento['stock_anterior'],
+                            'cantidad_actual' => $resultadoDescuento['stock_actual'],
+                            'costo_unitario' => $amenity->precio_compra,
+                            'costo_total' => $costoTotal,
+                            'observaciones' => $amenityData['observaciones'] ?? null,
+                            'fecha_consumo' => now()
+                        ]);
+                    } catch (\Exception $e) {
+                        throw new \Exception("Error con amenity '{$amenity->nombre}': {$e->getMessage()}");
+                    }
                 }
-                
-                // Actualizar stock del amenity
-                $amenity->decrement('stock_actual', $cantidadDejada);
             }
             
             DB::commit();
@@ -151,50 +183,7 @@ class AmenityLimpiezaController extends Controller
      */
     private function calcularCantidadRecomendada($amenity, $reserva, $apartamento)
     {
-        $numeroPersonas = $reserva ? $reserva->numero_personas : 1;
-        $dias = $reserva ? Carbon::parse($reserva->fecha_entrada)->diffInDays($reserva->fecha_salida) : 1;
-        
-        switch ($amenity->tipo_consumo) {
-            case 'por_reserva':
-                // Para amenities por reserva (ej: gafas, toallas, etc.)
-                $cantidad = $amenity->consumo_por_reserva ?? 1;
-                
-                // Aplicar límites mínimo y máximo si están configurados
-                if ($amenity->consumo_minimo_reserva) {
-                    $cantidad = max($cantidad, $amenity->consumo_minimo_reserva);
-                }
-                if ($amenity->consumo_maximo_reserva) {
-                    $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
-                }
-                
-                return $cantidad;
-                
-            case 'por_tiempo':
-                // Para amenities por tiempo (ej: ambientador cada X días)
-                if ($amenity->duracion_dias && $amenity->duracion_dias > 0) {
-                    $cantidad = ceil($dias / $amenity->duracion_dias);
-                    return max(1, $cantidad); // Mínimo 1
-                }
-                return 1;
-                
-            case 'por_persona':
-                // Para amenities por persona por día (ej: champú, gel, etc.)
-                $cantidadPorPersonaPorDia = $amenity->consumo_por_persona ?? 1;
-                $cantidad = $cantidadPorPersonaPorDia * $numeroPersonas * $dias;
-                
-                // Aplicar límites mínimo y máximo si están configurados
-                if ($amenity->consumo_minimo_reserva) {
-                    $cantidad = max($cantidad, $amenity->consumo_minimo_reserva);
-                }
-                if ($amenity->consumo_maximo_reserva) {
-                    $cantidad = min($cantidad, $amenity->consumo_maximo_reserva);
-                }
-                
-                return ceil($cantidad);
-                
-            default:
-                return 1;
-        }
+        return AmenityConsumptionService::calculateRecommendedQuantity($amenity, $reserva, $apartamento);
     }
     
     /**
@@ -219,8 +208,9 @@ class AmenityLimpiezaController extends Controller
         try {
             $reserva = Reserva::with(['apartamento'])->findOrFail($reservaId);
             
-            // Obtener amenities activos por categoría
+            // Obtener solo amenities activos de categoría "Otros" para el modal de limpiadoras
             $amenities = Amenity::activos()
+                ->where('categoria', 'Otros')
                 ->orderBy('categoria')
                 ->orderBy('nombre')
                 ->get()

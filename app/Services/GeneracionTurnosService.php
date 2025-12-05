@@ -74,9 +74,20 @@ class GeneracionTurnosService
     private function obtenerEmpleadasDisponibles($fecha)
     {
         return EmpleadaHorario::where('activo', true)
-            ->with('user')
+            ->with(['user' => function($query) {
+                // Solo usuarios activos (no inactivos)
+                $query->where(function($q) {
+                    $q->where('inactive', '=', 0)
+                      ->orWhereNull('inactive');
+                });
+            }])
             ->get()
             ->filter(function($empleada) use ($fecha) {
+                // Verificar que el usuario existe y está activo
+                if (!$empleada->user || $empleada->user->inactive) {
+                    return false;
+                }
+                
                 $diaSemana = $fecha->dayOfWeek;
                 $diasColumnas = [
                     1 => 'lunes', 2 => 'martes', 3 => 'miercoles', 

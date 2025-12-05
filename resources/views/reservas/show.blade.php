@@ -648,6 +648,66 @@
         </div>
     </div>
 </div>
+
+<!-- Servicios Extras Comprados -->
+@if($reserva->serviciosExtras && $reserva->serviciosExtras->where('estado', 'pagado')->count() > 0)
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-gift text-primary me-2"></i>
+            Servicios Extras Comprados
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Estado</th>
+                        <th>Fecha de Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($reserva->serviciosExtras->where('estado', 'pagado') as $reservaServicio)
+                        <tr>
+                            <td>
+                                <strong>{{ $reservaServicio->servicio->nombre }}</strong>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ $reservaServicio->servicio->descripcion }}</small>
+                            </td>
+                            <td>
+                                <strong class="text-success">{{ number_format($reservaServicio->precio, 2, ',', '.') }} €</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">Pagado</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ $reservaServicio->fecha_pago ? $reservaServicio->fecha_pago->format('d/m/Y H:i') : '-' }}
+                                </small>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-end"><strong>Total Extras:</strong></td>
+                        <td colspan="3">
+                            <strong class="text-success fs-5">
+                                {{ number_format($reserva->serviciosExtras->where('estado', 'pagado')->sum('precio'), 2, ',', '.') }} €
+                            </strong>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script>
     $(document).ready(function() {

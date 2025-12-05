@@ -300,7 +300,7 @@
                     <a href="{{ route('web.reservas.portal', request()->only(['fecha_entrada', 'fecha_salida', 'adultos', 'ninos'])) }}" 
                        class="booking-btn booking-btn-secondary">
                         <i class="fas fa-arrow-left"></i>
-                        Volver a resultados
+                        {{ __('apartment_detail.back_to_results') }}
                     </a>
                 </div>
             </div>
@@ -342,7 +342,7 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-info-circle me-2"></i>
-                                Acerca de este apartamento
+                                {{ __('apartment_detail.about_apartment') }}
                             </h2>
                             <div class="property-description">
                                 {!! $apartamento->description !!}
@@ -354,15 +354,15 @@
                     <div class="property-details-section">
                         <h2>
                             <i class="fas fa-list me-2"></i>
-                            Características
+                            {{ __('apartment_detail.features') }}
                         </h2>
                         <div class="property-features-grid">
                             @if($apartamento->max_guests)
                                 <div class="property-feature-item">
                                     <i class="fas fa-users"></i>
                                     <div>
-                                        <strong>Capacidad:</strong>
-                                        <span>Hasta {{ $apartamento->max_guests }} huéspedes</span>
+                                        <strong>{{ __('apartment_detail.capacity') }}</strong>
+                                        <span>{{ __('apartments.up_to_guests', ['count' => $apartamento->max_guests]) }}</span>
                                     </div>
                                 </div>
                             @endif
@@ -370,8 +370,8 @@
                                 <div class="property-feature-item">
                                     <i class="fas fa-bed"></i>
                                     <div>
-                                        <strong>Habitaciones:</strong>
-                                        <span>{{ $apartamento->bedrooms }} {{ $apartamento->bedrooms == 1 ? 'habitación' : 'habitaciones' }}</span>
+                                        <strong>{{ __('apartment_detail.rooms') }}</strong>
+                                        <span>{{ $apartamento->bedrooms }} {{ $apartamento->bedrooms == 1 ? __('apartment_detail.room') : __('apartment_detail.rooms_plural') }}</span>
                                     </div>
                                 </div>
                             @endif
@@ -379,8 +379,8 @@
                                 <div class="property-feature-item">
                                     <i class="fas fa-bath"></i>
                                     <div>
-                                        <strong>Baños:</strong>
-                                        <span>{{ number_format($apartamento->bathrooms, 1, ',', '.') }} {{ $apartamento->bathrooms == 1 ? 'baño' : 'baños' }}</span>
+                                        <strong>{{ __('apartments.bathrooms') }}:</strong>
+                                        <span>{{ number_format($apartamento->bathrooms, 1, ',', '.') }} {{ $apartamento->bathrooms == 1 ? __('apartments.bathroom') : __('apartments.bathrooms') }}</span>
                                     </div>
                                 </div>
                             @endif
@@ -388,8 +388,8 @@
                                 <div class="property-feature-item">
                                     <i class="fas fa-ruler-combined"></i>
                                     <div>
-                                        <strong>Superficie:</strong>
-                                        <span>{{ $apartamento->size }} m²</span>
+                                        <strong>{{ __('apartment_detail.surface') }}</strong>
+                                        <span>{{ $apartamento->size }} {{ __('apartments.square_meters') }}</span>
                                     </div>
                                 </div>
                             @endif
@@ -408,28 +408,28 @@
                     <!-- Amenities / Servicios -->
                     @php
                         $amenities = [];
-                        if ($apartamento->wifi) $amenities[] = ['icon' => 'wifi', 'label' => 'WiFi' . ($apartamento->wifi_free ? ' (Gratis)' : '')];
-                        if ($apartamento->parking) $amenities[] = ['icon' => 'parking', 'label' => 'Parking' . ($apartamento->parking_free ? ' (Gratis)' : '')];
-                        if ($apartamento->air_conditioning) $amenities[] = ['icon' => 'snowflake', 'label' => 'Aire acondicionado'];
-                        if ($apartamento->heating) $amenities[] = ['icon' => 'thermometer-half', 'label' => 'Calefacción'];
-                        if ($apartamento->kitchen) $amenities[] = ['icon' => 'utensils', 'label' => 'Cocina' . ($apartamento->kitchen_fully_equipped ? ' totalmente equipada' : '')];
-                        if ($apartamento->tv) $amenities[] = ['icon' => 'tv', 'label' => 'TV' . ($apartamento->cable_tv ? ' por cable' : '')];
-                        if ($apartamento->dishwasher) $amenities[] = ['icon' => 'utensils', 'label' => 'Lavavajillas'];
-                        if ($apartamento->washing_machine) $amenities[] = ['icon' => 'tshirt', 'label' => 'Lavadora'];
-                        if ($apartamento->balcony) $amenities[] = ['icon' => 'door-open', 'label' => 'Balcón'];
-                        if ($apartamento->terrace) $amenities[] = ['icon' => 'home', 'label' => 'Terraza'];
-                        if ($apartamento->swimming_pool) $amenities[] = ['icon' => 'swimming-pool', 'label' => 'Piscina'];
-                        if ($apartamento->elevator) $amenities[] = ['icon' => 'arrow-up', 'label' => 'Ascensor'];
-                        if ($apartamento->pets_allowed) $amenities[] = ['icon' => 'paw', 'label' => 'Mascotas permitidas'];
-                        if ($apartamento->safe) $amenities[] = ['icon' => 'lock', 'label' => 'Caja fuerte'];
-                        if ($apartamento->workspace) $amenities[] = ['icon' => 'laptop', 'label' => 'Zona de trabajo'];
+                        if ($apartamento->wifi) $amenities[] = ['icon' => 'wifi', 'label' => __('apartments.wifi') . ($apartamento->wifi_free ? __('apartment_detail.wifi_free') : '')];
+                        if ($apartamento->parking) $amenities[] = ['icon' => 'parking', 'label' => __('apartments.parking') . ($apartamento->parking_free ? __('apartment_detail.parking_free') : '')];
+                        if ($apartamento->air_conditioning) $amenities[] = ['icon' => 'snowflake', 'label' => __('apartments.air_conditioning')];
+                        if ($apartamento->heating) $amenities[] = ['icon' => 'thermometer-half', 'label' => __('apartment_detail.heating')];
+                        if ($apartamento->kitchen) $amenities[] = ['icon' => 'utensils', 'label' => __('apartments.kitchen') . ($apartamento->kitchen_fully_equipped ? __('apartment_detail.fully_equipped') : '')];
+                        if ($apartamento->tv) $amenities[] = ['icon' => 'tv', 'label' => __('apartments.tv') . ($apartamento->cable_tv ? __('apartment_detail.cable_tv') : '')];
+                        if ($apartamento->dishwasher) $amenities[] = ['icon' => 'utensils', 'label' => __('apartment_detail.dishwasher')];
+                        if ($apartamento->washing_machine) $amenities[] = ['icon' => 'tshirt', 'label' => __('apartments.washing_machine')];
+                        if ($apartamento->balcony) $amenities[] = ['icon' => 'door-open', 'label' => __('apartment_detail.balcony')];
+                        if ($apartamento->terrace) $amenities[] = ['icon' => 'home', 'label' => __('apartment_detail.terrace')];
+                        if ($apartamento->swimming_pool) $amenities[] = ['icon' => 'swimming-pool', 'label' => __('apartment_detail.swimming_pool')];
+                        if ($apartamento->elevator) $amenities[] = ['icon' => 'arrow-up', 'label' => __('apartments.elevator')];
+                        if ($apartamento->pets_allowed) $amenities[] = ['icon' => 'paw', 'label' => __('apartment_detail.pets_allowed')];
+                        if ($apartamento->safe) $amenities[] = ['icon' => 'lock', 'label' => __('apartment_detail.safe')];
+                        if ($apartamento->workspace) $amenities[] = ['icon' => 'laptop', 'label' => __('apartment_detail.workspace')];
                     @endphp
                     
                     @if(count($amenities) > 0)
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-star me-2"></i>
-                                Servicios y comodidades
+                                {{ __('apartment_detail.amenities') }}
                             </h2>
                             <div class="property-features-grid">
                                 @foreach($amenities as $amenity)
@@ -447,14 +447,14 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-calendar-check me-2"></i>
-                                Check-in / Check-out
+                                {{ __('apartment_detail.checkin_checkout') }}
                             </h2>
                             <div class="property-features-grid">
                                 @if($apartamento->check_in_time)
                                     <div class="property-feature-item">
                                         <i class="fas fa-sign-in-alt"></i>
                                         <div>
-                                            <strong>Entrada:</strong>
+                                            <strong>{{ __('apartment_detail.checkin') }}</strong>
                                             <span>{{ \Carbon\Carbon::parse($apartamento->check_in_time)->format('H:i') }}</span>
                                         </div>
                                     </div>
@@ -463,7 +463,7 @@
                                     <div class="property-feature-item">
                                         <i class="fas fa-sign-out-alt"></i>
                                         <div>
-                                            <strong>Salida:</strong>
+                                            <strong>{{ __('apartment_detail.checkout') }}</strong>
                                             <span>{{ \Carbon\Carbon::parse($apartamento->check_out_time)->format('H:i') }}</span>
                                         </div>
                                     </div>
@@ -471,13 +471,13 @@
                             </div>
                             @if($apartamento->check_in_instructions)
                                 <div class="property-description mt-3">
-                                    <strong>Instrucciones de entrada:</strong><br>
+                                    <strong>{{ __('apartment_detail.checkin_instructions') }}</strong><br>
                                     {{ $apartamento->check_in_instructions }}
                                 </div>
                             @endif
                             @if($apartamento->check_out_instructions)
                                 <div class="property-description mt-2">
-                                    <strong>Instrucciones de salida:</strong><br>
+                                    <strong>{{ __('apartment_detail.checkout_instructions') }}</strong><br>
                                     {{ $apartamento->check_out_instructions }}
                                 </div>
                             @endif
@@ -489,7 +489,7 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-gavel me-2"></i>
-                                Reglas de la casa
+                                {{ __('apartment_detail.house_rules') }}
                             </h2>
                             <div class="property-description" style="line-height: 1.8;">
                                 {!! \App\Helpers\MarkdownHelper::toHtml($apartamento->house_rules) !!}
@@ -502,12 +502,12 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-info-circle me-2"></i>
-                                Política de cancelación
+                                {{ __('apartment_detail.cancellation_policy') }}
                             </h2>
                             <div class="property-description">
                                 <strong>{{ ucfirst(str_replace('_', ' ', $apartamento->cancellation_policy)) }}</strong>
                                 @if($apartamento->cancellation_deadline)
-                                    <br><small>Cancelación gratis hasta {{ $apartamento->cancellation_deadline }} días antes</small>
+                                    <br><small>{{ str_replace(':days', $apartamento->cancellation_deadline, __('apartment_detail.free_cancellation')) }}</small>
                                 @endif
                                 @if($apartamento->cancellation_details)
                                     <br><br>{{ $apartamento->cancellation_details }}
@@ -521,7 +521,7 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-map-marked-alt me-2"></i>
-                                Qué hay cerca
+                                {{ __('apartment_detail.what_nearby') }}
                             </h2>
                             <div class="property-features-grid">
                                 @if($apartamento->nearest_beach_name)
@@ -549,7 +549,7 @@
                                 @if($apartamento->public_transport_nearby)
                                     <div class="property-feature-item">
                                         <i class="fas fa-bus"></i>
-                                        <span>Transporte público cerca</span>
+                                        <span>{{ __('apartment_detail.public_transport') }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -561,19 +561,19 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-map-marker-alt me-2"></i>
-                                Ubicación
+                                {{ __('apartment_detail.location') }}
                             </h2>
                             @if($apartamento->address)
                                 <p class="property-description">
-                                    <strong>Dirección:</strong> {{ $apartamento->address }}
+                                    <strong>{{ __('apartment_detail.address') }}</strong> {{ $apartamento->address }}
                                 </p>
                             @endif
                             @if($apartamento->latitude && $apartamento->longitude)
                                 <div style="height: 300px; background: var(--booking-gray-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--booking-gray-medium);">
                                     <div>
                                         <i class="fas fa-map" style="font-size: 48px; margin-bottom: var(--spacing-sm);"></i>
-                                        <p>Mapa interactivo (pendiente de integrar)</p>
-                                        <small>Coordenadas: {{ $apartamento->latitude }}, {{ $apartamento->longitude }}</small>
+                                        <p>{{ __('apartment_detail.interactive_map') }}</p>
+                                        <small>{{ __('apartment_detail.coordinates') }} {{ $apartamento->latitude }}, {{ $apartamento->longitude }}</small>
                                     </div>
                                 </div>
                             @endif
@@ -585,7 +585,7 @@
                         <div class="property-details-section">
                             <h2>
                                 <i class="fas fa-exclamation-circle me-2"></i>
-                                Información importante
+                                {{ __('apartment_detail.important_info') }}
                             </h2>
                             <div class="property-description">
                                 {!! $apartamento->important_information !!}
@@ -599,43 +599,43 @@
                     <div class="booking-reservation-card">
                         <h3>
                             <i class="fas fa-calendar-check me-2"></i>
-                            Reservar ahora
+                            {{ __('apartment_detail.book_now') }}
                         </h3>
                         
                         @if($fechaEntrada && $fechaSalida)
                             <div class="reservation-summary">
                                 <div class="reservation-summary-item">
-                                    <span>Entrada:</span>
+                                    <span>{{ __('apartment_detail.checkin') }}</span>
                                     <strong>{{ \Carbon\Carbon::parse($fechaEntrada)->format('d/m/Y') }}</strong>
                                 </div>
                                 <div class="reservation-summary-item">
-                                    <span>Salida:</span>
+                                    <span>{{ __('apartment_detail.checkout') }}</span>
                                     <strong>{{ \Carbon\Carbon::parse($fechaSalida)->format('d/m/Y') }}</strong>
                                 </div>
                                 <div class="reservation-summary-item">
-                                    <span>Huéspedes:</span>
-                                    <strong>{{ $adultos }} {{ $adultos == 1 ? 'adulto' : 'adultos' }}{{ $ninos > 0 ? ', ' . $ninos . ' ' . ($ninos == 1 ? 'niño' : 'niños') : '' }}</strong>
+                                    <span>{{ __('apartment_detail.guests') }}</span>
+                                    <strong>{{ $adultos }} {{ $adultos == 1 ? __('reservation.adult') : __('reservation.adults') }}{{ $ninos > 0 ? ', ' . $ninos . ' ' . ($ninos == 1 ? __('reservation.child') : __('reservation.children')) : '' }}</strong>
                                 </div>
                                 <div class="reservation-summary-item">
-                                    <span>Noches:</span>
+                                    <span>{{ __('apartment_detail.nights') }}</span>
                                     <strong>{{ \Carbon\Carbon::parse($fechaEntrada)->diffInDays(\Carbon\Carbon::parse($fechaSalida)) }}</strong>
                                 </div>
                             </div>
                             
                             <div class="reservation-price-total">
-                                Precio: <span style="color: var(--booking-error);">Pendiente de calcular</span>
+                                {{ __('apartment_detail.total') }}: <span style="color: var(--booking-error);">{{ __('common.pending_calculation') }}</span>
                             </div>
                             
                             <button class="booking-btn booking-btn-primary" style="width: 100%;" disabled>
                                 <i class="fas fa-lock me-2"></i>
-                                Reservar ahora
+                                {{ __('apartment_detail.book_now') }}
                             </button>
                         @else
                             <div class="booking-alert booking-alert-info">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
-                                    <strong>Selecciona fechas</strong>
-                                    <p style="margin: 0; margin-top: 8px;">Completa el formulario para ver disponibilidad y precio.</p>
+                                    <strong>{{ __('apartment_detail.select_dates') }}</strong>
+                                    <p style="margin: 0; margin-top: 8px;">{{ __('apartment_detail.complete_form') }}</p>
                                 </div>
                             </div>
                         @endif
@@ -643,7 +643,7 @@
                         <a href="{{ route('web.reservas.portal', request()->only(['fecha_entrada', 'fecha_salida', 'adultos', 'ninos'])) }}" 
                            class="booking-btn booking-btn-secondary" style="width: 100%; margin-top: var(--spacing-sm);">
                             <i class="fas fa-search me-2"></i>
-                            Modificar fechas
+                            {{ __('apartment_detail.modify_dates') }}
                         </a>
                     </div>
                 </div>

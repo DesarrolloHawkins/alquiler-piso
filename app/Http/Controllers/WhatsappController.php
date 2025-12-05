@@ -165,6 +165,36 @@ class WhatsappController extends Controller
 
         // Solo si es texto, responde con ChatGPT
         if ($tipo === 'text') {
+            // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
+            // Buscar mensajes idénticos del mismo remitente en los últimos 10 minutos
+            $mensajeRepetido = $this->verificarMensajeRepetido($waId, $contenido);
+            
+            if ($mensajeRepetido) {
+                Log::info("🔄 Mensaje repetido detectado - No se responderá para evitar bucle con contestador automático", [
+                    'remitente' => $waId,
+                    'mensaje' => substr($contenido, 0, 100),
+                    'mensaje_anterior_id' => $mensajeRepetido->id,
+                    'fecha_mensaje_anterior' => $mensajeRepetido->date
+                ]);
+                
+                // Crear registro pero sin responder
+                $chat = ChatGpt::create([
+                    'id_mensaje' => $id,
+                    'whatsapp_mensaje_id' => $whatsappMensaje->id,
+                    'remitente' => $waId,
+                    'mensaje' => $contenido,
+                    'respuesta' => null,
+                    'status' => 2, // 2 = mensaje repetido, no responder
+                    'type' => 'text',
+                    'date' => now(),
+                ]);
+                
+                return response()->json([
+                    'status' => 'ignored',
+                    'reason' => 'Mensaje repetido detectado - No se responde para evitar bucle'
+                ]);
+            }
+            
             // 1. Siempre crear el registro de entrada
             $chat = ChatGpt::create([
                 'id_mensaje' => $id,
@@ -1608,6 +1638,80 @@ class WhatsappController extends Controller
         }
 
         return response()->json($mensajes);
+    }
+
+    /**
+     * Verifica si un mensaje es repetido (contestador automático)
+     * Busca mensajes idénticos del mismo remitente en los últimos 10 minutos
+     * que ya hayan sido respondidos
+     * 
+     * @param string $remitente Número de teléfono del remitente
+     * @param string $contenido Contenido del mensaje
+     * @return ChatGpt|null Mensaje repetido encontrado o null
+     */
+    private function verificarMensajeRepetido($remitente, $contenido)
+    {
+        try {
+            // Normalizar el contenido para comparación (eliminar espacios extra, convertir a minúsculas)
+            $contenidoNormalizado = trim(strtolower($contenido));
+            
+            // Buscar mensajes idénticos del mismo remitente en los últimos 10 minutos
+            $fechaLimite = Carbon::now()->subMinutes(10);
+            
+            $mensajeAnterior = ChatGpt::where('remitente', $remitente)
+                ->where('mensaje', $contenido) // Comparación exacta primero (más rápida)
+                ->where('date', '>=', $fechaLimite)
+                ->where('status', '!=', 2) // Excluir otros mensajes repetidos
+                ->orderBy('date', 'desc')
+                ->first();
+            
+            // Si no se encuentra con comparación exacta, intentar con normalización
+            if (!$mensajeAnterior) {
+                $mensajesRecientes = ChatGpt::where('remitente', $remitente)
+                    ->where('date', '>=', $fechaLimite)
+                    ->where('status', '!=', 2)
+                    ->orderBy('date', 'desc')
+                    ->limit(5) // Solo revisar los últimos 5 mensajes para optimizar
+                    ->get();
+                
+                foreach ($mensajesRecientes as $mensaje) {
+                    $mensajeNormalizado = trim(strtolower($mensaje->mensaje ?? ''));
+                    
+                    // Comparar mensajes normalizados (ignorar diferencias de mayúsculas/minúsculas y espacios)
+                    if ($mensajeNormalizado === $contenidoNormalizado) {
+                        $mensajeAnterior = $mensaje;
+                        break;
+                    }
+                    
+                    // También verificar similitud alta (más del 95% de similitud)
+                    // para capturar variaciones menores del contestador automático
+                    if (strlen($contenidoNormalizado) > 10 && strlen($mensajeNormalizado) > 10) {
+                        $similitud = similar_text($contenidoNormalizado, $mensajeNormalizado, $percent);
+                        if ($percent > 95) {
+                            $mensajeAnterior = $mensaje;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Si encontramos un mensaje anterior, verificar que ya se haya respondido
+            if ($mensajeAnterior && $mensajeAnterior->status == 1 && !empty($mensajeAnterior->respuesta)) {
+                Log::info("✅ Mensaje repetido encontrado y ya respondido", [
+                    'remitente' => $remitente,
+                    'mensaje_anterior_id' => $mensajeAnterior->id,
+                    'fecha_anterior' => $mensajeAnterior->date,
+                    'tiempo_transcurrido' => Carbon::now()->diffInSeconds($mensajeAnterior->date) . ' segundos'
+                ]);
+                return $mensajeAnterior;
+            }
+            
+            return null;
+        } catch (\Exception $e) {
+            Log::error("❌ Error verificando mensaje repetido: " . $e->getMessage());
+            // En caso de error, no bloquear el mensaje (mejor responder que no responder)
+            return null;
+        }
     }
 
 }

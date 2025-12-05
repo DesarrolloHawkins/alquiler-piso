@@ -43,6 +43,7 @@ class VerifyCsrfToken extends Middleware
         '/channex/property',
         '/webhook-handler',
         '/dormitorio-store/*',
-        '/channex/full-sync'
+        '/channex/full-sync',
+        '/webhooks/stripe'
     ];
 }

@@ -151,12 +151,27 @@
                         </label>
                         <input type="text" 
                                class="form-control" 
-                               name="mir_arrendador" 
-                               value="{{ \App\Models\Setting::get('mir_arrendador') }}"
-                               placeholder="Código asignado por el Sistema de Hospedajes">
+                               name="mir_codigo_arrendador" 
+                               value="{{ \App\Models\Setting::get('mir_codigo_arrendador', \App\Models\Setting::get('mir_arrendador', '0000004735')) }}"
+                               placeholder="0000004735">
                         <small class="form-text">Código único asignado al registrarte en la Sede Electrónica del Ministerio del Interior</small>
                     </div>
                     
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-building"></i>
+                            Código Establecimiento
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="mir_codigo_establecimiento" 
+                               value="{{ \App\Models\Setting::get('mir_codigo_establecimiento', '0000003984') }}"
+                               placeholder="0000003984">
+                        <small class="form-text">Código del establecimiento asignado por el Sistema de Hospedajes</small>
+                    </div>
+                </div>
+                
+                <div class="row">
                     <div class="col-md-6 mb-4">
                         <label class="form-label">
                             <i class="fas fa-tag"></i>
@@ -232,6 +247,7 @@
     </div>
 </div>
 @endsection
+
 
 
 

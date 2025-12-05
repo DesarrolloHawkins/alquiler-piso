@@ -180,17 +180,6 @@
         </div>
         @endif
         
-        <!-- Botón CRM Completo (fuera de la tarjeta) -->
-        @if($siguienteReserva)
-        <div class="text-center mt-3">
-            <a href="https://crm.apartamentosalgeciras.com/reservas/{{ $siguienteReserva->id }}/show" 
-               target="_blank" 
-               class="btn btn-primary btn-lg" style="border-radius: 8px;">
-                <i class="fas fa-external-link-alt me-2"></i>
-                CRM Completo
-            </a>
-        </div>
-        @endif
         
         <!-- Cartel Informativo -->
         <div class="info-banner mt-3 w-75 mx-auto" style="
@@ -209,6 +198,70 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Botón para descuento de artículo roto -->
+        @if(isset($articulosActivos) && count($articulosActivos) > 0 && isset($apartamentoLimpieza))
+        <div class="text-center my-3">
+            <button type="button" class="btn btn-warning btn-lg" id="abrirModalDescontar">
+                <i class="fas fa-exclamation-triangle"></i> Descontar Artículo Roto
+            </button>
+        </div>
+
+        <!-- Modal NUEVO - Descontar Artículo Roto -->
+        <div class="modal fade" id="modalDescontar" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            Descontar Artículo Roto
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formDescontar">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Artículo</label>
+                                <select name="articulo_id" class="form-select" required>
+                                    <option value="">Seleccionar artículo...</option>
+                                    @foreach($articulosActivos as $articulo)
+                                        <option value="{{ $articulo->id }}">{{ $articulo->nombre }} (Stock: {{ $articulo->stock_actual }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Motivo</label>
+                                <select name="motivo" class="form-select" required>
+                                    <option value="roto">Roto</option>
+                                    <option value="danado">Dañado</option>
+                                    <option value="perdido">Perdido</option>
+                                    <option value="desgastado">Desgastado</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Observaciones (opcional)</label>
+                                <textarea name="observaciones" class="form-control" rows="2" placeholder="Detalles (opcional)"></textarea>
+                            </div>
+                        </form>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Se repondrá automáticamente una unidad del mismo artículo si hay stock disponible.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" id="guardarDescuento">
+                            <i class="fas fa-check me-2"></i>Registrar Descuento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+        
         <div class="apple-card-body">
                     <form action="{{ route('gestion.updateTarea', $tarea) }}" method="POST" id="formPrincipalLimpieza">
                         @csrf
@@ -620,33 +673,24 @@
     function verificarFormularioAmenities() {
         // Buscar el formulario directamente
         const formulario = document.getElementById('amenityForm');
-        console.log('🔍 Buscando formulario amenityForm:', formulario);
         
+        // Si no existe el formulario, retornar null silenciosamente (es esperado si no hay amenities)
         if (!formulario) {
-            console.log('❌ Formulario de amenities no encontrado');
             return null;
         }
         
         // Verificar que el formulario esté visible
         const amenitiesContent = document.getElementById('amenitiesContent');
-        console.log('🔍 Amenities content:', amenitiesContent);
-        console.log('🔍 Display style:', amenitiesContent ? amenitiesContent.style.display : 'no content');
-        
         if (amenitiesContent && amenitiesContent.style.display === 'none') {
-            console.log('❌ Formulario de amenities está oculto');
             return null;
         }
         
         // Verificar que el formulario tenga todos los elementos necesarios
         const inputs = formulario.querySelectorAll('input[name^="amenities["]');
-        console.log('🔍 Inputs encontrados:', inputs.length);
-        
         if (inputs.length === 0) {
-            console.log('❌ Formulario encontrado pero sin inputs de amenities');
             return null;
         }
         
-        console.log('✅ Formulario de amenities verificado y disponible con', inputs.length, 'inputs');
         return formulario;
     }
     
@@ -1240,7 +1284,6 @@
     });
 
     $(document).ready(function () {
-        console.log('Limpieza de Apartamento by Hawkins.')
 
         // Función para manejar los cambios de checkbox
         function handleCheckboxChange(checkbox) {
@@ -1261,6 +1304,7 @@
                     id: id,
                     checked: isChecked ? 1 : 0,
                     limpieza_id: limpiezaId,
+                    tarea_id: {{ $tarea->id ?? 'null' }},
                 },
                 success: function(response) {
                     if (response.success) {
@@ -1403,15 +1447,12 @@ function guardarCambios() {
     setTimeout(() => {
         // SOLO el formulario principal de limpieza (checklists)
         const formularioLimpieza = document.getElementById('formPrincipalLimpieza');
-        console.log('🔍 Buscando formulario principal de limpieza:', formularioLimpieza);
         
         if (formularioLimpieza) {
-            console.log('✅ Formulario de limpieza encontrado, enviando...');
             formularioLimpieza.submit();
         } else {
             // Si no existe el formulario de limpieza, mostrar error
             hideLoadingOverlay();
-            console.log('❌ No se encontró el formulario de limpieza');
             mostrarModalError('No se pudo encontrar el formulario de limpieza. Por favor, recarga la página.');
         }
     }, 500);
@@ -1419,55 +1460,28 @@ function guardarCambios() {
 
 // Gestión de Amenities
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== INICIALIZANDO AMENITIES ===');
-    
     // Verificar que Bootstrap esté disponible
     if (typeof bootstrap === 'undefined') {
         console.error('Bootstrap no está disponible. Esperando...');
         return;
     }
     
+    // Inicializar toggle de amenities (solo si existe)
     const amenitiesToggle = document.getElementById('amenitiesToggle');
     const amenitiesContent = document.getElementById('amenitiesContent');
     
-    console.log('Toggle encontrado:', amenitiesToggle);
-    console.log('Content encontrado:', amenitiesContent);
-    
-    if (amenitiesToggle) {
+    if (amenitiesToggle && amenitiesContent) {
         amenitiesToggle.addEventListener('change', function() {
-            console.log('Toggle cambiado:', this.checked);
             if (this.checked) {
                 amenitiesContent.style.display = 'block';
-                console.log('Amenities content mostrado');
-                // Una vez que se muestra el contenido, inicializar los amenities
+                // Inicializar amenities después de mostrar el contenido
                 setTimeout(() => {
-                    console.log('Inicializando amenities después de mostrar...');
                     inicializarAmenities();
-                    
-                    // Verificar que el formulario esté disponible después de la inicialización
-                    const formulario = verificarFormularioAmenities();
-                    if (formulario) {
-                        console.log('✅ Formulario de amenities inicializado correctamente');
-                    } else {
-                        console.log('❌ Error: Formulario de amenities no se pudo inicializar');
-                        // Intentar de nuevo con más delay
-                        setTimeout(() => {
-                            const formularioRetry = verificarFormularioAmenities();
-                            if (formularioRetry) {
-                                console.log('✅ Formulario de amenities encontrado en segundo intento');
-                            } else {
-                                console.log('❌ Error persistente: Formulario de amenities no encontrado');
-                            }
-                        }, 1000);
-                    }
-                }, 1000); // Aumentado el delay para asegurar que el DOM esté completamente listo
+                }, 500);
             } else {
                 amenitiesContent.style.display = 'none';
-                console.log('Amenities content oculto');
             }
         });
-    } else {
-        console.log('Toggle de amenities no encontrado aún, esperando...');
     }
     
     // Función para inicializar amenities solo cuando estén visibles
@@ -1475,18 +1489,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Obtener referencias a los elementos del formulario de forma segura
         const amenitiesForm = verificarFormularioAmenities();
         if (!amenitiesForm) {
-            return; // La función ya maneja el logging
+            return; // Retornar silenciosamente si no existe el formulario
         }
         
         const amenitiesInputs = document.querySelectorAll('input[name^="amenities["]');
         
         if (!amenitiesInputs || amenitiesInputs.length === 0) {
-            console.log('Inputs de amenities no encontrados aún, esperando a que se muestren...');
+            // Intentar de nuevo si los inputs aún no están disponibles
+            setTimeout(inicializarAmenities, 500);
             return;
         }
-        
-        console.log('Formulario encontrado:', amenitiesForm);
-        console.log('Inputs de amenities encontrados:', amenitiesInputs.length);
         
         // Agregar event listeners a los inputs de amenities ya añadidos
         amenitiesInputs.forEach(input => {
@@ -1599,16 +1611,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Event listener para checkboxes de categoría (checklists)
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== INICIALIZANDO CHECKBOXES DE CATEGORÍA ===');
-    
-    // Obtener todos los checkboxes de categoría
+    // Obtener todos los checkboxes de categoría e inicializarlos
     const categoryCheckboxes = document.querySelectorAll('.category-switch');
-    console.log('Checkboxes de categoría encontrados:', categoryCheckboxes.length);
     
     categoryCheckboxes.forEach(checkbox => {
-        console.log('Añadiendo event listener a checkbox:', checkbox.name, 'ID:', checkbox.dataset.habitacion);
         checkbox.addEventListener('change', function() {
-            console.log('Checkbox de categoría cambiado:', this.name, this.checked, 'ID:', this.dataset.habitacion);
             guardarCheckboxCategoria(this);
         });
     });
@@ -1649,7 +1656,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: 'checklist',
                 id: checklistId,
                 checked: checked,
-                limpieza_id: limpiezaId
+                limpieza_id: limpiezaId,
+                tarea_id: {{ $tarea->id ?? 'null' }}
             })
         })
         .then(response => response.json())
@@ -1678,12 +1686,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const amenitiesInputs = document.querySelectorAll('input[name^="amenities["]');
         
         if (!amenitiesInputs || amenitiesInputs.length === 0) {
-            console.error('Error: No se encontraron inputs de amenities.');
-            return;
+            return; // Retornar silenciosamente si no hay inputs
         }
-        
-        console.log('Formulario encontrado:', amenitiesForm);
-        console.log('Inputs de amenities encontrados:', amenitiesInputs.length);
         
         // Agregar event listeners a los inputs de amenities ya añadidos
         amenitiesInputs.forEach(input => {
@@ -2723,21 +2727,81 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* Modales */
+/* FORZAR LIMPIEZA DEL ESTADO MODAL - SOLUCIÓN CRÍTICA CSS */
+/* Solo desbloquear cuando NO hay modales visibles */
+body.modal-open:not(:has(.modal.show)) {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}
+
+/* Permitir que Bootstrap funcione normalmente cuando hay un modal visible */
+body.modal-open:has(.modal.show) {
+    /* Bootstrap necesita controlar esto, no forzar */
+}
+
+/* Fallback: permitir scroll solo cuando no hay modal activo */
+body:not(.modal-open) {
+    overflow: auto !important;
+}
+
+/* FORZAR VISIBILIDAD DEL MODAL - SOLUCIÓN DEFINITIVA */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1055;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
+}
+
+.modal.show {
+    display: block !important;
+}
+
+.modal.fade {
+    transition: opacity 0.15s linear;
+}
+
+.modal.fade:not(.show) {
+    opacity: 0;
+}
+
+.modal.fade.show {
+    opacity: 1;
+}
+
+.modal-dialog {
+    position: relative;
+    width: auto;
+    margin: 1.75rem auto;
+    pointer-events: none;
+}
+
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
+}
+
 .modal-content {
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 0.3rem;
+    outline: 0;
 }
 
-.modal-header {
-    border-radius: 15px 15px 0 0;
-    border-bottom: none;
-}
 
-.modal-footer {
-    border-radius: 0 0 15px 15px;
-    border-top: none;
-}
+
 
 .list-group-item {
     border: none;
@@ -4093,5 +4157,119 @@ function mostrarAlerta(mensaje, tipo = 'info') {
     }
 }
 </script>
+
+
+<script>
+// SOLUCIÓN INTELIGENTE: Solo desbloquear cuando no hay modales visibles
+(function() {
+    function limpiarEstadoModal() {
+        // Verificar si hay modales visibles
+        const modales = document.querySelectorAll('.modal.show');
+        if (modales.length === 0) {
+            // No hay modales visibles, limpiar el estado
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            document.body.removeAttribute('data-bs-overflow');
+            document.body.removeAttribute('data-bs-padding-right');
+        }
+        // Si hay modales visibles, dejar que Bootstrap controle el estado
+    }
+    
+    // Limpiar al cargar si no hay modales
+    function inicializar() {
+        limpiarEstadoModal();
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializar);
+    } else {
+        inicializar();
+    }
+    
+    window.addEventListener('load', limpiarEstadoModal);
+    
+    // Limpiar cuando cualquier modal se cierra
+    function agregarListenersModal() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                setTimeout(limpiarEstadoModal, 100);
+            });
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', agregarListenersModal);
+    } else {
+        agregarListenersModal();
+    }
+    
+@if(isset($articulosActivos) && count($articulosActivos) > 0 && isset($apartamentoLimpieza))
+<script>
+// CÓDIGO LIMPIO Y SIMPLE - Modal y Botón NUEVOS
+document.addEventListener('DOMContentLoaded', function() {
+    // Botón para abrir modal
+    const btnAbrir = document.getElementById('abrirModalDescontar');
+    const modal = document.getElementById('modalDescontar');
+    
+    if (btnAbrir && modal) {
+        btnAbrir.addEventListener('click', function() {
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        });
+    }
+    
+    // Botón para guardar
+    const btnGuardar = document.getElementById('guardarDescuento');
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', function() {
+            const form = document.getElementById('formDescontar');
+            const articuloId = form.querySelector('[name="articulo_id"]').value;
+            const motivo = form.querySelector('[name="motivo"]').value;
+            const observaciones = form.querySelector('[name="observaciones"]').value;
+            
+            if (!articuloId || !motivo) {
+                alert('Selecciona el artículo y el motivo.');
+                return;
+            }
+            
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            
+            fetch('{{ route('gestion.articulo-descuento', $apartamentoLimpieza->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ 
+                    articulo_id: articuloId, 
+                    motivo: motivo, 
+                    observaciones: observaciones 
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    alert(data.message || 'Movimiento registrado correctamente');
+                    form.reset();
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                } else {
+                    alert(data.message || 'Error al registrar el movimiento');
+                }
+            })
+            .catch(function() {
+                alert('Error de conexión');
+            })
+            .finally(function() {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = '<i class="fas fa-check me-2"></i>Registrar Descuento';
+            });
+        });
+    }
+});
+</script>
+@endif
 
 @endsection

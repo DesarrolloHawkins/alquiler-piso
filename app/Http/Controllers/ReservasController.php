@@ -278,7 +278,9 @@ class ReservasController extends Controller
         $reserva->load([
             'apartamento.edificioName',
             'cliente',
-            'estado'
+            'estado',
+            'serviciosExtras.servicio',
+            'serviciosExtras.pago'
         ]);
         
         $huespedes = Huesped::where('reserva_id', $reserva->id)->get();

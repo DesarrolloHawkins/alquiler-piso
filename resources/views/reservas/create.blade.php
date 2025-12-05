@@ -219,6 +219,117 @@
                 </div>
             </div>
 
+            <!-- Información para Plataforma del Estado -->
+            <div class="row g-3 mt-4">
+                <div class="col-12">
+                    <h6 class="text-primary mb-3 fw-semibold">
+                        <i class="fas fa-government me-2"></i>Plataforma del Estado
+                    </h6>
+                    <p class="text-muted small mb-3">Información adicional requerida para la subida de viajeros.</p>
+                </div>
+                
+                <!-- Referencia del Contrato -->
+                <div class="col-md-6">
+                    <label for="referencia_contrato" class="form-label fw-semibold">
+                        <i class="fas fa-file-contract text-primary me-1"></i>
+                        Referencia del Contrato
+                    </label>
+                    <input type="text" class="form-control form-control-lg {{ $errors->has('referencia_contrato') ? 'is-invalid' : '' }}" 
+                           name="referencia_contrato" id="referencia_contrato" value="{{ old('referencia_contrato') }}" 
+                           placeholder="Referencia del contrato">
+                    @error('referencia_contrato')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Fecha del Contrato -->
+                <div class="col-md-6">
+                    <label for="fecha_contrato" class="form-label fw-semibold">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        Fecha del Contrato
+                    </label>
+                    <input type="date" class="form-control form-control-lg {{ $errors->has('fecha_contrato') ? 'is-invalid' : '' }}" 
+                           name="fecha_contrato" id="fecha_contrato" value="{{ old('fecha_contrato') }}">
+                    @error('fecha_contrato')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Fecha y Hora de Entrada -->
+                <div class="col-md-6">
+                    <label for="fecha_hora_entrada" class="form-label fw-semibold">
+                        <i class="fas fa-sign-in-alt text-primary me-1"></i>
+                        Fecha y Hora de Entrada
+                    </label>
+                    <input type="datetime-local" class="form-control form-control-lg {{ $errors->has('fecha_hora_entrada') ? 'is-invalid' : '' }}" 
+                           name="fecha_hora_entrada" id="fecha_hora_entrada" value="{{ old('fecha_hora_entrada') }}">
+                    @error('fecha_hora_entrada')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Fecha y Hora de Salida -->
+                <div class="col-md-6">
+                    <label for="fecha_hora_salida" class="form-label fw-semibold">
+                        <i class="fas fa-sign-out-alt text-primary me-1"></i>
+                        Fecha y Hora de Salida
+                    </label>
+                    <input type="datetime-local" class="form-control form-control-lg {{ $errors->has('fecha_hora_salida') ? 'is-invalid' : '' }}" 
+                           name="fecha_hora_salida" id="fecha_hora_salida" value="{{ old('fecha_hora_salida') }}">
+                    @error('fecha_hora_salida')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Número de Habitaciones -->
+                <div class="col-md-6">
+                    <label for="numero_habitaciones" class="form-label fw-semibold">
+                        <i class="fas fa-bed text-primary me-1"></i>
+                        Número de Habitaciones
+                    </label>
+                    <input type="number" class="form-control form-control-lg {{ $errors->has('numero_habitaciones') ? 'is-invalid' : '' }}" 
+                           name="numero_habitaciones" id="numero_habitaciones" value="{{ old('numero_habitaciones') }}" 
+                           min="1" placeholder="1">
+                    @error('numero_habitaciones')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Conexión a Internet -->
+                <div class="col-md-6">
+                    <label for="conexion_internet" class="form-label fw-semibold">
+                        <i class="fas fa-wifi text-primary me-1"></i>
+                        Conexión a Internet
+                    </label>
+                    <select class="form-select form-select-lg {{ $errors->has('conexion_internet') ? 'is-invalid' : '' }}" 
+                            name="conexion_internet" id="conexion_internet">
+                        <option value="1" {{ old('conexion_internet', '1') == '1' ? 'selected' : '' }}>Sí, disponible</option>
+                        <option value="0" {{ old('conexion_internet') == '0' ? 'selected' : '' }}>No disponible</option>
+                    </select>
+                    @error('conexion_internet')
+                        <div class="alert alert-danger alert-dismissible fade show mt-2">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ $message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @enderror
+                </div>
+            </div>
+
             <!-- Opciones de Facturación -->
             <div class="row g-3 mt-3">
                 <div class="col-12">

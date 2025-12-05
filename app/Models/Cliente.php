@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Cliente extends Model
+class Cliente extends Authenticatable
 {
-    use HasFactory, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
       /**
      * The attributes that are mass assignable.
@@ -16,6 +18,7 @@ class Cliente extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'is_null',
         'alias',
         'nombre',
         'apellido1',
@@ -38,6 +41,11 @@ class Cliente extends Model
         'idioma_establecido',
         'inactivo',
         'email_secundario',
+        'password',
+        'remember_token',
+        'password_set_at',
+        'stripe_customer_id',
+        'stripe_payment_methods',
         'nacionalidadStr',
         'nacionalidadCode',
         'direccion',
@@ -45,6 +53,8 @@ class Cliente extends Model
         'codigo_postal',
         'provincia',
         'estado',
+        'data_dni', // Indica si el DNI ha sido entregado/verificado
+        'lugar_nacimiento', // Lugar de nacimiento
         'relacion_parentesco', // Nuevo campo
         'numero_referencia_contrato', // Nuevo campo
         'fecha_firma_contrato', // Nuevo campo
@@ -72,6 +82,11 @@ class Cliente extends Model
         'requiere_factura',
         'condiciones_pago',
         'observaciones_facturacion',
+        // Campos para plataforma del estado
+        'pais_iso3',
+        'codigo_municipio_ine',
+        'nombre_municipio',
+        'telefono2',
     ];
 
     /**
@@ -87,12 +102,154 @@ class Cliente extends Model
     ];
 
     /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
      * Casts para campos específicos
      */
     protected $casts = [
+        'is_null' => 'boolean',
         'es_empresa' => 'boolean',
         'requiere_factura' => 'boolean',
+        'password_set_at' => 'datetime',
+        'stripe_payment_methods' => 'array',
+        'fecha_nacimiento' => 'date',
+        'fecha_expedicion_doc' => 'date',
     ];
+
+    /**
+     * Obtener el email principal del cliente (no de booking)
+     * Prioridad: email (si no es de booking) > email_secundario (si no es de booking)
+     */
+    public function getEmailPrincipalAttribute()
+    {
+        // Verificar si el email principal no es de booking y no es null
+        if ($this->email && !$this->esEmailBooking($this->email)) {
+            return $this->email;
+        }
+        
+        // Si el email secundario no es de booking y no es null
+        if ($this->email_secundario && !$this->esEmailBooking($this->email_secundario)) {
+            return $this->email_secundario;
+        }
+        
+        // Fallback al email principal aunque sea de booking
+        return $this->email;
+    }
+
+    /**
+     * Verificar si un email es de booking
+     */
+    public function esEmailBooking($email)
+    {
+        if (!$email) {
+            return false;
+        }
+        
+        $dominiosBooking = ['booking.com', 'expedia.com', 'airbnb.com', 'tripadvisor.com'];
+        $dominio = substr(strrchr($email, "@"), 1);
+        
+        return in_array(strtolower($dominio), $dominiosBooking);
+    }
+
+    /**
+     * Verificar si el cliente tiene password establecido
+     */
+    public function tienePassword()
+    {
+        return !empty($this->password);
+    }
+
+    /**
+     * Buscar cliente por email o teléfono
+     */
+    public static function buscarPorCredenciales($identificador)
+    {
+        // Primero intentar por email principal o secundario
+        $cliente = static::where(function($query) use ($identificador) {
+            $query->where('email', $identificador)
+                  ->orWhere('email_secundario', $identificador);
+        })->first();
+        
+        // Si no se encuentra, intentar por teléfono
+        if (!$cliente) {
+            $cliente = static::where(function($query) use ($identificador) {
+                $query->where('telefono', $identificador)
+                      ->orWhere('telefono_movil', $identificador)
+                      ->orWhere('telefono2', $identificador);
+            })->first();
+        }
+        
+        return $cliente;
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'id';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     *
+     * @return mixed
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->password;
+    }
+
+    /**
+     * Get the token value for the "remember me" session.
+     *
+     * @return string|null
+     */
+    public function getRememberToken()
+    {
+        return $this->remember_token;
+    }
+
+    /**
+     * Set the token value for the "remember me" session.
+     *
+     * @param  string  $value
+     * @return void
+     */
+    public function setRememberToken($value)
+    {
+        $this->remember_token = $value;
+    }
+
+    /**
+     * Get the column name for the "remember me" token.
+     *
+     * @return string
+     */
+    public function getRememberTokenName()
+    {
+        return 'remember_token';
+    }
 
     /**
      * Obtiene el nombre completo para facturación
