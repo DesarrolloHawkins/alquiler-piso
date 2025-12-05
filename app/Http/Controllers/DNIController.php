@@ -676,7 +676,7 @@ class DNIController extends Controller
         ]);
 
         //dd($data);
-        return view('dni.index', compact('id', 'paises', 'reserva', 'cliente', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo'));
+        return view('dni.index', compact('id', 'paises', 'reserva', 'cliente', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo', 'token'));
     }
 
     public function listadoPaises(){
