@@ -3231,7 +3231,7 @@
             if (languageSelect) {
                 languageSelect.addEventListener('change', function() {
                     const selectedLanguage = this.value;
-                    const token = '{{ $token }}';
+                    const token = @json($token);
                     
                     const originalValue = this.value;
                     this.disabled = true;
@@ -3241,7 +3241,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-CSRF-TOKEN': @json(csrf_token()),
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({

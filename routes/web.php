@@ -869,6 +869,7 @@ Route::middleware('auth')->group(function () {
     Route::post('gestion/tareas/{tarea}/update', [App\Http\Controllers\GestionApartamentoController::class, 'updateTarea'])->name('gestion.updateTarea');
     Route::post('gestion/tareas/{tarea}/checklist/update', [App\Http\Controllers\GestionApartamentoController::class, 'updateChecklistTarea'])->name('gestion.tareas.checklist.update');
     Route::post('gestion/tareas/{tarea}/checklist/finalizar', [App\Http\Controllers\GestionApartamentoController::class, 'finalizarChecklistTarea'])->name('gestion.tareas.checklist.finalizar');
+    Route::post('gestion/{apartamentoLimpieza}/articulo-descuento', [App\Http\Controllers\GestionApartamentoController::class, 'registrarDescuentoArticulo'])->name('gestion.articulo-descuento');
     // Rutas para gestión de tareas asignadas
     Route::get('gestion/tareas/{tarea}/checklist', [App\Http\Controllers\GestionApartamentoController::class, 'checklistTarea'])->name('gestion.tareas.checklist');
 });
