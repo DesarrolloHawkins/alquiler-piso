@@ -2857,6 +2857,7 @@
                 showError(translations.errorConnection + ': ' + error.message);
             }
         });
+        }
         
         function showProcessingModal(message) {
             const modal = document.getElementById('processingModal');
@@ -3090,6 +3091,7 @@
             const canvas = document.getElementById(canvasId);
             const captureBtn = document.getElementById(`${type}CaptureBtn_${index}`);
             const wrapper = document.getElementById(`${type}CameraWrapper_${index}`);
+            const placeholder = document.getElementById(`${type}CameraPlaceholder_${index}`);
             const preview = document.getElementById(`${type}Preview_${index}`);
             const previewImage = document.getElementById(`${type}Image_${index}`);
             const fileName = document.getElementById(`${type}Name_${index}`);
@@ -3231,7 +3233,8 @@
             if (languageSelect) {
                 languageSelect.addEventListener('change', function() {
                     const selectedLanguage = this.value;
-                    const token = @json($token);
+                    // Usar la variable token global ya definida al inicio del script
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     
                     const originalValue = this.value;
                     this.disabled = true;
@@ -3241,7 +3244,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': @json(csrf_token()),
+                            'X-CSRF-TOKEN': csrfToken,
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
