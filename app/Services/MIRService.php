@@ -123,13 +123,19 @@ class MIRService
             return 'H'; // Por defecto
         };
         
-        // Construir XML con la estructura correcta (sin namespaces, como en el archivo de prueba)
+        // Construir XML con la estructura correcta según documentación oficial MIR
+        // Formato correcto: <loteReservas> -> <reserva> -> <contrato> + <viajero>
+        // IMPORTANTE: 
+        // - Raíz: <loteReservas xmlns="http://www.mir.es/hospedajes/esquema">
+        // - NO usar <comunicacion> ni <persona>, usar <reserva> y <viajero>
+        // - El archivo dentro del ZIP debe llamarse loteReservas.xml
+        // - Usar indentación de 2 espacios como en el ejemplo oficial
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<solicitud>' . "\n";
+        $xml .= '<loteReservas xmlns="http://www.mir.es/hospedajes/esquema">' . "\n";
         $xml .= '  <codigoEstablecimiento>' . htmlspecialchars($codigoEstablecimiento) . '</codigoEstablecimiento>' . "\n";
-        $xml .= '  <comunicacion>' . "\n";
+        $xml .= '  <reserva>' . "\n";
         
-        // Sección contrato
+        // Sección contrato (dentro de <reserva>)
         $xml .= '    <contrato>' . "\n";
         $xml .= '      <referencia>' . htmlspecialchars($reserva->codigo_reserva) . '</referencia>' . "\n";
         $xml .= '      <fechaContrato>' . $fechaEntrada->format('Y-m-d') . '</fechaContrato>' . "\n";
@@ -149,7 +155,8 @@ class MIRService
             throw new \Exception('El cliente principal no tiene DNI configurado (num_identificacion). Es obligatorio para el envío a MIR.');
         }
         
-        $xml .= '    <persona>' . "\n";
+        // Cliente principal como <viajero> (NO <persona>)
+        $xml .= '    <viajero>' . "\n";
         $xml .= '      <rol>VI</rol>' . "\n"; // VI = Viajero
         $xml .= '      <nombre>' . htmlspecialchars($cliente->nombre ?? '') . '</nombre>' . "\n";
         $xml .= '      <apellido1>' . htmlspecialchars($cliente->apellido1 ?? '') . '</apellido1>' . "\n";
@@ -164,35 +171,10 @@ class MIRService
         $xml .= '      <nacionalidad>' . $normalizarNacionalidad($cliente->nacionalidad ?? 'ES') . '</nacionalidad>' . "\n";
         $xml .= '      <sexo>' . $obtenerSexo($cliente->sexo ?? null, $cliente->sexo_str ?? null) . '</sexo>' . "\n";
         
-        // Dirección del cliente
-        if (!empty($cliente->direccion) || !empty($cliente->codigo_postal)) {
-            $xml .= '      <direccion>' . "\n";
-            $xml .= '        <pais>' . $normalizarNacionalidad($cliente->nacionalidad ?? 'ES') . '</pais>' . "\n";
-            if (!empty($cliente->provincia)) {
-                $xml .= '        <provincia>' . htmlspecialchars($normalizarProvincia($cliente->provincia)) . '</provincia>' . "\n";
-            }
-            if (!empty($cliente->localidad)) {
-                $xml .= '        <municipio>' . htmlspecialchars($cliente->localidad) . '</municipio>' . "\n";
-            }
-            if (!empty($cliente->direccion)) {
-                // Intentar separar calle y número
-                $direccion = $cliente->direccion;
-                $xml .= '        <via>' . htmlspecialchars($direccion) . '</via>' . "\n";
-            }
-            if (!empty($cliente->codigo_postal)) {
-                $xml .= '        <codigoPostal>' . htmlspecialchars($cliente->codigo_postal) . '</codigoPostal>' . "\n";
-            }
-            $xml .= '      </direccion>' . "\n";
-        }
+        // NOTA: Según el ejemplo de MIR, <viajero> NO incluye dirección, teléfono ni correo
+        // Solo incluye: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
         
-        if (!empty($cliente->telefono_movil) || !empty($cliente->telefono)) {
-            $telefono = preg_replace('/[^0-9+]/', '', $cliente->telefono_movil ?? $cliente->telefono ?? '');
-            $xml .= '      <telefono>' . htmlspecialchars($telefono) . '</telefono>' . "\n";
-        }
-        if (!empty($cliente->email)) {
-            $xml .= '      <correo>' . htmlspecialchars($cliente->email) . '</correo>' . "\n";
-        }
-        $xml .= '    </persona>' . "\n";
+        $xml .= '    </viajero>' . "\n";
         
         // Huéspedes adicionales (personas 2, 3, ...)
         $huespedes = \App\Models\Huesped::where('reserva_id', $reserva->id)->get();
@@ -215,7 +197,8 @@ class MIRService
                 throw new \Exception("El huésped {$huesped->nombre} {$apellido1} no tiene DNI configurado (numero_identificacion). Es obligatorio para el envío a MIR.");
             }
             
-            $xml .= '    <persona>' . "\n";
+            // Huéspedes adicionales como <viajero> (NO <persona>)
+            $xml .= '    <viajero>' . "\n";
             $xml .= '      <rol>VI</rol>' . "\n";
             $xml .= '      <nombre>' . htmlspecialchars($huesped->nombre) . '</nombre>' . "\n";
             $xml .= '      <apellido1>' . htmlspecialchars($apellido1) . '</apellido1>' . "\n";
@@ -230,37 +213,14 @@ class MIRService
             $xml .= '      <nacionalidad>' . $normalizarNacionalidad($huesped->nacionalidad ?? 'ES') . '</nacionalidad>' . "\n";
             $xml .= '      <sexo>' . $obtenerSexo($huesped->sexo ?? null, $huesped->sexo_str ?? null) . '</sexo>' . "\n";
             
-            // Dirección del huésped (si está disponible)
-            if (!empty($huesped->direccion) || !empty($huesped->codigo_postal)) {
-                $xml .= '      <direccion>' . "\n";
-                $xml .= '        <pais>' . $normalizarNacionalidad($huesped->nacionalidad ?? 'ES') . '</pais>' . "\n";
-                if (!empty($huesped->provincia)) {
-                    $xml .= '        <provincia>' . htmlspecialchars($normalizarProvincia($huesped->provincia)) . '</provincia>' . "\n";
-                }
-                if (!empty($huesped->localidad)) {
-                    $xml .= '        <municipio>' . htmlspecialchars($huesped->localidad) . '</municipio>' . "\n";
-                }
-                if (!empty($huesped->direccion)) {
-                    $xml .= '        <via>' . htmlspecialchars($huesped->direccion) . '</via>' . "\n";
-                }
-                if (!empty($huesped->codigo_postal)) {
-                    $xml .= '        <codigoPostal>' . htmlspecialchars($huesped->codigo_postal) . '</codigoPostal>' . "\n";
-                }
-                $xml .= '      </direccion>' . "\n";
-            }
+            // NOTA: Según el ejemplo de MIR, <viajero> NO incluye dirección, teléfono ni correo
+            // Solo incluye: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
             
-            if (!empty($huesped->telefono_movil)) {
-                $telefono = preg_replace('/[^0-9+]/', '', $huesped->telefono_movil);
-                $xml .= '      <telefono>' . htmlspecialchars($telefono) . '</telefono>' . "\n";
-            }
-            if (!empty($huesped->email)) {
-                $xml .= '      <correo>' . htmlspecialchars($huesped->email) . '</correo>' . "\n";
-            }
-            $xml .= '    </persona>' . "\n";
+            $xml .= '    </viajero>' . "\n";
         }
         
-        $xml .= '  </comunicacion>' . "\n";
-        $xml .= '</solicitud>';
+        $xml .= '    </reserva>' . "\n";
+        $xml .= '</loteReservas>';
         
         return $xml;
     }
@@ -436,40 +396,32 @@ class MIRService
             }
             
             // Comprimir y codificar
-            $solicitudBase64 = $this->comprimirYCodificar($xml, 'parte_viajeros_' . $reserva->codigo_reserva . '.xml');
+            // IMPORTANTE: El nombre del archivo dentro del ZIP debe ser EXACTAMENTE "loteReservas.xml"
+            // según la especificación MIR para partes de viajeros (PV)
+            $solicitudBase64 = $this->comprimirYCodificar($xml, 'loteReservas.xml');
             
-            // Construir XML EXACTAMENTE como el archivo de prueba que funciona
-            // El archivo de prueba usa <arrendador> (no codigoArrendador) y NO tiene nodo <peticion>
-            $requestXml = '<comunicacionRequest>';
-            $requestXml .= '<cabecera>';
-            $requestXml .= '<arrendador>' . htmlspecialchars($config['codigo_arrendador']) . '</arrendador>'; // El archivo de prueba usa <arrendador>
-            $requestXml .= '<aplicacion>' . htmlspecialchars($config['aplicacion']) . '</aplicacion>';
-            $requestXml .= '<tipoOperacion>A</tipoOperacion>';
-            $requestXml .= '<tipoComunicacion>PV</tipoComunicacion>';
-            $requestXml .= '</cabecera>';
-            $requestXml .= '<solicitud>' . $solicitudBase64 . '</solicitud>';
-            $requestXml .= '</comunicacionRequest>';
-            
-            // Opción 2: Con SOAP (comentado por ahora, descomentar si la opción 1 falla)
-            /*
-            $requestXml = '<?xml version="1.0" encoding="UTF-8"?>';
-            $requestXml .= '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">';
-            $requestXml .= '<soapenv:Header/>';
-            $requestXml .= '<soapenv:Body>';
-            $requestXml .= '<com:comunicacionRequest>';
-            $requestXml .= '<peticion>';
-            $requestXml .= '<cabecera>';
-            $requestXml .= '<codigoArrendador>' . htmlspecialchars($config['codigo_arrendador']) . '</codigoArrendador>';
-            $requestXml .= '<aplicacion>' . htmlspecialchars($config['aplicacion']) . '</aplicacion>';
-            $requestXml .= '<tipoOperacion>A</tipoOperacion>';
-            $requestXml .= '<tipoComunicacion>PV</tipoComunicacion>';
-            $requestXml .= '</cabecera>';
-            $requestXml .= '<solicitud>' . $solicitudBase64 . '</solicitud>';
-            $requestXml .= '</peticion>';
-            $requestXml .= '</com:comunicacionRequest>';
-            $requestXml .= '</soapenv:Body>';
+            // Construir XML con formato SOAP según especificación MIR
+            // Formato correcto según respuesta del soporte MIR:
+            // - SOAP Envelope con namespaces
+            // - <codigoArrendador> (no <arrendador>)
+            // - Todo envuelto en <peticion>
+            $requestXml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $requestXml .= '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">' . "\n";
+            $requestXml .= '   <soapenv:Header/>' . "\n";
+            $requestXml .= '   <soapenv:Body>' . "\n";
+            $requestXml .= '      <com:comunicacionRequest>' . "\n";
+            $requestXml .= '         <peticion>' . "\n";
+            $requestXml .= '            <cabecera>' . "\n";
+            $requestXml .= '               <codigoArrendador>' . htmlspecialchars($config['codigo_arrendador']) . '</codigoArrendador>' . "\n";
+            $requestXml .= '               <aplicacion>' . htmlspecialchars($config['aplicacion']) . '</aplicacion>' . "\n";
+            $requestXml .= '               <tipoOperacion>A</tipoOperacion>' . "\n";
+            $requestXml .= '               <tipoComunicacion>PV</tipoComunicacion>' . "\n";
+            $requestXml .= '            </cabecera>' . "\n";
+            $requestXml .= '            <solicitud>' . $solicitudBase64 . '</solicitud>' . "\n";
+            $requestXml .= '         </peticion>' . "\n";
+            $requestXml .= '      </com:comunicacionRequest>' . "\n";
+            $requestXml .= '   </soapenv:Body>' . "\n";
             $requestXml .= '</soapenv:Envelope>';
-            */
             
             // Log del XML generado para debugging (solo en sandbox)
             if ($config['entorno'] === 'sandbox') {
@@ -503,10 +455,13 @@ class MIRService
             ]);
             
             // Configurar la petición HTTP usando cURL directamente
-            // Headers según el archivo de prueba (sin SOAP)
+            // Headers para SOAP según especificación MIR
             $headers = [
                 'Authorization: Basic ' . $credentials,
-                'Content-Type: text/xml; charset=utf-8'
+                'Content-Type: text/xml; charset=utf-8',
+                'SOAPAction: ""',
+                'Accept: text/xml',
+                'User-Agent: PHP-cURL/8.2'
             ];
             
             Log::info('Headers HTTP configurados', [

@@ -108,24 +108,43 @@ class DNIScannerController extends Controller
     }
     
     /**
-     * Verificar si el cliente tiene datos completos
+     * Verificar si el cliente tiene datos completos para MIR
+     * Basado en los campos obligatorios definidos en ReservaPagoController::verificarDatosMIR()
      */
     private function verificarDatosCompletos($cliente)
     {
+        // Campos obligatorios para MIR según ReservaPagoController::verificarDatosMIR()
         $camposRequeridos = [
-            'nombre',
-            'apellido1',
-            'num_identificacion',
-            'fecha_nacimiento',
-            'fecha_expedicion_doc',
-            'sexo',
-            'nacionalidadStr'
+            'nombre' => 'Nombre',
+            'apellido1' => 'Primer Apellido',
+            'fecha_nacimiento' => 'Fecha de Nacimiento',
+            'nacionalidadStr' => 'Nacionalidad',
+            'tipo_documento' => 'Tipo de Documento',
+            'num_identificacion' => 'Número de Identificación',
+            'fecha_expedicion_doc' => 'Fecha de Expedición del Documento',
+            'sexo' => 'Sexo',
+            'email' => 'Email',
+            'telefono_movil' => 'Teléfono Móvil',
+            'provincia' => 'Provincia',
         ];
         
-        foreach ($camposRequeridos as $campo) {
+        $datosFaltantes = [];
+        foreach ($camposRequeridos as $campo => $nombre) {
             if (empty($cliente->$campo)) {
-                return false;
+                $datosFaltantes[] = $nombre;
             }
+        }
+        
+        // Si hay datos faltantes, loggear y retornar false
+        if (!empty($datosFaltantes)) {
+            Log::warning('Datos incompletos para MIR', [
+                'cliente_id' => $cliente->id,
+                'datos_faltantes' => $datosFaltantes,
+                'campos_vacios' => array_keys(array_filter($camposRequeridos, function($campo) use ($cliente) {
+                    return empty($cliente->$campo);
+                }, ARRAY_FILTER_USE_KEY))
+            ]);
+            return false;
         }
         
         return true;
@@ -726,18 +745,35 @@ class DNIScannerController extends Controller
                         // No lanzar excepción para que el proceso continúe
                     }
                     
-                    // Marcar como completado si es cliente
+                    // Marcar como completado si es cliente - SOLO si tiene todos los datos obligatorios para MIR
                     if ($personaTipo === 'cliente') {
-                        $persona->update(['data_dni' => true]);
-                        // Recargar el cliente para asegurar que data_dni esté actualizado
+                        // Recargar el cliente para obtener los datos más recientes
                         $persona->refresh();
                         
-                        // También actualizar dni_entregado en la reserva
-                        $reserva->update(['dni_entregado' => true]);
-                        Log::info('dni_entregado actualizado en reserva', [
-                            'reserva_id' => $reserva->id,
-                            'dni_entregado' => true
-                        ]);
+                        // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                        if ($this->verificarDatosCompletos($persona)) {
+                            $persona->update(['data_dni' => true]);
+                            // Recargar el cliente para asegurar que data_dni esté actualizado
+                            $persona->refresh();
+                            
+                            // También actualizar dni_entregado en la reserva
+                            $reserva->update(['dni_entregado' => true]);
+                            Log::info('dni_entregado actualizado en reserva - datos completos', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $persona->id,
+                                'dni_entregado' => true
+                            ]);
+                        } else {
+                            Log::warning('No se puede marcar data_dni = true: faltan datos obligatorios para MIR', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $persona->id,
+                                'fecha_nacimiento' => $persona->fecha_nacimiento,
+                                'fecha_expedicion_doc' => $persona->fecha_expedicion_doc,
+                                'email' => $persona->email,
+                                'telefono_movil' => $persona->telefono_movil,
+                                'provincia' => $persona->provincia
+                            ]);
+                        }
                     }
                     
                     $procesados++;
@@ -976,9 +1012,27 @@ class DNIScannerController extends Controller
                         ]);
                     }
                     
-                    // Marcar como completado
+                    // Marcar como completado - SOLO si tiene todos los datos obligatorios para MIR
                     if ($personaTipo === 'cliente') {
-                        $persona->update(['data_dni' => true]);
+                        // Recargar el cliente para obtener los datos más recientes
+                        $persona->refresh();
+                        
+                        // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                        if ($this->verificarDatosCompletos($persona)) {
+                            $persona->update(['data_dni' => true]);
+                            Log::info('data_dni marcado como true - datos completos', [
+                                'cliente_id' => $persona->id
+                            ]);
+                        } else {
+                            Log::warning('No se puede marcar data_dni = true: faltan datos obligatorios para MIR', [
+                                'cliente_id' => $persona->id,
+                                'fecha_nacimiento' => $persona->fecha_nacimiento,
+                                'fecha_expedicion_doc' => $persona->fecha_expedicion_doc,
+                                'email' => $persona->email,
+                                'telefono_movil' => $persona->telefono_movil,
+                                'provincia' => $persona->provincia
+                            ]);
+                        }
                     }
                     
                     $procesados++;
@@ -1704,7 +1758,7 @@ INSTRUCCIONES ESPECÍFICAS:
                         'nacionalidadStr' => $data['nacionalidad'] ?? $persona->nacionalidadStr,
                         'tipo_documento' => $tipoDocCode,
                         'tipo_documento_str' => $tipoDocStr,
-                    'data_dni' => true
+                        // NO marcar data_dni aquí - se validará después de actualizar
                     ];
                     
                     // Agregar lugar de nacimiento si está disponible (puede no estar en el modelo, pero lo intentamos)
@@ -1727,10 +1781,27 @@ INSTRUCCIONES ESPECÍFICAS:
                     
                     $persona->update($updateData);
                     
-                    Log::info('Datos del frontal guardados en Cliente', [
-                        'cliente_id' => $persona->id,
-                    'dni' => $data['dni'] ?? 'N/A'
-                ]);
+                    // Recargar el cliente para obtener los datos actualizados
+                    $persona->refresh();
+                    
+                    // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                    if ($this->verificarDatosCompletos($persona)) {
+                        $persona->update(['data_dni' => true]);
+                        Log::info('Datos del frontal guardados en Cliente - data_dni marcado como true', [
+                            'cliente_id' => $persona->id,
+                            'dni' => $data['dni'] ?? 'N/A'
+                        ]);
+                    } else {
+                        Log::warning('Datos del frontal guardados pero NO se marca data_dni = true: faltan datos obligatorios para MIR', [
+                            'cliente_id' => $persona->id,
+                            'dni' => $data['dni'] ?? 'N/A',
+                            'fecha_nacimiento' => $persona->fecha_nacimiento,
+                            'fecha_expedicion_doc' => $persona->fecha_expedicion_doc,
+                            'email' => $persona->email,
+                            'telefono_movil' => $persona->telefono_movil,
+                            'provincia' => $persona->provincia
+                        ]);
+                    }
                 } else {
                     // Determinar tipo de documento para Huesped
                     $tipoDoc = $data['tipo_documento'] ?? '';
@@ -2064,16 +2135,31 @@ INSTRUCCIONES ESPECÍFICAS:
             
             $cliente = $reserva->cliente;
             
-            // Marcar como completado
-            $cliente->update([
-                'data_dni' => true,
-                'updated_at' => now()
-            ]);
+            // Recargar el cliente para obtener los datos más recientes
+            $cliente->refresh();
             
-            Log::info('Verificación de DNI completada', [
-                'reserva_id' => $reserva->id,
-                'cliente_id' => $cliente->id
-            ]);
+            // Validar que tiene todos los datos obligatorios antes de marcar como completado
+            if ($this->verificarDatosCompletos($cliente)) {
+                $cliente->update([
+                    'data_dni' => true,
+                    'updated_at' => now()
+                ]);
+                
+                Log::info('Verificación de DNI completada - data_dni marcado como true', [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $cliente->id
+                ]);
+            } else {
+                Log::warning('Verificación de DNI completada pero NO se marca data_dni = true: faltan datos obligatorios para MIR', [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $cliente->id,
+                    'fecha_nacimiento' => $cliente->fecha_nacimiento,
+                    'fecha_expedicion_doc' => $cliente->fecha_expedicion_doc,
+                    'email' => $cliente->email,
+                    'telefono_movil' => $cliente->telefono_movil,
+                    'provincia' => $cliente->provincia
+                ]);
+            }
             
             return response()->json([
                 'success' => true,
