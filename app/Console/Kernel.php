@@ -41,6 +41,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\CleanOldNotifications::class,
         \App\Console\Commands\FixAmenityMovements::class,
         \App\Console\Commands\FixAllAmenitiesMovements::class,
+        \App\Console\Commands\CheckOverlappingReservations::class,
     ];
 
 
@@ -51,6 +52,7 @@ class Kernel extends ConsoleKernel
     {
         
         $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
+        $schedule->command('reservas:check-overlaps')->everyMinute();
 
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
         // Ejecuta el comando cada hora
