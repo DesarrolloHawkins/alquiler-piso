@@ -105,9 +105,10 @@ class CheckOverlappingReservations extends Command
     private function enviarNotificacion(array $conflicto, Carbon $ahora): void
     {
         $texto = $this->construirMensaje($conflicto, $ahora);
+        $variables = $this->construirVariablesTemplate($conflicto);
 
         try {
-            $this->whatsappNotificationService->sendToConfiguredRecipients($texto);
+            $this->whatsappNotificationService->sendToConfiguredRecipients($texto, $variables);
             Log::info("CheckOverlappingReservations: notificación enviada para {$conflicto['apartamento_id']}");
         } catch (\Throwable $e) {
             Log::error('CheckOverlappingReservations: error enviando notificación', [
@@ -128,6 +129,27 @@ class CheckOverlappingReservations extends Command
             . "🔗 Reservas: {$rangos}\n"
             . "⏱️ Detectado: {$ahora->format('d/m/Y H:i')}\n"
             . "Por favor, revisa y resuelve en el ERP.";
+    }
+
+    /**
+     * Variables para el template alerta_doble_reserva:
+     * 1) Apartamento
+     * 2) Fecha inicio
+     * 3) Fecha fin
+     * 4) IDs de reservas
+     */
+    private function construirVariablesTemplate(array $conflicto): array
+    {
+        $ids = collect($conflicto['reserva_ids'])
+            ->map(fn ($id) => "#{$id}")
+            ->implode(', ');
+
+        return [
+            $conflicto['apartamento_nombre'],
+            Carbon::parse($conflicto['rango_inicio'])->format('d/m/Y'),
+            Carbon::parse($conflicto['rango_fin'])->format('d/m/Y'),
+            $ids,
+        ];
     }
 }
 
