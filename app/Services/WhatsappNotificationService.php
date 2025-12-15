@@ -22,7 +22,18 @@ class WhatsappNotificationService
             return;
         }
 
+        Log::info('WhatsappNotificationService: iniciando envío a responsables', [
+            'total_destinatarios' => $destinatarios->count(),
+            'ids' => $destinatarios->pluck('id'),
+        ]);
+
         foreach ($destinatarios as $destinatario) {
+            Log::info('WhatsappNotificationService: preparando envío', [
+                'destinatario_id' => $destinatario->id,
+                'telefono' => $destinatario->telefono,
+                'nombre' => $destinatario->nombre,
+            ]);
+
             $this->sendText($destinatario->telefono, $message);
         }
     }
@@ -35,6 +46,11 @@ class WhatsappNotificationService
             Log::warning('WhatsappNotificationService: TOKEN_WHATSAPP no configurado');
             return;
         }
+
+        Log::info('WhatsappNotificationService: enviando mensaje', [
+            'telefono' => $phone,
+            'preview' => mb_substr($message, 0, 120),
+        ]);
 
         $payload = [
             'messaging_product' => 'whatsapp',
@@ -52,7 +68,11 @@ class WhatsappNotificationService
         ])->post($this->apiUrl, $payload);
 
         if ($response->failed()) {
-            Log::error("WhatsappNotificationService: error enviando a {$phone}: {$response->body()}");
+            Log::error('WhatsappNotificationService: error enviando mensaje', [
+                'telefono' => $phone,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
             return;
         }
 
@@ -61,6 +81,11 @@ class WhatsappNotificationService
             "overlap-whatsapp-{$phone}.json",
             json_encode($responseJson, JSON_PRETTY_PRINT)
         );
+
+        Log::info('WhatsappNotificationService: mensaje enviado correctamente', [
+            'telefono' => $phone,
+            'response_id' => $responseJson['messages'][0]['id'] ?? null,
+        ]);
     }
 }
 

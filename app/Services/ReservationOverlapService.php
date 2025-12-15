@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class ReservationOverlapService
 {
@@ -13,27 +14,42 @@ class ReservationOverlapService
      */
     public function detect(Carbon $from, Carbon $to): Collection
     {
+        Log::info('ReservationOverlapService: iniciando detección de solapes', [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+        ]);
+
         $reservas = Reserva::query()
             ->activas()
-            ->whereNull('deleted_at')
-            ->where(function ($query) use ($from, $to) {
-                $query
-                    ->whereBetween('fecha_entrada', [$from->toDateString(), $to->toDateString()])
-                    ->orWhereBetween('fecha_salida', [$from->toDateString(), $to->toDateString()])
-                    ->orWhere(function ($q) use ($from, $to) {
-                        $q->where('fecha_entrada', '<=', $from->toDateString())
-                            ->where('fecha_salida', '>=', $to->toDateString());
-                    });
-            })
+            ->whereNotNull('apartamento_id')
+            // Cualquier reserva cuyo rango [entrada, salida) intersecte con [from, to]
+            ->whereDate('fecha_salida', '>', $from->toDateString())
+            ->whereDate('fecha_entrada', '<', $to->toDateString())
             ->with('apartamento')
             ->orderBy('apartamento_id')
             ->orderBy('fecha_entrada')
-            ->get()
-            ->groupBy('apartamento_id');
+            ->get();
 
-        return $reservas->flatMap(function (Collection $reservasApartamento) {
+        Log::info('ReservationOverlapService: reservas candidatas encontradas', [
+            'total' => $reservas->count(),
+        ]);
+
+        $porApartamento = $reservas->groupBy('apartamento_id');
+
+        $conflictos = $porApartamento->flatMap(function (Collection $reservasApartamento, $apartamentoId) {
+            Log::info('ReservationOverlapService: procesando apartamento', [
+                'apartamento_id' => $apartamentoId,
+                'reservas' => $reservasApartamento->pluck('id'),
+            ]);
+
             return $this->detectOverlapsForApartment($reservasApartamento);
         });
+
+        Log::info('ReservationOverlapService: detección terminada', [
+            'conflictos' => $conflictos->count(),
+        ]);
+
+        return $conflictos;
     }
 
     /**

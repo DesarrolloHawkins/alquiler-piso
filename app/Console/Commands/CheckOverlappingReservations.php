@@ -29,7 +29,21 @@ class CheckOverlappingReservations extends Command
         $ahora = now();
         $fin = $ahora->copy()->addMonth();
 
+        Log::info('CheckOverlappingReservations: inicio de comando', [
+            'from' => $ahora->toDateTimeString(),
+            'to' => $fin->toDateTimeString(),
+        ]);
+
         $conflictos = $this->overlapService->detect($ahora, $fin);
+
+        $this->info('Rango analizado: ' . $ahora->toDateString() . ' -> ' . $fin->toDateString());
+        $this->info('Conflictos detectados: ' . $conflictos->count());
+
+        Log::info('CheckOverlappingReservations: conflictos detectados', [
+            'total_conflictos' => $conflictos->count(),
+            'detalles' => $conflictos->all(),
+        ]);
+
         $keysDetectados = [];
 
         foreach ($conflictos as $conflicto) {
@@ -48,9 +62,20 @@ class CheckOverlappingReservations extends Command
             $alerta->save();
 
             if ($debeEnviar) {
+                Log::info('CheckOverlappingReservations: envío pendiente para conflicto', [
+                    'conflict_key' => $key,
+                    'apartamento_id' => $alerta->apartamento_id,
+                    'reserva_ids' => $alerta->reserva_ids,
+                ]);
+
                 $this->enviarNotificacion($conflicto, $ahora);
                 $alerta->last_sent_at = $ahora;
                 $alerta->save();
+            } else {
+                Log::info('CheckOverlappingReservations: no se envía por ventana de 6h', [
+                    'conflict_key' => $key,
+                    'last_sent_at' => optional($alerta->last_sent_at)->toDateTimeString(),
+                ]);
             }
         }
 
@@ -62,6 +87,8 @@ class CheckOverlappingReservations extends Command
         $query->update(['resolved_at' => $ahora]);
 
         $this->info('Comprobación de solapes finalizada');
+
+        Log::info('CheckOverlappingReservations: fin de comando');
 
         return Command::SUCCESS;
     }
