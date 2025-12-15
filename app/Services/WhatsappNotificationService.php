@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\EmailNotificaciones;
-use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\WhatsappController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -40,43 +40,16 @@ class WhatsappNotificationService
 
     private function sendText(string $phone, string $message): void
     {
-        $token = env('TOKEN_WHATSAPP');
-
-        if (!$token) {
-            Log::warning('WhatsappNotificationService: TOKEN_WHATSAPP no configurado');
-            return;
-        }
-
         Log::info('WhatsappNotificationService: enviando mensaje', [
             'telefono' => $phone,
             'preview' => mb_substr($message, 0, 120),
         ]);
 
-        $payload = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $phone,
-            'type' => 'text',
-            'text' => [
-                'body' => $message,
-            ],
-        ];
+        /** @var WhatsappController $whatsapp */
+        $whatsapp = app(WhatsappController::class);
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $token,
-        ])->post($this->apiUrl, $payload);
+        $responseJson = $whatsapp->contestarWhatsapp3($phone, $message);
 
-        if ($response->failed()) {
-            Log::error('WhatsappNotificationService: error enviando mensaje', [
-                'telefono' => $phone,
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            return;
-        }
-
-        $responseJson = $response->json();
         Storage::disk('local')->put(
             "overlap-whatsapp-{$phone}.json",
             json_encode($responseJson, JSON_PRETTY_PRINT)
