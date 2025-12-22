@@ -51,7 +51,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
 
-        $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
+        //$schedule->command('reservas:sincronizar')->hourly(); // o daily(), hourly(), etc.
         $schedule->command('reservas:check-overlaps')->everyMinute();
 
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
