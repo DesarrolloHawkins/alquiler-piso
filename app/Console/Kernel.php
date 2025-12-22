@@ -342,8 +342,8 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Primer envio de DNI ejecutada con éxito.");
         })->everyMinute();
 
-        // Ejecutar el comando cada minuto
-        $schedule->command('ari:fullsync')->everyMinute();
+        // Ejecutar el comando cada hora
+        $schedule->command('ari:fullsync')->hourly();
         $schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
