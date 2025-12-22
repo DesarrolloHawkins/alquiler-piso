@@ -50,7 +50,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        
+
         $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
         $schedule->command('reservas:check-overlaps')->everyMinute();
 
@@ -81,7 +81,7 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
-        // Aviso para gestion Miramos si el cliente ha entregado el DNI el dia de entrada 
+        // Aviso para gestion Miramos si el cliente ha entregado el DNI el dia de entrada
         $schedule->call(function (ClienteService $clienteService) {
             // Hoy
             $hoy = Carbon::now();
@@ -141,22 +141,22 @@ class Kernel extends ConsoleKernel
 
         // Limpiar logs antiguos cada día a las 2:00 AM
         $schedule->command('logs:clean --days=30')->dailyAt('02:00');
-        
+
         // Limpiar notificaciones antiguas cada día a las 3:00 AM
         $schedule->command('notifications:clean --days=30')->dailyAt('03:00');
-        
+
         // Aplicar descuento del 20% a apartamentos libres (SOLO lunes a jueves a las 10:00)
         // NO se ejecuta viernes, sábado ni domingo
         // Se ejecuta con --confirmar para evitar interacción en modo cron
-        $schedule->command('aplicar:descuento-apartamentos-libres --confirmar')
-            ->at('10:00')
-            ->when(function () {
-                // Solo ejecutar de lunes a jueves
-                // En Carbon: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
-                // Excluye: 0=Domingo, 5=Viernes, 6=Sábado
-                $dayOfWeek = Carbon::now()->dayOfWeek;
-                return in_array($dayOfWeek, [1, 2, 3, 4]);
-            });
+        // $schedule->command('aplicar:descuento-apartamentos-libres --confirmar')
+        //     ->at('10:00')
+        //     ->when(function () {
+        //         // Solo ejecutar de lunes a jueves
+        //         // En Carbon: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+        //         // Excluye: 0=Domingo, 5=Viernes, 6=Sábado
+        //         $dayOfWeek = Carbon::now()->dayOfWeek;
+        //         return in_array($dayOfWeek, [1, 2, 3, 4]);
+        //     });
 
         // Tarea de Generacion de Factura
         $schedule->call(function () {
@@ -183,26 +183,26 @@ class Kernel extends ConsoleKernel
                         Log::info("Reserva {$reserva->id} no facturada (marcada como no_facturar)");
                         continue; // Saltar esta reserva
                     }
-                    
+
                     // Validar que el precio sea mayor o igual a 10 euros
                     if ($reserva->precio < 10) {
                         Log::info("Reserva {$reserva->id} con precio {$reserva->precio}€ no facturada (menor a 10€)");
                         continue; // Saltar esta reserva
                     }
-                    
+
                     // Obtener datos de facturación del cliente
                     $cliente = $reserva->cliente;
                     if (!$cliente) {
                         Log::warning("Cliente no encontrado para reserva {$reserva->id}");
                         continue;
                     }
-                    
+
                     // Verificar que el cliente tenga datos de facturación completos
                     if (!$cliente->tieneDatosFacturacionCompletos()) {
                         Log::warning("Cliente {$cliente->id} no tiene datos de facturación completos para reserva {$reserva->id}");
                         continue;
                     }
-                    
+
                      // Cálculo correcto de la base imponible y el IVA
                     $total = $reserva->precio;
                     $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
@@ -230,7 +230,7 @@ class Kernel extends ConsoleKernel
                         'created_at' => $reserva->fecha_salida,
                         'updated_at' => $reserva->fecha_salida,
                     ];
-                    
+
                     Log::info("Generando factura para reserva {$reserva->id} con datos de facturación del cliente {$cliente->id}");
                     $crearFactura = Invoices::create($data);
 
@@ -241,7 +241,7 @@ class Kernel extends ConsoleKernel
                     $crearFactura->save();
                     $reserva->estado_id = 5;
                     $reserva->save();
-                    
+
                     Log::info("Factura {$crearFactura->id} generada exitosamente para reserva {$reserva->id}");
                 }
 
