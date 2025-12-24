@@ -81,8 +81,9 @@ class LiberarCanceladasCommand extends Command
             $start = Carbon::parse($reserva->fecha_entrada);
             $end = Carbon::parse($reserva->fecha_salida)->subDay(); // Restar 1 día como en otros comandos
 
-            // ⚠️ VALIDACIÓN CRÍTICA: Verificar si hay reservas activas en esas fechas
-            // antes de liberar disponibilidad. Si hay una reserva activa, NO liberamos.
+            // ⚠️ VALIDACIÓN CRÍTICA 1: Verificar si hay reservas activas en esas fechas
+            // ANTES de verificar si ya se liberó. Si hay una reserva activa, NO liberamos.
+            // Esto es crítico porque puede haber entrado una nueva reserva después de liberar.
             $reservasActivas = Reserva::where('apartamento_id', $apartamento->id)
                 ->where('room_type_id', $roomType->id)
                 ->where('id', '!=', $reserva->id) // Excluir la reserva cancelada actual
@@ -111,6 +112,42 @@ class LiberarCanceladasCommand extends Command
                     'fecha_entrada' => $start->toDateString(),
                     'fecha_salida' => $reserva->fecha_salida->toDateString(),
                 ]);
+                continue;
+            }
+
+            // ⚠️ VALIDACIÓN 2: Verificar si ya se liberó esta reserva anteriormente
+            // SOLO si NO hay reservas activas. Si hay reservas activas, ya se omitió arriba.
+            // Buscar en logs del día actual si ya se procesó exitosamente (evita duplicados)
+            $logFile = storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log');
+            $yaLiberada = false;
+            
+            if (file_exists($logFile)) {
+                $logContent = file_get_contents($logFile);
+                // Buscar si hay un log de liberación exitosa para esta reserva
+                $pattern = '/Reserva cancelada liberada en Channex.*?"reserva_id":' . $reserva->id . '/s';
+                if (preg_match($pattern, $logContent)) {
+                    $yaLiberada = true;
+                }
+            }
+            
+            // También verificar logs de días anteriores (últimos 7 días)
+            if (!$yaLiberada) {
+                for ($i = 1; $i <= 7; $i++) {
+                    $fechaLog = now()->subDays($i)->format('Y-m-d');
+                    $logFileAnterior = storage_path('logs/laravel-' . $fechaLog . '.log');
+                    if (file_exists($logFileAnterior)) {
+                        $logContent = file_get_contents($logFileAnterior);
+                        $pattern = '/Reserva cancelada liberada en Channex.*?"reserva_id":' . $reserva->id . '/s';
+                        if (preg_match($pattern, $logContent)) {
+                            $yaLiberada = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($yaLiberada) {
+                $this->line("⏭️  Reserva #{$reserva->id}: Ya fue liberada anteriormente y no hay reservas activas. Saltando...");
                 continue;
             }
             
