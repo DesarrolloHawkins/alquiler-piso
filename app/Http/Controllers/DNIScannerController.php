@@ -37,13 +37,14 @@ class DNIScannerController extends Controller
             // Recargar el cliente para obtener el idioma actualizado
             $cliente->refresh();
             
-            // Verificar si ya tiene datos del DNI completos (solo si data_dni es true)
+            // Verificar si ya tiene datos del DNI completos o si el DNI ya fue entregado
             // No usar verificarDatosCompletos() porque los datos pueden venir de otras fuentes
             // y no significa que el DNI haya sido entregado/verificado
-            if ($cliente->data_dni) {
-                Log::info('Cliente ya tiene datos del DNI entregados', [
+            if ($reserva->dni_entregado || $cliente->data_dni) {
+                Log::info('Cliente ya tiene datos del DNI entregados o reserva marcada como dni_entregado', [
                     'cliente_id' => $cliente->id,
-                    'data_dni' => $cliente->data_dni
+                    'data_dni' => $cliente->data_dni,
+                    'dni_entregado' => $reserva->dni_entregado
                 ]);
                 return redirect()->route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es');
             }
@@ -588,8 +589,94 @@ class DNIScannerController extends Controller
                     } else {
                         $persona = \App\Models\Huesped::find($personaId);
                         if (!$persona) {
-                            $errores[] = "Adulto " . ($index + 1) . ": Huésped no encontrado";
-                            continue;
+                            // Si el huésped no existe, intentar crearlo desde datos temporales en sesión
+                            $sessionKey = "dni_temp_data_{$token}_{$index}";
+                            $tempData = session($sessionKey, []);
+                            
+                            if (!empty($tempData) && isset($tempData['front'])) {
+                                // Crear huésped desde datos temporales
+                                $frontData = $tempData['front'];
+                                $rearData = $tempData['rear'] ?? [];
+                                
+                                // Determinar tipo de documento
+                                $tipoDoc = $frontData['tipo_documento'] ?? '';
+                                $tipoDocStr = '';
+                                $tipoDocCode = '1'; // Por defecto DNI (1)
+                                
+                                if (stripos($tipoDoc, 'pasaporte') !== false || stripos($tipoDoc, 'passport') !== false) {
+                                    $tipoDocCode = '2';
+                                    $tipoDocStr = 'Pasaporte';
+                                } elseif (stripos($tipoDoc, 'nie') !== false) {
+                                    $tipoDocCode = '3';
+                                    $tipoDocStr = 'NIE';
+                                } else {
+                                    $tipoDocCode = '1';
+                                    $tipoDocStr = 'DNI';
+                                }
+                                
+                                // Normalizar sexo
+                                $sexo = $frontData['sexo'] ?? '';
+                                $sexoStr = '';
+                                if (stripos($sexo, 'masculino') !== false || stripos($sexo, 'hombre') !== false || $sexo === 'M' || $sexo === 'MALE') {
+                                    $sexoStr = 'Masculino';
+                                } elseif (stripos($sexo, 'femenino') !== false || stripos($sexo, 'mujer') !== false || $sexo === 'F' || $sexo === 'FEMALE') {
+                                    $sexoStr = 'Femenino';
+                                } else {
+                                    $sexoStr = $sexo;
+                                }
+                                
+                                // Crear huésped
+                                $huespedData = [
+                                    'reserva_id' => $reserva->id,
+                                    'nombre' => $frontData['nombre'] ?? '',
+                                    'primer_apellido' => $frontData['apellido1'] ?? '',
+                                    'segundo_apellido' => $frontData['apellido2'] ?? '',
+                                    'numero_identificacion' => $frontData['dni'] ?? $frontData['numero_dni_o_pasaporte'] ?? '',
+                                    'fecha_nacimiento' => $frontData['fecha_nacimiento'] ?? null,
+                                    'sexo' => $sexoStr,
+                                    'sexo_str' => $sexoStr === 'Masculino' ? 'M' : 'F',
+                                    'fecha_expedicion' => $frontData['fecha_expedicion'] ?? null,
+                                    'tipo_documento' => $tipoDocCode,
+                                    'tipo_documento_str' => $tipoDocStr,
+                                    'nacionalidadStr' => $frontData['nacionalidad'] ?? '',
+                                    'lugar_nacimiento' => $frontData['lugar_nacimiento'] ?? $rearData['lugar_nacimiento'] ?? '',
+                                    'direccion' => $rearData['direccion'] ?? '',
+                                    'localidad' => $rearData['localidad'] ?? '',
+                                    'codigo_postal' => $rearData['codigo_postal'] ?? '',
+                                    'provincia' => $rearData['provincia'] ?? '',
+                                    'contador' => $index
+                                ];
+                                
+                                // Añadir fecha de caducidad si está disponible
+                                if (isset($frontData['fecha_caducidad']) && !empty($frontData['fecha_caducidad'])) {
+                                    $huespedData['fecha_caducidad'] = \Carbon\Carbon::parse($frontData['fecha_caducidad'])->format('Y-m-d');
+                                }
+                                
+                                try {
+                                    $persona = \App\Models\Huesped::create($huespedData);
+                                    
+                                    Log::info('Huésped creado desde datos temporales', [
+                                        'huesped_id' => $persona->id,
+                                        'reserva_id' => $reserva->id,
+                                        'index' => $index,
+                                        'nombre' => $persona->nombre
+                                    ]);
+                                    
+                                    // Limpiar datos temporales de sesión después de crear
+                                    session()->forget($sessionKey);
+                                } catch (\Exception $e) {
+                                    Log::error('Error creando huésped desde datos temporales', [
+                                        'error' => $e->getMessage(),
+                                        'index' => $index,
+                                        'huesped_data' => $huespedData
+                                    ]);
+                                    $errores[] = "Adulto " . ($index + 1) . ": Error al crear huésped: " . $e->getMessage();
+                                    continue;
+                                }
+                            } else {
+                                $errores[] = "Adulto " . ($index + 1) . ": Huésped no encontrado y no hay datos temporales";
+                                continue;
+                            }
                         }
                     }
                     
@@ -745,7 +832,7 @@ class DNIScannerController extends Controller
                         // No lanzar excepción para que el proceso continúe
                     }
                     
-                    // Marcar como completado si es cliente - SOLO si tiene todos los datos obligatorios para MIR
+                    // Marcar como completado si es cliente
                     if ($personaTipo === 'cliente') {
                         // Recargar el cliente para obtener los datos más recientes
                         $persona->refresh();
@@ -774,6 +861,18 @@ class DNIScannerController extends Controller
                                 'provincia' => $persona->provincia
                             ]);
                         }
+                    }
+                    
+                    // Si se guardaron fotos, marcar dni_entregado = true (independientemente de datos completos)
+                    if (!empty($fotosGuardadas) && ($fotosGuardadas['front'] || $fotosGuardadas['rear'])) {
+                        $reserva->update(['dni_entregado' => true]);
+                        Log::info('dni_entregado actualizado en reserva - fotos guardadas', [
+                            'reserva_id' => $reserva->id,
+                            'persona_tipo' => $personaTipo,
+                            'persona_id' => $persona->id,
+                            'fotos_guardadas' => $fotosGuardadas,
+                            'dni_entregado' => true
+                        ]);
                     }
                     
                     $procesados++;
@@ -843,12 +942,38 @@ class DNIScannerController extends Controller
                 ];
             }
             
+            // Verificar si hay fotos guardadas y marcar dni_entregado = true si las hay
+            $tieneFotos = false;
+            if (isset($fotosVerificadas['cliente']) && ($fotosVerificadas['cliente']['frontal'] || $fotosVerificadas['cliente']['trasera'])) {
+                $tieneFotos = true;
+            }
+            if (!$tieneFotos && isset($fotosVerificadas['huespedes'])) {
+                foreach ($fotosVerificadas['huespedes'] as $fotosHuesped) {
+                    if ($fotosHuesped['frontal'] || $fotosHuesped['trasera']) {
+                        $tieneFotos = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Si hay fotos guardadas, marcar dni_entregado = true (incluso si faltan datos para MIR)
+            if ($tieneFotos && !$reserva->dni_entregado) {
+                $reserva->update(['dni_entregado' => true]);
+                Log::info('dni_entregado actualizado en reserva - fotos verificadas en BD', [
+                    'reserva_id' => $reserva->id,
+                    'fotos_verificadas' => $fotosVerificadas,
+                    'dni_entregado' => true
+                ]);
+            }
+            
             Log::info('Verificación de datos y fotos guardados', [
                 'reserva_id' => $reserva->id,
                 'datos_verificados' => $datosVerificados,
                 'fotos_verificadas' => $fotosVerificadas,
                 'procesados' => $procesados,
-                'errores' => $errores
+                'errores' => $errores,
+                'tiene_fotos' => $tieneFotos,
+                'dni_entregado' => $reserva->dni_entregado
             ]);
             
             // Determinar URL de redirección
@@ -1053,11 +1178,21 @@ class DNIScannerController extends Controller
                 ], 400);
             }
             
+            // Marcar dni_entregado = true en la reserva si se procesaron documentos exitosamente
+            if ($procesados > 0) {
+                $reserva->update(['dni_entregado' => true]);
+                Log::info('dni_entregado actualizado en reserva - processUpload', [
+                    'reserva_id' => $reserva->id,
+                    'dni_entregado' => true
+                ]);
+            }
+            
             Log::info('Imágenes subidas y procesadas', [
                 'reserva_id' => $reserva->id,
                 'cliente_id' => $cliente->id,
                 'procesados' => $procesados,
-                'errores' => $errores
+                'errores' => $errores,
+                'dni_entregado' => $reserva->dni_entregado
             ]);
             
             $mensaje = $procesados > 0 
@@ -2316,11 +2451,19 @@ IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.'
                     'updated_at' => now()
                 ]);
                 
-                Log::info('Verificación de DNI completada - data_dni marcado como true', [
+                // Marcar dni_entregado = true en la reserva
+                $reserva->update(['dni_entregado' => true]);
+                
+                Log::info('Verificación de DNI completada - data_dni y dni_entregado marcados como true', [
                     'reserva_id' => $reserva->id,
-                    'cliente_id' => $cliente->id
+                    'cliente_id' => $cliente->id,
+                    'dni_entregado' => true
                 ]);
             } else {
+                // Aún así, marcar dni_entregado = true si se subieron imágenes
+                // (aunque falten algunos datos para MIR)
+                $reserva->update(['dni_entregado' => true]);
+                
                 Log::warning('Verificación de DNI completada pero NO se marca data_dni = true: faltan datos obligatorios para MIR', [
                     'reserva_id' => $reserva->id,
                     'cliente_id' => $cliente->id,
@@ -2328,7 +2471,8 @@ IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.'
                     'fecha_expedicion_doc' => $cliente->fecha_expedicion_doc,
                     'email' => $cliente->email,
                     'telefono_movil' => $cliente->telefono_movil,
-                    'provincia' => $cliente->provincia
+                    'provincia' => $cliente->provincia,
+                    'dni_entregado' => true // Se marca igual porque se subieron imágenes
                 ]);
             }
             
