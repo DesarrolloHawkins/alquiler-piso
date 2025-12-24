@@ -15,6 +15,7 @@ use App\Services\ClienteService;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use DateTime;
@@ -345,6 +346,23 @@ class Kernel extends ConsoleKernel
         // Ejecutar el comando cada hora
         //$schedule->command('ari:fullsync')->hourly();
         $schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
+        
+        // Generar turnos automáticamente todas las mañanas a las 7:00 AM con IA real
+        // Genera turnos para el día de hoy para que estén listos durante la jornada
+        $schedule->call(function () {
+            $fechaHoy = Carbon::today()->format('Y-m-d');
+            Artisan::call('turnos:generar', [
+                'fecha' => $fechaHoy,
+                '--force' => true,
+                '--ia' => true,
+            ]);
+            
+            Log::info('Turnos generados automáticamente con IA', [
+                'fecha' => $fechaHoy,
+                'hora' => now()->format('H:i:s'),
+                'ia_activada' => true,
+            ]);
+        })->dailyAt('07:00')->name('generar-turnos-automatico');
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
