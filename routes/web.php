@@ -415,6 +415,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
     Route::delete('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
     Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
+    Route::post('/reservas/{id}/cancelar', [App\Http\Controllers\ReservasController::class, 'cancelar'])->name('reservas.cancelar');
     
     // Cerrar Apartamento
     Route::get('/cerrar-apartamento', [CerrarApartamentoController::class, 'index'])->name('admin.cerrar-apartamento.index');
