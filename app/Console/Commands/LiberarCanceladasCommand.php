@@ -54,6 +54,7 @@ class LiberarCanceladasCommand extends Command
 
         $liberadas = 0;
         $errores = 0;
+        $omitidas = 0; // Reservas omitidas por tener reservas activas
 
         foreach ($canceladas as $reserva) {
             $apartamento = $reserva->apartamento;
@@ -79,6 +80,39 @@ class LiberarCanceladasCommand extends Command
 
             $start = Carbon::parse($reserva->fecha_entrada);
             $end = Carbon::parse($reserva->fecha_salida)->subDay(); // Restar 1 día como en otros comandos
+
+            // ⚠️ VALIDACIÓN CRÍTICA: Verificar si hay reservas activas en esas fechas
+            // antes de liberar disponibilidad. Si hay una reserva activa, NO liberamos.
+            $reservasActivas = Reserva::where('apartamento_id', $apartamento->id)
+                ->where('room_type_id', $roomType->id)
+                ->where('id', '!=', $reserva->id) // Excluir la reserva cancelada actual
+                ->activas() // Usar el scope activas() que excluye canceladas (estado_id = 4)
+                ->where('estado_id', '!=', 7) // Excluir también temporales (estado_id = 7)
+                ->where(function ($query) use ($start, $reserva) {
+                    // Verificar solapamiento: la reserva activa solapa si:
+                    // - Su fecha_entrada es anterior a nuestra fecha_salida
+                    // - Y su fecha_salida es posterior a nuestra fecha_entrada
+                    $query->where('fecha_entrada', '<', $reserva->fecha_salida)
+                          ->where('fecha_salida', '>', $start);
+                })
+                ->exists();
+
+            if ($reservasActivas) {
+                $this->warn("⚠️  Reserva #{$reserva->id}: Hay reservas activas en esas fechas. NO se liberará disponibilidad.");
+                $this->line("   Apartamento: {$apartamento->nombre}");
+                $this->line("   Fechas: {$start->format('d/m/Y')} - {$reserva->fecha_salida->format('d/m/Y')}");
+                $this->newLine();
+                
+                $omitidas++;
+                
+                Log::info('Reserva cancelada NO liberada: hay reservas activas en esas fechas', [
+                    'reserva_id' => $reserva->id,
+                    'apartamento_id' => $apartamento->id,
+                    'fecha_entrada' => $start->toDateString(),
+                    'fecha_salida' => $reserva->fecha_salida->toDateString(),
+                ]);
+                continue;
+            }
             
             // Preparar actualización de disponibilidad (formato consistente con otros comandos)
             $update = [
@@ -152,6 +186,9 @@ class LiberarCanceladasCommand extends Command
         $this->newLine();
         $this->info("📊 Resumen:");
         $this->info("   ✅ Liberadas: {$liberadas}");
+        if ($omitidas > 0) {
+            $this->warn("   ⚠️  Omitidas (hay reservas activas): {$omitidas}");
+        }
         if ($errores > 0) {
             $this->error("   ❌ Errores: {$errores}");
         }
