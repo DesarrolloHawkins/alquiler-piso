@@ -8,10 +8,13 @@ use App\Models\Reserva;
 use App\Models\Pago;
 use App\Models\IntentoPago;
 use App\Models\Huesped;
+use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ReservaPagoController extends Controller
@@ -159,13 +162,12 @@ class ReservaPagoController extends Controller
             $fechaEntrada = Carbon::parse($request->fecha_entrada);
             $fechaSalida = Carbon::parse($request->fecha_salida);
             
-            // Verificar disponibilidad nuevamente
-            if (!$this->verificarDisponibilidad($apartamento, $fechaEntrada, $fechaSalida)) {
-                return back()->with('error', 'El apartamento ya no está disponible para las fechas seleccionadas.')->withInput();
-            }
-
-            // Calcular precio
+            // Calcular precio (antes de la transacción para validar)
             $precioPorNoche = $this->calcularPrecioPorNoche($apartamento, $fechaEntrada, $fechaSalida);
+            if (!$precioPorNoche) {
+                return back()->with('error', 'No se pudo calcular el precio. Por favor, contacta con nosotros.')->withInput();
+            }
+            
             $noches = $fechaEntrada->diffInDays($fechaSalida);
             $precioTotal = $precioPorNoche * $noches;
             
@@ -192,8 +194,32 @@ class ReservaPagoController extends Controller
                 return back()->with('error', 'El sistema de pagos no está disponible. Por favor, contacta con nosotros.')->withInput();
             }
 
-            // Usar transacción para asegurar que todo se cree correctamente o se revierta
+            // Usar transacción con nivel de aislamiento SERIALIZABLE para evitar condiciones de carrera
             return \DB::transaction(function () use ($request, $apartamento, $fechaEntrada, $fechaSalida, $precioTotal, $noches, $stripeSecret, $clienteLogueado, $esParaMi) {
+                // BLOQUEO CRÍTICO: Verificar disponibilidad DENTRO de la transacción con bloqueo de fila
+                // Esto previene condiciones de carrera cuando múltiples usuarios reservan simultáneamente
+                $reservasSolapadas = \App\Models\Reserva::where('apartamento_id', $apartamento->id)
+                    ->whereIn('estado_id', [1, 2, 3]) // Confirmada, Pendiente, En curso
+                    ->where(function ($query) use ($fechaEntrada, $fechaSalida) {
+                        $query->where(function ($q) use ($fechaEntrada, $fechaSalida) {
+                            $q->where('fecha_entrada', '<=', $fechaEntrada)
+                              ->where('fecha_salida', '>', $fechaEntrada);
+                        })->orWhere(function ($q) use ($fechaEntrada, $fechaSalida) {
+                            $q->where('fecha_entrada', '>=', $fechaEntrada)
+                              ->where('fecha_entrada', '<', $fechaSalida);
+                        });
+                    })
+                    ->lockForUpdate() // Bloqueo de fila para evitar condiciones de carrera
+                    ->exists();
+                
+                if ($reservasSolapadas) {
+                    \Log::warning('Intento de reserva duplicada detectado', [
+                        'apartamento_id' => $apartamento->id,
+                        'fecha_entrada' => $fechaEntrada->format('Y-m-d'),
+                        'fecha_salida' => $fechaSalida->format('Y-m-d'),
+                    ]);
+                    throw new \Exception('El apartamento ya no está disponible para las fechas seleccionadas. Otra reserva se ha completado simultáneamente.');
+                }
                 // Determinar cliente y huésped
                 if ($clienteLogueado && $esParaMi) {
                     // Es para el cliente logueado
@@ -231,11 +257,19 @@ class ReservaPagoController extends Controller
                     );
                 }
 
+                // Obtener room_type_id del apartamento (necesario para Channex)
+                $roomType = RoomType::where('property_id', $apartamento->id)->first();
+                if (!$roomType) {
+                    \Log::error('RoomType no encontrado para apartamento', ['apartamento_id' => $apartamento->id]);
+                    throw new \Exception('Error de configuración: no se encontró el tipo de habitación para este apartamento.');
+                }
+
                 // Crear reserva temporal (pendiente de pago)
                 $codigoReserva = 'WEB-' . strtoupper(Str::random(8));
                 $reserva = Reserva::create([
                     'cliente_id' => $cliente->id,
                     'apartamento_id' => $apartamento->id,
+                    'room_type_id' => $roomType->id,
                     'estado_id' => 2, // Pendiente
                     'origen' => 'Web',
                     'fecha_entrada' => $fechaEntrada->format('Y-m-d'),
@@ -247,6 +281,10 @@ class ReservaPagoController extends Controller
                     'numero_personas' => $request->adultos + ($request->ninos ?? 0),
                     'numero_ninos' => $request->ninos ?? 0,
                 ]);
+                
+                // SINCRONIZAR CON CHANNEX: Actualizar disponibilidad para bloquear las fechas
+                // Esto previene que otras plataformas (Booking, Airbnb) vendan las mismas fechas
+                $this->sincronizarConChannex($reserva);
                 
                 // Si es para otro huésped, crear registro en tabla huespedes
                 if ($clienteComprador) {
@@ -361,8 +399,18 @@ class ReservaPagoController extends Controller
             });
 
         } catch (\Exception $e) {
-            \Log::error('Error al procesar reserva: ' . $e->getMessage());
-            return back()->with('error', 'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.')->withInput();
+            \Log::error('Error al procesar reserva: ' . $e->getMessage(), [
+                'apartamento_id' => $request->apartamento_id ?? null,
+                'fecha_entrada' => $request->fecha_entrada ?? null,
+                'fecha_salida' => $request->fecha_salida ?? null,
+            ]);
+            
+            // Mensaje más específico para errores de disponibilidad
+            $mensajeError = str_contains($e->getMessage(), 'disponible') 
+                ? $e->getMessage() 
+                : 'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.';
+            
+            return back()->with('error', $mensajeError)->withInput();
         }
     }
 
@@ -496,5 +544,109 @@ class ReservaPagoController extends Controller
         // se solicitará al momento de hacer la reserva si es necesario
         
         return $datosFaltantes;
+    }
+    
+    /**
+     * Sincronizar reserva web con Channex para bloquear disponibilidad
+     * Esto previene que otras plataformas (Booking, Airbnb) vendan las mismas fechas
+     */
+    private function sincronizarConChannex(Reserva $reserva)
+    {
+        try {
+            $apartamento = $reserva->apartamento;
+            $roomType = RoomType::find($reserva->room_type_id);
+            
+            // Verificar que tenemos los datos necesarios para Channex
+            if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
+                \Log::warning('No se puede sincronizar con Channex: faltan datos', [
+                    'reserva_id' => $reserva->id,
+                    'apartamento_id_channex' => $apartamento->id_channex ?? null,
+                    'room_type_id' => $reserva->room_type_id ?? null,
+                    'room_type_id_channex' => $roomType->id_channex ?? null,
+                ]);
+                return;
+            }
+            
+            $startDate = Carbon::parse($reserva->fecha_entrada);
+            $endDate = Carbon::parse($reserva->fecha_salida)->subDay(); // Restamos un día a la fecha de salida
+            
+            $update = [
+                'property_id' => $apartamento->id_channex,
+                'room_type_id' => $roomType->id_channex,
+                'date_from' => $startDate->toDateString(),
+                'date_to' => $endDate->toDateString(),
+                'update_type' => 'availability',
+                'availability' => 0, // Bloqueamos la disponibilidad
+            ];
+            
+            // Usar las mismas credenciales que WebhookController para consistencia
+            $apiUrl = env('CHANNEX_URL', 'https://app.channex.io/api/v1');
+            $apiToken = env('CHANNEX_TOKEN');
+            
+            if (!$apiToken) {
+                \Log::error('Channex API token no configurado en .env (CHANNEX_TOKEN)', [
+                    'reserva_id' => $reserva->id,
+                ]);
+                return;
+            }
+            
+            if (!$apiUrl) {
+                \Log::error('Channex API URL no configurada en .env (CHANNEX_URL)', [
+                    'reserva_id' => $reserva->id,
+                ]);
+                return;
+            }
+            
+            // Log de lo que vamos a enviar (sin el token por seguridad)
+            \Log::info('Intentando sincronizar reserva web con Channex', [
+                'reserva_id' => $reserva->id,
+                'codigo_reserva' => $reserva->codigo_reserva,
+                'apartamento_id' => $apartamento->id,
+                'apartamento_id_channex' => $apartamento->id_channex,
+                'room_type_id' => $roomType->id,
+                'room_type_id_channex' => $roomType->id_channex,
+                'fecha_entrada' => $startDate->toDateString(),
+                'fecha_salida' => $endDate->toDateString(),
+                'api_url' => $apiUrl,
+                'payload' => $update,
+            ]);
+            
+            // Enviar actualización de disponibilidad a Channex
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'user-api-key' => $apiToken,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$apiUrl}/availability", ['values' => [$update]]);
+            
+            if ($response->successful()) {
+                $responseData = $response->json();
+                \Log::info('✅ Reserva web sincronizada exitosamente con Channex - Disponibilidad bloqueada', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'apartamento_id' => $apartamento->id,
+                    'apartamento_nombre' => $apartamento->nombre,
+                    'fechas' => $startDate->toDateString() . ' - ' . $endDate->toDateString(),
+                    'channex_response' => $responseData,
+                ]);
+            } else {
+                \Log::error('❌ Error al sincronizar reserva web con Channex', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'http_status' => $response->status(),
+                    'error_body' => $response->body(),
+                    'error_json' => $response->json(),
+                    'payload_enviado' => $update,
+                ]);
+            }
+        } catch (\Exception $e) {
+            // No lanzar excepción para no interrumpir el flujo de pago
+            // Solo loguear el error
+            \Log::error('Excepción al sincronizar con Channex', [
+                'reserva_id' => $reserva->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 }

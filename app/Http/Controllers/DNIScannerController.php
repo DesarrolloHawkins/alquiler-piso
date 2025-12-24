@@ -1308,8 +1308,20 @@ class DNIScannerController extends Controller
             // Preparar prompt según el lado del documento (formato exacto como Postman)
             // Incluir TODOS los campos requeridos por la legislación española
             if ($side === 'front') {
-                $prompt = 'Extrae de la imagen del DNI o pasaporte español TODOS los datos solicitados. Busca cuidadosamente TODOS los campos visibles en el documento. Responde únicamente con un objeto JSON válido EXACTAMENTE en este formato. No añadas texto, explicaciones ni caracteres adicionales. Usa el formato de fecha YYYY-MM-DD. Si no se encuentra un campo, devuélvelo como cadena vacía.
+                $prompt = 'Extrae de la imagen del DNI o pasaporte español TODOS los datos solicitados. Busca cuidadosamente TODOS los campos visibles en el documento.
 
+FORMATO DE RESPUESTA OBLIGATORIO:
+Responde ÚNICAMENTE con un objeto JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional. El JSON debe empezar directamente con { y terminar con }. NO uses ```json ni ```.
+
+Ejemplo de formato CORRECTO:
+{"nombre": "Juan", "apellidos": "Pérez", ...}
+
+Ejemplo de formato INCORRECTO (NO hacer esto):
+```json
+{"nombre": "Juan", ...}
+```
+
+Estructura JSON requerida:
 {
 "nombre": "",
 "apellidos": "",
@@ -1329,12 +1341,28 @@ INSTRUCCIONES ESPECÍFICAS:
 3. LUGAR DE NACIMIENTO: En el REVERSO del DNI español, busca el campo "LUGAR DE NACIMIENTO". Este campo es OBLIGATORIO y aparece claramente en el reverso del documento.
 4. DIRECCIÓN COMPLETA: En el REVERSO del DNI, busca el campo "DOMICILIO". Extrae TODA la dirección completa incluyendo calle, número, piso, puerta, etc. (ej: "C. VIRGEN. DEL VALLE 2B P01 B"). No solo la ciudad.
 5. El tipo de documento debe ser "DNI", "NIE" o "Pasaporte" según el documento que estés analizando.
-6. El sexo puede aparecer como "M"/"F", "Masculino"/"Femenino", o "Hombre"/"Mujer".';
+6. El sexo puede aparecer como "M"/"F", "Masculino"/"Femenino", o "Hombre"/"Mujer".
+7. Usa el formato de fecha YYYY-MM-DD para todas las fechas.
+8. Si no se encuentra un campo, devuélvelo como cadena vacía "".
+
+IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.';
             } else {
                 // Prompt para reverso con el mismo formato que funciona en frontal
                 // IMPORTANTE: El reverso contiene dirección Y lugar de nacimiento
-                $prompt = 'Extrae de la imagen del REVERSO del DNI español TODOS los datos solicitados. Busca cuidadosamente el campo "DOMICILIO" para la dirección completa y el campo "LUGAR DE NACIMIENTO" para el lugar de nacimiento. Responde únicamente con un objeto JSON válido EXACTAMENTE en este formato. No añadas texto, explicaciones ni caracteres adicionales. Si no se encuentra un campo, devuélvelo como cadena vacía.
+                $prompt = 'Extrae de la imagen del REVERSO del DNI español TODOS los datos solicitados. Busca cuidadosamente el campo "DOMICILIO" para la dirección completa y el campo "LUGAR DE NACIMIENTO" para el lugar de nacimiento.
 
+FORMATO DE RESPUESTA OBLIGATORIO:
+Responde ÚNICAMENTE con un objeto JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional. El JSON debe empezar directamente con { y terminar con }. NO uses ```json ni ```.
+
+Ejemplo de formato CORRECTO:
+{"direccion": "C. VIRGEN. DEL VALLE 2B P01 B", "localidad": "SEVILLA", ...}
+
+Ejemplo de formato INCORRECTO (NO hacer esto):
+```json
+{"direccion": "...", ...}
+```
+
+Estructura JSON requerida:
 {
 "direccion": "",
 "localidad": "",
@@ -1347,8 +1375,11 @@ INSTRUCCIONES ESPECÍFICAS:
 1. DIRECCIÓN COMPLETA: Busca el campo "DOMICILIO" en el reverso. Extrae TODA la dirección incluyendo calle, número, piso, puerta, bloque, etc. (ej: "C. VIRGEN. DEL VALLE 2B P01 B"). No solo la ciudad.
 2. LOCALIDAD: Extrae la ciudad que aparece después de la dirección (ej: "SEVILLA").
 3. PROVINCIA: Extrae la provincia que aparece después de la localidad (puede ser la misma que la localidad si es una ciudad capital de provincia).
-4. CÓDIGO POSTAL: Si aparece en el documento, extráelo. Si no aparece, déjalo vacío.
-5. LUGAR DE NACIMIENTO: Busca el campo "LUGAR DE NACIMIENTO" en el reverso del DNI. Este campo es OBLIGATORIO y aparece claramente marcado. Extrae la ciudad y provincia de nacimiento (ej: "SEVILLA" o "SEVILLA, SEVILLA").';
+4. CÓDIGO POSTAL: Si aparece en el documento, extráelo. Si no aparece, déjalo vacío "".
+5. LUGAR DE NACIMIENTO: Busca el campo "LUGAR DE NACIMIENTO" en el reverso del DNI. Este campo es OBLIGATORIO y aparece claramente marcado. Extrae la ciudad y provincia de nacimiento (ej: "SEVILLA" o "SEVILLA, SEVILLA").
+6. Si no se encuentra un campo, devuélvelo como cadena vacía "".
+
+IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.';
             }
             
             // URL completa de la API: baseUrl/chat/analyze-image
@@ -1496,38 +1527,117 @@ INSTRUCCIONES ESPECÍFICAS:
             
             // Extraer datos de la respuesta
             // La respuesta puede venir en diferentes formatos según la API
+            // Intentamos múltiples formatos con fallbacks para máxima robustez
             $extractedData = [];
             
             // Formato 1: respuesta directa con JSON en 'respuesta'
             if (isset($responseData['respuesta'])) {
                 $respuestaJson = $responseData['respuesta'];
                 if (is_string($respuestaJson)) {
-                    $extractedData = json_decode($respuestaJson, true) ?: [];
-                } else {
+                    // Extraer JSON del bloque markdown si está presente (```json ... ```)
+                    $jsonString = $this->extractJsonFromMarkdown($respuestaJson);
+                    $decoded = json_decode($jsonString, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $extractedData = $decoded;
+                    }
+                } elseif (is_array($respuestaJson)) {
                     $extractedData = $respuestaJson;
                 }
             }
+            
+            // Formato 1b: JSON en metadata.message.content (formato Ollama/qwen)
+            if (empty($extractedData) && isset($responseData['metadata']['message']['content'])) {
+                $content = $responseData['metadata']['message']['content'];
+                if (is_string($content)) {
+                    // Extraer JSON del bloque markdown si está presente
+                    $jsonString = $this->extractJsonFromMarkdown($content);
+                    $decoded = json_decode($jsonString, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $extractedData = $decoded;
+                    }
+                } elseif (is_array($content)) {
+                    $extractedData = $content;
+                }
+            }
+            
             // Formato 2: datos directamente en 'data'
-            elseif (isset($responseData['data']) && is_array($responseData['data'])) {
+            if (empty($extractedData) && isset($responseData['data']) && is_array($responseData['data'])) {
                 $extractedData = $responseData['data'];
             }
-            // Formato 3: datos directamente en la raíz
-            elseif (isset($responseData['nombre']) || isset($responseData['dni']) || isset($responseData['numero'])) {
+            
+            // Formato 3: datos directamente en la raíz (verificar campos clave)
+            if (empty($extractedData) && (
+                isset($responseData['nombre']) || 
+                isset($responseData['dni']) || 
+                isset($responseData['numero']) ||
+                isset($responseData['numero_dni_o_pasaporte']) ||
+                isset($responseData['direccion'])
+            )) {
                 $extractedData = $responseData;
+            }
+            
+            // Formato 4: intentar extraer JSON de cualquier campo string que contenga JSON
+            if (empty($extractedData)) {
+                foreach ($responseData as $key => $value) {
+                    if (is_string($value) && (strpos($value, '{') !== false || strpos($value, '[') !== false)) {
+                        $jsonString = $this->extractJsonFromMarkdown($value);
+                        $decoded = json_decode($jsonString, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded)) {
+                            $extractedData = $decoded;
+                            Log::info('JSON extraído de campo inesperado', ['campo' => $key]);
+                            break;
+                        }
+                    }
+                }
             }
             
             // Normalizar campos según formato de respuesta
             if (!empty($extractedData)) {
+                Log::info('Datos extraídos antes de normalizar', [
+                    'side' => $side,
+                    'data_keys' => array_keys($extractedData),
+                    'data_preview' => array_slice($extractedData, 0, 5)
+                ]);
+                
                 $extractedData = $this->normalizeExtractedData($extractedData, $side);
+                
+                Log::info('Datos normalizados', [
+                    'side' => $side,
+                    'data_keys' => array_keys($extractedData),
+                    'has_required_fields' => !empty($extractedData)
+                ]);
             }
             
             if (empty($extractedData)) {
                 Log::error('No se pudieron extraer datos de la respuesta', [
                     'url' => $fullUrl,
                     'response_structure' => array_keys($responseData),
-                    'raw_response' => $response,
-                    'parsed_response' => $responseData
+                    'has_respuesta' => isset($responseData['respuesta']),
+                    'has_metadata' => isset($responseData['metadata']),
+                    'has_data' => isset($responseData['data']),
+                    'raw_response_preview' => substr($response, 0, 1000),
+                    'parsed_response_keys' => array_keys($responseData)
                 ]);
+                
+                // Intentar mostrar qué campos tiene la respuesta para debugging
+                $debugInfo = [
+                    'response_keys' => array_keys($responseData),
+                ];
+                
+                if (isset($responseData['respuesta'])) {
+                    $debugInfo['respuesta_type'] = gettype($responseData['respuesta']);
+                    $debugInfo['respuesta_preview'] = is_string($responseData['respuesta']) 
+                        ? substr($responseData['respuesta'], 0, 200) 
+                        : 'No es string';
+                }
+                
+                if (isset($responseData['metadata']['message']['content'])) {
+                    $debugInfo['metadata_content_type'] = gettype($responseData['metadata']['message']['content']);
+                    $debugInfo['metadata_content_preview'] = is_string($responseData['metadata']['message']['content'])
+                        ? substr($responseData['metadata']['message']['content'], 0, 200)
+                        : 'No es string';
+                }
+                
                 return [
                     'success' => false,
                     'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
@@ -1536,14 +1646,16 @@ INSTRUCCIONES ESPECÍFICAS:
                     'ai_url' => $fullUrl,
                     'ai_raw_response' => $response,
                     'ai_response_parsed' => $responseData,
+                    'debug_info' => $debugInfo,
                     'response_structure' => array_keys($responseData),
                     'ai_http_code' => $httpCode
                 ];
             }
             
-            Log::info('Datos extraídos por IA Hawkins', [
+            Log::info('✅ Datos extraídos exitosamente por IA Hawkins', [
                 'side' => $side,
-                'data_keys' => array_keys($extractedData)
+                'data_keys' => array_keys($extractedData),
+                'fields_count' => count($extractedData)
             ]);
             
             return [
@@ -1695,8 +1807,67 @@ INSTRUCCIONES ESPECÍFICAS:
     }
     
     /**
-     * Normalizar formato de fecha
+     * Extraer JSON de un bloque markdown si está presente
+     * Maneja múltiples formatos de respuesta de la IA de forma robusta
      */
+    private function extractJsonFromMarkdown($text)
+    {
+        if (!is_string($text)) {
+            return $text;
+        }
+        
+        $text = trim($text);
+        
+        // Si ya es JSON válido (empieza con { y termina con }), devolverlo directamente
+        if (preg_match('/^\s*\{.*\}\s*$/s', $text)) {
+            return $text;
+        }
+        
+        // Patrón 1: ```json ... ``` (formato más común)
+        if (preg_match('/```json\s*\n?(.*?)\n?```/s', $text, $matches)) {
+            $json = trim($matches[1]);
+            if (!empty($json)) {
+                return $json;
+            }
+        }
+        
+        // Patrón 2: ``` ... ``` (sin especificar json, pero contiene JSON)
+        if (preg_match('/```\s*\n?(.*?)\n?```/s', $text, $matches)) {
+            $content = trim($matches[1]);
+            // Verificar si parece JSON (empieza con {)
+            if (preg_match('/^\s*\{.*\}/s', $content)) {
+                return $content;
+            }
+        }
+        
+        // Patrón 3: JSON dentro de texto con posibles espacios/retornos antes/después
+        // Buscar el primer { y el último } para extraer el JSON
+        $firstBrace = strpos($text, '{');
+        $lastBrace = strrpos($text, '}');
+        
+        if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+            $jsonCandidate = substr($text, $firstBrace, $lastBrace - $firstBrace + 1);
+            // Validar que sea JSON válido
+            $decoded = json_decode($jsonCandidate, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $jsonCandidate;
+            }
+        }
+        
+        // Patrón 4: Buscar cualquier objeto JSON en el texto (último recurso)
+        if (preg_match('/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s', $text, $matches)) {
+            $jsonCandidate = $matches[0];
+            $decoded = json_decode($jsonCandidate, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $jsonCandidate;
+            }
+        }
+        
+        // Si no se encontró JSON válido, devolver el texto original
+        // (puede que ya sea JSON válido o que necesite otro procesamiento)
+        return $text;
+    }
+    
     private function normalizeDate($date)
     {
         if (empty($date)) {
