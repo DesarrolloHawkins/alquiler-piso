@@ -366,6 +366,11 @@ class Kernel extends ConsoleKernel
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
+            Log::info('=== INICIO: Tarea programada de mensajes automatizados ===', [
+                'fecha' => now()->format('Y-m-d H:i:s'),
+                'timestamp' => now()->timestamp
+            ]);
+
             // Obtener la fecha de hoy
             $hoy = Carbon::now();
 
@@ -374,6 +379,11 @@ class Kernel extends ConsoleKernel
             ->where('estado_id', '!=', 4)
             ->get();
             /* ->where('dni_entregado', '!=', null) */
+
+            Log::info('Reservas encontradas para procesar mensajes automatizados', [
+                'total_reservas' => $reservas->count(),
+                'fecha_entrada' => date('Y-m-d')
+            ]);
 
             foreach($reservas as $reserva){
 
@@ -454,6 +464,18 @@ class Kernel extends ConsoleKernel
                 // MENSAJE CLAVES DEL APARTAMENTO
                 if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                     $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
+                    
+                    Log::info('Evaluando envío de claves para reserva', [
+                        'reserva_id' => $reserva->id,
+                        'origen' => $reserva->origen,
+                        'id_channex' => $reserva->id_channex,
+                        'codigo_reserva' => $reserva->codigo_reserva,
+                        'diferenciasHoraCodigos' => $diferenciasHoraCodigos,
+                        'mensajeBienvenida' => $mensajeBienvenida ? 'existe' : 'no existe',
+                        'mensajeClaves' => $mensajeClaves ? 'existe' : 'no existe',
+                        'tiempoDesdeBienvenida' => $tiempoDesdeBienvenida
+                    ]);
+
                     if ($tiempoDesdeBienvenida >= 1) {
                         // Obtenemos el codigo de entrada del apartamento
                         //$code = $this->codigoApartamento($reserva->apartamento_id);
@@ -559,8 +581,15 @@ class Kernel extends ConsoleKernel
                         }
 
                                                 // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
+                                Log::info('Iniciando envío de claves por Channex', [
+                                    'reserva_id' => $reserva->id,
+                                    'id_channex' => $reserva->id_channex,
+                                    'codigo_reserva' => $reserva->codigo_reserva,
+                                    'origen' => $reserva->origen
+                                ]);
+
                                 // Crear mensaje específico para el chat
                                 $datosClaves = [
                                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
@@ -576,20 +605,35 @@ class Kernel extends ConsoleKernel
 
                                 Log::info('Mensaje de chat creado:', ['mensaje' => $mensajeChat]);
 
-                                // Enviar al chat de Channex usando el bookingId
+                                // Enviar al chat de Channex usando el bookingId (id_channex)
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
                                     $reserva->id_channex
                                 );
 
-                                Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Resultado envío a Channex:', [
+                                    'resultado' => $resultado,
+                                    'reserva_id' => $reserva->id,
+                                    'id_channex' => $reserva->id_channex,
+                                    'codigo_reserva' => $reserva->codigo_reserva
+                                ]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de claves al chat:', [
                                     'error' => $e->getMessage(),
                                     'reserva_id' => $reserva->id,
-                                    'booking_id' => $reserva->codigo_reserva
+                                    'id_channex' => $reserva->id_channex,
+                                    'codigo_reserva' => $reserva->codigo_reserva,
+                                    'trace' => $e->getTraceAsString()
                                 ]);
                             }
+                        } else {
+                            Log::info('Reserva omitida para envío de claves por Channex', [
+                                'reserva_id' => $reserva->id,
+                                'origen' => $reserva->origen,
+                                'id_channex' => $reserva->id_channex,
+                                'codigo_reserva' => $reserva->codigo_reserva,
+                                'razon' => $reserva->origen === 'web' ? 'es_reserva_web' : (empty($reserva->id_channex) ? 'sin_id_channex' : 'desconocida')
+                            ]);
                         }
 
                     }
@@ -688,7 +732,10 @@ class Kernel extends ConsoleKernel
                 }
             }
 
-            Log::info("Tarea programada de Envio de mensajes Automatizados ejecutada con éxito.");
+            Log::info("=== FIN: Tarea programada de Envio de mensajes Automatizados ejecutada con éxito ===", [
+                'fecha' => now()->format('Y-m-d H:i:s'),
+                'timestamp' => now()->timestamp
+            ]);
         })->everyMinute();
 
 
