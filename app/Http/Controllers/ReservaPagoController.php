@@ -432,7 +432,32 @@ class ReservaPagoController extends Controller
                 
                 $pago = Pago::where('stripe_checkout_session_id', $sessionId)->first();
                 
-                if ($pago && $session->payment_status === 'paid') {
+                if ($pago) {
+                    // Si el pago NO fue exitoso, cancelar la reserva
+                    if ($session->payment_status !== 'paid') {
+                        if ($pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+                            // Cancelar la reserva
+                            $pago->reserva->estado_id = 4; // Cancelada
+                            $pago->reserva->save();
+                            
+                            // Marcar el pago como fallido
+                            $pago->update(['estado' => 'fallido']);
+                            
+                            // Liberar disponibilidad en Channex
+                            $this->liberarDisponibilidadChannex($pago->reserva);
+                            
+                            \Log::info('Reserva cancelada - pago no exitoso en página de éxito', [
+                                'reserva_id' => $pago->reserva->id,
+                                'codigo_reserva' => $pago->reserva->codigo_reserva,
+                                'payment_status' => $session->payment_status,
+                            ]);
+                        }
+                        
+                        return redirect()->route('web.reservas.pago.cancelado', ['reserva_id' => $pago->reserva_id ?? null])
+                            ->with('error', 'El pago no se completó correctamente.');
+                    }
+                    
+                    // El pago fue exitoso
                     // El webhook debería haber actualizado esto, pero por si acaso
                     if ($pago->estado !== 'completado') {
                         $pago->update([
@@ -463,6 +488,40 @@ class ReservaPagoController extends Controller
     public function cancelado(Request $request)
     {
         $reservaId = $request->get('reserva_id');
+        
+        if ($reservaId) {
+            try {
+                $reserva = Reserva::find($reservaId);
+                
+                if ($reserva && $reserva->estado_id == 2) { // Solo si está pendiente
+                    // Cancelar la reserva
+                    $reserva->estado_id = 4; // Cancelada
+                    $reserva->save();
+                    
+                    // Liberar disponibilidad en Channex
+                    $this->liberarDisponibilidadChannex($reserva);
+                    
+                    // Marcar el pago como cancelado si existe
+                    $pago = Pago::where('reserva_id', $reservaId)
+                        ->where('estado', 'pendiente')
+                        ->first();
+                    
+                    if ($pago) {
+                        $pago->update(['estado' => 'cancelado']);
+                    }
+                    
+                    \Log::info('Reserva cancelada por usuario - pago no completado', [
+                        'reserva_id' => $reservaId,
+                        'codigo_reserva' => $reserva->codigo_reserva,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error al cancelar reserva en página de cancelación: ' . $e->getMessage(), [
+                    'reserva_id' => $reservaId,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
         
         return view('public.reservas.reserva-cancelada', [
             'reserva_id' => $reservaId,
@@ -646,6 +705,72 @@ class ReservaPagoController extends Controller
                 'reserva_id' => $reserva->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Liberar disponibilidad en Channex para una reserva cancelada
+     */
+    private function liberarDisponibilidadChannex(Reserva $reserva)
+    {
+        try {
+            $apartamento = $reserva->apartamento;
+            $roomType = RoomType::find($reserva->room_type_id);
+            
+            if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
+                \Log::warning('No se puede liberar disponibilidad en Channex: faltan datos', [
+                    'reserva_id' => $reserva->id,
+                ]);
+                return;
+            }
+            
+            $startDate = Carbon::parse($reserva->fecha_entrada);
+            $endDate = Carbon::parse($reserva->fecha_salida)->subDay();
+            
+            $update = [
+                'property_id' => $apartamento->id_channex,
+                'room_type_id' => $roomType->id_channex,
+                'date_from' => $startDate->toDateString(),
+                'date_to' => $endDate->toDateString(),
+                'update_type' => 'availability',
+                'availability' => 1, // Habilitar disponibilidad (liberar)
+            ];
+            
+            $apiUrl = env('CHANNEX_URL', 'https://app.channex.io/api/v1');
+            $apiToken = env('CHANNEX_TOKEN');
+            
+            if (!$apiToken) {
+                \Log::error('CHANNEX_TOKEN no configurado para liberar disponibilidad');
+                return;
+            }
+            
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'user-api-key' => $apiToken,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$apiUrl}/availability", ['values' => [$update]]);
+            
+            if ($response->successful()) {
+                \Log::info('Disponibilidad liberada en Channex - reserva cancelada por pago fallido', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'apartamento_id' => $apartamento->id,
+                    'fecha_entrada' => $startDate->toDateString(),
+                    'fecha_salida' => $endDate->toDateString(),
+                ]);
+            } else {
+                \Log::error('Error al liberar disponibilidad en Channex', [
+                    'reserva_id' => $reserva->id,
+                    'http_status' => $response->status(),
+                    'error_body' => $response->body(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Excepción al liberar disponibilidad en Channex', [
+                'reserva_id' => $reserva->id ?? null,
+                'error' => $e->getMessage(),
             ]);
         }
     }

@@ -398,7 +398,7 @@ class DNIScannerController extends Controller
                     
                     return response()->json([
                         'success' => false,
-                        'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                        'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                         'error_type' => 'invalid_data',
                         'ai_response' => $result['data'] ?? null,
                         'ai_raw_response' => $result['ai_raw_response'] ?? null
@@ -496,9 +496,17 @@ class DNIScannerController extends Controller
                     'ai_url' => $result['ai_url'] ?? 'N/A'
                 ]);
                 
+                // Si el error es de calidad de imagen, usar mensaje específico
+                $errorMessage = $result['message'] ?? 'Error al procesar el documento con IA. Por favor, intenta de nuevo. Si el problema persiste, envía las imágenes del DNI por WhatsApp.';
+                
+                // Si es un error de datos inválidos o parse, usar mensaje de calidad de imagen
+                if (in_array($result['error_type'] ?? '', ['invalid_data', 'parse_error'])) {
+                    $errorMessage = 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.';
+                }
+                
                 return response()->json([
                     'success' => false,
-                    'message' => $result['message'] ?? 'Error al procesar el documento con IA. Por favor, intenta de nuevo. Si el problema persiste, envía las imágenes del DNI por WhatsApp.',
+                    'message' => $errorMessage,
                     'error' => $result['error'] ?? 'Error desconocido',
                     'error_type' => $result['error_type'] ?? 'ai_error',
                     'ai_url' => $result['ai_url'] ?? 'N/A',
@@ -1775,7 +1783,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.'
                 
                 return [
                     'success' => false,
-                    'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                    'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                     'error' => 'No se encontraron datos válidos en la respuesta de la IA',
                     'error_type' => 'parse_error',
                     'ai_url' => $fullUrl,
@@ -1809,7 +1817,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.'
             
             return [
                 'success' => false,
-                'message' => 'Error al procesar el documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                 'error' => $e->getMessage(),
                 'error_type' => 'ai_error',
                 'ai_url' => $fullUrl ?? 'N/A',

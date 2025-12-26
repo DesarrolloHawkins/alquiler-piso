@@ -47,6 +47,10 @@ class StripeWebhookController extends Controller
                 $this->handleCheckoutSessionCompleted($event['data']['object'] ?? $event->data->object ?? null);
                 break;
             
+            case 'checkout.session.expired':
+                $this->handleCheckoutSessionExpired($event['data']['object'] ?? $event->data->object ?? null);
+                break;
+            
             case 'payment_intent.succeeded':
                 $this->handlePaymentIntentSucceeded($event['data']['object'] ?? $event->data->object ?? null);
                 break;
@@ -138,6 +142,43 @@ class StripeWebhookController extends Controller
     }
 
     /**
+     * Manejar sesión de checkout expirada
+     */
+    private function handleCheckoutSessionExpired($session)
+    {
+        try {
+            $sessionId = $session['id'] ?? $session->id ?? null;
+            
+            if (!$sessionId) {
+                return;
+            }
+
+            $pago = Pago::where('stripe_checkout_session_id', $sessionId)->first();
+            
+            if ($pago && $pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+                // Cancelar la reserva
+                $pago->reserva->estado_id = 4; // Cancelada
+                $pago->reserva->save();
+                
+                // Marcar el pago como expirado
+                $pago->update(['estado' => 'expirado']);
+                
+                // Liberar disponibilidad en Channex
+                $this->liberarDisponibilidadChannex($pago->reserva);
+                
+                Log::info('Reserva cancelada por sesión de Stripe expirada', [
+                    'reserva_id' => $pago->reserva->id,
+                    'codigo_reserva' => $pago->reserva->codigo_reserva,
+                    'pago_id' => $pago->id,
+                    'session_id' => $sessionId,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al procesar checkout.session.expired: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Manejar payment intent exitoso
      */
     private function handlePaymentIntentSucceeded($paymentIntent)
@@ -195,9 +236,91 @@ class StripeWebhookController extends Controller
                     'respuesta_stripe' => is_array($paymentIntent) ? $paymentIntent : (array)$paymentIntent,
                     'fecha_intento' => now(),
                 ]);
+
+                // Cancelar la reserva si está pendiente y liberar Channex
+                if ($pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+                    $pago->reserva->estado_id = 4; // Cancelada
+                    $pago->reserva->save();
+                    
+                    // Liberar disponibilidad en Channex
+                    $this->liberarDisponibilidadChannex($pago->reserva);
+                    
+                    Log::info('Reserva cancelada por pago fallido en Stripe', [
+                        'reserva_id' => $pago->reserva->id,
+                        'codigo_reserva' => $pago->reserva->codigo_reserva,
+                        'pago_id' => $pago->id,
+                        'payment_intent_id' => $paymentIntentId,
+                    ]);
+                }
             }
         } catch (\Exception $e) {
             Log::error('Error al procesar payment_intent.payment_failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Liberar disponibilidad en Channex para una reserva cancelada
+     */
+    private function liberarDisponibilidadChannex(Reserva $reserva)
+    {
+        try {
+            $apartamento = $reserva->apartamento;
+            $roomType = \App\Models\RoomType::find($reserva->room_type_id);
+            
+            if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
+                Log::warning('No se puede liberar disponibilidad en Channex: faltan datos', [
+                    'reserva_id' => $reserva->id,
+                ]);
+                return;
+            }
+            
+            $startDate = \Carbon\Carbon::parse($reserva->fecha_entrada);
+            $endDate = \Carbon\Carbon::parse($reserva->fecha_salida)->subDay();
+            
+            $update = [
+                'property_id' => $apartamento->id_channex,
+                'room_type_id' => $roomType->id_channex,
+                'date_from' => $startDate->toDateString(),
+                'date_to' => $endDate->toDateString(),
+                'update_type' => 'availability',
+                'availability' => 1, // Habilitar disponibilidad (liberar)
+            ];
+            
+            $apiUrl = config('services.channex.url', env('CHANNEX_URL', 'https://app.channex.io/api/v1'));
+            $apiToken = config('services.channex.token', env('CHANNEX_TOKEN'));
+            
+            if (!$apiToken) {
+                Log::error('CHANNEX_TOKEN no configurado para liberar disponibilidad');
+                return;
+            }
+            
+            $response = \Illuminate\Support\Facades\Http::timeout(10)
+                ->withHeaders([
+                    'user-api-key' => $apiToken,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$apiUrl}/availability", ['values' => [$update]]);
+            
+            if ($response->successful()) {
+                Log::info('Disponibilidad liberada en Channex - reserva cancelada por pago fallido', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'apartamento_id' => $apartamento->id,
+                    'fecha_entrada' => $startDate->toDateString(),
+                    'fecha_salida' => $endDate->toDateString(),
+                ]);
+            } else {
+                Log::error('Error al liberar disponibilidad en Channex', [
+                    'reserva_id' => $reserva->id,
+                    'http_status' => $response->status(),
+                    'error_body' => $response->body(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción al liberar disponibilidad en Channex', [
+                'reserva_id' => $reserva->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
