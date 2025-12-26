@@ -43,6 +43,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\FixAmenityMovements::class,
         \App\Console\Commands\FixAllAmenitiesMovements::class,
         \App\Console\Commands\CheckOverlappingReservations::class,
+        \App\Console\Commands\CancelarReservasExpiradasCommand::class,
     ];
 
 
@@ -54,6 +55,7 @@ class Kernel extends ConsoleKernel
 
         //$schedule->command('reservas:sincronizar')->hourly(); // o daily(), hourly(), etc.
         $schedule->command('reservas:check-overlaps')->everyMinute();
+        $schedule->command('reservas:cancelar-expiradas')->everyMinute();
 
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
         // Ejecuta el comando cada hora

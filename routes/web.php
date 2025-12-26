@@ -100,6 +100,7 @@ Route::prefix('web')->name('web.')->group(function () {
         // Proceso de reserva y pago
         Route::get('/formulario/{apartamento}', [App\Http\Controllers\ReservaPagoController::class, 'formularioReserva'])->name('formulario');
         Route::post('/procesar', [App\Http\Controllers\ReservaPagoController::class, 'procesarReserva'])->name('procesar');
+        Route::post('/validar-cupon', [App\Http\Controllers\ReservaPagoController::class, 'validarCupon'])->name('validar-cupon');
         Route::get('/pago/exito', [App\Http\Controllers\ReservaPagoController::class, 'exito'])->name('pago.exito');
         Route::get('/pago/cancelado', [App\Http\Controllers\ReservaPagoController::class, 'cancelado'])->name('pago.cancelado');
     });
@@ -245,6 +246,18 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         'update' => 'admin.servicios.update',
         'destroy' => 'admin.servicios.destroy',
     ]);
+
+    // Cupones de descuento
+    Route::resource('cupones', App\Http\Controllers\Admin\CuponesController::class)->names([
+        'index' => 'admin.cupones.index',
+        'create' => 'admin.cupones.create',
+        'store' => 'admin.cupones.store',
+        'show' => 'admin.cupones.show',
+        'edit' => 'admin.cupones.edit',
+        'update' => 'admin.cupones.update',
+        'destroy' => 'admin.cupones.destroy',
+    ]);
+    Route::post('/cupones/{cupone}/toggle-active', [App\Http\Controllers\Admin\CuponesController::class, 'toggleActive'])->name('admin.cupones.toggle-active');
     
     // Política de Cancelaciones
     Route::get('/politica-cancelacion/edit', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'edit'])->name('admin.politica-cancelacion.edit');

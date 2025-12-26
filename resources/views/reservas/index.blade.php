@@ -455,9 +455,32 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="fw-bold fs-5 text-success">
-                                        <i class="fas fa-euro-sign me-1"></i>{{ number_format($reserva->precio, 2) }}
-                                    </span>
+                                    @php
+                                        // Obtener el pago principal (completado o el primero disponible)
+                                        $pago = $reserva->pagos->where('estado', 'completado')->first() ?? $reserva->pagos->first();
+                                        
+                                        // Obtener el precio real pagado (con descuento si aplica)
+                                        $precioReal = $pago && $pago->monto ? $pago->monto : $reserva->precio;
+                                        $descuento = $pago && $pago->descuento_aplicado ? $pago->descuento_aplicado : 0;
+                                        $precioOriginal = $pago && $pago->monto_original ? $pago->monto_original : $reserva->precio;
+                                    @endphp
+                                    <div>
+                                        <span class="fw-bold fs-5 text-success">
+                                            <i class="fas fa-euro-sign me-1"></i>{{ number_format($precioReal, 2, ',', '.') }}
+                                        </span>
+                                        @if($descuento > 0)
+                                            <br>
+                                            <small class="text-muted">
+                                                <del class="text-secondary">{{ number_format($precioOriginal, 2, ',', '.') }} €</del>
+                                                <span class="text-success ms-1">
+                                                    <i class="fas fa-ticket-alt me-1"></i>-{{ number_format($descuento, 2, ',', '.') }} €
+                                                </span>
+                                                @if($pago && $pago->cupon)
+                                                    <br><small class="text-info">({{ $pago->cupon->codigo }})</small>
+                                                @endif
+                                            </small>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">

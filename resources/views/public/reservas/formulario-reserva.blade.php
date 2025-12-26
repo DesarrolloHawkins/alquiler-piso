@@ -197,11 +197,42 @@
                     <span>{{ $noches }} {{ $noches == 1 ? __('reservation.nights') : __('reservation.nights') }}</span>
                     <span>{{ number_format($precioPorNoche * $noches, 2, ',', '.') }} €</span>
                 </div>
-                <div class="summary-item">
-                    <span>{{ __('reservation.total_price') }}</span>
-                    <span>{{ number_format($precioTotal, 2, ',', '.') }} €</span>
+                @if(isset($descuento) && $descuento > 0)
+                <div class="summary-item" style="color: #28a745; font-weight: 600;">
+                    <span><i class="fas fa-ticket-alt me-1"></i>Descuento ({{ $cupon->codigo ?? '' }}):</span>
+                    <span>-{{ number_format($descuento, 2, ',', '.') }} €</span>
+                </div>
+                @endif
+                <div class="summary-item" style="font-size: 18px; font-weight: 700; border-top: 2px solid #E0E0E0; padding-top: 12px; margin-top: 8px;">
+                    <span>{{ __('reservation.total_price') }}:</span>
+                    <span id="precioTotalDisplay">{{ number_format(isset($precioConDescuento) ? $precioConDescuento : $precioTotal, 2, ',', '.') }} €</span>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Campo de Cupón -->
+    <div class="reservation-form-card" style="margin-bottom: 32px;">
+        <h3 style="font-size: 20px; font-weight: 700; color: #003580; margin-bottom: 16px;">
+            <i class="fas fa-ticket-alt me-2"></i>¿Tienes un código de descuento?
+        </h3>
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="flex: 1;">
+                <input type="text" 
+                       id="codigoCupon" 
+                       name="codigo_cupon" 
+                       value="{{ $codigoCupon ?? '' }}"
+                       placeholder="Introduce tu código de descuento"
+                       style="padding: 12px 16px; border: 2px solid #E0E0E0; border-radius: 6px; width: 100%; font-size: 16px; text-transform: uppercase;"
+                       onkeyup="this.value = this.value.toUpperCase();">
+                <div id="cuponMensaje" style="margin-top: 8px; font-size: 14px;"></div>
+            </div>
+            <button type="button" 
+                    id="aplicarCuponBtn" 
+                    onclick="aplicarCupon()"
+                    style="padding: 12px 24px; background: #003580; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                Aplicar
+            </button>
         </div>
     </div>
     
@@ -732,10 +763,140 @@
         </form>
     </div>
 </div>
-@endsection
 
 @section('scripts')
 <script>
+    const precioTotalOriginal = {{ $precioTotal }};
+    let cuponAplicado = @json(isset($cupon) && $cupon ? ['id' => $cupon->id, 'codigo' => $cupon->codigo, 'descuento' => $descuento] : null);
+    
+    function aplicarCupon() {
+        const codigo = document.getElementById('codigoCupon').value.trim().toUpperCase();
+        const mensajeDiv = document.getElementById('cuponMensaje');
+        const aplicarBtn = document.getElementById('aplicarCuponBtn');
+        
+        if (!codigo) {
+            mensajeDiv.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-exclamation-circle me-1"></i>Por favor, introduce un código de descuento</span>';
+            return;
+        }
+        
+        // Deshabilitar botón mientras se valida
+        aplicarBtn.disabled = true;
+        aplicarBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validando...';
+        mensajeDiv.innerHTML = '';
+        
+        // Llamar a la API para validar el cupón
+        fetch('{{ route("web.reservas.validar-cupon") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                codigo: codigo,
+                apartamento_id: {{ $apartamento->id }},
+                precio_total: precioTotalOriginal
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            aplicarBtn.disabled = false;
+            aplicarBtn.innerHTML = 'Aplicar';
+            
+            if (data.valido) {
+                cuponAplicado = {
+                    id: data.cupon.id,
+                    codigo: data.cupon.codigo,
+                    descuento: data.descuento
+                };
+                
+                // Actualizar el resumen de precio
+                actualizarResumenPrecio(data.precio_original, data.descuento, data.precio_final, data.cupon);
+                
+                mensajeDiv.innerHTML = '<span style="color: #28a745;"><i class="fas fa-check-circle me-1"></i>' + data.mensaje + '</span>';
+                
+                // Asegurar que el campo visible tenga el valor del cupón
+                document.getElementById('codigoCupon').value = codigo;
+                
+                // También añadir campo hidden como respaldo
+                let cuponInput = document.getElementById('codigoCuponHidden');
+                if (!cuponInput) {
+                    cuponInput = document.createElement('input');
+                    cuponInput.type = 'hidden';
+                    cuponInput.id = 'codigoCuponHidden';
+                    cuponInput.name = 'codigo_cupon';
+                    document.getElementById('reservationForm').appendChild(cuponInput);
+                }
+                cuponInput.value = codigo;
+            } else {
+                cuponAplicado = null;
+                mensajeDiv.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle me-1"></i>' + data.mensaje + '</span>';
+                
+                // Restaurar precio original
+                actualizarResumenPrecio(precioTotalOriginal, 0, precioTotalOriginal, null);
+                
+                // Limpiar el campo del cupón
+                document.getElementById('codigoCupon').value = '';
+                
+                // Eliminar campo hidden si existe
+                const cuponInput = document.getElementById('codigoCuponHidden');
+                if (cuponInput) {
+                    cuponInput.remove();
+                }
+            }
+        })
+        .catch(error => {
+            aplicarBtn.disabled = false;
+            aplicarBtn.innerHTML = 'Aplicar';
+            mensajeDiv.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-exclamation-triangle me-1"></i>Error al validar el cupón. Por favor, intenta de nuevo.</span>';
+            console.error('Error:', error);
+        });
+    }
+    
+    function actualizarResumenPrecio(precioOriginal, descuento, precioFinal, cupon) {
+        // Buscar si ya existe el elemento de descuento
+        let descuentoItem = document.getElementById('descuentoItem');
+        const precioTotalItem = document.querySelector('.summary-item:last-of-type');
+        
+        if (descuento > 0 && cupon) {
+            if (!descuentoItem) {
+                descuentoItem = document.createElement('div');
+                descuentoItem.id = 'descuentoItem';
+                descuentoItem.className = 'summary-item';
+                descuentoItem.style.cssText = 'color: #28a745; font-weight: 600;';
+                
+                if (precioTotalItem && precioTotalItem.parentElement) {
+                    precioTotalItem.parentElement.insertBefore(descuentoItem, precioTotalItem);
+                }
+            }
+            descuentoItem.innerHTML = `
+                <span><i class="fas fa-ticket-alt me-1"></i>Descuento (${cupon.codigo}):</span>
+                <span>-${descuento.toFixed(2).replace('.', ',')} €</span>
+            `;
+        } else if (descuentoItem) {
+            descuentoItem.remove();
+        }
+        
+        // Actualizar precio total
+        const precioTotalDisplay = document.getElementById('precioTotalDisplay');
+        if (precioTotalDisplay) {
+            precioTotalDisplay.textContent = precioFinal.toFixed(2).replace('.', ',') + ' €';
+        }
+    }
+    
+    // Permitir aplicar cupón con Enter
+    document.getElementById('codigoCupon')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            aplicarCupon();
+        }
+    });
+    
+    // Si ya hay un cupón aplicado desde el servidor, mostrarlo
+    @if(isset($cupon) && $cupon && isset($descuento) && $descuento > 0)
+        document.getElementById('cuponMensaje').innerHTML = '<span style="color: #28a745;"><i class="fas fa-check-circle me-1"></i>Cupón {{ $cupon->codigo }} aplicado correctamente</span>';
+    @endif
+
+    // Código existente del formulario
     document.getElementById('reservationForm').addEventListener('submit', function(e) {
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;

@@ -58,7 +58,7 @@ class ReservasController extends Controller
         'fecha_salida' => $fechaSalida
     ]);
     
-    $query = Reserva::with('cliente');
+    $query = Reserva::with(['cliente', 'pagos.cupon']);
     
     // Aplicar filtro de estado de reservas
     $filtroEstado = $request->get('filtro_estado', 'activas');

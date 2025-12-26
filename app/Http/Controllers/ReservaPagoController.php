@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Models\IntentoPago;
 use App\Models\Huesped;
 use App\Models\RoomType;
+use App\Models\Cupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,26 @@ class ReservaPagoController extends Controller
             $precioTotal += $apartamento->cleaning_fee;
         }
 
+        // Validar y aplicar cupón si existe
+        $cupon = null;
+        $descuento = 0;
+        $precioConDescuento = $precioTotal;
+        
+        if ($request->has('codigo_cupon') && !empty($request->codigo_cupon)) {
+            $cupon = Cupon::where('codigo', strtoupper(trim($request->codigo_cupon)))->first();
+            if ($cupon) {
+                $clienteLogueado = Auth::guard('cliente')->user();
+                $validacion = $cupon->esValido($precioTotal, $apartamento->id, $clienteLogueado?->id);
+                
+                if ($validacion['valido']) {
+                    $descuento = $cupon->calcularDescuento($precioTotal);
+                    $precioConDescuento = max(0, $precioTotal - $descuento); // No puede ser negativo
+                } else {
+                    $cupon = null; // Invalidar cupón si no es válido
+                }
+            }
+        }
+
         // Verificar si el usuario está logueado
         $clienteLogueado = Auth::guard('cliente')->user();
         $datosFaltantes = [];
@@ -105,6 +126,10 @@ class ReservaPagoController extends Controller
             'ninos' => $ninos,
             'precioPorNoche' => $precioPorNoche,
             'precioTotal' => $precioTotal,
+            'precioConDescuento' => $precioConDescuento,
+            'descuento' => $descuento,
+            'cupon' => $cupon,
+            'codigoCupon' => $request->codigo_cupon ?? null,
             'clienteLogueado' => $clienteLogueado,
             'datosFaltantes' => $datosFaltantes,
             'esParaMi' => $esParaMi,
@@ -194,8 +219,53 @@ class ReservaPagoController extends Controller
                 return back()->with('error', 'El sistema de pagos no está disponible. Por favor, contacta con nosotros.')->withInput();
             }
 
+            // Validar y aplicar cupón antes de la transacción
+            $cupon = null;
+            $descuento = 0;
+            $precioConDescuento = $precioTotal;
+            $montoOriginal = $precioTotal;
+            
+            if ($request->has('codigo_cupon') && !empty($request->codigo_cupon)) {
+                $codigoCupon = strtoupper(trim($request->codigo_cupon));
+                \Log::info('Validando cupón en procesarReserva', [
+                    'codigo' => $codigoCupon,
+                    'precio_total' => $precioTotal,
+                    'apartamento_id' => $apartamento->id
+                ]);
+                
+                $cupon = Cupon::where('codigo', $codigoCupon)->first();
+                if ($cupon) {
+                    $clienteLogueado = Auth::guard('cliente')->user();
+                    $validacion = $cupon->esValido($precioTotal, $apartamento->id, $clienteLogueado?->id);
+                    
+                    if ($validacion['valido']) {
+                        $descuento = $cupon->calcularDescuento($precioTotal);
+                        $precioConDescuento = max(0, $precioTotal - $descuento);
+                        
+                        \Log::info('Cupón aplicado correctamente', [
+                            'cupon_id' => $cupon->id,
+                            'codigo' => $cupon->codigo,
+                            'precio_original' => $precioTotal,
+                            'descuento' => $descuento,
+                            'precio_con_descuento' => $precioConDescuento
+                        ]);
+                    } else {
+                        \Log::warning('Cupón no válido', [
+                            'codigo' => $codigoCupon,
+                            'razon' => $validacion['mensaje']
+                        ]);
+                        return back()->with('error', $validacion['mensaje'])->withInput();
+                    }
+                } else {
+                    \Log::warning('Cupón no encontrado', ['codigo' => $codigoCupon]);
+                    return back()->with('error', 'El código de cupón no es válido')->withInput();
+                }
+            } else {
+                \Log::info('No se proporcionó código de cupón');
+            }
+
             // Usar transacción con nivel de aislamiento SERIALIZABLE para evitar condiciones de carrera
-            return \DB::transaction(function () use ($request, $apartamento, $fechaEntrada, $fechaSalida, $precioTotal, $noches, $stripeSecret, $clienteLogueado, $esParaMi) {
+            return \DB::transaction(function () use ($request, $apartamento, $fechaEntrada, $fechaSalida, $precioTotal, $precioConDescuento, $montoOriginal, $descuento, $cupon, $noches, $stripeSecret, $clienteLogueado, $esParaMi) {
                 // BLOQUEO CRÍTICO: Verificar disponibilidad DENTRO de la transacción con bloqueo de fila
                 // Esto previene condiciones de carrera cuando múltiples usuarios reservan simultáneamente
                 $reservasSolapadas = \App\Models\Reserva::where('apartamento_id', $apartamento->id)
@@ -325,9 +395,12 @@ class ReservaPagoController extends Controller
                 $pago = Pago::create([
                     'reserva_id' => $reserva->id,
                     'cliente_id' => $clientePago->id,
+                    'cupon_id' => $cupon?->id,
                     'metodo_pago' => 'stripe',
                     'estado' => 'pendiente',
-                    'monto' => $precioTotal,
+                    'monto' => $precioConDescuento, // Precio con descuento aplicado
+                    'monto_original' => $montoOriginal, // Precio original antes del descuento
+                    'descuento_aplicado' => $descuento, // Descuento aplicado
                     'moneda' => 'EUR',
                     'descripcion' => "Reserva {$codigoReserva} - {$apartamento->titulo}",
                     'metadata' => [
@@ -336,8 +409,14 @@ class ReservaPagoController extends Controller
                         'ninos' => $request->ninos ?? 0,
                         'notas' => $request->notas,
                         'es_para_otro' => $clienteComprador ? true : false,
+                        'codigo_cupon' => $cupon?->codigo,
                     ],
                 ]);
+
+                // Incrementar contador de usos del cupón si se aplicó
+                if ($cupon) {
+                    $cupon->incrementarUso();
+                }
 
                 // Crear sesión de Stripe Checkout
                 try {
@@ -350,9 +429,9 @@ class ReservaPagoController extends Controller
                                 'currency' => 'eur',
                                 'product_data' => [
                                     'name' => "Reserva: {$apartamento->titulo}",
-                                    'description' => "Del {$fechaEntrada->format('d/m/Y')} al {$fechaSalida->format('d/m/Y')} ({$noches} noches)",
+                                    'description' => "Del {$fechaEntrada->format('d/m/Y')} al {$fechaSalida->format('d/m/Y')} ({$noches} noches)" . ($cupon ? " - Cupón: {$cupon->codigo}" : ''),
                                 ],
-                                'unit_amount' => (int)($precioTotal * 100), // Stripe usa centavos
+                                'unit_amount' => (int)($precioConDescuento * 100), // Stripe usa centavos (precio con descuento)
                             ],
                             'quantity' => 1,
                         ]],
@@ -389,6 +468,12 @@ class ReservaPagoController extends Controller
                         'session_id' => $checkoutSession->id,
                         'reserva_id' => $reserva->id,
                         'pago_id' => $pago->id,
+                        'precio_original' => $montoOriginal,
+                        'descuento' => $descuento,
+                        'precio_con_descuento' => $precioConDescuento,
+                        'cupon_id' => $cupon?->id,
+                        'cupon_codigo' => $cupon?->codigo,
+                        'stripe_amount' => (int)($precioConDescuento * 100),
                     ]);
 
                     // Si llegamos aquí, todo está bien, redirigir a Stripe
@@ -788,5 +873,54 @@ class ReservaPagoController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Validar cupón desde AJAX
+     */
+    public function validarCupon(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string',
+            'apartamento_id' => 'required|exists:apartamentos,id',
+            'precio_total' => 'required|numeric|min:0',
+        ]);
+
+        $cupon = Cupon::where('codigo', strtoupper(trim($request->codigo)))->first();
+        
+        if (!$cupon) {
+            return response()->json([
+                'valido' => false,
+                'mensaje' => 'El código de cupón no es válido'
+            ], 200);
+        }
+
+        $clienteLogueado = Auth::guard('cliente')->user();
+        $validacion = $cupon->esValido($request->precio_total, $request->apartamento_id, $clienteLogueado?->id);
+
+        if (!$validacion['valido']) {
+            return response()->json([
+                'valido' => false,
+                'mensaje' => $validacion['mensaje']
+            ], 200);
+        }
+
+        $descuento = $cupon->calcularDescuento($request->precio_total);
+        $precioFinal = max(0, $request->precio_total - $descuento);
+
+        return response()->json([
+            'valido' => true,
+            'mensaje' => 'Cupón aplicado correctamente',
+            'cupon' => [
+                'id' => $cupon->id,
+                'codigo' => $cupon->codigo,
+                'nombre' => $cupon->nombre,
+                'tipo' => $cupon->tipo,
+                'valor' => $cupon->valor,
+            ],
+            'descuento' => round($descuento, 2),
+            'precio_original' => round($request->precio_total, 2),
+            'precio_final' => round($precioFinal, 2),
+        ], 200);
     }
 }
