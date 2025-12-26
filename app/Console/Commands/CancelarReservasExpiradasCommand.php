@@ -22,17 +22,41 @@ class CancelarReservasExpiradasCommand extends Command
         // Buscar reservas con estado "Progreso" (10) creadas hace más de 5 minutos
         $fechaLimite = Carbon::now()->subMinutes(5);
         
+        // Primero, buscar todas las reservas en Progreso con más de 5 minutos (para diagnóstico)
+        $totalReservasProgreso = Reserva::where('estado_id', 10)
+            ->where('created_at', '<', $fechaLimite)
+            ->count();
+        
+        $this->line("📊 Total reservas en Progreso con más de 5 minutos: {$totalReservasProgreso}");
+        
+        // Buscar reservas con pago pendiente/procesando (con o sin session_id)
         $reservasExpiradas = Reserva::where('estado_id', 10) // Progreso
             ->where('created_at', '<', $fechaLimite)
             ->whereHas('pagos', function ($query) {
-                $query->whereIn('estado', ['pendiente', 'procesando'])
-                      ->whereNotNull('stripe_checkout_session_id');
+                $query->whereIn('estado', ['pendiente', 'procesando']);
             })
             ->with(['pagos', 'apartamento'])
             ->get();
         
+        // Filtrar manualmente para mostrar diagnóstico
+        $this->line("📋 Reservas con pago pendiente/procesando: {$reservasExpiradas->count()}");
+        
         if ($reservasExpiradas->isEmpty()) {
-            $this->info("✅ No se encontraron reservas expiradas para cancelar.");
+            $this->warn("⚠️  No se encontraron reservas con pago pendiente.");
+            
+            // Mostrar diagnóstico: reservas en Progreso sin pago o con pago en otro estado
+            $reservasSinPago = Reserva::where('estado_id', 10)
+                ->where('created_at', '<', $fechaLimite)
+                ->doesntHave('pagos')
+                ->get();
+            
+            if ($reservasSinPago->isNotEmpty()) {
+                $this->warn("⚠️  Encontradas {$reservasSinPago->count()} reserva(s) en Progreso SIN pago asociado:");
+                foreach ($reservasSinPago as $reserva) {
+                    $this->line("   - Reserva #{$reserva->id} ({$reserva->codigo_reserva}) - Creada: {$reserva->created_at->format('Y-m-d H:i:s')}");
+                }
+            }
+            
             return 0;
         }
         
@@ -44,18 +68,22 @@ class CancelarReservasExpiradasCommand extends Command
         
         foreach ($reservasExpiradas as $reserva) {
             try {
-                $this->line("Procesando reserva #{$reserva->id} ({$reserva->codigo_reserva})...");
+                $minutosTranscurridos = Carbon::now()->diffInMinutes($reserva->created_at);
+                $this->line("Procesando reserva #{$reserva->id} ({$reserva->codigo_reserva}) - Creada hace {$minutosTranscurridos} minutos...");
                 
-                // Obtener el pago pendiente asociado
+                // Obtener el pago pendiente asociado (sin requerir session_id)
                 $pago = $reserva->pagos()
                     ->whereIn('estado', ['pendiente', 'procesando'])
-                    ->whereNotNull('stripe_checkout_session_id')
                     ->first();
                 
                 if (!$pago) {
                     $this->warn("  ⚠️  No se encontró pago pendiente para la reserva #{$reserva->id}");
                     continue;
                 }
+                
+                // Mostrar información del pago
+                $tieneSessionId = !empty($pago->stripe_checkout_session_id);
+                $this->line("  📝 Pago #{$pago->id} - Estado: {$pago->estado} - Session ID: " . ($tieneSessionId ? 'Sí (' . substr($pago->stripe_checkout_session_id, 0, 20) . '...)' : 'No'));
                 
                 // Actualizar el pago a cancelado
                 $pago->update(['estado' => 'cancelado']);
