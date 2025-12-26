@@ -264,13 +264,14 @@ class ReservaPagoController extends Controller
                     throw new \Exception('Error de configuración: no se encontró el tipo de habitación para este apartamento.');
                 }
 
-                // Crear reserva temporal (pendiente de pago)
+                // Crear reserva con estado "Progreso" (ID 10) desde el inicio
+                // Esto previene que el cron de claves envíe mensajes antes de que el pago se complete
                 $codigoReserva = 'WEB-' . strtoupper(Str::random(8));
                 $reserva = Reserva::create([
                     'cliente_id' => $cliente->id,
                     'apartamento_id' => $apartamento->id,
                     'room_type_id' => $roomType->id,
-                    'estado_id' => 2, // Pendiente
+                    'estado_id' => 10, // Progreso - reserva en proceso de pago
                     'origen' => 'Web',
                     'fecha_entrada' => $fechaEntrada->format('Y-m-d'),
                     'fecha_salida' => $fechaSalida->format('Y-m-d'),
@@ -280,6 +281,12 @@ class ReservaPagoController extends Controller
                     'codigo_reserva' => $codigoReserva,
                     'numero_personas' => $request->adultos + ($request->ninos ?? 0),
                     'numero_ninos' => $request->ninos ?? 0,
+                ]);
+                
+                \Log::info('Reserva creada con estado "Progreso" (en proceso de pago)', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'estado_id' => 10
                 ]);
                 
                 // SINCRONIZAR CON CHANNEX: Actualizar disponibilidad para bloquear las fechas
@@ -435,7 +442,7 @@ class ReservaPagoController extends Controller
                 if ($pago) {
                     // Si el pago NO fue exitoso, cancelar la reserva
                     if ($session->payment_status !== 'paid') {
-                        if ($pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+                        if ($pago->reserva && in_array($pago->reserva->estado_id, [2, 10])) { // Pendiente (2) o Progreso (10)
                             // Cancelar la reserva
                             $pago->reserva->estado_id = 4; // Cancelada
                             $pago->reserva->save();
@@ -466,7 +473,15 @@ class ReservaPagoController extends Controller
                             'stripe_payment_intent_id' => $session->payment_intent,
                         ]);
                         
-                        $pago->reserva->update(['estado_id' => 1]); // Confirmada
+                        // Cambiar de "Progreso" (10) a "Pendiente Cliente" (1) cuando el pago se confirma
+                        $pago->reserva->update(['estado_id' => 1]); // Pendiente Cliente
+                        
+                        \Log::info('Reserva confirmada después de pago exitoso', [
+                            'reserva_id' => $pago->reserva->id,
+                            'codigo_reserva' => $pago->reserva->codigo_reserva,
+                            'estado_anterior' => 10,
+                            'estado_nuevo' => 1
+                        ]);
                     }
                     
                     return view('public.reservas.reserva-exitosa', [
@@ -493,7 +508,7 @@ class ReservaPagoController extends Controller
             try {
                 $reserva = Reserva::find($reservaId);
                 
-                if ($reserva && $reserva->estado_id == 2) { // Solo si está pendiente
+                if ($reserva && in_array($reserva->estado_id, [2, 10])) { // Pendiente (2) o Progreso (10)
                     // Cancelar la reserva
                     $reserva->estado_id = 4; // Cancelada
                     $reserva->save();

@@ -375,8 +375,10 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
 
             // Reservas
+            // Excluir reservas canceladas (4) y en progreso de pago (10)
+            // El estado 10 (Progreso) se usa cuando el pago está en proceso para evitar que se envíen claves antes de confirmar el pago
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
-            ->where('estado_id', '!=', 4)
+            ->whereNotIn('estado_id', [4, 10]) // Excluir Cancelada (4) y Progreso (10)
             ->get();
             /* ->where('dni_entregado', '!=', null) */
 

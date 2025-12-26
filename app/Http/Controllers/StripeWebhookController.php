@@ -95,9 +95,16 @@ class StripeWebhookController extends Controller
                     'fecha_pago' => now(),
                 ]);
 
-                // Actualizar reserva a confirmada
+                // Actualizar reserva de "Progreso" (10) a "Pendiente Cliente" (1) cuando el pago se confirma
                 if ($pago->reserva) {
-                    $pago->reserva->update(['estado_id' => 1]); // Confirmada
+                    $pago->reserva->update(['estado_id' => 1]); // Pendiente Cliente
+                    
+                    Log::info('Reserva confirmada por webhook de Stripe', [
+                        'reserva_id' => $pago->reserva->id,
+                        'codigo_reserva' => $pago->reserva->codigo_reserva,
+                        'estado_anterior' => $pago->reserva->getOriginal('estado_id'),
+                        'estado_nuevo' => 1
+                    ]);
                     
                     // Crear notificación
                     \App\Models\Notification::createForAdmins(
@@ -155,7 +162,7 @@ class StripeWebhookController extends Controller
 
             $pago = Pago::where('stripe_checkout_session_id', $sessionId)->first();
             
-            if ($pago && $pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+            if ($pago && $pago->reserva && in_array($pago->reserva->estado_id, [2, 10])) { // Pendiente (2) o Progreso (10)
                 // Cancelar la reserva
                 $pago->reserva->estado_id = 4; // Cancelada
                 $pago->reserva->save();
@@ -199,7 +206,14 @@ class StripeWebhookController extends Controller
                 ]);
 
                 if ($pago->reserva) {
-                    $pago->reserva->update(['estado_id' => 1]);
+                    // Cambiar de "Progreso" (10) a "Pendiente Cliente" (1) cuando el pago se confirma
+                    $pago->reserva->update(['estado_id' => 1]); // Pendiente Cliente
+                    
+                    Log::info('Reserva confirmada por payment_intent.succeeded', [
+                        'reserva_id' => $pago->reserva->id,
+                        'codigo_reserva' => $pago->reserva->codigo_reserva,
+                        'estado_nuevo' => 1
+                    ]);
                 }
             }
         } catch (\Exception $e) {
@@ -237,8 +251,8 @@ class StripeWebhookController extends Controller
                     'fecha_intento' => now(),
                 ]);
 
-                // Cancelar la reserva si está pendiente y liberar Channex
-                if ($pago->reserva && $pago->reserva->estado_id == 2) { // Solo si está pendiente
+                // Cancelar la reserva si está pendiente o en progreso y liberar Channex
+                if ($pago->reserva && in_array($pago->reserva->estado_id, [2, 10])) { // Pendiente (2) o Progreso (10)
                     $pago->reserva->estado_id = 4; // Cancelada
                     $pago->reserva->save();
                     
