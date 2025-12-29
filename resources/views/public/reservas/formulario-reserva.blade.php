@@ -739,6 +739,70 @@
                 </div>
             @endif
             
+            <!-- Horario de Check-in -->
+            <h3 class="form-section-title" style="margin-top: 32px;">
+                <i class="fas fa-clock me-2"></i>Horario de Check-in
+            </h3>
+            
+            @php
+                $horarioCheckinTemprano = \App\Models\Setting::get('checkin_horario_temprano', '14:00');
+                $horarioCheckinTardio = \App\Models\Setting::get('checkin_horario_tardio', '18:00');
+            @endphp
+            
+            <div class="form-group">
+                <label for="horario_checkin">Seleccione su horario de check-in preferido <span class="required">*</span></label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+                    <label style="display: flex; align-items: center; padding: 16px; border: 2px solid #E0E0E0; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: {{ old('horario_checkin') == 'temprano' ? '#E3F2FD' : '#fff' }};" 
+                           onmouseover="this.style.borderColor='#003580'" 
+                           onmouseout="this.style.borderColor='{{ old('horario_checkin') == 'temprano' ? '#003580' : '#E0E0E0' }}'">
+                        <input 
+                            type="radio" 
+                            id="horario_checkin_temprano" 
+                            name="horario_checkin" 
+                            value="temprano" 
+                            required
+                            {{ old('horario_checkin') == 'temprano' ? 'checked' : '' }}
+                            style="margin-right: 12px; width: 20px; height: 20px; cursor: pointer;"
+                            onchange="document.querySelectorAll('label[for^=horario_checkin]').forEach(l => l.style.background = '#fff'); this.closest('label').style.background = '#E3F2FD'; this.closest('label').style.borderColor = '#003580';"
+                        >
+                        <div>
+                            <strong style="display: block; color: #003580; margin-bottom: 4px;">
+                                <i class="fas fa-sun me-1"></i>Check-in Temprano
+                            </strong>
+                            <span style="color: #666; font-size: 14px;">Desde las {{ $horarioCheckinTemprano }}</span>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; padding: 16px; border: 2px solid #E0E0E0; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: {{ old('horario_checkin') == 'tardio' ? '#E3F2FD' : '#fff' }};" 
+                           onmouseover="this.style.borderColor='#003580'" 
+                           onmouseout="this.style.borderColor='{{ old('horario_checkin') == 'tardio' ? '#003580' : '#E0E0E0' }}'">
+                        <input 
+                            type="radio" 
+                            id="horario_checkin_tardio" 
+                            name="horario_checkin" 
+                            value="tardio" 
+                            required
+                            {{ old('horario_checkin') == 'tardio' ? 'checked' : '' }}
+                            style="margin-right: 12px; width: 20px; height: 20px; cursor: pointer;"
+                            onchange="document.querySelectorAll('label[for^=horario_checkin]').forEach(l => l.style.background = '#fff'); this.closest('label').style.background = '#E3F2FD'; this.closest('label').style.borderColor = '#003580';"
+                        >
+                        <div>
+                            <strong style="display: block; color: #003580; margin-bottom: 4px;">
+                                <i class="fas fa-moon me-1"></i>Check-in Tardío
+                            </strong>
+                            <span style="color: #666; font-size: 14px;">Desde las {{ $horarioCheckinTardio }}</span>
+                        </div>
+                    </label>
+                </div>
+                <small style="display: block; margin-top: 8px; color: #666;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Seleccione el horario que mejor se adapte a su llegada. Nos pondremos en contacto con usted para confirmar la hora exacta.
+                </small>
+                @error('horario_checkin')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+            
             <!-- Notas Adicionales -->
             <h3 class="form-section-title" style="margin-top: 32px;">{{ __('reservation.notes_label') }}</h3>
             

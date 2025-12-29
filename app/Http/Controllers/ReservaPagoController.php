@@ -178,6 +178,7 @@ class ReservaPagoController extends Controller
             'provincia' => 'required|string|max:255',
             'lugar_nacimiento' => 'nullable|string|max:255',
             'notas' => 'nullable|string|max:1000',
+            'horario_checkin' => 'required|in:temprano,tardio',
         ];
         
         $request->validate($rules);
@@ -334,6 +335,14 @@ class ReservaPagoController extends Controller
                     throw new \Exception('Error de configuración: no se encontró el tipo de habitación para este apartamento.');
                 }
 
+                // Obtener horarios de check-in configurables
+                $horarioCheckinTemprano = \App\Models\Setting::get('checkin_horario_temprano', '14:00');
+                $horarioCheckinTardio = \App\Models\Setting::get('checkin_horario_tardio', '18:00');
+                
+                // Determinar hora de entrada según el horario seleccionado
+                $horarioCheckin = $request->horario_checkin;
+                $horaEntrada = $horarioCheckin === 'temprano' ? $horarioCheckinTemprano : $horarioCheckinTardio;
+
                 // Crear reserva con estado "Progreso" (ID 10) desde el inicio
                 // Esto previene que el cron de claves envíe mensajes antes de que el pago se complete
                 $codigoReserva = 'WEB-' . strtoupper(Str::random(8));
@@ -345,12 +354,13 @@ class ReservaPagoController extends Controller
                     'origen' => 'Web',
                     'fecha_entrada' => $fechaEntrada->format('Y-m-d'),
                     'fecha_salida' => $fechaSalida->format('Y-m-d'),
-                    'fecha_hora_entrada' => $fechaEntrada->format('Y-m-d') . ' 15:00:00',
+                    'fecha_hora_entrada' => $fechaEntrada->format('Y-m-d') . ' ' . $horaEntrada . ':00',
                     'fecha_hora_salida' => $fechaSalida->format('Y-m-d') . ' 11:00:00',
                     'precio' => $precioTotal,
                     'codigo_reserva' => $codigoReserva,
                     'numero_personas' => $request->adultos + ($request->ninos ?? 0),
                     'numero_ninos' => $request->ninos ?? 0,
+                    'horario_checkin' => $horarioCheckin,
                 ]);
                 
                 \Log::info('Reserva creada con estado "Progreso" (en proceso de pago)', [
@@ -385,7 +395,7 @@ class ReservaPagoController extends Controller
                         'localidad' => $request->localidad,
                         'codigo_postal' => $request->codigo_postal,
                         'provincia' => $request->provincia,
-                        'fecha_hora_entrada' => $fechaEntrada->format('Y-m-d') . ' 15:00:00',
+                        'fecha_hora_entrada' => $fechaEntrada->format('Y-m-d') . ' ' . $horaEntrada . ':00',
                         'fecha_hora_salida' => $fechaSalida->format('Y-m-d') . ' 11:00:00',
                     ]);
                 }

@@ -438,6 +438,8 @@ class ConfiguracionesController extends Controller
                 'host_rating' => 'nullable|numeric|min:0|max:10',
                 'host_reviews_count' => 'nullable|integer|min:0',
                 'host_alojamientos_count' => 'nullable|integer|min:0',
+                'checkin_horario_temprano' => 'required|date_format:H:i',
+                'checkin_horario_tardio' => 'required|date_format:H:i',
             ], [
                 'host_nombre.max' => 'El nombre no puede exceder 255 caracteres.',
                 'host_iniciales.max' => 'Las iniciales no pueden exceder 4 caracteres.',
@@ -449,6 +451,10 @@ class ConfiguracionesController extends Controller
                 'host_reviews_count.min' => 'El número de comentarios debe ser mayor o igual a 0.',
                 'host_alojamientos_count.integer' => 'El número de alojamientos debe ser un número entero.',
                 'host_alojamientos_count.min' => 'El número de alojamientos debe ser mayor o igual a 0.',
+                'checkin_horario_temprano.required' => 'El horario de check-in temprano es obligatorio.',
+                'checkin_horario_temprano.date_format' => 'El horario de check-in temprano debe tener el formato HH:mm (ej: 14:00).',
+                'checkin_horario_tardio.required' => 'El horario de check-in tardío es obligatorio.',
+                'checkin_horario_tardio.date_format' => 'El horario de check-in tardío debe tener el formato HH:mm (ej: 18:00).',
             ]);
 
             // Guardar cada setting - guardar EXACTAMENTE lo que viene del request
@@ -479,6 +485,10 @@ class ConfiguracionesController extends Controller
             if ($request->has('host_alojamientos_count')) {
                 Setting::set('host_alojamientos_count', $request->input('host_alojamientos_count'), 'Número de alojamientos gestionados');
             }
+            
+            // Guardar horarios de check-in
+            Setting::set('checkin_horario_temprano', $request->input('checkin_horario_temprano'), 'Horario de check-in temprano (formato HH:mm)');
+            Setting::set('checkin_horario_tardio', $request->input('checkin_horario_tardio'), 'Horario de check-in tardío (formato HH:mm)');
 
             \Log::info('Todos los settings guardados correctamente');
             

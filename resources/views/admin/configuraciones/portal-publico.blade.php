@@ -172,6 +172,53 @@
                 <small class="form-text text-muted">Número de alojamientos gestionados</small>
             </div>
             
+            <!-- Horarios de Check-in -->
+            <div class="mb-4" style="border-top: 2px solid #E0E0E0; padding-top: 24px; margin-top: 32px;">
+                <h6 style="color: #003580; font-weight: 600; margin-bottom: 20px;">
+                    <i class="fas fa-clock me-2"></i>Horarios de Check-in
+                </h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fas fa-sun me-1"></i>
+                            Horario Check-in Temprano <span class="text-danger">*</span>
+                        </label>
+                        <input type="time" 
+                               class="form-control @error('checkin_horario_temprano') is-invalid @enderror" 
+                               name="checkin_horario_temprano" 
+                               value="{{ old('checkin_horario_temprano', \App\Models\Setting::get('checkin_horario_temprano', '14:00')) }}"
+                               required>
+                        @error('checkin_horario_temprano')
+                            <div class="invalid-feedback">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
+                            </div>
+                        @enderror
+                        <small class="form-text text-muted">Hora de inicio para check-in temprano (ej: 14:00)</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fas fa-moon me-1"></i>
+                            Horario Check-in Tardío <span class="text-danger">*</span>
+                        </label>
+                        <input type="time" 
+                               class="form-control @error('checkin_horario_tardio') is-invalid @enderror" 
+                               name="checkin_horario_tardio" 
+                               value="{{ old('checkin_horario_tardio', \App\Models\Setting::get('checkin_horario_tardio', '18:00')) }}"
+                               required>
+                        @error('checkin_horario_tardio')
+                            <div class="invalid-feedback">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ $message }}
+                            </div>
+                        @enderror
+                        <small class="form-text text-muted">Hora de inicio para check-in tardío (ej: 18:00)</small>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Nota:</strong> Estos horarios se mostrarán en el formulario de reserva pública. Los clientes podrán seleccionar entre check-in temprano o tardío.
+                </div>
+            </div>
+            
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-2"></i>Guardar Configuración

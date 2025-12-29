@@ -425,7 +425,7 @@
 
                                 <!-- Comunicación -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') || request()->is('whatsapp*') || request()->is('templates*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') || request()->is('whatsapp*') || request()->is('templates*') || request()->is('mensajes-personalizados*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-comments me-1"></i>Comunicación
                                     </a>
                                     <ul class="dropdown-menu">
@@ -441,6 +441,9 @@
                                         </a></li>
                                         <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">
                                             <i class="fab fa-whatsapp me-2"></i>Conversaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.mensajes-personalizados.index') }}">
+                                            <i class="fas fa-paper-plane me-2"></i>Mensajes Personalizados
                                         </a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.contactos-web.index') }}">

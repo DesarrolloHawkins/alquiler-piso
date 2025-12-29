@@ -400,6 +400,10 @@ Route::get('/test-datos-momento/{id}', function($id) {
         return view('admin.alerts.index');
     })->name('admin.alerts.index');
 
+    // Mensajes Personalizados
+    Route::get('/admin/mensajes-personalizados', [App\Http\Controllers\Admin\MensajesPersonalizadosController::class, 'index'])->name('admin.mensajes-personalizados.index');
+    Route::post('/admin/mensajes-personalizados/enviar', [App\Http\Controllers\Admin\MensajesPersonalizadosController::class, 'enviar'])->name('admin.mensajes-personalizados.enviar');
+
     // Reservas
     // Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 

@@ -389,6 +389,9 @@ class Kernel extends ConsoleKernel
                 'fecha_entrada' => date('Y-m-d')
             ]);
 
+            // Flag para indicar si se enviaron claves en esta ejecución (para ejecutar comando Channex al final)
+            $clavesEnviadasEnEstaEjecucion = false;
+
             foreach($reservas as $reserva){
 
                 // Apartamento
@@ -425,9 +428,56 @@ class Kernel extends ConsoleKernel
 
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
-                    Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
+                    
+                    Log::info('Iniciando envío de mensaje de bienvenida por WhatsApp', [
+                        'reserva_id' => $reserva->id,
+                        'cliente_id' => $reserva->cliente_id,
+                        'telefono' => $phoneCliente,
+                        'idioma' => $idiomaCliente,
+                        'nombre' => $reserva->cliente->nombre
+                    ]);
+                    
+                    try {
+                        // Enviamos el mensaje
+                        $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
+                        Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
+                        
+                        // Procesar respuesta de WhatsApp
+                        $responseData = json_decode($data, true);
+                        if ($responseData && isset($responseData['messages']) && isset($responseData['messages'][0]['id'])) {
+                            Log::info('Mensaje de bienvenida enviado exitosamente por WhatsApp', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono' => $phoneCliente,
+                                'message_id' => $responseData['messages'][0]['id']
+                            ]);
+                        } elseif ($responseData && isset($responseData['error'])) {
+                            Log::error('Error al enviar mensaje de bienvenida por WhatsApp', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono' => $phoneCliente,
+                                'error_code' => $responseData['error']['code'] ?? null,
+                                'error_message' => $responseData['error']['message'] ?? null,
+                                'error_type' => $responseData['error']['type'] ?? null,
+                                'response' => $data
+                            ]);
+                        } else {
+                            Log::warning('Respuesta inesperada al enviar mensaje de bienvenida por WhatsApp', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono' => $phoneCliente,
+                                'response' => $data
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Excepción al enviar mensaje de bienvenida por WhatsApp', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'telefono' => $phoneCliente,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                    }
 
                                             // Creamos la data para guardar el mensaje
                         $dataMensaje = [
@@ -489,28 +539,76 @@ class Kernel extends ConsoleKernel
                         $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
                         $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
 
-                        if ($reserva->apartamento_id === 1) {
-                            $data = $this->clavesMensajeAtico(
-                                $reserva->cliente->nombre,
-                                $reserva->apartamento->titulo, $reserva->apartamento->edificioName->clave,
-                                $reserva->apartamento->claves,
-                                $phoneCliente,
-                                $idiomaCliente,
-                                $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico',
-                                $url = $enlace,
-                                $url2 = $enlaceLimpio
-                            );
-                        } else {
-                            $data = $this->clavesMensaje(
-                                $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $reserva->apartamento->titulo,
-                                $reserva->apartamento->edificioName->clave,
-                                $reserva->apartamento->claves,
-                                $phoneCliente,
-                                $idiomaCliente,
-                                $enlace
-                            );
-                            //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+                        Log::info('Iniciando envío de claves por WhatsApp', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'telefono' => $phoneCliente,
+                            'idioma' => $idiomaCliente,
+                            'apartamento_id' => $reserva->apartamento_id,
+                            'apartamento' => $reserva->apartamento->titulo
+                        ]);
 
+                        try {
+                            if ($reserva->apartamento_id === 1) {
+                                $data = $this->clavesMensajeAtico(
+                                    $reserva->cliente->nombre,
+                                    $reserva->apartamento->titulo, $reserva->apartamento->edificioName->clave,
+                                    $reserva->apartamento->claves,
+                                    $phoneCliente,
+                                    $idiomaCliente,
+                                    $idiomaCliente == 'pt_PT' ? 'codigo_atico_por' : 'codigos_atico',
+                                    $url = $enlace,
+                                    $url2 = $enlaceLimpio
+                                );
+                            } else {
+                                $data = $this->clavesMensaje(
+                                    $reserva->cliente->nombre == null ? $reserva->cliente->alias : $reserva->cliente->nombre, $reserva->apartamento->titulo,
+                                    $reserva->apartamento->edificioName->clave,
+                                    $reserva->apartamento->claves,
+                                    $phoneCliente,
+                                    $idiomaCliente,
+                                    $enlace
+                                );
+                                //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
+
+                            }
+
+                            // Procesar respuesta de WhatsApp
+                            $responseData = json_decode($data, true);
+                            if ($responseData && isset($responseData['messages']) && isset($responseData['messages'][0]['id'])) {
+                                Log::info('Mensaje de claves enviado exitosamente por WhatsApp', [
+                                    'reserva_id' => $reserva->id,
+                                    'cliente_id' => $reserva->cliente_id,
+                                    'telefono' => $phoneCliente,
+                                    'message_id' => $responseData['messages'][0]['id'],
+                                    'apartamento' => $reserva->apartamento->titulo
+                                ]);
+                            } elseif ($responseData && isset($responseData['error'])) {
+                                Log::error('Error al enviar mensaje de claves por WhatsApp', [
+                                    'reserva_id' => $reserva->id,
+                                    'cliente_id' => $reserva->cliente_id,
+                                    'telefono' => $phoneCliente,
+                                    'error_code' => $responseData['error']['code'] ?? null,
+                                    'error_message' => $responseData['error']['message'] ?? null,
+                                    'error_type' => $responseData['error']['type'] ?? null,
+                                    'response' => $data
+                                ]);
+                            } else {
+                                Log::warning('Respuesta inesperada al enviar mensaje de claves por WhatsApp', [
+                                    'reserva_id' => $reserva->id,
+                                    'cliente_id' => $reserva->cliente_id,
+                                    'telefono' => $phoneCliente,
+                                    'response' => $data
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Excepción al enviar mensaje de claves por WhatsApp', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono' => $phoneCliente,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
                         }
 
                         // Creamos la data para guardar el mensaje
@@ -523,6 +621,8 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // Marcar que se enviaron claves en esta ejecución
+                        $clavesEnviadasEnEstaEjecucion = true;
 
                         if ($reserva->apartamento_id === 1) {
                             $mensaje = $this->clavesEmailAtico(
@@ -584,62 +684,6 @@ class Kernel extends ConsoleKernel
                             );
                         }
 
-                                                // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
-                            try {
-                                Log::info('Iniciando envío de claves por Channex', [
-                                    'reserva_id' => $reserva->id,
-                                    'id_channex' => $reserva->id_channex,
-                                    'codigo_reserva' => $reserva->codigo_reserva,
-                                    'origen' => $reserva->origen
-                                ]);
-
-                                // Crear mensaje específico para el chat
-                                $datosClaves = [
-                                    'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
-                                    'apartamento' => $reserva->apartamento->titulo,
-                                    'claveEntrada' => $reserva->apartamento->edificioName->clave,
-                                    'clavePiso' => $reserva->apartamento->claves,
-                                    'url' => $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
-                                ];
-
-                                Log::info('Datos para mensaje de claves:', $datosClaves);
-
-                                $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
-
-                                Log::info('Mensaje de chat creado:', ['mensaje' => $mensajeChat]);
-
-                                // Enviar al chat de Channex usando el bookingId (id_channex)
-                                $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
-                                    $mensajeChat,
-                                    $reserva->id_channex
-                                );
-
-                                Log::info('Resultado envío a Channex:', [
-                                    'resultado' => $resultado,
-                                    'reserva_id' => $reserva->id,
-                                    'id_channex' => $reserva->id_channex,
-                                    'codigo_reserva' => $reserva->codigo_reserva
-                                ]);
-                            } catch (\Exception $e) {
-                                Log::error('Error al enviar mensaje de claves al chat:', [
-                                    'error' => $e->getMessage(),
-                                    'reserva_id' => $reserva->id,
-                                    'id_channex' => $reserva->id_channex,
-                                    'codigo_reserva' => $reserva->codigo_reserva,
-                                    'trace' => $e->getTraceAsString()
-                                ]);
-                            }
-                        } else {
-                            Log::info('Reserva omitida para envío de claves por Channex', [
-                                'reserva_id' => $reserva->id,
-                                'origen' => $reserva->origen,
-                                'id_channex' => $reserva->id_channex,
-                                'codigo_reserva' => $reserva->codigo_reserva,
-                                'razon' => $reserva->origen === 'web' ? 'es_reserva_web' : (empty($reserva->id_channex) ? 'sin_id_channex' : 'desconocida')
-                            ]);
-                        }
-
                     }
                 }
 
@@ -674,7 +718,7 @@ class Kernel extends ConsoleKernel
 
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
                                 Log::info('Mensaje de consulta enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
@@ -736,10 +780,32 @@ class Kernel extends ConsoleKernel
                 }
             }
 
+            // Ejecutar comando para enviar claves por Channex (una sola vez después de procesar todas las reservas)
+            // Este comando se ejecuta SOLO si se enviaron claves por WhatsApp/email en esta ejecución
+            // Esto evita ejecuciones repetidas cada minuto y asegura que solo se ejecute cuando realmente hay claves nuevas que enviar
+            if ($clavesEnviadasEnEstaEjecucion) {
+                try {
+                    Log::info('Ejecutando comando para enviar claves por Channex (claves enviadas en esta ejecución)', [
+                        'claves_enviadas_en_esta_ejecucion' => $clavesEnviadasEnEstaEjecucion
+                    ]);
+                    Artisan::call('ari:enviar-claves-channex');
+                    $output = Artisan::output();
+                    Log::info('Comando ari:enviar-claves-channex ejecutado', ['output' => $output]);
+                } catch (\Exception $e) {
+                    Log::error('Error al ejecutar comando ari:enviar-claves-channex', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            } else {
+                Log::debug('Comando ari:enviar-claves-channex no ejecutado (no se enviaron claves en esta ejecución)');
+            }
+
             Log::info("=== FIN: Tarea programada de Envio de mensajes Automatizados ejecutada con éxito ===", [
                 'fecha' => now()->format('Y-m-d H:i:s'),
                 'timestamp' => now()->timestamp
-            ]);
+            ]);  
+
         })->everyMinute();
 
 
@@ -796,7 +862,7 @@ class Kernel extends ConsoleKernel
 
                             \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                 $mensajeChat,
-                                $reserva->codigo_reserva
+                                $reserva->id_channex
                             );
                         }
 
