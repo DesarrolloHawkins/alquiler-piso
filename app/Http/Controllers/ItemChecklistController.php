@@ -194,13 +194,23 @@ class ItemChecklistController extends Controller
     public function destroy($id)
     {
         try {
-            $item = ItemChecklist::with(['controles'])->findOrFail($id);
+            $item = ItemChecklist::findOrFail($id);
             $checklistId = $item->checklist_id;
             
-            // Verificar si tiene controles asociados
-            if ($item->controles->count() > 0) {
-                return redirect()->back()
-                    ->with('swal_error', 'No se puede eliminar el item porque tiene controles asociados.');
+            // Verificar si tiene controles asociados (solo si la tabla existe)
+            try {
+                $controlesCount = \App\Models\ControlLimpieza::where('item_checklist_id', $id)->count();
+                if ($controlesCount > 0) {
+                    return redirect()->back()
+                        ->with('swal_error', 'No se puede eliminar el item porque tiene controles asociados.');
+                }
+            } catch (\Exception $e) {
+                // Si la tabla no existe, continuar con la eliminación
+                // Esto puede pasar si la tabla controles_limpieza no está creada
+                \Log::warning('No se pudo verificar controles al eliminar item', [
+                    'item_id' => $id,
+                    'error' => $e->getMessage()
+                ]);
             }
 
             $item->delete();
