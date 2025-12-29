@@ -1203,6 +1203,7 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/limpiezas', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'index'])->name('limpiezas.index');
     Route::get('/limpiezas/{id}', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'show'])->name('limpiezas.show');
+    Route::post('/limpiezas/{id}/cambiar-estado-en-limpieza', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'cambiarEstadoEnLimpieza'])->name('limpiezas.cambiar-estado-en-limpieza');
     
     // Gestión de Zonas Comunes
     Route::resource('zonas-comunes', App\Http\Controllers\Admin\ZonaComunController::class);

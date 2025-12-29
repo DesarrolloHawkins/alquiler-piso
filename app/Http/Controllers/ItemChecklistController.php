@@ -80,6 +80,12 @@ class ItemChecklistController extends Controller
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
 
+            // Manejar cantidad_requerida: si tiene_stock es false o no se envía, usar valor por defecto
+            $cantidadRequerida = 1; // Valor por defecto según migración
+            if ($validatedData['tiene_stock'] && isset($validatedData['cantidad_requerida'])) {
+                $cantidadRequerida = $validatedData['cantidad_requerida'];
+            }
+            
             $item = ItemChecklist::create([
                 'nombre' => $validatedData['nombre'],
                 'descripcion' => $validatedData['descripcion'],
@@ -88,8 +94,8 @@ class ItemChecklistController extends Controller
                 'orden' => $validatedData['orden'],
                 'checklist_id' => $validatedData['checklistId'],
                 'tiene_stock' => $validatedData['tiene_stock'],
-                'articulo_id' => $validatedData['articulo_id'] ?? null,
-                'cantidad_requerida' => $validatedData['cantidad_requerida'] ?? null,
+                'articulo_id' => $validatedData['tiene_stock'] ? ($validatedData['articulo_id'] ?? null) : null,
+                'cantidad_requerida' => $cantidadRequerida,
                 'tiene_averias' => $validatedData['tiene_averias'],
                 'observaciones_stock' => $validatedData['observaciones_stock'] ?? null
             ]);
@@ -163,6 +169,16 @@ class ItemChecklistController extends Controller
             $validatedData['tiene_averias'] = $request->has('tiene_averias');
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
+            
+            // Manejar cantidad_requerida: si tiene_stock es false o no se envía, usar valor por defecto o mantener el actual
+            if (!$validatedData['tiene_stock']) {
+                // Si no tiene stock, establecer cantidad_requerida a 1 (valor por defecto según migración)
+                $validatedData['cantidad_requerida'] = 1;
+                $validatedData['articulo_id'] = null; // También limpiar articulo_id si no tiene stock
+            } else {
+                // Si tiene stock, usar el valor enviado o mantener el actual si no se envía
+                $validatedData['cantidad_requerida'] = $validatedData['cantidad_requerida'] ?? $item->cantidad_requerida ?? 1;
+            }
 
             $item->update($validatedData);
 

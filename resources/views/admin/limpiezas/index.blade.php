@@ -437,6 +437,14 @@
                                                             <i class="fas fa-microscope"></i>
                                                         </a>
                                                     @endif
+                                                    @if($limpieza->estado && $limpieza->estado->id == 3)
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-warning cambiar-estado-btn" 
+                                                                title="Volver a En Limpieza"
+                                                                data-limpieza-id="{{ $limpieza->id }}">
+                                                            <i class="fas fa-redo"></i>
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -852,7 +860,76 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Aplicar estilos cada 2 segundos como respaldo
     setInterval(aplicarEstilosFilas, 2000);
-});
+    });
+
+    // Manejar cambio de estado a "En Limpieza"
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.cambiar-estado-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const limpiezaId = this.getAttribute('data-limpieza-id');
+                const btnElement = this;
+                
+                Swal.fire({
+                    title: '¿Volver a En Limpieza?',
+                    text: '¿Estás seguro de que quieres cambiar el estado de esta limpieza de "Limpio" a "En Limpieza"?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, cambiar estado',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Deshabilitar botón mientras se procesa
+                        btnElement.disabled = true;
+                        btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        
+                        fetch(`/admin/limpiezas/${limpiezaId}/cambiar-estado-en-limpieza`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: '¡Estado cambiado!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: data.message || 'No se pudo cambiar el estado',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                                btnElement.disabled = false;
+                                btnElement.innerHTML = '<i class="fas fa-redo"></i>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Ocurrió un error al cambiar el estado',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                            btnElement.disabled = false;
+                            btnElement.innerHTML = '<i class="fas fa-redo"></i>';
+                        });
+                    }
+                });
+            });
+        });
+    });
 </script>
 @endsection
 

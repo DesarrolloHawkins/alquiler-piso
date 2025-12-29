@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Apartamento;
 use App\Models\ApartamentoLimpiezaItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class AdminLimpiezasController extends Controller
@@ -374,5 +375,68 @@ class AdminLimpiezasController extends Controller
             'items' => $items,
             'checklists' => collect([])
         ];
+    }
+
+    /**
+     * Cambiar estado de limpieza de "Limpio" (3) a "En Limpieza" (2)
+     */
+    public function cambiarEstadoEnLimpieza($id)
+    {
+        try {
+            $limpieza = ApartamentoLimpieza::findOrFail($id);
+            
+            // Verificar que el estado actual es "Limpio" (3)
+            if ($limpieza->status_id != 3) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se puede cambiar el estado de limpiezas que están en estado "Limpio"'
+                ], 400);
+            }
+            
+            // Cambiar estado a "En Limpieza" (2)
+            $limpieza->status_id = 2;
+            $limpieza->fecha_fin = null; // Limpiar fecha de fin ya que vuelve a estar en limpieza
+            $limpieza->save();
+            
+            // Si tiene tarea asignada, cambiar su estado de 'completada' a 'en_progreso'
+            if ($limpieza->tarea_asignada_id) {
+                $tarea = \App\Models\TareaAsignada::find($limpieza->tarea_asignada_id);
+                if ($tarea && $tarea->estado === 'completada') {
+                    $tarea->update([
+                        'estado' => 'en_progreso',
+                        'fecha_fin_real' => null // Limpiar fecha de fin
+                    ]);
+                    
+                    Log::info('Tarea cambiada de completada a en_progreso', [
+                        'tarea_id' => $tarea->id,
+                        'limpieza_id' => $limpieza->id
+                    ]);
+                }
+            }
+            
+            Log::info('Estado de limpieza cambiado de Limpio a En Limpieza', [
+                'limpieza_id' => $limpieza->id,
+                'status_id_anterior' => 3,
+                'status_id_nuevo' => 2
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado cambiado a "En Limpieza" correctamente',
+                'limpieza' => $limpieza->load('estado')
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar estado de limpieza', [
+                'limpieza_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
