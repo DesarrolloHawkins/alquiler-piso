@@ -101,7 +101,7 @@ class GestionApartamentoController extends Controller
         $reservasOcupados = Reserva::apartamentosOcupados();
         $reservasSalida = Reserva::apartamentosSalida();
         // $reservasLimpieza = Reserva::apartamentosLimpiados();
-        $reservasLimpieza = ApartamentoLimpieza::apartamentosLimpiados()->with(['apartamento', 'zonaComun'])->get();
+        $reservasLimpieza = ApartamentoLimpieza::apartamentosLimpiados()->with(['apartamento', 'zonaComun', 'estado'])->get();
         $reservasEnLimpieza = ApartamentoLimpieza::apartamentosEnLimpiados()->with(['apartamento', 'zonaComun'])->get();
 
         // Obtener información de la siguiente reserva para las limpiezas en proceso
@@ -321,6 +321,8 @@ class GestionApartamentoController extends Controller
                     $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
                     // Información de la próxima reserva
                     $reserva->proximaReserva = $proximaReserva;
+                    // Añadir status_id para compatibilidad con la vista
+                    $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
                     
                     // Agregar a la colección apropiada según el estado
                     if ($tarea->estado === 'pendiente') {
@@ -350,6 +352,8 @@ class GestionApartamentoController extends Controller
                     $reserva->orden_ejecucion = $tarea->orden_ejecucion;
                     $reserva->estado = $tarea->estado;
                     $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                    // Añadir status_id para compatibilidad con la vista
+                    $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
                     
                     if ($tarea->estado === 'pendiente') {
                         $reservasPendientes->push($reserva);
@@ -378,6 +382,8 @@ class GestionApartamentoController extends Controller
                 $reserva->orden_ejecucion = $tarea->orden_ejecucion;
                 $reserva->estado = $tarea->estado;
                 $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
+                // Añadir status_id para compatibilidad con la vista
+                $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
                 
                 if ($tarea->estado === 'pendiente') {
                     $reservasPendientes->push($reserva);
