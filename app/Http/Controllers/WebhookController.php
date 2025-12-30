@@ -455,7 +455,7 @@ class WebhookController extends Controller
 
                 $roomTypeId = $ratePlan->room_type_id;
 
-                Reserva::create([
+                $nuevaReserva = Reserva::create([
                     'cliente_id' => $cliente->id,
                     'apartamento_id' => $apartamento->id,
                     'room_type_id' => $roomTypeId,
@@ -475,6 +475,10 @@ class WebhookController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                
+                // Si la reserva es de hoy y son más de las 14:00, intentar enviar claves por Channex
+                // (solo si ya tiene mensaje de bienvenida, que se enviará después por el cron)
+                \App\Console\Kernel::enviarClavesPorChannexSiEsNecesario($nuevaReserva);
                 
                 Log::info('Nueva reserva creada', [
                     'codigo_reserva' => $codigoReserva,
