@@ -8,9 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class ControlLimpieza extends Model
 {
     use HasFactory;
-    
-    protected $table = 'controles_limpieza';
-    
     protected $fillable = ['apartamento_id', 'item_checklist_id', 'estado'];
 
 }

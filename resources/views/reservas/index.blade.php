@@ -91,6 +91,10 @@
 <!-- Incluir el CSS de Flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+<!-- Incluir Flatpickr y la localización en español -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -451,32 +455,9 @@
                                     </div>
                                 </td>
                                 <td>
-                                    @php
-                                        // Obtener el pago principal (completado o el primero disponible)
-                                        $pago = $reserva->pagos->where('estado', 'completado')->first() ?? $reserva->pagos->first();
-                                        
-                                        // Obtener el precio real pagado (con descuento si aplica)
-                                        $precioReal = $pago && $pago->monto ? $pago->monto : $reserva->precio;
-                                        $descuento = $pago && $pago->descuento_aplicado ? $pago->descuento_aplicado : 0;
-                                        $precioOriginal = $pago && $pago->monto_original ? $pago->monto_original : $reserva->precio;
-                                    @endphp
-                                    <div>
-                                        <span class="fw-bold fs-5 text-success">
-                                            <i class="fas fa-euro-sign me-1"></i>{{ number_format($precioReal, 2, ',', '.') }}
-                                        </span>
-                                        @if($descuento > 0)
-                                            <br>
-                                            <small class="text-muted">
-                                                <del class="text-secondary">{{ number_format($precioOriginal, 2, ',', '.') }} €</del>
-                                                <span class="text-success ms-1">
-                                                    <i class="fas fa-ticket-alt me-1"></i>-{{ number_format($descuento, 2, ',', '.') }} €
-                                                </span>
-                                                @if($pago && $pago->cupon)
-                                                    <br><small class="text-info">({{ $pago->cupon->codigo }})</small>
-                                                @endif
-                                            </small>
-                                        @endif
-                                    </div>
+                                    <span class="fw-bold fs-5 text-success">
+                                        <i class="fas fa-euro-sign me-1"></i>{{ number_format($reserva->precio, 2) }}
+                                    </span>
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
@@ -495,25 +476,12 @@
                                                 <i class="fas fa-undo"></i>
                                             </button>
                                         @else
-                                            @if($reserva->estado_id != 4)
-                                                <a href="{{ route('reservas.edit', $reserva->id) }}" 
-                                                   class="btn btn-outline-warning btn-sm" 
-                                                   data-bs-toggle="tooltip" 
-                                                   title="Editar reserva">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button" 
-                                                        class="btn btn-outline-secondary btn-sm" 
-                                                        onclick="confirmarCancelacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}', '{{ $reserva->apartamento->titulo }}')"
-                                                        data-bs-toggle="tooltip" 
-                                                        title="Cancelar reserva">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            @else
-                                                <span class="badge bg-danger-subtle text-danger">
-                                                    <i class="fas fa-times-circle me-1"></i>Cancelada
-                                                </span>
-                                            @endif
+                                            <a href="{{ route('reservas.edit', $reserva->id) }}" 
+                                               class="btn btn-outline-warning btn-sm" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Editar reserva">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm" 
                                                     onclick="confirmarEliminacion({{ $reserva->id }}, '{{ $reserva->cliente->alias }}', '{{ $reserva->codigo_reserva }}')"
@@ -553,17 +521,8 @@
 @endsection
 
 @section('scripts')
-<!-- Incluir Flatpickr y la localización en español -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Verificar que Flatpickr esté cargado
-        if (typeof flatpickr === 'undefined') {
-            console.error('Flatpickr no está cargado');
-            return;
-        }
-        
         // Inicializar Flatpickr en los campos de fecha con localización en español
         flatpickr("#fecha_entrada", {
             dateFormat: "Y-m-d",
@@ -706,81 +665,6 @@
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `{{ route('reservas.restore', '') }}/${id}`;
-                
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
-                
-                form.appendChild(csrfToken);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    }
-
-    // Función para confirmar cancelación de reserva
-    function confirmarCancelacion(id, cliente, codigo, apartamento) {
-        Swal.fire({
-            title: '⚠️ Cancelar Reserva',
-            html: `
-                <div class="text-center">
-                    <div class="alert alert-warning mb-3">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                        <h5 class="mb-2"><strong>¿Cancelar esta reserva?</strong></h5>
-                        <p class="mb-0">La reserva será marcada como cancelada (estado: Cancelada).</p>
-                    </div>
-                    <div class="card border-warning">
-                        <div class="card-body text-start">
-                            <h6 class="card-title text-warning">
-                                <i class="fas fa-info-circle me-2"></i>Detalles de la Reserva:
-                            </h6>
-                            <p class="mb-1"><strong>Cliente:</strong> ${cliente}</p>
-                            <p class="mb-1"><strong>Apartamento:</strong> ${apartamento}</p>
-                            <p class="mb-0"><strong>Código de Reserva:</strong> <code>${codigo}</code></p>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-muted small">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Si la reserva es de origen Web, se liberará automáticamente la disponibilidad en Channex.
-                        </p>
-                    </div>
-                </div>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#6c757d',
-            cancelButtonColor: '#198754',
-            confirmButtonText: '<i class="fas fa-ban me-2"></i>Sí, Cancelar Reserva',
-            cancelButtonText: '<i class="fas fa-times me-2"></i>No, Mantener Activa',
-            customClass: {
-                confirmButton: 'btn btn-secondary btn-lg',
-                cancelButton: 'btn btn-success btn-lg'
-            },
-            buttonsStyling: false,
-            focusCancel: true,
-            allowOutsideClick: false,
-            allowEscapeKey: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Mostrar loading mientras se procesa
-                Swal.fire({
-                    title: 'Cancelando...',
-                    text: 'Por favor espera mientras se procesa la cancelación',
-                    icon: 'info',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                // Crear formulario temporal para enviar la petición POST
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `{{ route('reservas.cancelar', '') }}/${id}`;
                 
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';

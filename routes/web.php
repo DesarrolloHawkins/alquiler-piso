@@ -100,7 +100,6 @@ Route::prefix('web')->name('web.')->group(function () {
         // Proceso de reserva y pago
         Route::get('/formulario/{apartamento}', [App\Http\Controllers\ReservaPagoController::class, 'formularioReserva'])->name('formulario');
         Route::post('/procesar', [App\Http\Controllers\ReservaPagoController::class, 'procesarReserva'])->name('procesar');
-        Route::post('/validar-cupon', [App\Http\Controllers\ReservaPagoController::class, 'validarCupon'])->name('validar-cupon');
         Route::get('/pago/exito', [App\Http\Controllers\ReservaPagoController::class, 'exito'])->name('pago.exito');
         Route::get('/pago/cancelado', [App\Http\Controllers\ReservaPagoController::class, 'cancelado'])->name('pago.cancelado');
     });
@@ -246,18 +245,6 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         'update' => 'admin.servicios.update',
         'destroy' => 'admin.servicios.destroy',
     ]);
-
-    // Cupones de descuento
-    Route::resource('cupones', App\Http\Controllers\Admin\CuponesController::class)->names([
-        'index' => 'admin.cupones.index',
-        'create' => 'admin.cupones.create',
-        'store' => 'admin.cupones.store',
-        'show' => 'admin.cupones.show',
-        'edit' => 'admin.cupones.edit',
-        'update' => 'admin.cupones.update',
-        'destroy' => 'admin.cupones.destroy',
-    ]);
-    Route::post('/cupones/{cupone}/toggle-active', [App\Http\Controllers\Admin\CuponesController::class, 'toggleActive'])->name('admin.cupones.toggle-active');
     
     // Política de Cancelaciones
     Route::get('/politica-cancelacion/edit', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'edit'])->name('admin.politica-cancelacion.edit');
@@ -400,10 +387,6 @@ Route::get('/test-datos-momento/{id}', function($id) {
         return view('admin.alerts.index');
     })->name('admin.alerts.index');
 
-    // Mensajes Personalizados
-    Route::get('/admin/mensajes-personalizados', [App\Http\Controllers\Admin\MensajesPersonalizadosController::class, 'index'])->name('admin.mensajes-personalizados.index');
-    Route::post('/admin/mensajes-personalizados/enviar', [App\Http\Controllers\Admin\MensajesPersonalizadosController::class, 'enviar'])->name('admin.mensajes-personalizados.enviar');
-
     // Reservas
     // Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
 
@@ -432,7 +415,6 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
     Route::delete('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
     Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
-    Route::post('/reservas/{id}/cancelar', [App\Http\Controllers\ReservasController::class, 'cancelar'])->name('reservas.cancelar');
     
     // Cerrar Apartamento
     Route::get('/cerrar-apartamento', [CerrarApartamentoController::class, 'index'])->name('admin.cerrar-apartamento.index');
@@ -1203,7 +1185,6 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/limpiezas', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'index'])->name('limpiezas.index');
     Route::get('/limpiezas/{id}', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'show'])->name('limpiezas.show');
-    Route::post('/limpiezas/{id}/cambiar-estado-en-limpieza', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'cambiarEstadoEnLimpieza'])->name('limpiezas.cambiar-estado-en-limpieza');
     
     // Gestión de Zonas Comunes
     Route::resource('zonas-comunes', App\Http\Controllers\Admin\ZonaComunController::class);

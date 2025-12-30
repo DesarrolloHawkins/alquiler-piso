@@ -154,7 +154,7 @@
 
                                 <!-- Gestión de Propiedades -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('apartamentos*', 'admin/edificios*', 'admin/checklists*', 'admin/normas-casa*', 'admin/servicios*', 'admin/cupones*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('apartamentos*', 'admin/edificios*', 'admin/checklists*', 'admin/normas-casa*', 'admin/servicios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-building me-1"></i>Propiedades
                                     </a>
                                     <ul class="dropdown-menu">
@@ -173,9 +173,6 @@
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.servicios.index') }}">
                                             <i class="fas fa-concierge-bell me-2"></i>Servicios
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.cupones.index') }}">
-                                            <i class="fas fa-ticket-alt me-2"></i>Cupones de Descuento
                                         </a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.politica-cancelacion.edit') }}">
                                             <i class="fas fa-file-contract me-2"></i>Política de Cancelaciones
@@ -425,7 +422,7 @@
 
                                 <!-- Comunicación -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') || request()->is('whatsapp*') || request()->is('templates*') || request()->is('mensajes-personalizados*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') || request()->is('whatsapp*') || request()->is('templates*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-comments me-1"></i>Comunicación
                                     </a>
                                     <ul class="dropdown-menu">
@@ -441,9 +438,6 @@
                                         </a></li>
                                         <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">
                                             <i class="fab fa-whatsapp me-2"></i>Conversaciones
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.mensajes-personalizados.index') }}">
-                                            <i class="fas fa-paper-plane me-2"></i>Mensajes Personalizados
                                         </a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.contactos-web.index') }}">

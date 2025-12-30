@@ -261,21 +261,13 @@
                                                     <i class="fas fa-{{ $item->activo ?? true ? 'pause' : 'play' }}"></i>
                                                 </button>
                                             </form>
-                                            <form action="{{ route('admin.itemsChecklist.destroy', $item->id) }}" 
-                                                  method="POST" 
-                                                  class="d-inline delete-form"
-                                                  data-item-id="{{ $item->id }}"
-                                                  data-item-name="{{ $item->nombre }}">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-outline-danger delete-btn" 
-                                                        data-id="{{ $item->id }}"
-                                                        data-name="{{ $item->nombre }}"
-                                                        title="Eliminar item">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger delete-btn" 
+                                                    data-id="{{ $item->id }}"
+                                                    data-name="{{ $item->nombre }}"
+                                                    title="Eliminar item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -319,118 +311,132 @@
     </div>
 </div>
 
+<!-- Formulario oculto para eliminar -->
+<form id="delete-form" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection
 
 @include('sweetalert::alert')
 
-@push('scripts')
+@section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+console.log('🚀 SCRIPT INICIADO - Checklist Items');
 
-// Esperar a que todo esté completamente cargado
-window.addEventListener('load', function() {
-    console.log('🔍 Página completamente cargada');
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('📋 DOM CARGADO - Buscando botones de eliminar...');
     
-    // Función para manejar la eliminación
-    function handleDeleteClick(e) {
-        console.log('🖱️ CLICK DETECTADO:', e.target);
-        
-        // Verificar si el click fue en el botón o en el icono dentro del botón
-        let button = e.target;
-        if (e.target.classList.contains('fa-trash') || e.target.classList.contains('fa')) {
-            button = e.target.closest('.delete-btn');
-        } else if (!e.target.classList.contains('delete-btn')) {
-            button = e.target.closest('.delete-btn');
-        }
-        
-        if (!button || !button.classList.contains('delete-btn')) {
-            return; // No es un click en el botón de eliminar
-        }
-        
-        console.log('🖱️ CLICK EN BOTÓN DE ELIMINAR DETECTADO');
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const itemId = button.getAttribute('data-id');
-        const itemName = button.getAttribute('data-name') || 'este item';
-        const form = button.closest('.delete-form');
-        
-        console.log('📋 Datos:', { itemId, itemName, form: form ? 'encontrado' : 'no encontrado' });
-        
-        if (!form) {
-            console.error('❌ No se encontró el formulario de eliminación');
-            alert('Error: No se encontró el formulario de eliminación');
-            return;
-        }
-        
-        if (!itemId) {
-            console.error('❌ No se encontró el ID del item');
-            alert('Error: No se encontró el ID del item');
-            return;
-        }
-        
-        console.log('✅ Mostrando modal de confirmación...');
-        
-        // Verificar que Swal esté disponible
-        if (typeof Swal === 'undefined') {
-            console.error('❌ SweetAlert2 no está disponible');
-            if (confirm(`¿Estás seguro de que deseas eliminar "${itemName}"?`)) {
-                form.submit();
-            }
-            return;
-        }
-        
-        Swal.fire({
-            title: '¿Eliminar Item?',
-            html: `¿Estás seguro de que deseas eliminar <strong>"${itemName}"</strong>?<br><br>Esta acción no se puede deshacer.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="fas fa-trash me-2"></i>Sí, eliminar',
-            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar',
-            reverseButtons: true
-        }).then((result) => {
-            console.log('📋 Resultado del modal:', result);
-            if (result.isConfirmed) {
-                console.log('✅ Usuario confirmó, enviando formulario...');
-                // Mostrar loading
-                Swal.fire({
-                    title: 'Eliminando...',
-                    text: 'Por favor espera',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-                
-                // Enviar formulario
-                form.submit();
-            } else {
-                console.log('❌ Usuario canceló');
-            }
+    // Buscar botones de eliminar con múltiples selectores
+    const deleteButtons = document.querySelectorAll('.delete-btn, .btn-outline-danger[data-id]');
+    console.log('🔍 Botones encontrados:', deleteButtons.length);
+    console.log('📝 Botones:', deleteButtons);
+    
+    if (deleteButtons.length === 0) {
+        console.error('❌ NO SE ENCONTRARON BOTONES DE ELIMINAR');
+        // Buscar todos los botones rojos para debug
+        const allRedButtons = document.querySelectorAll('.btn-danger, .btn-outline-danger');
+        console.log('🔴 Todos los botones rojos encontrados:', allRedButtons.length);
+        allRedButtons.forEach((btn, index) => {
+            console.log(`Botón ${index}:`, btn, 'Classes:', btn.className, 'Data-id:', btn.dataset.id);
         });
     }
     
-    // Configurar listeners cuando la página esté lista
-    console.log('🔍 Configurando listeners de eliminación...');
-    
-    // Event delegation en el documento
-    document.addEventListener('click', handleDeleteClick);
-    
-    // También añadir listeners directos como backup
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    console.log('📊 Botones encontrados:', deleteButtons.length);
-    
-    deleteButtons.forEach(function(button, index) {
-        console.log(`🔗 Botón ${index + 1}:`, button, 'data-id:', button.getAttribute('data-id'));
-        // Añadir listener directo también
-        button.addEventListener('click', handleDeleteClick);
+    // Event delegation - capturar TODOS los clicks
+    document.addEventListener('click', function(e) {
+        console.log('👆 CLICK DETECTADO en:', e.target);
+        console.log('📍 Clases del elemento:', e.target.className);
+        console.log('🏷️ Dataset:', e.target.dataset);
+        
+        // Verificar si es un botón de eliminar
+        const isDeleteBtn = e.target.classList.contains('delete-btn') || 
+                           e.target.classList.contains('btn-outline-danger') ||
+                           e.target.closest('.delete-btn') ||
+                           e.target.closest('.btn-outline-danger[data-id]');
+        
+        if (isDeleteBtn) {
+            console.log('🗑️ BOTÓN DE ELIMINAR DETECTADO!');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.classList.contains('delete-btn') || e.target.classList.contains('btn-outline-danger') 
+                          ? e.target 
+                          : e.target.closest('.delete-btn, .btn-outline-danger[data-id]');
+            
+            const itemId = button.dataset.id;
+            const itemName = button.dataset.name || 'Item sin nombre';
+            
+            console.log('📊 Datos del item:', { itemId, itemName });
+            
+            if (!itemId) {
+                console.error('❌ No se encontró ID del item');
+                alert('Error: No se puede eliminar el item (ID no encontrado)');
+                return;
+            }
+            
+            console.log('🎯 Mostrando SweetAlert...');
+            
+            Swal.fire({
+                title: '⚠️ Eliminar Item',
+                text: `¿Estás seguro de eliminar "${itemName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                console.log('📋 Resultado SweetAlert:', result);
+                if (result.isConfirmed) {
+                    console.log('✅ Usuario confirmó eliminación');
+                    
+                    // Crear formulario dinámicamente si no existe
+                    let form = document.getElementById('delete-form');
+                    if (!form) {
+                        console.log('📝 Creando formulario de eliminación...');
+                        form = document.createElement('form');
+                        form.id = 'delete-form';
+                        form.method = 'POST';
+                        form.style.display = 'none';
+                        
+                        // CSRF Token
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        form.appendChild(csrfInput);
+                        
+                        // Method DELETE
+                        const methodInput = document.createElement('input');
+                        methodInput.type = 'hidden';
+                        methodInput.name = '_method';
+                        methodInput.value = 'DELETE';
+                        form.appendChild(methodInput);
+                        
+                        document.body.appendChild(form);
+                    }
+                    
+                    const deleteUrl = `{{ route('admin.itemsChecklist.destroy', '') }}/${itemId}`;
+                    console.log('🔗 URL de eliminación:', deleteUrl);
+                    
+                    form.action = deleteUrl;
+                    console.log('📤 Enviando formulario...');
+                    form.submit();
+                }
+            });
+        }
     });
-});
+    
+    // También agregar event listeners directos como backup
+    deleteButtons.forEach((button, index) => {
+        console.log(`🔗 Agregando listener al botón ${index}:`, button);
+        button.addEventListener('click', function(e) {
+            console.log('🎯 LISTENER DIRECTO ACTIVADO');
+            // El event delegation ya maneja esto, pero por si acaso
+        });
+    });
 
-// Código para ordenación (fuera de la función auto-ejecutada)
-document.addEventListener('DOMContentLoaded', function() {
     // Variables para el modo ordenación
     let isOrderMode = false;
     let sortable = null;
@@ -592,12 +598,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .drag-handle:hover {
     opacity: 1;
 }
-
-/* Asegurar que los formularios dentro de btn-group no rompan el layout */
-.btn-group form {
-    display: inline-block;
-    margin: 0;
-}
 </style>
-@endpush
+@endsection
 

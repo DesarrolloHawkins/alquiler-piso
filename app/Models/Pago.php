@@ -15,14 +15,11 @@ class Pago extends Model
     protected $fillable = [
         'reserva_id',
         'cliente_id',
-        'cupon_id',
         'stripe_payment_intent_id',
         'stripe_checkout_session_id',
         'metodo_pago',
         'estado',
         'monto',
-        'descuento_aplicado',
-        'monto_original',
         'moneda',
         'descripcion',
         'metadata',
@@ -34,8 +31,6 @@ class Pago extends Model
 
     protected $casts = [
         'monto' => 'decimal:2',
-        'descuento_aplicado' => 'decimal:2',
-        'monto_original' => 'decimal:2',
         'metadata' => 'array',
         'fecha_pago' => 'datetime',
         'fecha_vencimiento' => 'datetime',
@@ -55,11 +50,6 @@ class Pago extends Model
     public function intentos()
     {
         return $this->hasMany(IntentoPago::class);
-    }
-
-    public function cupon()
-    {
-        return $this->belongsTo(Cupon::class);
     }
 
     // Scopes

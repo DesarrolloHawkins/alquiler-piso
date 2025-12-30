@@ -58,7 +58,7 @@ class ReservasController extends Controller
         'fecha_salida' => $fechaSalida
     ]);
     
-    $query = Reserva::with(['cliente', 'pagos.cupon']);
+    $query = Reserva::with('cliente');
     
     // Aplicar filtro de estado de reservas
     $filtroEstado = $request->get('filtro_estado', 'activas');
@@ -512,123 +512,6 @@ class ReservasController extends Controller
             return redirect()->route('reservas.index')->with('success', 'Reserva restaurada correctamente.');
         } else {
             return redirect()->route('reservas.index')->with('error', 'Reserva no encontrada.');
-        }
-    }
-
-    /**
-     * Cancelar una reserva (cambiar estado a cancelado)
-     */
-    public function cancelar(string $id)
-    {
-        try {
-            $reserva = Reserva::find($id);
-            
-            if (!$reserva) {
-                return redirect()->route('reservas.index')->with('error', 'Reserva no encontrada.');
-            }
-
-            // Verificar si ya está cancelada
-            if ($reserva->estado_id == 4) {
-                return redirect()->route('reservas.index')->with('info', 'La reserva ya está cancelada.');
-            }
-
-            $oldData = $reserva->toArray();
-            
-            // Cambiar estado a cancelado (estado_id = 4)
-            $reserva->estado_id = 4;
-            $reserva->save();
-
-            // Log de la cancelación
-            $this->logUpdate('RESERVA', $reserva->id, $oldData, $reserva->toArray());
-
-            // Crear notificación de cancelación
-            NotificationService::notifyReservationCancellation($reserva, 'Cancelada por administrador');
-
-            // Si la reserva es de origen Web (no Booking ni Airbnb), liberar disponibilidad en Channex
-            if (!in_array($reserva->origen, ['Booking', 'BookingCom', 'Airbnb', 'AirbnbCom'])) {
-                $this->liberarDisponibilidadChannex($reserva);
-            }
-
-            Log::info('Reserva cancelada', [
-                'reserva_id' => $reserva->id,
-                'codigo_reserva' => $reserva->codigo_reserva,
-                'origen' => $reserva->origen,
-                'apartamento_id' => $reserva->apartamento_id,
-            ]);
-
-            return redirect()->route('reservas.index')->with('success', 'Reserva cancelada correctamente.');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al cancelar reserva: ' . $e->getMessage(), [
-                'reserva_id' => $id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            
-            return redirect()->route('reservas.index')->with('error', 'Error al cancelar la reserva: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Liberar disponibilidad en Channex para una reserva cancelada
-     */
-    private function liberarDisponibilidadChannex(Reserva $reserva)
-    {
-        try {
-            $apartamento = $reserva->apartamento;
-            $roomType = RoomType::find($reserva->room_type_id);
-            
-            if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
-                Log::warning('No se puede liberar disponibilidad en Channex: faltan datos', [
-                    'reserva_id' => $reserva->id,
-                ]);
-                return;
-            }
-            
-            $startDate = Carbon::parse($reserva->fecha_entrada);
-            $endDate = Carbon::parse($reserva->fecha_salida)->subDay();
-            
-            $update = [
-                'property_id' => $apartamento->id_channex,
-                'room_type_id' => $roomType->id_channex,
-                'date_from' => $startDate->toDateString(),
-                'date_to' => $endDate->toDateString(),
-                'update_type' => 'availability',
-                'availability' => 1, // Habilitar disponibilidad
-            ];
-            
-            $apiUrl = env('CHANNEX_URL', 'https://app.channex.io/api/v1');
-            $apiToken = env('CHANNEX_TOKEN');
-            
-            if (!$apiToken) {
-                Log::error('CHANNEX_TOKEN no configurado para liberar disponibilidad');
-                return;
-            }
-            
-            $response = Http::timeout(10)
-                ->withHeaders([
-                    'user-api-key' => $apiToken,
-                    'Content-Type' => 'application/json',
-                ])
-                ->post("{$apiUrl}/availability", ['values' => [$update]]);
-            
-            if ($response->successful()) {
-                Log::info('Disponibilidad liberada en Channex tras cancelación', [
-                    'reserva_id' => $reserva->id,
-                    'apartamento_id' => $apartamento->id,
-                    'fechas' => $startDate->toDateString() . ' - ' . $endDate->toDateString(),
-                ]);
-            } else {
-                Log::error('Error al liberar disponibilidad en Channex', [
-                    'reserva_id' => $reserva->id,
-                    'http_status' => $response->status(),
-                    'error_body' => $response->body(),
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Excepción al liberar disponibilidad en Channex', [
-                'reserva_id' => $reserva->id ?? null,
-                'error' => $e->getMessage(),
-            ]);
         }
     }
     /**

@@ -58,7 +58,6 @@ class Reserva extends Model
         'mir_fecha_envio',
         'mir_codigo_referencia',
         'conversacion_plataforma',
-        'horario_checkin',
     ];
 
     /**

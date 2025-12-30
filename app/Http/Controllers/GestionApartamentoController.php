@@ -1031,28 +1031,14 @@ class GestionApartamentoController extends Controller
                                 continue;
                             }
 
-                            // Para amenities tipo "por_reserva" y "por_tiempo", calcular cantidad automáticamente
+                            // Para amenities tipo "por_reserva", usar consumo_por_reserva en lugar de cantidad_dejada
                             $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
                             if ($amenity) {
                                 if ($amenity->tipo_consumo === 'por_reserva') {
                                     // Usar consumo_por_reserva configurado
                                     $cantidad = $amenity->consumo_por_reserva ?? 0;
-                                } elseif ($amenity->tipo_consumo === 'por_tiempo') {
-                                    // Calcular cantidad basada en días de reserva y duración del amenity
-                                    $reserva = $apartamentoLimpieza->reserva;
-                                    $cantidad = \App\Services\AmenityConsumptionService::calculateRecommendedQuantity(
-                                        $amenity,
-                                        $reserva,
-                                        $apartamentoLimpieza->apartamento
-                                    );
-                                    \Log::info("Amenity por_tiempo calculado automáticamente", [
-                                        'amenity_id' => $amenityId,
-                                        'cantidad_calculada' => $cantidad,
-                                        'duracion_dias' => $amenity->duracion_dias,
-                                        'reserva_id' => $reserva?->id
-                                    ]);
                                 } else {
-                                    // Para otros tipos (por_persona), usar cantidad_dejada manual
+                                    // Para otros tipos, usar cantidad_dejada manual
                                     $cantidad = floatval($amenityData['cantidad_dejada'] ?? 0);
                                 }
 
@@ -2172,35 +2158,8 @@ class GestionApartamentoController extends Controller
 
         foreach ($request->amenities as $amenityId => $amenityData) {
             try {
-                $amenity = \App\Models\Amenity::find($amenityId);
-                if (!$amenity) {
-                    \Log::warning("Amenity {$amenityId} no encontrado");
-                    continue;
-                }
-
-                // Calcular cantidad según el tipo de consumo
-                if ($amenity->tipo_consumo === 'por_reserva') {
-                    // Usar consumo_por_reserva configurado
-                    $cantidadDejada = $amenity->consumo_por_reserva ?? 0;
-                } elseif ($amenity->tipo_consumo === 'por_tiempo') {
-                    // Calcular cantidad basada en días de reserva y duración del amenity
-                    $reserva = $apartamentoLimpieza->reserva;
-                    $cantidadDejada = \App\Services\AmenityConsumptionService::calculateRecommendedQuantity(
-                        $amenity,
-                        $reserva,
-                        $apartamentoLimpieza->apartamento
-                    );
-                    \Log::info("Amenity por_tiempo calculado automáticamente en guardarLimpieza", [
-                        'amenity_id' => $amenityId,
-                        'cantidad_calculada' => $cantidadDejada,
-                        'duracion_dias' => $amenity->duracion_dias,
-                        'reserva_id' => $reserva?->id
-                    ]);
-                } else {
-                    // Para otros tipos (por_persona), usar cantidad_dejada manual
-                    $cantidadDejada = intval($amenityData['cantidad_dejada'] ?? 0);
-                }
-
+                // Validar datos antes de insertar
+                $cantidadDejada = intval($amenityData['cantidad_dejada'] ?? 0);
                 $observaciones = $amenityData['observaciones'] ?? null;
 
                 // Solo procesar si hay cantidad dejada
@@ -2225,21 +2184,6 @@ class GestionApartamentoController extends Controller
                         // Stock antes del ajuste
                         $stockAnterior = $amenity->stock_actual;
                         $cantidadConsumoAnterior = $consumoExistente->cantidad_consumida;
-
-                        // Si es por_tiempo, recalcular la cantidad correcta
-                        if ($amenity->tipo_consumo === 'por_tiempo') {
-                            $reserva = $apartamentoLimpieza->reserva;
-                            $cantidadDejada = \App\Services\AmenityConsumptionService::calculateRecommendedQuantity(
-                                $amenity,
-                                $reserva,
-                                $apartamentoLimpieza->apartamento
-                            );
-                            \Log::info("Amenity por_tiempo recalculado al actualizar", [
-                                'amenity_id' => $amenityId,
-                                'cantidad_calculada' => $cantidadDejada,
-                                'cantidad_anterior' => $cantidadConsumoAnterior
-                            ]);
-                        }
 
                         // Ajustar el stock basado en la diferencia de consumo
                         \Log::info("ANTES de ajustar stock - Amenity {$amenityId}: stock_actual = {$stockAnterior}, consumo anterior = {$cantidadConsumoAnterior}, consumo nuevo = {$cantidadDejada}");
@@ -3048,25 +2992,6 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         try {
             \Log::info('Iniciando descuento automático de amenities para limpieza ID: ' . $apartamentoLimpieza->id);
 
-            // Asegurar que la reserva esté cargada
-            if (!$apartamentoLimpieza->relationLoaded('reserva') && $apartamentoLimpieza->reserva_id) {
-                $apartamentoLimpieza->load('reserva');
-            }
-
-            // Asegurar que el apartamento esté cargado
-            if (!$apartamentoLimpieza->relationLoaded('apartamento')) {
-                $apartamentoLimpieza->load('apartamento');
-            }
-
-            $reserva = $apartamentoLimpieza->reserva;
-
-            \Log::info('Información de reserva para cálculo', [
-                'reserva_id' => $apartamentoLimpieza->reserva_id,
-                'reserva_existe' => $reserva ? 'sí' : 'no',
-                'fecha_entrada' => $reserva ? $reserva->fecha_entrada : 'N/A',
-                'fecha_salida' => $reserva ? $reserva->fecha_salida : 'N/A'
-            ]);
-
             // Obtener TODOS los amenities activos (no solo los de limpieza)
             $amenitiesLimpieza = \App\Models\Amenity::where('activo', true)
                 ->get();
@@ -3077,16 +3002,12 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $amenitiesUsados = [];
 
             foreach ($amenitiesLimpieza as $amenity) {
-                \Log::info('Procesando amenity: ' . $amenity->nombre . ' (Categoría: ' . $amenity->categoria . ', Tipo: ' . $amenity->tipo_consumo . ', Stock: ' . $amenity->stock_actual . ')');
+                \Log::info('Procesando amenity: ' . $amenity->nombre . ' (Categoría: ' . $amenity->categoria . ', Stock: ' . $amenity->stock_actual . ')');
 
                 // Calcular cantidad recomendada para esta limpieza
-                $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $reserva, $apartamentoLimpieza->apartamento);
+                $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $apartamentoLimpieza->reserva, $apartamentoLimpieza->apartamento);
 
-                \Log::info('Cantidad recomendada calculada', [
-                    'amenity' => $amenity->nombre,
-                    'tipo_consumo' => $amenity->tipo_consumo,
-                    'cantidad' => $cantidadRecomendada
-                ]);
+                \Log::info('Cantidad recomendada calculada: ' . $cantidadRecomendada);
 
                 if ($cantidadRecomendada > 0) {
                     \Log::info('Cantidad > 0, verificando stock...');

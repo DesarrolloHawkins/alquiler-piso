@@ -80,12 +80,6 @@ class ItemChecklistController extends Controller
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
 
-            // Manejar cantidad_requerida: si tiene_stock es false o no se envía, usar valor por defecto
-            $cantidadRequerida = 1; // Valor por defecto según migración
-            if ($validatedData['tiene_stock'] && isset($validatedData['cantidad_requerida'])) {
-                $cantidadRequerida = $validatedData['cantidad_requerida'];
-            }
-            
             $item = ItemChecklist::create([
                 'nombre' => $validatedData['nombre'],
                 'descripcion' => $validatedData['descripcion'],
@@ -94,8 +88,8 @@ class ItemChecklistController extends Controller
                 'orden' => $validatedData['orden'],
                 'checklist_id' => $validatedData['checklistId'],
                 'tiene_stock' => $validatedData['tiene_stock'],
-                'articulo_id' => $validatedData['tiene_stock'] ? ($validatedData['articulo_id'] ?? null) : null,
-                'cantidad_requerida' => $cantidadRequerida,
+                'articulo_id' => $validatedData['articulo_id'] ?? null,
+                'cantidad_requerida' => $validatedData['cantidad_requerida'] ?? null,
                 'tiene_averias' => $validatedData['tiene_averias'],
                 'observaciones_stock' => $validatedData['observaciones_stock'] ?? null
             ]);
@@ -169,16 +163,6 @@ class ItemChecklistController extends Controller
             $validatedData['tiene_averias'] = $request->has('tiene_averias');
             $validatedData['tipo'] = $validatedData['tipo'] ?? 'simple';
             $validatedData['orden'] = $validatedData['orden'] ?? 1;
-            
-            // Manejar cantidad_requerida: si tiene_stock es false o no se envía, usar valor por defecto o mantener el actual
-            if (!$validatedData['tiene_stock']) {
-                // Si no tiene stock, establecer cantidad_requerida a 1 (valor por defecto según migración)
-                $validatedData['cantidad_requerida'] = 1;
-                $validatedData['articulo_id'] = null; // También limpiar articulo_id si no tiene stock
-            } else {
-                // Si tiene stock, usar el valor enviado o mantener el actual si no se envía
-                $validatedData['cantidad_requerida'] = $validatedData['cantidad_requerida'] ?? $item->cantidad_requerida ?? 1;
-            }
 
             $item->update($validatedData);
 
@@ -194,23 +178,13 @@ class ItemChecklistController extends Controller
     public function destroy($id)
     {
         try {
-            $item = ItemChecklist::findOrFail($id);
+            $item = ItemChecklist::with(['controles'])->findOrFail($id);
             $checklistId = $item->checklist_id;
             
-            // Verificar si tiene controles asociados (solo si la tabla existe)
-            try {
-                $controlesCount = \App\Models\ControlLimpieza::where('item_checklist_id', $id)->count();
-                if ($controlesCount > 0) {
-                    return redirect()->back()
-                        ->with('swal_error', 'No se puede eliminar el item porque tiene controles asociados.');
-                }
-            } catch (\Exception $e) {
-                // Si la tabla no existe, continuar con la eliminación
-                // Esto puede pasar si la tabla controles_limpieza no está creada
-                \Log::warning('No se pudo verificar controles al eliminar item', [
-                    'item_id' => $id,
-                    'error' => $e->getMessage()
-                ]);
+            // Verificar si tiene controles asociados
+            if ($item->controles->count() > 0) {
+                return redirect()->back()
+                    ->with('swal_error', 'No se puede eliminar el item porque tiene controles asociados.');
             }
 
             $item->delete();

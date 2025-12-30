@@ -95,26 +95,12 @@ class AmenityLimpiezaController extends Controller
                     throw new \Exception("Amenity con ID {$amenityData['amenity_id']} no encontrado");
                 }
                 
-                // Para amenities tipo "por_reserva" y "por_tiempo", calcular cantidad automáticamente
+                // Para amenities tipo "por_reserva", usar consumo_por_reserva en lugar de cantidad_dejada
                 if ($amenity->tipo_consumo === 'por_reserva') {
                     // Usar consumo_por_reserva configurado
                     $cantidadDejada = $amenity->consumo_por_reserva ?? 0;
-                } elseif ($amenity->tipo_consumo === 'por_tiempo') {
-                    // Calcular cantidad basada en días de reserva y duración del amenity
-                    $reserva = $limpieza->reserva;
-                    $cantidadDejada = AmenityConsumptionService::calculateRecommendedQuantity(
-                        $amenity,
-                        $reserva,
-                        $limpieza->apartamento
-                    );
-                    \Log::info("Amenity por_tiempo calculado automáticamente en AmenityLimpiezaController", [
-                        'amenity_id' => $amenity->id,
-                        'cantidad_calculada' => $cantidadDejada,
-                        'duracion_dias' => $amenity->duracion_dias,
-                        'reserva_id' => $reserva?->id
-                    ]);
                 } else {
-                    // Para otros tipos (por_persona), usar cantidad_dejada manual
+                    // Para otros tipos, usar cantidad_dejada manual
                     $cantidadDejada = floatval($amenityData['cantidad_dejada'] ?? 0);
                 }
                 
@@ -135,21 +121,6 @@ class AmenityLimpiezaController extends Controller
                     // Stock antes del ajuste
                     $stockAnterior = $amenity->stock_actual;
                     $cantidadConsumoAnterior = $consumoExistente->cantidad_consumida;
-                    
-                    // Si es por_tiempo, recalcular la cantidad correcta
-                    if ($amenity->tipo_consumo === 'por_tiempo') {
-                        $reserva = $limpieza->reserva;
-                        $cantidadDejada = AmenityConsumptionService::calculateRecommendedQuantity(
-                            $amenity,
-                            $reserva,
-                            $limpieza->apartamento
-                        );
-                        \Log::info("Amenity por_tiempo recalculado al actualizar en AmenityLimpiezaController", [
-                            'amenity_id' => $amenity->id,
-                            'cantidad_calculada' => $cantidadDejada,
-                            'cantidad_anterior' => $cantidadConsumoAnterior
-                        ]);
-                    }
                     
                     // Ajustar el stock basado en la diferencia de consumo
                     $stockActual = $amenity->ajustarStock($cantidadConsumoAnterior, $cantidadDejada);
