@@ -42,6 +42,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\FixAmenityMovements::class,
         \App\Console\Commands\FixAllAmenitiesMovements::class,
         \App\Console\Commands\CheckOverlappingReservations::class,
+        \App\Console\Commands\EnviarClavesChannexCommand::class,
     ];
 
 
