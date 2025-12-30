@@ -37,13 +37,14 @@ class DNIScannerController extends Controller
             // Recargar el cliente para obtener el idioma actualizado
             $cliente->refresh();
             
-            // Verificar si ya tiene datos del DNI completos (solo si data_dni es true)
+            // Verificar si ya tiene datos del DNI completos o si el DNI ya fue entregado
             // No usar verificarDatosCompletos() porque los datos pueden venir de otras fuentes
             // y no significa que el DNI haya sido entregado/verificado
-            if ($cliente->data_dni) {
-                Log::info('Cliente ya tiene datos del DNI entregados', [
+            if ($reserva->dni_entregado || $cliente->data_dni) {
+                Log::info('Cliente ya tiene datos del DNI entregados o reserva marcada como dni_entregado', [
                     'cliente_id' => $cliente->id,
-                    'data_dni' => $cliente->data_dni
+                    'data_dni' => $cliente->data_dni,
+                    'dni_entregado' => $reserva->dni_entregado
                 ]);
                 return redirect()->route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es');
             }
@@ -397,7 +398,7 @@ class DNIScannerController extends Controller
                     
                     return response()->json([
                         'success' => false,
-                        'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                        'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                         'error_type' => 'invalid_data',
                         'ai_response' => $result['data'] ?? null,
                         'ai_raw_response' => $result['ai_raw_response'] ?? null
@@ -495,9 +496,17 @@ class DNIScannerController extends Controller
                     'ai_url' => $result['ai_url'] ?? 'N/A'
                 ]);
                 
+                // Si el error es de calidad de imagen, usar mensaje específico
+                $errorMessage = $result['message'] ?? 'Error al procesar el documento con IA. Por favor, intenta de nuevo. Si el problema persiste, envía las imágenes del DNI por WhatsApp.';
+                
+                // Si es un error de datos inválidos o parse, usar mensaje de calidad de imagen
+                if (in_array($result['error_type'] ?? '', ['invalid_data', 'parse_error'])) {
+                    $errorMessage = 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.';
+                }
+                
                 return response()->json([
                     'success' => false,
-                    'message' => $result['message'] ?? 'Error al procesar el documento con IA. Por favor, intenta de nuevo. Si el problema persiste, envía las imágenes del DNI por WhatsApp.',
+                    'message' => $errorMessage,
                     'error' => $result['error'] ?? 'Error desconocido',
                     'error_type' => $result['error_type'] ?? 'ai_error',
                     'ai_url' => $result['ai_url'] ?? 'N/A',
@@ -588,8 +597,94 @@ class DNIScannerController extends Controller
                     } else {
                         $persona = \App\Models\Huesped::find($personaId);
                         if (!$persona) {
-                            $errores[] = "Adulto " . ($index + 1) . ": Huésped no encontrado";
-                            continue;
+                            // Si el huésped no existe, intentar crearlo desde datos temporales en sesión
+                            $sessionKey = "dni_temp_data_{$token}_{$index}";
+                            $tempData = session($sessionKey, []);
+                            
+                            if (!empty($tempData) && isset($tempData['front'])) {
+                                // Crear huésped desde datos temporales
+                                $frontData = $tempData['front'];
+                                $rearData = $tempData['rear'] ?? [];
+                                
+                                // Determinar tipo de documento
+                                $tipoDoc = $frontData['tipo_documento'] ?? '';
+                                $tipoDocStr = '';
+                                $tipoDocCode = '1'; // Por defecto DNI (1)
+                                
+                                if (stripos($tipoDoc, 'pasaporte') !== false || stripos($tipoDoc, 'passport') !== false) {
+                                    $tipoDocCode = '2';
+                                    $tipoDocStr = 'Pasaporte';
+                                } elseif (stripos($tipoDoc, 'nie') !== false) {
+                                    $tipoDocCode = '3';
+                                    $tipoDocStr = 'NIE';
+                                } else {
+                                    $tipoDocCode = '1';
+                                    $tipoDocStr = 'DNI';
+                                }
+                                
+                                // Normalizar sexo
+                                $sexo = $frontData['sexo'] ?? '';
+                                $sexoStr = '';
+                                if (stripos($sexo, 'masculino') !== false || stripos($sexo, 'hombre') !== false || $sexo === 'M' || $sexo === 'MALE') {
+                                    $sexoStr = 'Masculino';
+                                } elseif (stripos($sexo, 'femenino') !== false || stripos($sexo, 'mujer') !== false || $sexo === 'F' || $sexo === 'FEMALE') {
+                                    $sexoStr = 'Femenino';
+                                } else {
+                                    $sexoStr = $sexo;
+                                }
+                                
+                                // Crear huésped
+                                $huespedData = [
+                                    'reserva_id' => $reserva->id,
+                                    'nombre' => $frontData['nombre'] ?? '',
+                                    'primer_apellido' => $frontData['apellido1'] ?? '',
+                                    'segundo_apellido' => $frontData['apellido2'] ?? '',
+                                    'numero_identificacion' => $frontData['dni'] ?? $frontData['numero_dni_o_pasaporte'] ?? '',
+                                    'fecha_nacimiento' => $frontData['fecha_nacimiento'] ?? null,
+                                    'sexo' => $sexoStr,
+                                    'sexo_str' => $sexoStr === 'Masculino' ? 'M' : 'F',
+                                    'fecha_expedicion' => $frontData['fecha_expedicion'] ?? null,
+                                    'tipo_documento' => $tipoDocCode,
+                                    'tipo_documento_str' => $tipoDocStr,
+                                    'nacionalidadStr' => $frontData['nacionalidad'] ?? '',
+                                    'lugar_nacimiento' => $frontData['lugar_nacimiento'] ?? $rearData['lugar_nacimiento'] ?? '',
+                                    'direccion' => $rearData['direccion'] ?? '',
+                                    'localidad' => $rearData['localidad'] ?? '',
+                                    'codigo_postal' => $rearData['codigo_postal'] ?? '',
+                                    'provincia' => $rearData['provincia'] ?? '',
+                                    'contador' => $index
+                                ];
+                                
+                                // Añadir fecha de caducidad si está disponible
+                                if (isset($frontData['fecha_caducidad']) && !empty($frontData['fecha_caducidad'])) {
+                                    $huespedData['fecha_caducidad'] = \Carbon\Carbon::parse($frontData['fecha_caducidad'])->format('Y-m-d');
+                                }
+                                
+                                try {
+                                    $persona = \App\Models\Huesped::create($huespedData);
+                                    
+                                    Log::info('Huésped creado desde datos temporales', [
+                                        'huesped_id' => $persona->id,
+                                        'reserva_id' => $reserva->id,
+                                        'index' => $index,
+                                        'nombre' => $persona->nombre
+                                    ]);
+                                    
+                                    // Limpiar datos temporales de sesión después de crear
+                                    session()->forget($sessionKey);
+                                } catch (\Exception $e) {
+                                    Log::error('Error creando huésped desde datos temporales', [
+                                        'error' => $e->getMessage(),
+                                        'index' => $index,
+                                        'huesped_data' => $huespedData
+                                    ]);
+                                    $errores[] = "Adulto " . ($index + 1) . ": Error al crear huésped: " . $e->getMessage();
+                                    continue;
+                                }
+                            } else {
+                                $errores[] = "Adulto " . ($index + 1) . ": Huésped no encontrado y no hay datos temporales";
+                                continue;
+                            }
                         }
                     }
                     
@@ -745,7 +840,7 @@ class DNIScannerController extends Controller
                         // No lanzar excepción para que el proceso continúe
                     }
                     
-                    // Marcar como completado si es cliente - SOLO si tiene todos los datos obligatorios para MIR
+                    // Marcar como completado si es cliente
                     if ($personaTipo === 'cliente') {
                         // Recargar el cliente para obtener los datos más recientes
                         $persona->refresh();
@@ -774,6 +869,18 @@ class DNIScannerController extends Controller
                                 'provincia' => $persona->provincia
                             ]);
                         }
+                    }
+                    
+                    // Si se guardaron fotos, marcar dni_entregado = true (independientemente de datos completos)
+                    if (!empty($fotosGuardadas) && ($fotosGuardadas['front'] || $fotosGuardadas['rear'])) {
+                        $reserva->update(['dni_entregado' => true]);
+                        Log::info('dni_entregado actualizado en reserva - fotos guardadas', [
+                            'reserva_id' => $reserva->id,
+                            'persona_tipo' => $personaTipo,
+                            'persona_id' => $persona->id,
+                            'fotos_guardadas' => $fotosGuardadas,
+                            'dni_entregado' => true
+                        ]);
                     }
                     
                     $procesados++;
@@ -843,12 +950,38 @@ class DNIScannerController extends Controller
                 ];
             }
             
+            // Verificar si hay fotos guardadas y marcar dni_entregado = true si las hay
+            $tieneFotos = false;
+            if (isset($fotosVerificadas['cliente']) && ($fotosVerificadas['cliente']['frontal'] || $fotosVerificadas['cliente']['trasera'])) {
+                $tieneFotos = true;
+            }
+            if (!$tieneFotos && isset($fotosVerificadas['huespedes'])) {
+                foreach ($fotosVerificadas['huespedes'] as $fotosHuesped) {
+                    if ($fotosHuesped['frontal'] || $fotosHuesped['trasera']) {
+                        $tieneFotos = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Si hay fotos guardadas, marcar dni_entregado = true (incluso si faltan datos para MIR)
+            if ($tieneFotos && !$reserva->dni_entregado) {
+                $reserva->update(['dni_entregado' => true]);
+                Log::info('dni_entregado actualizado en reserva - fotos verificadas en BD', [
+                    'reserva_id' => $reserva->id,
+                    'fotos_verificadas' => $fotosVerificadas,
+                    'dni_entregado' => true
+                ]);
+            }
+            
             Log::info('Verificación de datos y fotos guardados', [
                 'reserva_id' => $reserva->id,
                 'datos_verificados' => $datosVerificados,
                 'fotos_verificadas' => $fotosVerificadas,
                 'procesados' => $procesados,
-                'errores' => $errores
+                'errores' => $errores,
+                'tiene_fotos' => $tieneFotos,
+                'dni_entregado' => $reserva->dni_entregado
             ]);
             
             // Determinar URL de redirección
@@ -1053,11 +1186,21 @@ class DNIScannerController extends Controller
                 ], 400);
             }
             
+            // Marcar dni_entregado = true en la reserva si se procesaron documentos exitosamente
+            if ($procesados > 0) {
+                $reserva->update(['dni_entregado' => true]);
+                Log::info('dni_entregado actualizado en reserva - processUpload', [
+                    'reserva_id' => $reserva->id,
+                    'dni_entregado' => true
+                ]);
+            }
+            
             Log::info('Imágenes subidas y procesadas', [
                 'reserva_id' => $reserva->id,
                 'cliente_id' => $cliente->id,
                 'procesados' => $procesados,
-                'errores' => $errores
+                'errores' => $errores,
+                'dni_entregado' => $reserva->dni_entregado
             ]);
             
             $mensaje = $procesados > 0 
@@ -1308,8 +1451,20 @@ class DNIScannerController extends Controller
             // Preparar prompt según el lado del documento (formato exacto como Postman)
             // Incluir TODOS los campos requeridos por la legislación española
             if ($side === 'front') {
-                $prompt = 'Extrae de la imagen del DNI o pasaporte español TODOS los datos solicitados. Busca cuidadosamente TODOS los campos visibles en el documento. Responde únicamente con un objeto JSON válido EXACTAMENTE en este formato. No añadas texto, explicaciones ni caracteres adicionales. Usa el formato de fecha YYYY-MM-DD. Si no se encuentra un campo, devuélvelo como cadena vacía.
+                $prompt = 'Extrae de la imagen del DNI o pasaporte español TODOS los datos solicitados. Busca cuidadosamente TODOS los campos visibles en el documento.
 
+FORMATO DE RESPUESTA OBLIGATORIO:
+Responde ÚNICAMENTE con un objeto JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional. El JSON debe empezar directamente con { y terminar con }. NO uses ```json ni ```.
+
+Ejemplo de formato CORRECTO:
+{"nombre": "Juan", "apellidos": "Pérez", ...}
+
+Ejemplo de formato INCORRECTO (NO hacer esto):
+```json
+{"nombre": "Juan", ...}
+```
+
+Estructura JSON requerida:
 {
 "nombre": "",
 "apellidos": "",
@@ -1329,12 +1484,28 @@ INSTRUCCIONES ESPECÍFICAS:
 3. LUGAR DE NACIMIENTO: En el REVERSO del DNI español, busca el campo "LUGAR DE NACIMIENTO". Este campo es OBLIGATORIO y aparece claramente en el reverso del documento.
 4. DIRECCIÓN COMPLETA: En el REVERSO del DNI, busca el campo "DOMICILIO". Extrae TODA la dirección completa incluyendo calle, número, piso, puerta, etc. (ej: "C. VIRGEN. DEL VALLE 2B P01 B"). No solo la ciudad.
 5. El tipo de documento debe ser "DNI", "NIE" o "Pasaporte" según el documento que estés analizando.
-6. El sexo puede aparecer como "M"/"F", "Masculino"/"Femenino", o "Hombre"/"Mujer".';
+6. El sexo puede aparecer como "M"/"F", "Masculino"/"Femenino", o "Hombre"/"Mujer".
+7. Usa el formato de fecha YYYY-MM-DD para todas las fechas.
+8. Si no se encuentra un campo, devuélvelo como cadena vacía "".
+
+IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.';
             } else {
                 // Prompt para reverso con el mismo formato que funciona en frontal
                 // IMPORTANTE: El reverso contiene dirección Y lugar de nacimiento
-                $prompt = 'Extrae de la imagen del REVERSO del DNI español TODOS los datos solicitados. Busca cuidadosamente el campo "DOMICILIO" para la dirección completa y el campo "LUGAR DE NACIMIENTO" para el lugar de nacimiento. Responde únicamente con un objeto JSON válido EXACTAMENTE en este formato. No añadas texto, explicaciones ni caracteres adicionales. Si no se encuentra un campo, devuélvelo como cadena vacía.
+                $prompt = 'Extrae de la imagen del REVERSO del DNI español TODOS los datos solicitados. Busca cuidadosamente el campo "DOMICILIO" para la dirección completa y el campo "LUGAR DE NACIMIENTO" para el lugar de nacimiento.
 
+FORMATO DE RESPUESTA OBLIGATORIO:
+Responde ÚNICAMENTE con un objeto JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional. El JSON debe empezar directamente con { y terminar con }. NO uses ```json ni ```.
+
+Ejemplo de formato CORRECTO:
+{"direccion": "C. VIRGEN. DEL VALLE 2B P01 B", "localidad": "SEVILLA", ...}
+
+Ejemplo de formato INCORRECTO (NO hacer esto):
+```json
+{"direccion": "...", ...}
+```
+
+Estructura JSON requerida:
 {
 "direccion": "",
 "localidad": "",
@@ -1347,8 +1518,11 @@ INSTRUCCIONES ESPECÍFICAS:
 1. DIRECCIÓN COMPLETA: Busca el campo "DOMICILIO" en el reverso. Extrae TODA la dirección incluyendo calle, número, piso, puerta, bloque, etc. (ej: "C. VIRGEN. DEL VALLE 2B P01 B"). No solo la ciudad.
 2. LOCALIDAD: Extrae la ciudad que aparece después de la dirección (ej: "SEVILLA").
 3. PROVINCIA: Extrae la provincia que aparece después de la localidad (puede ser la misma que la localidad si es una ciudad capital de provincia).
-4. CÓDIGO POSTAL: Si aparece en el documento, extráelo. Si no aparece, déjalo vacío.
-5. LUGAR DE NACIMIENTO: Busca el campo "LUGAR DE NACIMIENTO" en el reverso del DNI. Este campo es OBLIGATORIO y aparece claramente marcado. Extrae la ciudad y provincia de nacimiento (ej: "SEVILLA" o "SEVILLA, SEVILLA").';
+4. CÓDIGO POSTAL: Si aparece en el documento, extráelo. Si no aparece, déjalo vacío "".
+5. LUGAR DE NACIMIENTO: Busca el campo "LUGAR DE NACIMIENTO" en el reverso del DNI. Este campo es OBLIGATORIO y aparece claramente marcado. Extrae la ciudad y provincia de nacimiento (ej: "SEVILLA" o "SEVILLA, SEVILLA").
+6. Si no se encuentra un campo, devuélvelo como cadena vacía "".
+
+IMPORTANTE: Responde SOLO con el JSON, sin bloques markdown, sin explicaciones.';
             }
             
             // URL completa de la API: baseUrl/chat/analyze-image
@@ -1496,54 +1670,135 @@ INSTRUCCIONES ESPECÍFICAS:
             
             // Extraer datos de la respuesta
             // La respuesta puede venir en diferentes formatos según la API
+            // Intentamos múltiples formatos con fallbacks para máxima robustez
             $extractedData = [];
             
             // Formato 1: respuesta directa con JSON en 'respuesta'
             if (isset($responseData['respuesta'])) {
                 $respuestaJson = $responseData['respuesta'];
                 if (is_string($respuestaJson)) {
-                    $extractedData = json_decode($respuestaJson, true) ?: [];
-                } else {
+                    // Extraer JSON del bloque markdown si está presente (```json ... ```)
+                    $jsonString = $this->extractJsonFromMarkdown($respuestaJson);
+                    $decoded = json_decode($jsonString, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $extractedData = $decoded;
+                    }
+                } elseif (is_array($respuestaJson)) {
                     $extractedData = $respuestaJson;
                 }
             }
+            
+            // Formato 1b: JSON en metadata.message.content (formato Ollama/qwen)
+            if (empty($extractedData) && isset($responseData['metadata']['message']['content'])) {
+                $content = $responseData['metadata']['message']['content'];
+                if (is_string($content)) {
+                    // Extraer JSON del bloque markdown si está presente
+                    $jsonString = $this->extractJsonFromMarkdown($content);
+                    $decoded = json_decode($jsonString, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $extractedData = $decoded;
+                    }
+                } elseif (is_array($content)) {
+                    $extractedData = $content;
+                }
+            }
+            
             // Formato 2: datos directamente en 'data'
-            elseif (isset($responseData['data']) && is_array($responseData['data'])) {
+            if (empty($extractedData) && isset($responseData['data']) && is_array($responseData['data'])) {
                 $extractedData = $responseData['data'];
             }
-            // Formato 3: datos directamente en la raíz
-            elseif (isset($responseData['nombre']) || isset($responseData['dni']) || isset($responseData['numero'])) {
+            
+            // Formato 3: datos directamente en la raíz (verificar campos clave)
+            if (empty($extractedData) && (
+                isset($responseData['nombre']) || 
+                isset($responseData['dni']) || 
+                isset($responseData['numero']) ||
+                isset($responseData['numero_dni_o_pasaporte']) ||
+                isset($responseData['direccion'])
+            )) {
                 $extractedData = $responseData;
+            }
+            
+            // Formato 4: intentar extraer JSON de cualquier campo string que contenga JSON
+            if (empty($extractedData)) {
+                foreach ($responseData as $key => $value) {
+                    if (is_string($value) && (strpos($value, '{') !== false || strpos($value, '[') !== false)) {
+                        $jsonString = $this->extractJsonFromMarkdown($value);
+                        $decoded = json_decode($jsonString, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded)) {
+                            $extractedData = $decoded;
+                            Log::info('JSON extraído de campo inesperado', ['campo' => $key]);
+                            break;
+                        }
+                    }
+                }
             }
             
             // Normalizar campos según formato de respuesta
             if (!empty($extractedData)) {
+                Log::info('Datos extraídos antes de normalizar', [
+                    'side' => $side,
+                    'data_keys' => array_keys($extractedData),
+                    'data_preview' => array_slice($extractedData, 0, 5)
+                ]);
+                
                 $extractedData = $this->normalizeExtractedData($extractedData, $side);
+                
+                Log::info('Datos normalizados', [
+                    'side' => $side,
+                    'data_keys' => array_keys($extractedData),
+                    'has_required_fields' => !empty($extractedData)
+                ]);
             }
             
             if (empty($extractedData)) {
                 Log::error('No se pudieron extraer datos de la respuesta', [
                     'url' => $fullUrl,
                     'response_structure' => array_keys($responseData),
-                    'raw_response' => $response,
-                    'parsed_response' => $responseData
+                    'has_respuesta' => isset($responseData['respuesta']),
+                    'has_metadata' => isset($responseData['metadata']),
+                    'has_data' => isset($responseData['data']),
+                    'raw_response_preview' => substr($response, 0, 1000),
+                    'parsed_response_keys' => array_keys($responseData)
                 ]);
+                
+                // Intentar mostrar qué campos tiene la respuesta para debugging
+                $debugInfo = [
+                    'response_keys' => array_keys($responseData),
+                ];
+                
+                if (isset($responseData['respuesta'])) {
+                    $debugInfo['respuesta_type'] = gettype($responseData['respuesta']);
+                    $debugInfo['respuesta_preview'] = is_string($responseData['respuesta']) 
+                        ? substr($responseData['respuesta'], 0, 200) 
+                        : 'No es string';
+                }
+                
+                if (isset($responseData['metadata']['message']['content'])) {
+                    $debugInfo['metadata_content_type'] = gettype($responseData['metadata']['message']['content']);
+                    $debugInfo['metadata_content_preview'] = is_string($responseData['metadata']['message']['content'])
+                        ? substr($responseData['metadata']['message']['content'], 0, 200)
+                        : 'No es string';
+                }
+                
                 return [
                     'success' => false,
-                    'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                    'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                     'error' => 'No se encontraron datos válidos en la respuesta de la IA',
                     'error_type' => 'parse_error',
                     'ai_url' => $fullUrl,
                     'ai_raw_response' => $response,
                     'ai_response_parsed' => $responseData,
+                    'debug_info' => $debugInfo,
                     'response_structure' => array_keys($responseData),
                     'ai_http_code' => $httpCode
                 ];
             }
             
-            Log::info('Datos extraídos por IA Hawkins', [
+            Log::info('✅ Datos extraídos exitosamente por IA Hawkins', [
                 'side' => $side,
-                'data_keys' => array_keys($extractedData)
+                'data_keys' => array_keys($extractedData),
+                'fields_count' => count($extractedData)
             ]);
             
             return [
@@ -1562,7 +1817,7 @@ INSTRUCCIONES ESPECÍFICAS:
             
             return [
                 'success' => false,
-                'message' => 'Error al procesar el documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
+                'message' => 'Revisa la imagen: no tiene suficiente calidad y no podemos extraer los datos del documento. Por favor, toma una nueva foto con buena iluminación, asegúrate de que el documento esté completo y enfocado, o envía las imágenes por WhatsApp.',
                 'error' => $e->getMessage(),
                 'error_type' => 'ai_error',
                 'ai_url' => $fullUrl ?? 'N/A',
@@ -1695,8 +1950,67 @@ INSTRUCCIONES ESPECÍFICAS:
     }
     
     /**
-     * Normalizar formato de fecha
+     * Extraer JSON de un bloque markdown si está presente
+     * Maneja múltiples formatos de respuesta de la IA de forma robusta
      */
+    private function extractJsonFromMarkdown($text)
+    {
+        if (!is_string($text)) {
+            return $text;
+        }
+        
+        $text = trim($text);
+        
+        // Si ya es JSON válido (empieza con { y termina con }), devolverlo directamente
+        if (preg_match('/^\s*\{.*\}\s*$/s', $text)) {
+            return $text;
+        }
+        
+        // Patrón 1: ```json ... ``` (formato más común)
+        if (preg_match('/```json\s*\n?(.*?)\n?```/s', $text, $matches)) {
+            $json = trim($matches[1]);
+            if (!empty($json)) {
+                return $json;
+            }
+        }
+        
+        // Patrón 2: ``` ... ``` (sin especificar json, pero contiene JSON)
+        if (preg_match('/```\s*\n?(.*?)\n?```/s', $text, $matches)) {
+            $content = trim($matches[1]);
+            // Verificar si parece JSON (empieza con {)
+            if (preg_match('/^\s*\{.*\}/s', $content)) {
+                return $content;
+            }
+        }
+        
+        // Patrón 3: JSON dentro de texto con posibles espacios/retornos antes/después
+        // Buscar el primer { y el último } para extraer el JSON
+        $firstBrace = strpos($text, '{');
+        $lastBrace = strrpos($text, '}');
+        
+        if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+            $jsonCandidate = substr($text, $firstBrace, $lastBrace - $firstBrace + 1);
+            // Validar que sea JSON válido
+            $decoded = json_decode($jsonCandidate, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $jsonCandidate;
+            }
+        }
+        
+        // Patrón 4: Buscar cualquier objeto JSON en el texto (último recurso)
+        if (preg_match('/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s', $text, $matches)) {
+            $jsonCandidate = $matches[0];
+            $decoded = json_decode($jsonCandidate, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $jsonCandidate;
+            }
+        }
+        
+        // Si no se encontró JSON válido, devolver el texto original
+        // (puede que ya sea JSON válido o que necesite otro procesamiento)
+        return $text;
+    }
+    
     private function normalizeDate($date)
     {
         if (empty($date)) {
@@ -2145,11 +2459,19 @@ INSTRUCCIONES ESPECÍFICAS:
                     'updated_at' => now()
                 ]);
                 
-                Log::info('Verificación de DNI completada - data_dni marcado como true', [
+                // Marcar dni_entregado = true en la reserva
+                $reserva->update(['dni_entregado' => true]);
+                
+                Log::info('Verificación de DNI completada - data_dni y dni_entregado marcados como true', [
                     'reserva_id' => $reserva->id,
-                    'cliente_id' => $cliente->id
+                    'cliente_id' => $cliente->id,
+                    'dni_entregado' => true
                 ]);
             } else {
+                // Aún así, marcar dni_entregado = true si se subieron imágenes
+                // (aunque falten algunos datos para MIR)
+                $reserva->update(['dni_entregado' => true]);
+                
                 Log::warning('Verificación de DNI completada pero NO se marca data_dni = true: faltan datos obligatorios para MIR', [
                     'reserva_id' => $reserva->id,
                     'cliente_id' => $cliente->id,
@@ -2157,7 +2479,8 @@ INSTRUCCIONES ESPECÍFICAS:
                     'fecha_expedicion_doc' => $cliente->fecha_expedicion_doc,
                     'email' => $cliente->email,
                     'telefono_movil' => $cliente->telefono_movil,
-                    'provincia' => $cliente->provincia
+                    'provincia' => $cliente->provincia,
+                    'dni_entregado' => true // Se marca igual porque se subieron imágenes
                 ]);
             }
             
