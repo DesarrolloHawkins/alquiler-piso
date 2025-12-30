@@ -2692,26 +2692,8 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $tarea = null;
 
             // Intentar obtener la tarea de diferentes formas
-            if ($tareaId) {
-                // Convertir a entero si es string
-                $tareaId = (int) $tareaId;
-
-                // Si se envía tarea_id directamente, usarlo
-                $tarea = TareaAsignada::find($tareaId);
-                if (!$tarea) {
-                    Log::error('Tarea no encontrada por ID', [
-                        'tarea_id' => $tareaId,
-                        'tarea_id_original' => $request->input('tarea_id'),
-                        'total_tareas' => TareaAsignada::count()
-                    ]);
-                    return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
-                }
-                Log::info('Tarea encontrada por ID directo', [
-                    'tarea_id' => $tarea->id,
-                    'estado' => $tarea->estado,
-                    'turno_id' => $tarea->turno_id
-                ]);
-            } elseif ($limpiezaId) {
+            // Priorizar limpieza_id si ambos vienen, ya que es más confiable
+            if ($limpiezaId) {
                 // Convertir a entero si es string
                 $limpiezaId = (int) $limpiezaId;
 
@@ -2744,6 +2726,49 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                     'tarea_id' => $tarea->id,
                     'limpieza_id' => $limpiezaId
                 ]);
+            } elseif ($tareaId) {
+                // Convertir a entero si es string
+                $tareaId = (int) $tareaId;
+
+                // Si se envía tarea_id directamente, usarlo
+                $tarea = TareaAsignada::find($tareaId);
+                if (!$tarea) {
+                    // Si no se encontró por tarea_id pero hay limpieza_id, intentar por limpieza como fallback
+                    $limpiezaIdFallback = $request->input('limpieza_id');
+                    if ($limpiezaIdFallback) {
+                        $limpiezaIdFallback = (int) $limpiezaIdFallback;
+                        $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaIdFallback);
+                        if ($apartamentoLimpieza && $apartamentoLimpieza->tarea_asignada_id) {
+                            $tarea = TareaAsignada::find($apartamentoLimpieza->tarea_asignada_id);
+                            if ($tarea) {
+                                Log::info('Tarea encontrada por limpieza_id después de fallar búsqueda por tarea_id', [
+                                    'tarea_id_original' => $tareaId,
+                                    'tarea_id_encontrada' => $tarea->id,
+                                    'limpieza_id' => $limpiezaIdFallback
+                                ]);
+                            }
+                        }
+                    }
+
+                    if (!$tarea) {
+                        Log::error('Tarea no encontrada por ID ni por limpieza_id', [
+                            'tarea_id' => $tareaId,
+                            'tarea_id_original' => $request->input('tarea_id'),
+                            'limpieza_id_disponible' => $limpiezaIdFallback ? 'sí' : 'no',
+                            'total_tareas' => TareaAsignada::count()
+                        ]);
+                    }
+
+                    if (!$tarea) {
+                        return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                    }
+                } else {
+                    Log::info('Tarea encontrada por ID directo', [
+                        'tarea_id' => $tarea->id,
+                        'estado' => $tarea->estado,
+                        'turno_id' => $tarea->turno_id
+                    ]);
+                }
             } else {
                 Log::error('No se proporcionó tarea_id ni limpieza_id');
                 return response()->json(['success' => false, 'message' => 'Se requiere tarea_id o limpieza_id'], 400);
