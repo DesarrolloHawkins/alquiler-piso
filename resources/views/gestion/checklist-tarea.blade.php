@@ -37,7 +37,7 @@
                             <p class="apartment-subtitle">{{ $tarea->tipoTarea->nombre }}</p>
                         </div>
                     </div>
-                    
+
                     <div class="header-actions">
                         <a href="{{ route('gestion.index') }}" class="btn btn-outline-light">
                             <i class="fas fa-arrow-left me-2"></i>
@@ -47,7 +47,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="progress-badge mt-3 w-75 mx-auto mb-0" id="checklistProgress">
             <div class="progress-icon">
                 <i class="fas fa-check-circle"></i>
@@ -57,7 +57,7 @@
                 <span class="progress-label">Items</span>
             </div>
         </div>
-        
+
         <!-- Información de la Siguiente Reserva -->
         @if($siguienteReserva)
         <div class="siguiente-reserva-banner mt-3 w-75 mx-auto" style="
@@ -76,7 +76,7 @@
                     <span class="text-dark ms-2" style="font-size: 1.1em;">{{ \Carbon\Carbon::parse($siguienteReserva->fecha_entrada)->format('d/m/Y') }}</span>
                 </div>
             </div>
-            
+
             <!-- Información del Cliente -->
             @if($siguienteReserva->cliente)
             <div class="cliente-info mb-3">
@@ -84,8 +84,8 @@
                     <i class="fas fa-user text-primary me-2"></i>
                     <strong class="text-primary">{{ $siguienteReserva->cliente->nombre ?? 'N/A' }}</strong>
                     @if($siguienteReserva->cliente->telefono)
-                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $siguienteReserva->cliente->telefono) }}" 
-                           target="_blank" 
+                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $siguienteReserva->cliente->telefono) }}"
+                           target="_blank"
                            class="btn btn-primary btn-sm ms-2">
                             <i class="fab fa-whatsapp"></i>
                             WhatsApp
@@ -100,7 +100,7 @@
                 @endif
             </div>
             @endif
-            
+
             <!-- Detalles de la Reserva -->
             <div class="reserva-details">
                 <div class="row text-center">
@@ -129,7 +129,7 @@
             </div>
         </div>
         @endif
-        
+
         <!-- Banner de Información -->
         <div class="info-banner mt-3 w-75 mx-auto" style="
             background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
@@ -147,7 +147,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="apple-card-body">
             <form action="{{ route('gestion.updateTarea', $tarea) }}" method="POST" id="formPrincipalLimpieza">
                 @csrf
@@ -238,11 +238,11 @@
                                         <span class="apple-switch-slider"></span>
                                     </label>
                                 </div>
-                                
+
                                 {{-- Botones de cámara no aplicables en el sistema de tareas asignadas --}}
                             </div>
                         </div>
-                        
+
                         <div class="items-container" id="items_{{ $checklist->id }}">
                             @if($checklist->items && $checklist->items->count() > 0)
                                 @foreach($checklist->items as $item)
@@ -254,8 +254,8 @@
                                             @endif
                                         </div>
                                         <div class="item-controls">
-                                            <input type="checkbox" 
-                                                   class="item-checkbox" 
+                                            <input type="checkbox"
+                                                   class="item-checkbox"
                                                    data-item-id="{{ $item->id }}"
                                                    data-checklist-id="{{ $checklist->id }}"
                                                    name="items[{{ $item->id }}]"
@@ -281,7 +281,7 @@
                             <small class="text-muted">Información del stock actual</small>
                         </div>
                     </div>
-                    
+
                     <div class="amenities-content">
                         @foreach($amenitiesConRecomendaciones as $categoria => $amenitiesCategoria)
                             <div class="amenities-category mb-3">
@@ -296,7 +296,7 @@
                                             $esAutomaticoNinos = $amenityData['es_automatico_ninos'] ?? false;
                                             $motivoNinos = $amenityData['motivo_ninos'] ?? '';
                                         @endphp
-                                        
+
                                         <div class="amenity-item-simple d-flex justify-content-between align-items-center py-2 border-bottom">
                                             <div class="amenity-info">
                                                 <span class="amenity-name fw-bold">{{ $amenity->nombre }}</span>
@@ -306,7 +306,7 @@
                                             </div>
                                             <div class="amenity-details text-end">
                                                 <small class="text-muted">
-                                                    Recomendado: <strong>{{ $cantidadRecomendada }}</strong> | 
+                                                    Recomendado: <strong>{{ $cantidadRecomendada }}</strong> |
                                                     Stock: <span class="{{ $stockDisponible < $cantidadRecomendada ? 'text-danger' : 'text-success' }}">{{ $stockDisponible }}</span>
                                                 </small>
                                             </div>
@@ -335,7 +335,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Checkbox de consentimiento para finalizar sin completar todos los checklists -->
                     <div class="consentimiento-section mt-3" style="
                         background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
@@ -355,15 +355,15 @@
                             <label for="motivoConsentimiento" class="form-label">
                                 <strong>Motivo del consentimiento:</strong>
                             </label>
-                            <textarea class="form-control" 
-                                    id="motivoConsentimiento" 
-                                    name="motivo_consentimiento" 
-                                    rows="3" 
+                            <textarea class="form-control"
+                                    id="motivoConsentimiento"
+                                    name="motivo_consentimiento"
+                                    rows="3"
                                     placeholder="Explica brevemente por qué no se completaron todos los checklists..."></textarea>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Campos ocultos para el formulario -->
                 <input type="hidden" name="consentimiento_finalizacion" id="consentimientoFinalizarHidden" value="false">
                 <input type="hidden" name="motivo_consentimiento" id="motivoConsentimientoHidden" value="">
@@ -749,13 +749,13 @@
     .amenities-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .section-header {
         flex-direction: column;
         gap: 1rem;
         align-items: flex-start;
     }
-    
+
     .section-controls {
         width: 100%;
         justify-content: space-between;
@@ -767,16 +767,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar contadores
     actualizarContadores();
-    
+
     // Inicializar switches de categorías
     inicializarSwitchesCategorias();
-    
+
     // Inicializar amenities
     inicializarAmenities();
-    
+
     // Inicializar consentimiento
     inicializarConsentimiento();
-    
+
     // Inicializar checkboxes de items
     inicializarCheckboxesItems();
 });
@@ -784,10 +784,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function actualizarContadores() {
     const totalItems = document.querySelectorAll('.item-checkbox').length;
     const itemsCompletados = document.querySelectorAll('.item-checkbox:checked').length;
-    
+
     document.getElementById('checklistTotal').textContent = totalItems;
     document.getElementById('checklistCount').textContent = itemsCompletados;
-    
+
     // Actualizar barra de progreso visual
     const progressBadge = document.getElementById('checklistProgress');
     if (totalItems > 0) {
@@ -807,7 +807,7 @@ function inicializarSwitchesCategorias() {
             const habitacionId = this.dataset.habitacion;
             const itemsContainer = document.getElementById(`items_${habitacionId}`);
             const cameraButton = document.getElementById(`camara${habitacionId}`);
-            
+
             if (this.checked) {
                 itemsContainer.style.display = 'block';
                 if (cameraButton) {
@@ -824,18 +824,18 @@ function inicializarSwitchesCategorias() {
                     item.checked = false;
                 });
             }
-            
+
             actualizarContadores();
             // Guardar automáticamente el cambio de categoría
             guardarCheckboxCategoria(this);
         });
-        
+
         // Mostrar items si la categoría ya está marcada
         if (switchElement.checked) {
             const habitacionId = switchElement.dataset.habitacion;
             const itemsContainer = document.getElementById(`items_${habitacionId}`);
             const cameraButton = document.getElementById(`camara${habitacionId}`);
-            
+
             if (itemsContainer) {
                 itemsContainer.style.display = 'block';
             }
@@ -848,7 +848,7 @@ function inicializarSwitchesCategorias() {
 
 function inicializarAmenities() {
     const amenitiesContent = document.getElementById('amenitiesContent');
-    
+
     if (amenitiesContent) {
         // Mostrar siempre el contenido de amenities (solo informativo)
         amenitiesContent.style.display = 'block';
@@ -866,7 +866,7 @@ function inicializarConsentimiento() {
     const motivoTextarea = document.getElementById('motivoConsentimiento');
     const motivoHidden = document.getElementById('motivoConsentimientoHidden');
     const consentimientoHidden = document.getElementById('consentimientoFinalizarHidden');
-    
+
     if (consentimientoCheckbox) {
         consentimientoCheckbox.addEventListener('change', function() {
             if (this.checked) {
@@ -881,7 +881,7 @@ function inicializarConsentimiento() {
             }
         });
     }
-    
+
     if (motivoTextarea) {
         motivoTextarea.addEventListener('input', function() {
             motivoHidden.value = this.value;
@@ -892,14 +892,14 @@ function inicializarConsentimiento() {
 function inicializarCheckboxesItems() {
     const checkboxes = document.querySelectorAll('.item-checkbox');
     console.log('🔧 Inicializando checkboxes de items:', checkboxes.length, 'encontrados');
-    
+
     checkboxes.forEach((checkbox, index) => {
         console.log(`🔧 Checkbox ${index + 1}:`, {
             id: checkbox.dataset.itemId,
             checklistId: checkbox.dataset.checklistId,
             checked: checkbox.checked
         });
-        
+
         checkbox.addEventListener('change', function() {
             console.log('🔄 Checkbox cambiado:', {
                 id: this.dataset.itemId,
@@ -916,31 +916,43 @@ function guardarCheckboxIndividual(checkbox) {
     const itemId = checkbox.dataset.itemId;
     const checklistId = checkbox.dataset.checklistId;
     const isChecked = checkbox.checked;
-    
+
     console.log('🔧 Guardando checkbox individual:', {
         itemId: itemId,
         checklistId: checklistId,
         isChecked: isChecked,
         limpiezaId: {{ $apartamentoLimpieza->id ?? 'null' }}
     });
-    
+
     // Mostrar indicador de guardado
     const originalText = checkbox.parentElement.innerHTML;
     checkbox.parentElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
-    
+
+    const requestData = {
+        type: 'item',
+        id: itemId,
+        checked: isChecked ? 1 : 0
+    };
+
+    // Añadir limpieza_id solo si existe
+    @if(isset($apartamentoLimpieza) && $apartamentoLimpieza)
+        requestData.limpieza_id = {{ $apartamentoLimpieza->id }};
+    @endif
+
+    // Añadir tarea_id solo si existe
+    @if(isset($tarea) && $tarea)
+        requestData.tarea_id = {{ $tarea->id }};
+    @endif
+
+    console.log('📤 Enviando datos:', requestData);
+
     fetch('{{ route("gestion.updateCheckbox") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify({
-            type: 'item',
-            id: itemId,
-            checked: isChecked ? 1 : 0,
-            limpieza_id: {{ $apartamentoLimpieza->id ?? 'null' }},
-            tarea_id: {{ $tarea->id ?? 'null' }}
-        })
+        body: JSON.stringify(requestData)
     })
     .then(response => {
         console.log('📡 Respuesta del servidor:', response.status, response.statusText);
@@ -974,17 +986,17 @@ function guardarCheckboxIndividual(checkbox) {
 function guardarCheckboxCategoria(checkbox) {
     const checklistId = checkbox.dataset.habitacion;
     const isChecked = checkbox.checked;
-    
+
     console.log('🔧 Guardando checkbox de categoría:', {
         checklistId: checklistId,
         isChecked: isChecked,
         limpiezaId: {{ $apartamentoLimpieza->id ?? 'null' }}
     });
-    
+
     // Mostrar indicador de guardado
     const originalText = checkbox.parentElement.innerHTML;
     checkbox.parentElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
-    
+
     fetch('{{ route("gestion.updateCheckbox") }}', {
         method: 'POST',
         headers: {
@@ -1031,9 +1043,9 @@ function mostrarNotificacionSutil(mensaje, tipo = 'info') {
         <small>${mensaje}</small>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-remover después de 2 segundos
     setTimeout(() => {
         if (notification.parentNode) {
@@ -1044,11 +1056,11 @@ function mostrarNotificacionSutil(mensaje, tipo = 'info') {
 
 function guardarProgreso() {
     mostrarOverlay();
-    
+
     // Preparar datos del formulario
     const formData = new FormData(document.getElementById('formPrincipalLimpieza'));
     formData.append('accion', 'guardar');
-    
+
     fetch('{{ route("gestion.updateTarea", $tarea) }}', {
         method: 'POST',
         body: formData,
@@ -1076,40 +1088,40 @@ function finalizarTarea() {
     const totalItems = document.querySelectorAll('.item-checkbox').length;
     const itemsCompletados = document.querySelectorAll('.item-checkbox:checked').length;
     const porcentajeCompletado = totalItems > 0 ? (itemsCompletados / totalItems) * 100 : 100;
-    
+
     // Verificar si necesita consentimiento
     if (porcentajeCompletado < 100) {
         const consentimientoCheckbox = document.getElementById('consentimientoFinalizar');
         const motivoTextarea = document.getElementById('motivoConsentimiento');
-        
+
         if (!consentimientoCheckbox.checked) {
             mostrarAlerta('Para finalizar sin completar todos los checklists, debes marcar el consentimiento y explicar el motivo.', 'warning');
             return;
         }
-        
+
         if (!motivoTextarea.value.trim()) {
             mostrarAlerta('Debes explicar el motivo por el cual no se completaron todos los checklists.', 'warning');
             return;
         }
     }
-    
+
     if (confirm('¿Estás seguro de que quieres finalizar esta tarea?')) {
         mostrarOverlay();
-        
+
         // Preparar datos del formulario
         const formData = new FormData(document.getElementById('formPrincipalLimpieza'));
         formData.append('accion', 'finalizar');
-        
+
         // Añadir datos de consentimiento si es necesario
         const consentimientoCheckbox = document.getElementById('consentimientoFinalizar');
         const motivoTextarea = document.getElementById('motivoConsentimiento');
-        
+
         if (consentimientoCheckbox.checked) {
             formData.set('consentimiento_finalizacion', 'true');
             formData.set('motivo_consentimiento', motivoTextarea.value);
             formData.set('fecha_consentimiento', new Date().toISOString());
         }
-        
+
         fetch('{{ route("gestion.updateTarea", $tarea) }}', {
             method: 'POST',
             body: formData,
