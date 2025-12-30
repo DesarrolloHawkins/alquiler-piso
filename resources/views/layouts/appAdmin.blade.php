@@ -895,6 +895,7 @@
         </script>
 
         <!-- Scripts personalizados de las vistas -->
+        @yield('scripts')
         @stack('scripts')
 
     </body>
