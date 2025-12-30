@@ -56,6 +56,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('reservas:check-overlaps')->everyMinute();
 
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
+        
+        // Enviar claves por Channex todos los días a las 14:00
+        $schedule->command('ari:enviar-claves-channex')->dailyAt('14:00');
         // Ejecuta el comando cada hora
         $schedule->command('emails:categorize')->everyMinute();
 
@@ -321,7 +324,7 @@ class Kernel extends ConsoleKernel
                         $enviarEmail = $this->enviarEmail($emailDestino, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
 
                                                 // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             // Crear mensaje específico para el chat
                             $datosDNI = [
                                 'token' => $token
@@ -409,7 +412,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
                                 $datosBienvenida = [
                                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
@@ -422,7 +425,7 @@ class Kernel extends ConsoleKernel
                                     $reserva->id_channex
                                 );
 
-                                Log::info('Mensaje de bienvenida enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Mensaje de bienvenida enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de bienvenida al chat:', [
                                     'error' => $e->getMessage(),
@@ -542,37 +545,9 @@ class Kernel extends ConsoleKernel
                         }
 
                                                 // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
-                            try {
-                                // Crear mensaje específico para el chat
-                                $datosClaves = [
-                                    'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
-                                    'apartamento' => $reserva->apartamento->titulo,
-                                    'claveEntrada' => $reserva->apartamento->edificioName->clave,
-                                    'clavePiso' => $reserva->apartamento->claves,
-                                    'url' => $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
-                                ];
-
-                                Log::info('Datos para mensaje de claves:', $datosClaves);
-
-                                $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
-
-                                Log::info('Mensaje de chat creado:', ['mensaje' => $mensajeChat]);
-
-                                // Enviar al chat de Channex usando el bookingId
-                                $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
-                                    $mensajeChat,
-                                    $reserva->id_channex
-                                );
-
-                                Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
-                            } catch (\Exception $e) {
-                                Log::error('Error al enviar mensaje de claves al chat:', [
-                                    'error' => $e->getMessage(),
-                                    'reserva_id' => $reserva->id,
-                                    'booking_id' => $reserva->id_channex
-                                ]);
-                            }
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
+                            // Usar el método helper para enviar claves por Channex
+                            $this->enviarClavesPorChannex($reserva, $idiomaCliente, $apartamentoReservado);
                         }
 
                     }
@@ -599,7 +574,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
                                 $datosConsulta = [
                                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
@@ -609,10 +584,10 @@ class Kernel extends ConsoleKernel
 
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
-                                Log::info('Mensaje de consulta enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Mensaje de consulta enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de consulta al chat:', [
                                     'error' => $e->getMessage(),
@@ -719,7 +694,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             $datosDespedida = [
                                 'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
                             ];
@@ -728,7 +703,7 @@ class Kernel extends ConsoleKernel
 
                             \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                 $mensajeChat,
-                                $reserva->codigo_reserva
+                                $reserva->id_channex
                             );
                         }
 
