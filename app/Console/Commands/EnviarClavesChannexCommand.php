@@ -5,133 +5,178 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Reserva;
 use App\Models\MensajeAuto;
-use App\Services\ClienteService;
-use App\Http\Controllers\WebhookController;
+use App\Models\Apartamento;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\ClienteService;
 
 class EnviarClavesChannexCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'ari:enviar-claves-channex';
+    protected $description = 'Envía mensajes de claves por Channex para reservas de hoy (Booking/Airbnb). Ejecutar manualmente cuando sea necesario.';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Envía las claves del apartamento por Channex a reservas que ya recibieron las claves por WhatsApp/Email pero no por Channex';
-
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $this->info('🔑 Iniciando envío de claves por Channex...');
+        $this->info("🔑 Buscando reservas de hoy para enviar claves por Channex...");
+        $this->newLine();
 
-        $clienteService = new ClienteService();
+        // Obtener la fecha de hoy
+        $fechaHoyStr = Carbon::now()->format('Y-m-d');
 
-        // Buscar reservas que:
-        // 1. No sean de origen 'web'
-        // 2. Tengan id_channex (están en Channex)
-        // 3. Ya tengan el mensaje de claves enviado (por WhatsApp/Email)
-        // 4. No hayan recibido el mensaje de claves por Channex aún
-        $reservas = Reserva::where('origen', '!=', 'web')
-            ->whereNotNull('id_channex')
+        // Buscar reservas de hoy que:
+        // 1. Tengan fecha_entrada = hoy
+        // 2. NO estén canceladas (estado_id != 4)
+        // 3. NO sean de la web (origen != 'web')
+        // 4. Tengan id_channex (booking ID de Channex)
+        // 5. Tengan mensaje de bienvenida enviado (categoria_id = 4)
+        // NOTA: No verificamos si ya se enviaron las claves - esto es para reenvío manual si falla algo
+        $reservas = Reserva::whereDate('fecha_entrada', '=', $fechaHoyStr)
+            ->where(function($query) {
+                $query->where('estado_id', '!=', 4)
+                      ->orWhereNull('estado_id');
+            })
+            ->where('origen', '!=', 'web')
+            ->whereNotNull('id_channex') // Booking ID de Channex
+            ->whereIn('id', function ($query) {
+                $query->select('reserva_id')
+                    ->from('mensajes_auto')
+                    ->where('categoria_id', 4); // Tiene mensaje de bienvenida
+            })
             ->with(['cliente', 'apartamento.edificioName'])
             ->get();
 
+        if ($reservas->isEmpty()) {
+            $this->info("✅ No se encontraron reservas para enviar claves.");
+            return 0;
+        }
+
+        $this->info("📋 Encontradas {$reservas->count()} reserva(s) para procesar.");
+        $this->newLine();
+
+        $clienteService = app(ClienteService::class);
         $enviadas = 0;
         $errores = 0;
         $omitidas = 0;
 
         foreach ($reservas as $reserva) {
             try {
-                // Verificar si ya se envió el mensaje de claves (por WhatsApp/Email)
-                $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)
-                    ->where('tipo', 'claves')
+                // Verificar que tenga mensaje de bienvenida
+                $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)
+                    ->where('categoria_id', 4)
                     ->first();
 
-                if (!$mensajeClaves) {
-                    // No se ha enviado el mensaje de claves aún, omitir
+                if (!$mensajeBienvenida) {
+                    $this->warn("⚠️  Reserva #{$reserva->id}: No tiene mensaje de bienvenida. Saltando...");
                     $omitidas++;
                     continue;
                 }
 
-                // Verificar si ya se envió por Channex (podríamos agregar un campo para esto, pero por ahora verificamos si existe)
-                // Por simplicidad, asumimos que si el mensaje de claves existe, debemos enviarlo por Channex si no es de web
-
-                // Obtener idioma del cliente
-                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad ?? 'ES');
-
-                // Preparar datos para el mensaje
                 $apartamentoReservado = $reserva->apartamento;
                 if (!$apartamentoReservado) {
-                    Log::warning('Reserva sin apartamento para envío de claves Channex', [
-                        'reserva_id' => $reserva->id
-                    ]);
-                    $errores++;
+                    $this->warn("⚠️  Reserva #{$reserva->id}: Apartamento no encontrado. Saltando...");
+                    $omitidas++;
                     continue;
                 }
 
+                // Obtener código de idioma
+                $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad ?? 'ES');
+
+                // Preparar datos para el mensaje de claves
                 $datosClaves = [
                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
-                    'apartamento' => $apartamentoReservado->titulo,
-                    'claveEntrada' => $apartamentoReservado->edificioName->clave ?? 'N/A',
-                    'clavePiso' => $apartamentoReservado->claves ?? 'N/A',
+                    'apartamento' => $reserva->apartamento->titulo,
+                    'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
+                    'clavePiso' => $reserva->apartamento->claves ?? '',
                     'url' => $apartamentoReservado->edificio == 1 
                         ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' 
                         : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
                 ];
 
-                // Crear mensaje de chat
-                $mensajeChat = WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+                $this->info("🔄 Procesando reserva #{$reserva->id} ({$reserva->origen})");
+                $this->line("   Cliente: {$datosClaves['nombre']}");
+                $this->line("   Apartamento: {$datosClaves['apartamento']}");
+                $this->line("   Booking ID (Channex): {$reserva->id_channex}");
+                $this->line("   Código Reserva: {$reserva->codigo_reserva}");
 
-                // Enviar a Channex
-                $resultado = WebhookController::enviarMensajeAutomaticoAChannex(
+                // Crear mensaje de chat
+                $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+
+                Log::info('Enviando mensaje de claves por Channex', [
+                    'reserva_id' => $reserva->id,
+                    'id_channex' => $reserva->id_channex,
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'origen' => $reserva->origen,
+                    'idioma' => $idiomaCliente,
+                    'datos_claves' => $datosClaves
+                ]);
+
+                // Enviar al chat de Channex usando el id_channex (booking ID de Channex)
+                $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                     $mensajeChat,
-                    $reserva->id_channex
+                    $reserva->id_channex  // ✅ Usar id_channex como booking ID de Channex
                 );
 
                 if ($resultado) {
+                    // Crear o actualizar registro de mensaje enviado (por si ya existía)
+                    MensajeAuto::updateOrCreate(
+                        [
+                            'reserva_id' => $reserva->id,
+                            'categoria_id' => 3, // Mensaje de claves
+                        ],
+                        [
+                            'cliente_id' => $reserva->cliente_id,
+                            'fecha_envio' => Carbon::now()
+                        ]
+                    );
+
+                    $this->info("   ✅ Mensaje de claves enviado correctamente a Channex");
                     $enviadas++;
-                    $this->info("✅ Claves enviadas a Channex para reserva #{$reserva->id} (Código: {$reserva->codigo_reserva})");
-                    Log::info('Claves enviadas por Channex desde comando', [
+
+                    Log::info('Mensaje de claves enviado exitosamente por Channex', [
                         'reserva_id' => $reserva->id,
-                        'codigo_reserva' => $reserva->codigo_reserva,
-                        'id_channex' => $reserva->id_channex
+                        'id_channex' => $reserva->id_channex,
+                        'codigo_reserva' => $reserva->codigo_reserva
                     ]);
                 } else {
+                    $this->error("   ❌ Error al enviar mensaje a Channex");
                     $errores++;
-                    $this->error("❌ Error al enviar claves a Channex para reserva #{$reserva->id}");
-                    Log::error('Error al enviar claves por Channex desde comando', [
+
+                    Log::error('Error al enviar mensaje de claves por Channex', [
                         'reserva_id' => $reserva->id,
+                        'id_channex' => $reserva->id_channex,
                         'codigo_reserva' => $reserva->codigo_reserva,
-                        'id_channex' => $reserva->id_channex
+                        'resultado' => $resultado
                     ]);
                 }
 
             } catch (\Exception $e) {
+                $this->error("   ❌ Excepción: " . $e->getMessage());
                 $errores++;
-                $this->error("❌ Excepción al procesar reserva #{$reserva->id}: " . $e->getMessage());
+
                 Log::error('Excepción al enviar claves por Channex', [
-                    'reserva_id' => $reserva->id ?? null,
+                    'reserva_id' => $reserva->id,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
+
+            $this->newLine();
         }
 
-        $this->info("\n📊 Resumen:");
+        // Resumen final
+        $this->newLine();
+        $this->info("📊 Resumen:");
         $this->info("   ✅ Enviadas: {$enviadas}");
-        $this->info("   ⏭️  Omitidas: {$omitidas}");
-        $this->info("   ❌ Errores: {$errores}");
+        if ($omitidas > 0) {
+            $this->warn("   ⏭️  Omitidas: {$omitidas}");
+        }
+        if ($errores > 0) {
+            $this->error("   ❌ Errores: {$errores}");
+        }
+        $this->info("   📋 Total procesadas: {$reservas->count()}");
+        $this->newLine();
+        $this->info("✅ Proceso de envío de claves por Channex finalizado.");
 
-        return Command::SUCCESS;
+        return 0;
     }
 }
-

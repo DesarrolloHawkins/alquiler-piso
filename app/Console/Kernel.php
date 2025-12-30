@@ -565,12 +565,12 @@ class Kernel extends ConsoleKernel
                                     $reserva->id_channex
                                 );
 
-                                Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de claves al chat:', [
                                     'error' => $e->getMessage(),
                                     'reserva_id' => $reserva->id,
-                                    'booking_id' => $reserva->codigo_reserva
+                                    'booking_id' => $reserva->id_channex
                                 ]);
                             }
                         }
