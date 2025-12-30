@@ -91,10 +91,6 @@
 <!-- Incluir el CSS de Flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-<!-- Incluir Flatpickr y la localización en español -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -557,8 +553,17 @@
 @endsection
 
 @section('scripts')
+<!-- Incluir Flatpickr y la localización en español -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Verificar que Flatpickr esté cargado
+        if (typeof flatpickr === 'undefined') {
+            console.error('Flatpickr no está cargado');
+            return;
+        }
+        
         // Inicializar Flatpickr en los campos de fecha con localización en español
         flatpickr("#fecha_entrada", {
             dateFormat: "Y-m-d",
