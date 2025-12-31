@@ -38,6 +38,14 @@ class AdminServiciosController extends Controller
      */
     public function store(Request $request)
     {
+        // Preparar datos antes de validar - normalizar checkboxes
+        $data = $request->all();
+        $data['es_popular'] = $request->has('es_popular') && $request->input('es_popular') == '1' ? true : false;
+        $data['activo'] = $request->has('activo') && $request->input('activo') == '1' ? true : false;
+        
+        // Crear un nuevo request con los datos normalizados
+        $request->merge($data);
+
         $validated = $request->validate([
             'icono' => 'nullable|string|max:255',
             'nombre' => 'required|string|max:255',
@@ -47,8 +55,8 @@ class AdminServiciosController extends Controller
             'imagen' => 'nullable|string|max:255',
             'orden' => 'nullable|integer|min:0',
             'categoria' => 'nullable|string|max:255',
-            'es_popular' => 'nullable|boolean',
-            'activo' => 'nullable|boolean',
+            'es_popular' => 'required|boolean',
+            'activo' => 'required|boolean',
         ]);
 
         Servicio::create($validated);
@@ -71,6 +79,14 @@ class AdminServiciosController extends Controller
     public function update(Request $request, Servicio $servicio)
     {
         try {
+            // Preparar datos antes de validar - normalizar checkboxes
+            $data = $request->all();
+            $data['es_popular'] = $request->has('es_popular') && $request->input('es_popular') == '1' ? true : false;
+            $data['activo'] = $request->has('activo') && $request->input('activo') == '1' ? true : false;
+            
+            // Crear un nuevo request con los datos normalizados
+            $request->merge($data);
+
             $validated = $request->validate([
                 'icono' => 'nullable|string|max:255',
                 'nombre' => 'required|string|max:255',
@@ -80,8 +96,8 @@ class AdminServiciosController extends Controller
                 'imagen' => 'nullable|string|max:255',
                 'orden' => 'nullable|integer|min:0',
                 'categoria' => 'nullable|string|max:255',
-                'es_popular' => 'nullable|boolean',
-                'activo' => 'nullable|boolean',
+                'es_popular' => 'required|boolean',
+                'activo' => 'required|boolean',
             ], [
                 'nombre.required' => 'El nombre del servicio es obligatorio.',
                 'nombre.max' => 'El nombre no puede tener más de 255 caracteres.',
@@ -91,6 +107,8 @@ class AdminServiciosController extends Controller
                 'precio.max' => 'El precio no puede ser mayor a 999999.99.',
                 'orden.integer' => 'El orden debe ser un número entero.',
                 'orden.min' => 'El orden no puede ser negativo.',
+                'es_popular.boolean' => 'El campo servicio popular debe ser verdadero o falso.',
+                'activo.boolean' => 'El campo activo debe ser verdadero o falso.',
             ]);
 
             $servicio->update($validated);

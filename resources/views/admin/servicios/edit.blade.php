@@ -214,6 +214,7 @@
                                            type="checkbox" 
                                            id="es_popular" 
                                            name="es_popular" 
+                                           value="1"
                                            {{ old('es_popular', $servicio->es_popular) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="es_popular">
                                         Marcar como popular
@@ -234,6 +235,7 @@
                                            type="checkbox" 
                                            id="activo" 
                                            name="activo" 
+                                           value="1"
                                            {{ old('activo', $servicio->activo) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="activo">
                                         Servicio activo
