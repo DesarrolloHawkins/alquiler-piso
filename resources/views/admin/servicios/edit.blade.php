@@ -22,6 +22,21 @@
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Errores de validación
+                            </h5>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+                    
                     <form action="{{ route('admin.servicios.update', $servicio->id) }}" method="POST">
                         @csrf
                         @method('PUT')
