@@ -89,6 +89,9 @@ Route::prefix('web')->name('web.')->group(function () {
     Route::get('/contacto', [App\Http\Controllers\PublicReservasController::class, 'contacto'])->name('contacto');
     Route::post('/contacto', [App\Http\Controllers\PublicReservasController::class, 'enviarContacto'])->name('contacto.enviar');
     
+    // Página Video Exterior - Instrucciones de acceso
+    Route::get('/video-exterior', [App\Http\Controllers\PublicReservasController::class, 'videoExterior'])->name('video-exterior');
+    
     // Rutas de reservas públicas
     Route::prefix('reservas')->name('reservas.')->group(function () {
         Route::get('/buscador', [App\Http\Controllers\PublicReservasController::class, 'iframe'])->name('iframe');
@@ -203,6 +206,11 @@ Route::get('/request-data', function (Request $request) {
 });
 Route::get('paises', [App\Http\Controllers\HomeController::class, 'paises'])->name('paises');
 Route::get('tipos', [App\Http\Controllers\HomeController::class, 'tipos'])->name('tipos');
+
+// Redirección de /video-exterior a /web/video-exterior
+Route::get('/video-exterior', function () {
+    return redirect()->route('web.video-exterior');
+});
 Route::get('pruebas-dni', [App\Http\Controllers\HomeController::class, 'pruebas'])->name('pruebas');
 Route::get('/get-reservas-json', [App\Http\Controllers\HomeController::class, 'getReservas'])->name('reservas.get.json');
 
@@ -234,6 +242,11 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::put('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
+    
+    // Rutas para gestión de fotos
+    Route::post('/apartamentos/{id}/photos/upload', [App\Http\Controllers\ApartamentosController::class, 'uploadPhotos'])->name('apartamentos.photos.upload');
+    Route::delete('/apartamentos/{id}/photos/{photoId}', [App\Http\Controllers\ApartamentosController::class, 'deletePhoto'])->name('apartamentos.photos.delete');
+    Route::post('/apartamentos/{id}/photos/{photoId}/primary', [App\Http\Controllers\ApartamentosController::class, 'setPrimaryPhoto'])->name('apartamentos.photos.primary');
 
     // Servicios
     Route::resource('servicios', App\Http\Controllers\Admin\AdminServiciosController::class)->names([

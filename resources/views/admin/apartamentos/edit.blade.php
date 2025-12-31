@@ -498,24 +498,54 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
+                                    <!-- Zona de Drag and Drop -->
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">
                                             <i class="fas fa-upload me-1 text-primary"></i>
                                             Subir Fotos (Múltiples)
                                         </label>
+                                        
+                                        <!-- Zona de arrastrar y soltar -->
+                                        <div id="dropZone" 
+                                             class="drop-zone border-2 border-dashed rounded p-4 text-center mb-3"
+                                             style="border-color: #dee2e6; background-color: #f8f9fa; transition: all 0.3s ease; cursor: pointer; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                            <div id="dropZoneContent">
+                                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                                <p class="mb-2 fw-semibold">Arrastra y suelta las fotos aquí</p>
+                                                <p class="text-muted small mb-3">o</p>
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('photosInput').click()">
+                                                    <i class="fas fa-folder-open me-2"></i>Seleccionar archivos
+                                                </button>
+                                                <p class="text-muted small mt-3 mb-0">
+                                                    Formatos: JPG, PNG, WEBP | Máx. 5MB por archivo
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Input oculto -->
                                         <input type="file" 
-                                               class="form-control" 
+                                               class="d-none" 
                                                id="photosInput" 
                                                name="photos[]" 
                                                accept="image/jpeg,image/jpg,image/png,image/webp"
                                                multiple>
-                                        <small class="form-text text-muted">
-                                            Selecciona una o más fotos (máx. 5MB cada una). Formatos: JPG, PNG, WEBP
-                                        </small>
+                                        
+                                        <!-- Vista previa de archivos seleccionados -->
+                                        <div id="filesPreview" class="row g-2 mb-3" style="display: none;">
+                                            <div class="col-12">
+                                                <p class="mb-2 fw-semibold">
+                                                    <i class="fas fa-images me-2"></i>Archivos seleccionados:
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Botón de subir -->
                                         <div class="mt-2">
                                             <button type="button" 
                                                     class="btn btn-primary btn-sm" 
-                                                    onclick="uploadPhotos()">
+                                                    id="uploadBtn"
+                                                    onclick="uploadPhotos()"
+                                                    style="display: none;">
                                                 <i class="fas fa-upload me-2"></i>Subir Fotos
                                             </button>
                                         </div>
@@ -918,12 +948,179 @@
         margin-bottom: 1rem;
     }
 }
+
+/* Estilos para Drag and Drop */
+.drop-zone {
+    transition: all 0.3s ease;
+}
+
+.drop-zone:hover {
+    border-color: #667eea !important;
+    background-color: #e7f1ff !important;
+}
+
+.drop-zone.drag-over {
+    border-color: #667eea !important;
+    background-color: #e7f1ff !important;
+    transform: scale(1.02);
+}
+
+#filesPreview .card {
+    transition: transform 0.2s ease;
+}
+
+#filesPreview .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 </style>
 @endsection
 
 @section('scriptHead')
 <script>
     const apartamentoId = {{ $apartamento->id }};
+    let selectedFiles = [];
+    
+    // Inicializar drag and drop
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const photosInput = document.getElementById('photosInput');
+        const filesPreview = document.getElementById('filesPreview');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        if (!dropZone || !photosInput) return;
+        
+        // Prevenir comportamiento por defecto del navegador
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Efectos visuales al arrastrar
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.style.borderColor = '#667eea';
+                dropZone.style.backgroundColor = '#e7f1ff';
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.style.borderColor = '#dee2e6';
+                dropZone.style.backgroundColor = '#f8f9fa';
+            }, false);
+        });
+        
+        // Manejar archivos soltados
+        dropZone.addEventListener('drop', handleDrop, false);
+        dropZone.addEventListener('click', () => photosInput.click());
+        
+        // Manejar selección de archivos
+        photosInput.addEventListener('change', handleFiles);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles({ target: { files } });
+        }
+        
+        function handleFiles(e) {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+            
+            // Validar archivos
+            const validFiles = [];
+            const invalidFiles = [];
+            
+            files.forEach(file => {
+                const isValidType = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type);
+                const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+                
+                if (isValidType && isValidSize) {
+                    validFiles.push(file);
+                } else {
+                    invalidFiles.push({
+                        name: file.name,
+                        reason: !isValidType ? 'Formato no válido' : 'Archivo muy grande (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)'
+                    });
+                }
+            });
+            
+            // Mostrar errores si hay archivos inválidos
+            if (invalidFiles.length > 0) {
+                const errorMessages = invalidFiles.map(f => `${f.name}: ${f.reason}`).join('<br>');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Archivos inválidos',
+                    html: `Los siguientes archivos no se pueden subir:<br>${errorMessages}`
+                });
+            }
+            
+            if (validFiles.length === 0) return;
+            
+            // Actualizar archivos seleccionados
+            selectedFiles = validFiles;
+            
+            // Actualizar el input
+            const dataTransfer = new DataTransfer();
+            validFiles.forEach(file => dataTransfer.items.add(file));
+            photosInput.files = dataTransfer.files;
+            
+            // Mostrar vista previa
+            showFilesPreview(validFiles);
+            
+            // Mostrar botón de subir
+            uploadBtn.style.display = 'inline-block';
+        }
+        
+        function showFilesPreview(files) {
+            filesPreview.innerHTML = '<div class="col-12"><p class="mb-2 fw-semibold"><i class="fas fa-images me-2"></i>Archivos seleccionados:</p></div>';
+            filesPreview.style.display = 'block';
+            
+            files.forEach((file, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 col-sm-4 col-6';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    col.innerHTML = `
+                        <div class="card position-relative">
+                            <img src="${e.target.result}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeFile(${index})" style="opacity: 0.9;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="card-body p-2">
+                                <small class="text-muted d-block text-truncate" title="${file.name}">${file.name}</small>
+                                <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                            </div>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+                filesPreview.appendChild(col);
+            });
+        }
+        
+        // Función global para remover archivo
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            photosInput.files = dataTransfer.files;
+            
+            if (selectedFiles.length === 0) {
+                filesPreview.style.display = 'none';
+                uploadBtn.style.display = 'none';
+            } else {
+                showFilesPreview(selectedFiles);
+            }
+        };
+    });
     
     // Subir fotos
     function uploadPhotos() {
@@ -944,23 +1141,6 @@
                 icon: 'warning',
                 title: 'Sin fotos',
                 text: 'Por favor selecciona al menos una foto para subir.'
-            });
-            return;
-        }
-        
-        // Validar tamaño de archivos
-        let invalidFiles = [];
-        Array.from(files).forEach((file, index) => {
-            if (file.size > 5 * 1024 * 1024) { // 5MB
-                invalidFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-            }
-        });
-        
-        if (invalidFiles.length > 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Archivos muy grandes',
-                html: `Los siguientes archivos exceden el límite de 5MB:<br>${invalidFiles.join('<br>')}`
             });
             return;
         }
@@ -986,13 +1166,25 @@
             },
             body: formData
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.message || 'Error al subir las fotos');
-                });
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error('El servidor devolvió una respuesta no válida. Por favor, recarga la página e intenta de nuevo.');
             }
-            return response.json();
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Manejar errores de validación
+                if (data.errors) {
+                    const errorMessages = Object.values(data.errors).flat().join('<br>');
+                    throw new Error(errorMessages);
+                }
+                throw new Error(data.message || 'Error al subir las fotos');
+            }
+            
+            return data;
         })
         .then(data => {
             Swal.close();
@@ -1019,7 +1211,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: error.message || 'Error al subir las fotos'
+                html: error.message || 'Error al subir las fotos'
             });
         });
     }

@@ -16,3 +16,21 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Videos (archivos grandes que no deben estar en el repositorio)
+/public/videos/*.mp4
+/public/videos/*.mov
+/public/videos/*.avi
+
+# Certificados y claves privadas
+*.pem
+*.key
+cert.pem
+key.pem
+
+# Archivos de proxy
+https-proxy.cjs
+https-proxy.js
+
+# Binarios
+mkcert-*

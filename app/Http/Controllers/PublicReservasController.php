@@ -45,6 +45,39 @@ class PublicReservasController extends Controller
     }
 
     /**
+     * Página "Video Exterior" - Instrucciones de acceso
+     */
+    public function videoExterior()
+    {
+        // Obtener el idioma actual de la sesión o aplicación
+        $locale = app()->getLocale() ?: session('locale', 'es');
+        
+        // Mapear locale a código de video
+        $videoCode = $this->getVideoCodeFromLocale($locale);
+        
+        return view('public.video-exterior.index', [
+            'videoCode' => $videoCode,
+            'locale' => $locale
+        ]);
+    }
+    
+    /**
+     * Obtener el código de video según el locale
+     * MOR = árabe, ESP = español, ENG = inglés (por defecto)
+     */
+    private function getVideoCodeFromLocale($locale)
+    {
+        $mapping = [
+            'es' => 'ESP',
+            'en' => 'ENG',
+            'ar' => 'MOR', // Árabe
+            'mor' => 'MOR', // Por si acaso viene como 'mor'
+        ];
+        
+        return $mapping[$locale] ?? 'ENG'; // Por defecto inglés
+    }
+
+    /**
      * Procesar envío del formulario de contacto
      */
     public function enviarContacto(Request $request)

@@ -59,6 +59,10 @@ class Kernel extends ConsoleKernel
         
         // Enviar claves por Channex todos los días a las 14:00
         $schedule->command('ari:enviar-claves-channex')->dailyAt('14:00');
+        
+        // Generar turnos de trabajo todos los días a las 7:00 AM
+        $schedule->command('turnos:generar')->dailyAt('07:00');
+        
         // Ejecuta el comando cada hora
         $schedule->command('emails:categorize')->everyMinute();
 

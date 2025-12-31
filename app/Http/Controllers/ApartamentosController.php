@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ApartamentosController extends Controller
@@ -886,13 +887,30 @@ class ApartamentosController extends Controller
      */
     public function uploadPhotos(Request $request, $id)
     {
-        $apartamento = Apartamento::findOrFail($id);
-
-        $request->validate([
-            'photos.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120', // 5MB max, nullable para permitir arrays vacíos
-        ]);
-
         try {
+            $apartamento = Apartamento::findOrFail($id);
+
+            // Validar y capturar errores de validación para devolver JSON
+            try {
+                $request->validate([
+                    'photos' => 'required|array|min:1',
+                    'photos.*' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120', // 5MB max
+                ], [
+                    'photos.required' => 'Debes seleccionar al menos una foto.',
+                    'photos.array' => 'Las fotos deben ser un array.',
+                    'photos.min' => 'Debes seleccionar al menos una foto.',
+                    'photos.*.required' => 'Una o más fotos no son válidas.',
+                    'photos.*.image' => 'Todos los archivos deben ser imágenes.',
+                    'photos.*.mimes' => 'Las imágenes deben ser JPG, PNG o WEBP.',
+                    'photos.*.max' => 'Cada imagen no puede exceder 5MB.',
+                ]);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $e->errors()
+                ], 422);
+            }
             $uploadedPhotos = [];
             
             if (!$request->hasFile('photos')) {

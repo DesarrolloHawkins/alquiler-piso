@@ -563,6 +563,45 @@
         @yield('content')
     </div>
     
+    <!-- PROGRAMA PYME DIGITAL -->
+    <div class="pyme-digital-section" style="background: #ffffff; padding: 48px 0; margin-top: 64px; border-top: 1px solid #e0e0e0;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <h2 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 24px;">
+                    Programa Pyme Digital de la Cámara de Comercio del Campo de Gibraltar
+                </h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #555; max-width: 900px; margin: 0 auto 24px;">
+                    IPOINT COMUNICACIÓN MASIVA S.L ha sido beneficiaria de Fondos Europeos, cuyo objetivo es la mejora de la competitividad de las PYMES, y gracias al cual ha puesto en marcha un Plan de Acción con el objetivo de reforzar la digitalización y la competitividad de las pymes durante el año 2024. Para ello ha contado con el apoyo del Programa Pyme Digital de la Cámara de Comercio del Campo de Gibraltar.
+                </p>
+                <div style="font-size: 18px; font-weight: 600; color: #003580; margin-top: 24px; margin-bottom: 32px;">
+                    #EuropaSeSiente
+                </div>
+            </div>
+            
+            <!-- Imagen de Logos y Beneficiarios -->
+            <div style="text-align: center; margin-top: 32px;">
+                <img src="{{ asset('images/pyme-digital-logos-beneficiarios.png') }}" 
+                     alt="Programa Pyme Digital - Beneficiarios 2024" 
+                     style="max-width: 100%; height: auto; display: block; margin: 0 auto;"
+                     onerror="this.style.display='none';"
+                     onload="this.style.display='block';">
+            </div>
+            
+            <!-- Sección final con imagen de comercio y texto -->
+            <div style="background: white; padding: 24px 16px; text-align: center; margin-top: 32px;">
+                <div style="margin-bottom: 16px;">
+                    <img src="{{ asset('images/imagen_comercio.png') }}" 
+                         alt="Cámara de Comercio" 
+                         style="max-width: 68%; height: auto; display: block; margin: 0 auto;"
+                         onerror="this.style.display='none';">
+                </div>
+                <div style="color: #333; font-size: 14px; font-weight: 500; margin: 0;">
+                    {{ __('footer.funding_text') }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- FOOTER ESTILO BOOKING.COM -->
     <div class="booking-footer">
         <div class="booking-footer-main">
@@ -600,18 +639,7 @@
                     </ul>
                 </div>
                 
-                <!-- Columna 4: Información -->
-                <div class="booking-footer-column">
-                    <h5>{{ __('footer.information') }}</h5>
-                    <ul>
-                        <li><a href="{{ route('web.sobre-nosotros') }}">{{ __('footer.about_company') }}</a></li>
-                        <li><a href="#">{{ __('footer.how_we_work') }}</a></li>
-                        <li><a href="#">{{ __('footer.sustainability') }}</a></li>
-                        <li><a href="{{ route('web.contacto') }}">{{ __('footer.corporate_contact') }}</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Columna 5: Contacto -->
+                <!-- Columna 4: Contacto -->
                 <div class="booking-footer-column">
                     <h5>{{ __('footer.contact_us') }}</h5>
                     <ul>
@@ -637,15 +665,6 @@
         </div>
     </div>
     
-    <!-- Sección final con fondo blanco -->
-    <div class="booking-footer-funding-final">
-        <div class="booking-footer-funding-final-image">
-            <img src="{{ asset('images/imagen_comercio.png') }}" alt="Cámara de Comercio" class="booking-footer-commerce-image">
-        </div>
-        <div class="booking-footer-funding-final-text">
-            {{ __('footer.funding_text') }}
-        </div>
-    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
