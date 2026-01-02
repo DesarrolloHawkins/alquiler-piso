@@ -178,7 +178,11 @@ class PresupuestoController extends Controller
     public function show($id)
     {
         $presupuesto = Presupuesto::with('cliente', 'conceptos')->findOrFail($id);
-        return view('admin.presupuestos.show', compact('presupuesto'));
+        
+        // Buscar la factura asociada a este presupuesto
+        $factura = Invoices::where('budget_id', $id)->first();
+        
+        return view('admin.presupuestos.show', compact('presupuesto', 'factura'));
     }
 
     /**
@@ -188,7 +192,11 @@ class PresupuestoController extends Controller
     {
         $presupuesto = Presupuesto::with('conceptos')->findOrFail($id);
         $clientes = Cliente::all();
-        return view('admin.presupuestos.edit', compact('presupuesto', 'clientes'));
+        
+        // Buscar la factura asociada a este presupuesto
+        $factura = Invoices::where('budget_id', $id)->first();
+        
+        return view('admin.presupuestos.edit', compact('presupuesto', 'clientes', 'factura'));
     }
 
     /**

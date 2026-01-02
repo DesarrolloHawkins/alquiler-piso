@@ -13,13 +13,22 @@
             </h1>
             <p class="text-muted mb-0">Modifica la información del presupuesto existente</p>
         </div>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('presupuestos.index') }}">Presupuestos</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Editar Presupuesto</li>
-            </ol>
-        </nav>
+        <div class="d-flex gap-2 align-items-center">
+            @if($factura)
+                <a href="{{ route('admin.facturas.edit', $factura->id) }}" 
+                   class="btn btn-success">
+                    <i class="fas fa-file-invoice me-2"></i>
+                    Ver Factura Asociada
+                </a>
+            @endif
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('presupuestos.index') }}">Presupuestos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Editar Presupuesto</li>
+                </ol>
+            </nav>
+        </div>
     </div>
 
     <!-- Formulario de Edición -->
