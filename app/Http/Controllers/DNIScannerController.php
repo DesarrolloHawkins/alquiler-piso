@@ -745,23 +745,27 @@ class DNIScannerController extends Controller
                         // No lanzar excepción para que el proceso continúe
                     }
                     
-                    // Marcar como completado si es cliente - SOLO si tiene todos los datos obligatorios para MIR
+                    // Marcar como completado si es cliente
                     if ($personaTipo === 'cliente') {
                         // Recargar el cliente para obtener los datos más recientes
                         $persona->refresh();
                         
-                        // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                        // SIEMPRE marcar dni_entregado = true cuando se sube el DNI (independientemente de datos completos)
+                        $reserva->update(['dni_entregado' => true]);
+                        Log::info('dni_entregado actualizado en reserva - DNI subido', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $persona->id,
+                            'dni_entregado' => true
+                        ]);
+                        
+                        // data_dni = true SOLO si tiene todos los datos obligatorios para MIR
                         if ($this->verificarDatosCompletos($persona)) {
                             $persona->update(['data_dni' => true]);
                             // Recargar el cliente para asegurar que data_dni esté actualizado
                             $persona->refresh();
-                            
-                            // También actualizar dni_entregado en la reserva
-                            $reserva->update(['dni_entregado' => true]);
-                            Log::info('dni_entregado actualizado en reserva - datos completos', [
+                            Log::info('data_dni marcado como true - datos completos para MIR', [
                                 'reserva_id' => $reserva->id,
-                                'cliente_id' => $persona->id,
-                                'dni_entregado' => true
+                                'cliente_id' => $persona->id
                             ]);
                         } else {
                             Log::warning('No se puede marcar data_dni = true: faltan datos obligatorios para MIR', [
@@ -1012,12 +1016,20 @@ class DNIScannerController extends Controller
                         ]);
                     }
                     
-                    // Marcar como completado - SOLO si tiene todos los datos obligatorios para MIR
+                    // Marcar como completado si es cliente
                     if ($personaTipo === 'cliente') {
                         // Recargar el cliente para obtener los datos más recientes
                         $persona->refresh();
                         
-                        // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                        // SIEMPRE marcar dni_entregado = true cuando se sube el DNI (independientemente de datos completos)
+                        $reserva->update(['dni_entregado' => true]);
+                        Log::info('dni_entregado actualizado en reserva - DNI subido (procesamiento múltiple)', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $persona->id,
+                            'dni_entregado' => true
+                        ]);
+                        
+                        // data_dni = true SOLO si tiene todos los datos obligatorios para MIR
                         if ($this->verificarDatosCompletos($persona)) {
                             $persona->update(['data_dni' => true]);
                             Log::info('data_dni marcado como true - datos completos', [
@@ -1784,7 +1796,15 @@ INSTRUCCIONES ESPECÍFICAS:
                     // Recargar el cliente para obtener los datos actualizados
                     $persona->refresh();
                     
-                    // Validar que tiene todos los datos obligatorios antes de marcar como completado
+                    // SIEMPRE marcar dni_entregado = true cuando se guarda el frontal del DNI
+                    $reserva->update(['dni_entregado' => true]);
+                    Log::info('dni_entregado actualizado en reserva - frontal guardado', [
+                        'reserva_id' => $reserva->id,
+                        'cliente_id' => $persona->id,
+                        'dni' => $data['dni'] ?? 'N/A'
+                    ]);
+                    
+                    // data_dni = true SOLO si tiene todos los datos obligatorios para MIR
                     if ($this->verificarDatosCompletos($persona)) {
                         $persona->update(['data_dni' => true]);
                         Log::info('Datos del frontal guardados en Cliente - data_dni marcado como true', [
@@ -2138,7 +2158,14 @@ INSTRUCCIONES ESPECÍFICAS:
             // Recargar el cliente para obtener los datos más recientes
             $cliente->refresh();
             
-            // Validar que tiene todos los datos obligatorios antes de marcar como completado
+            // SIEMPRE marcar dni_entregado = true cuando se completa la verificación (independientemente de datos completos)
+            $reserva->update(['dni_entregado' => true]);
+            Log::info('dni_entregado actualizado en reserva - verificación completada', [
+                'reserva_id' => $reserva->id,
+                'cliente_id' => $cliente->id
+            ]);
+            
+            // data_dni = true SOLO si tiene todos los datos obligatorios para MIR
             if ($this->verificarDatosCompletos($cliente)) {
                 $cliente->update([
                     'data_dni' => true,

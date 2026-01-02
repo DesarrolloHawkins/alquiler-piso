@@ -1390,9 +1390,8 @@ class GestionApartamentoController extends Controller
         // Obtener mensaje de amenities del session flash si existe
         $mensajeAmenities = session('mensajeAmenities');
         
-        // Artículos activos con stock para el modal simple de reposición 1:1
+        // Artículos activos para el modal simple de reposición 1:1 (mostrar todos, incluso con stock 0)
         $articulosActivos = \App\Models\Articulo::activos()
-            ->where('stock_actual', '>', 0)
             ->orderBy('nombre')
             ->get();
         
@@ -1721,9 +1720,8 @@ class GestionApartamentoController extends Controller
             }
         }
 
-        // Artículos activos con stock para el modal simple de reposición 1:1
+        // Artículos activos para el modal simple de reposición 1:1 (mostrar todos, incluso con stock 0)
         $articulosActivos = \App\Models\Articulo::activos()
-            ->where('stock_actual', '>', 0)
             ->orderBy('nombre')
             ->get();
 

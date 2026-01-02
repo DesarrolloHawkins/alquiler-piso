@@ -561,47 +561,72 @@ class InvoicesController extends Controller
 
    public function facturar(Request $request)
    {
-       $idReserva = $request->input('reserva_id');
-       $reserva = Reserva::find($idReserva);
+       try {
+           $idReserva = $request->input('reserva_id');
+           $reserva = Reserva::with('apartamento')->find($idReserva);
 
-       if (!$reserva) {
-           return response()->json(['success' => false, 'message' => 'Reserva no encontrada.'], 404);
-       }
+           if (!$reserva) {
+               return response()->json(['success' => false, 'message' => 'Reserva no encontrada.'], 404);
+           }
 
-       $invoice = Invoices::where('reserva_id', $idReserva)->first();
+           if (!$reserva->apartamento) {
+               return response()->json(['success' => false, 'message' => 'La reserva no tiene apartamento asociado.'], 400);
+           }
 
-       if ($invoice == null) {
-           $data = [
-               'budget_id' => null,
-               'cliente_id' => $reserva->cliente_id,
-               'reserva_id' => $reserva->id,
-               'invoice_status_id' => 1,
-               'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-               'description' => '',
-               'fecha' => $reserva->fecha_salida,
-               'fecha_cobro' => null,
-               'base' => $reserva->precio,
-               'iva' => $reserva->precio * 0.10,
-               'descuento' => null,
-               'total' => $reserva->precio,
-               'created_at' => $reserva->fecha_salida,
-               'updated_at' => $reserva->fecha_salida,
-           ];
+           $invoice = Invoices::where('reserva_id', $idReserva)->first();
 
-           $crearFactura = Invoices::create($data);
+           if ($invoice == null) {
+               $apartamentoTitulo = $reserva->apartamento->titulo ?? $reserva->apartamento->nombre ?? 'Apartamento #' . $reserva->apartamento_id;
+               
+               $data = [
+                   'budget_id' => null,
+                   'cliente_id' => $reserva->cliente_id,
+                   'reserva_id' => $reserva->id,
+                   'invoice_status_id' => 1,
+                   'concepto' => 'Estancia en apartamento: ' . $apartamentoTitulo,
+                   'description' => '',
+                   'fecha' => $reserva->fecha_salida,
+                   'fecha_cobro' => null,
+                   'base' => $reserva->precio,
+                   'iva' => $reserva->precio * 0.10,
+                   'descuento' => null,
+                   'total' => $reserva->precio,
+                   'created_at' => $reserva->fecha_salida,
+                   'updated_at' => $reserva->fecha_salida,
+               ];
 
-           $referencia = $this->generateBudgetReference($crearFactura);
-           $crearFactura->reference = $referencia['reference'];
-           $crearFactura->reference_autoincrement_id = $referencia['id'];
-           $crearFactura->invoice_status_id = 3;
-           $crearFactura->save();
+               $crearFactura = Invoices::create($data);
 
-           $reserva->estado_id = 5;
-           $reserva->save();
+               $referencia = $this->generateBudgetReference($crearFactura);
+               $crearFactura->reference = $referencia['reference'];
+               $crearFactura->reference_autoincrement_id = $referencia['id'];
+               $crearFactura->invoice_status_id = 3;
+               $crearFactura->save();
 
-           return response()->json(['success' => true, 'message' => 'Factura generada correctamente.']);
-       } else {
-           return response()->json(['success' => false, 'message' => 'La factura ya estaba generada.']);
+               $reserva->estado_id = 5;
+               $reserva->save();
+
+               Log::info('Factura generada correctamente', [
+                   'reserva_id' => $reserva->id,
+                   'invoice_id' => $crearFactura->id,
+                   'reference' => $crearFactura->reference
+               ]);
+
+               return response()->json(['success' => true, 'message' => 'Factura generada correctamente.']);
+           } else {
+               return response()->json(['success' => false, 'message' => 'La factura ya estaba generada.']);
+           }
+       } catch (\Exception $e) {
+           Log::error('Error al generar factura', [
+               'reserva_id' => $request->input('reserva_id'),
+               'error' => $e->getMessage(),
+               'trace' => $e->getTraceAsString()
+           ]);
+           
+           return response()->json([
+               'success' => false, 
+               'message' => 'Error al generar la factura: ' . $e->getMessage()
+           ], 500);
        }
    }
 
