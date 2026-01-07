@@ -8,14 +8,26 @@ use App\Models\Reserva;
 use App\Models\Pago;
 use App\Models\IntentoPago;
 use App\Models\Huesped;
+use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ReservaPagoController extends Controller
 {
+    private $apiUrl;
+    private $apiToken;
+
+    public function __construct()
+    {
+        $this->apiUrl = env('CHANNEX_URL', 'https://staging.channex.io/api/v1');
+        $this->apiToken = env('CHANNEX_TOKEN');
+    }
+
     /**
      * Mostrar formulario de datos del cliente para la reserva
      */
@@ -41,7 +53,7 @@ class ReservaPagoController extends Controller
 
         // Verificar disponibilidad
         $disponible = $this->verificarDisponibilidad($apartamento, $fechaEntrada, $fechaSalida);
-        
+
         if (!$disponible) {
             return redirect()->route('web.reservas.show', $apartamentoId)
                 ->with('error', 'El apartamento no está disponible para las fechas seleccionadas.')
@@ -57,7 +69,7 @@ class ReservaPagoController extends Controller
         }
 
         $precioTotal = $precioPorNoche * $noches;
-        
+
         // Aplicar impuestos si aplican
         if ($apartamento->tourist_tax && !$apartamento->tourist_tax_included) {
             $precioTotal += ($apartamento->tourist_tax * $noches * ($adultos + $ninos));
@@ -73,12 +85,12 @@ class ReservaPagoController extends Controller
         $clienteLogueado = Auth::guard('cliente')->user();
         $datosFaltantes = [];
         $esParaMi = $request->get('es_para_mi', false);
-        
+
         if ($clienteLogueado && $esParaMi) {
             // Verificar datos MIR necesarios solo si es para él
             $datosFaltantes = $this->verificarDatosMIR($clienteLogueado);
         }
-        
+
         // Guardar parámetros de reserva en sesión para poder recuperarlos después
         if ($clienteLogueado) {
             session([
@@ -115,7 +127,7 @@ class ReservaPagoController extends Controller
     {
         $clienteLogueado = Auth::guard('cliente')->user();
         $esParaMi = $request->get('es_para_mi', false);
-        
+
         // Si está logueado y es para él, validar datos MIR
         if ($clienteLogueado && $esParaMi) {
             $datosFaltantes = $this->verificarDatosMIR($clienteLogueado);
@@ -123,7 +135,7 @@ class ReservaPagoController extends Controller
                 return back()->with('error', 'Faltan datos necesarios para completar la reserva. Por favor, completa tu perfil.')->withInput();
             }
         }
-        
+
         // Validación base
         $rules = [
             'apartamento_id' => 'required|exists:apartamentos,id',
@@ -151,14 +163,14 @@ class ReservaPagoController extends Controller
             'lugar_nacimiento' => 'nullable|string|max:255',
             'notas' => 'nullable|string|max:1000',
         ];
-        
+
         $request->validate($rules);
 
         try {
             $apartamento = Apartamento::findOrFail($request->apartamento_id);
             $fechaEntrada = Carbon::parse($request->fecha_entrada);
             $fechaSalida = Carbon::parse($request->fecha_salida);
-            
+
             // Verificar disponibilidad nuevamente
             if (!$this->verificarDisponibilidad($apartamento, $fechaEntrada, $fechaSalida)) {
                 return back()->with('error', 'El apartamento ya no está disponible para las fechas seleccionadas.')->withInput();
@@ -168,7 +180,7 @@ class ReservaPagoController extends Controller
             $precioPorNoche = $this->calcularPrecioPorNoche($apartamento, $fechaEntrada, $fechaSalida);
             $noches = $fechaEntrada->diffInDays($fechaSalida);
             $precioTotal = $precioPorNoche * $noches;
-            
+
             if ($apartamento->tourist_tax && !$apartamento->tourist_tax_included) {
                 $precioTotal += ($apartamento->tourist_tax * $noches * ($request->adultos + ($request->ninos ?? 0)));
             }
@@ -181,12 +193,12 @@ class ReservaPagoController extends Controller
 
             // VERIFICAR STRIPE PRIMERO antes de crear nada
             $stripeSecret = config('services.stripe.secret');
-            
+
             if (!$stripeSecret) {
                 \Log::error('Stripe secret key no configurada');
                 return back()->with('error', 'El sistema de pagos no está configurado. Por favor, contacta con nosotros.')->withInput();
             }
-            
+
             if (!class_exists('\Stripe\Stripe')) {
                 \Log::error('Stripe SDK no disponible');
                 return back()->with('error', 'El sistema de pagos no está disponible. Por favor, contacta con nosotros.')->withInput();
@@ -202,7 +214,7 @@ class ReservaPagoController extends Controller
                 } else {
                     // Es para otro huésped o cliente no logueado
                     $clienteComprador = $clienteLogueado;
-                    
+
                     // Buscar o crear/actualizar cliente con los datos del formulario
                     $cliente = Cliente::updateOrCreate(
                         ['email' => $request->email],
@@ -247,7 +259,7 @@ class ReservaPagoController extends Controller
                     'numero_personas' => $request->adultos + ($request->ninos ?? 0),
                     'numero_ninos' => $request->ninos ?? 0,
                 ]);
-                
+
                 // Si es para otro huésped, crear registro en tabla huespedes
                 if ($clienteComprador) {
                     Huesped::create([
@@ -294,10 +306,13 @@ class ReservaPagoController extends Controller
                     ],
                 ]);
 
+                // Cerrar disponibilidad en Channex para esta reserva
+                $this->updateChannexAvailability($reserva);
+
                 // Crear sesión de Stripe Checkout
                 try {
                     \Stripe\Stripe::setApiKey($stripeSecret);
-                    
+
                     $checkoutSession = \Stripe\Checkout\Session::create([
                         'payment_method_types' => ['card'],
                         'line_items' => [[
@@ -354,7 +369,7 @@ class ReservaPagoController extends Controller
                         'reserva_id' => $reserva->id ?? null,
                         'error' => $e->getMessage(),
                     ]);
-                    
+
                     // Lanzar excepción para que la transacción se revierta
                     throw new \Exception('Error al crear sesión de pago: ' . $e->getMessage());
                 }
@@ -372,7 +387,7 @@ class ReservaPagoController extends Controller
     public function exito(Request $request)
     {
         $sessionId = $request->get('session_id');
-        
+
         if (!$sessionId) {
             return redirect()->route('web.index')->with('error', 'Sesión de pago no válida.');
         }
@@ -381,9 +396,9 @@ class ReservaPagoController extends Controller
             if (class_exists('\Stripe\Stripe')) {
                 \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                 $session = \Stripe\Checkout\Session::retrieve($sessionId);
-                
+
                 $pago = Pago::where('stripe_checkout_session_id', $sessionId)->first();
-                
+
                 if ($pago && $session->payment_status === 'paid') {
                     // El webhook debería haber actualizado esto, pero por si acaso
                     if ($pago->estado !== 'completado') {
@@ -392,10 +407,10 @@ class ReservaPagoController extends Controller
                             'fecha_pago' => now(),
                             'stripe_payment_intent_id' => $session->payment_intent,
                         ]);
-                        
+
                         $pago->reserva->update(['estado_id' => 1]); // Confirmada
                     }
-                    
+
                     return view('public.reservas.reserva-exitosa', [
                         'reserva' => $pago->reserva,
                         'pago' => $pago,
@@ -415,7 +430,7 @@ class ReservaPagoController extends Controller
     public function cancelado(Request $request)
     {
         $reservaId = $request->get('reserva_id');
-        
+
         return view('public.reservas.reserva-cancelada', [
             'reserva_id' => $reservaId,
         ]);
@@ -428,21 +443,21 @@ class ReservaPagoController extends Controller
             ->wherePivot('activo', true)
             ->where('tarifas.activo', true)
             ->get();
-        
+
         if ($tarifasAsignadas->isEmpty()) {
             return null;
         }
-        
+
         $tarifaVigente = $tarifasAsignadas->first(function ($tarifa) use ($fechaEntrada, $fechaSalida) {
             $fechaInicioTarifa = Carbon::parse($tarifa->fecha_inicio);
             $fechaFinTarifa = Carbon::parse($tarifa->fecha_fin);
             return $fechaInicioTarifa->lte($fechaEntrada) && $fechaFinTarifa->gte($fechaSalida);
         });
-        
+
         if ($tarifaVigente) {
             return floatval($tarifaVigente->precio);
         }
-        
+
         return null;
     }
 
@@ -460,17 +475,17 @@ class ReservaPagoController extends Controller
                 });
             })
             ->exists();
-        
+
         return !$reservasSolapadas;
     }
-    
+
     /**
      * Verificar que el cliente tenga todos los datos necesarios para MIR
      */
     private function verificarDatosMIR($cliente)
     {
         $datosFaltantes = [];
-        
+
         // Campos obligatorios para MIR
         $camposRequeridos = [
             'nombre' => 'Nombre',
@@ -485,16 +500,98 @@ class ReservaPagoController extends Controller
             'telefono_movil' => 'Teléfono Móvil',
             'provincia' => 'Provincia',
         ];
-        
+
         foreach ($camposRequeridos as $campo => $nombre) {
             if (empty($cliente->$campo)) {
                 $datosFaltantes[] = $nombre;
             }
         }
-        
+
         // Nota: La fecha de caducidad del documento no se almacena en clientes,
         // se solicitará al momento de hacer la reserva si es necesario
-        
+
         return $datosFaltantes;
+    }
+
+    /**
+     * Envía la actualización de disponibilidad a Channex después de crear una reserva.
+     */
+    private function updateChannexAvailability(Reserva $reserva)
+    {
+        $startDate = Carbon::parse($reserva->fecha_entrada);
+        $endDate = Carbon::parse($reserva->fecha_salida)->subDay(); // Restamos un día a la fecha de salida
+
+        $apartamento = Apartamento::with('roomTypes')->find($reserva->apartamento_id);
+
+        if (!$apartamento || !$apartamento->id_channex) {
+            Log::warning('ReservaPagoController: Apartamento sin id_channex', [
+                'reserva_id' => $reserva->id,
+                'apartamento_id' => $reserva->apartamento_id,
+            ]);
+            return;
+        }
+
+        $roomType = null;
+
+        // Si la reserva ya tiene room_type_id, verificar que pertenezca al apartamento
+        if ($reserva->room_type_id) {
+            $roomType = RoomType::where('id', $reserva->room_type_id)
+                ->where('property_id', $reserva->apartamento_id)
+                ->whereNotNull('id_channex')
+                ->first();
+        }
+
+        // Si no hay room_type válido, obtener el primero del apartamento con id_channex
+        if (!$roomType) {
+            $roomType = $apartamento->roomTypes()
+                ->whereNotNull('id_channex')
+                ->first();
+
+            // Si encontramos un room_type, actualizar la reserva
+            if ($roomType) {
+                $reserva->room_type_id = $roomType->id;
+                $reserva->save();
+            }
+        }
+
+        if (!$roomType || !$roomType->id_channex) {
+            Log::warning('ReservaPagoController: RoomType sin id_channex', [
+                'reserva_id' => $reserva->id,
+                'apartamento_id' => $reserva->apartamento_id,
+                'room_type_id' => $reserva->room_type_id,
+            ]);
+            return;
+        }
+
+        $update = [
+            'property_id' => $apartamento->id_channex,
+            'room_type_id' => $roomType->id_channex,
+            'date_from' => $startDate->toDateString(),
+            'date_to' => $endDate->toDateString(),
+            'update_type' => 'availability',
+            'availability' => 0, // Bloqueamos la disponibilidad
+        ];
+
+        // Enviar actualización a Channex (sin verificación SSL)
+        $response = Http::withoutVerifying()->withHeaders([
+            'user-api-key' => $this->apiToken,
+        ])->post("{$this->apiUrl}/availability", ['values' => [$update]]);
+
+        if (!$response->successful()) {
+            Log::error('ReservaPagoController: Error al actualizar disponibilidad en Channex', [
+                'reserva_id' => $reserva->id,
+                'error' => $response->body(),
+                'data' => $update
+            ]);
+        } else {
+            Log::info('ReservaPagoController: Disponibilidad cerrada en Channex', [
+                'reserva_id' => $reserva->id,
+                'apartamento_id' => $apartamento->id,
+                'apartamento_titulo' => $apartamento->titulo,
+                'room_type_id' => $roomType->id,
+                'fecha_entrada' => $reserva->fecha_entrada,
+                'fecha_salida' => $reserva->fecha_salida,
+            ]);
+        }
     }
 }

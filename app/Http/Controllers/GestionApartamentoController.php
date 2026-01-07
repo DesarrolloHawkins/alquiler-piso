@@ -45,21 +45,21 @@ class GestionApartamentoController extends Controller
     {
         $user = Auth::user();
         $hoy = Carbon::today();
-        
+
         // Verificar si hay turnos generados para hoy
         $turnoHoy = TurnoTrabajo::where('user_id', $user->id)
             ->whereDate('fecha', $hoy)
             ->with(['tareasAsignadas.tipoTarea', 'tareasAsignadas.apartamento', 'tareasAsignadas.zonaComun'])
             ->first();
-        
+
         // Si hay turno generado, usar el nuevo sistema
         if ($turnoHoy) {
             return $this->indexConTurnos($turnoHoy, $hoy);
         }
-        
+
         // Si no hay turno, usar el sistema antiguo
         $reservasPendientes = Reserva::apartamentosPendiente();
-        
+
         // Cargar la relación siguienteReserva con campos de niños para cada reserva pendiente
         foreach ($reservasPendientes as $reserva) {
             if (!$reserva->limpieza_fondo) {
@@ -75,7 +75,7 @@ class GestionApartamentoController extends Controller
                         $reserva->siguienteReserva = null;
                     }
                 }
-                
+
                 // Obtener manualmente la reserva que entra hoy si es la misma fecha
                 try {
                     $reservaEntraHoy = \App\Models\Reserva::where('apartamento_id', $reserva->apartamento_id)
@@ -87,7 +87,7 @@ class GestionApartamentoController extends Controller
                         })
                         ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                         ->first();
-                    
+
                     if ($reservaEntraHoy) {
                         $reserva->reserva_entra_hoy = $reservaEntraHoy;
                     }
@@ -97,7 +97,7 @@ class GestionApartamentoController extends Controller
                 }
             }
         }
-        
+
         $reservasOcupados = Reserva::apartamentosOcupados();
         $reservasSalida = Reserva::apartamentosSalida();
         // $reservasLimpieza = Reserva::apartamentosLimpiados();
@@ -117,11 +117,11 @@ class GestionApartamentoController extends Controller
                     ->orderBy('fecha_entrada', 'asc')
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($siguienteReserva) {
                     $limpieza->siguiente_reserva = $siguienteReserva;
                 }
-                
+
                 // También buscar si hay una reserva que entra hoy
                 $reservaEntraHoy = \App\Models\Reserva::where('apartamento_id', $limpieza->apartamento_id)
                     ->where('fecha_entrada', now()->toDateString())
@@ -131,7 +131,7 @@ class GestionApartamentoController extends Controller
                     })
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($reservaEntraHoy) {
                     $limpieza->reserva_entra_hoy = $reservaEntraHoy;
                 }
@@ -155,11 +155,11 @@ class GestionApartamentoController extends Controller
                     ->orderBy('fecha_entrada', 'asc')
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($siguienteReserva) {
                     $limpieza->siguiente_reserva = $siguienteReserva;
                 }
-                
+
                 // También buscar si hay una reserva que entra hoy
                 $reservaEntraHoy = \App\Models\Reserva::where('apartamento_id', $limpieza->apartamento_id)
                     ->where('fecha_entrada', now()->toDateString())
@@ -169,7 +169,7 @@ class GestionApartamentoController extends Controller
                     })
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($reservaEntraHoy) {
                     $limpieza->reserva_entra_hoy = $reservaEntraHoy;
                 }
@@ -203,11 +203,11 @@ class GestionApartamentoController extends Controller
                     ->orderBy('fecha_entrada', 'asc')
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($siguienteReserva) {
                     $reserva->siguiente_reserva = $siguienteReserva;
                 }
-                
+
                 // También buscar si hay una reserva que entra mañana mismo
                 $reservaEntraManana = \App\Models\Reserva::where('apartamento_id', $reserva->apartamento_id)
                     ->where('fecha_entrada', now()->addDay()->toDateString())
@@ -217,7 +217,7 @@ class GestionApartamentoController extends Controller
                     })
                     ->select('id', 'apartamento_id', 'fecha_entrada', 'fecha_salida', 'numero_personas', 'numero_ninos', 'edades_ninos', 'notas_ninos', 'codigo_reserva')
                     ->first();
-                
+
                 if ($reservaEntraManana) {
                     $reserva->reserva_entra_manana = $reservaEntraManana;
                 }
@@ -259,34 +259,34 @@ class GestionApartamentoController extends Controller
             'reservasOcupados',
             'reservasSalida',
             'reservasLimpieza',
-            'reservasEnLimpieza', 
-            'limpiezaFondo', 
+            'reservasEnLimpieza',
+            'limpiezaFondo',
             'reservasManana',
             'amenities',
             'consumosExistentes',
             'dashboardStats'
         ));
     }
-    
+
     /**
      * Mostrar gestión con el nuevo sistema de turnos
      */
     private function indexConTurnos($turnoHoy, $hoy)
     {
         $user = Auth::user();
-        
+
         // Obtener tareas asignadas ordenadas por prioridad y orden de ejecución
         $tareasAsignadas = $turnoHoy->tareasAsignadas()
             ->with(['tipoTarea', 'apartamento', 'zonaComun'])
             ->orderBy('prioridad_calculada', 'desc')
             ->orderBy('orden_ejecucion', 'asc')
             ->get();
-        
+
         // Preparar datos para la vista usando el formato del sistema antiguo
         $reservasPendientes = collect();
         $reservasEnLimpieza = collect();
         $reservasLimpieza = collect();
-        
+
         // Convertir tareas asignadas al formato esperado por la vista
         foreach ($tareasAsignadas as $tarea) {
             if ($tarea->apartamento_id) {
@@ -302,7 +302,7 @@ class GestionApartamentoController extends Controller
                         })
                         ->orderBy('fecha_entrada', 'asc')
                         ->first();
-                    
+
                     // Crear un objeto similar a Reserva para compatibilidad
                     $reserva = new \stdClass();
                     $reserva->id = $tarea->id;
@@ -323,7 +323,7 @@ class GestionApartamentoController extends Controller
                     $reserva->proximaReserva = $proximaReserva;
                     // Añadir status_id para compatibilidad con la vista
                     $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
-                    
+
                     // Agregar a la colección apropiada según el estado
                     if ($tarea->estado === 'pendiente') {
                         $reservasPendientes->push($reserva);
@@ -354,7 +354,7 @@ class GestionApartamentoController extends Controller
                     $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
                     // Añadir status_id para compatibilidad con la vista
                     $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
-                    
+
                     if ($tarea->estado === 'pendiente') {
                         $reservasPendientes->push($reserva);
                     } elseif ($tarea->estado === 'en_progreso') {
@@ -384,7 +384,7 @@ class GestionApartamentoController extends Controller
                 $reserva->tiempo_estimado = $tarea->tipoTarea->tiempo_estimado_minutos;
                 // Añadir status_id para compatibilidad con la vista
                 $reserva->status_id = $tarea->estado === 'completada' ? 3 : ($tarea->estado === 'en_progreso' ? 2 : 1);
-                
+
                 if ($tarea->estado === 'pendiente') {
                     $reservasPendientes->push($reserva);
                 } elseif ($tarea->estado === 'en_progreso') {
@@ -394,23 +394,23 @@ class GestionApartamentoController extends Controller
                 }
             }
         }
-        
+
         // Ordenar las colecciones por prioridad y orden de ejecución
         $reservasPendientes = $reservasPendientes->sortBy([
             ['prioridad', 'desc'],
             ['orden_ejecucion', 'asc']
         ])->values();
-        
+
         $reservasEnLimpieza = $reservasEnLimpieza->sortBy([
             ['prioridad', 'desc'],
             ['orden_ejecucion', 'asc']
         ])->values();
-        
+
         $reservasLimpieza = $reservasLimpieza->sortBy([
             ['prioridad', 'desc'],
             ['orden_ejecucion', 'asc']
         ])->values();
-        
+
         // Obtener solo amenities de categoría "Otros" para el modal de limpiadoras
         $amenities = \App\Models\Amenity::activos()
             ->where('categoria', 'Otros')
@@ -418,24 +418,24 @@ class GestionApartamentoController extends Controller
             ->orderBy('nombre')
             ->get()
             ->groupBy('categoria');
-        
+
         // Obtener estadísticas del dashboard
         $dashboardStats = $this->getDashboardStatsConTurnos($turnoHoy, $tareasAsignadas);
-        
+
         // Datos adicionales para compatibilidad
         $reservasOcupados = collect();
         $reservasSalida = collect();
         $limpiezaFondo = collect();
         $reservasManana = collect();
         $consumosExistentes = collect();
-        
+
         return view('gestion.index', compact(
             'reservasPendientes',
             'reservasOcupados',
             'reservasSalida',
             'reservasLimpieza',
-            'reservasEnLimpieza', 
-            'limpiezaFondo', 
+            'reservasEnLimpieza',
+            'limpiezaFondo',
             'reservasManana',
             'amenities',
             'consumosExistentes',
@@ -443,7 +443,7 @@ class GestionApartamentoController extends Controller
             'turnoHoy'
         ));
     }
-    
+
     /**
      * Obtener estadísticas del dashboard con el nuevo sistema de turnos
      */
@@ -451,18 +451,18 @@ class GestionApartamentoController extends Controller
     {
         $user = Auth::user();
         $hoy = Carbon::today();
-        
+
         // Estadísticas del día
         $limpiezasHoy = $tareasAsignadas->count();
         $limpiezasAsignadas = $tareasAsignadas->count();
         $limpiezasCompletadasHoy = $tareasAsignadas->where('estado', 'completada')->count();
         $limpiezasPendientesHoy = $tareasAsignadas->where('estado', 'pendiente')->count();
-        
+
         // Apartamentos pendientes (tareas de apartamento pendientes)
         $apartamentosPendientes = $tareasAsignadas->where('apartamento_id', '!=', null)
             ->where('estado', 'pendiente')
             ->count();
-        
+
         // Obtener incidencias pendientes del usuario
         $incidenciasPendientes = \DB::table('incidencias')
             ->where('empleada_id', $user->id)
@@ -470,35 +470,35 @@ class GestionApartamentoController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
-        
+
         // Obtener estadísticas de la semana
         $inicioSemana = $hoy->copy()->startOfWeek();
         $finSemana = $hoy->copy()->endOfWeek();
-        
+
         $limpiezasSemana = TurnoTrabajo::where('user_id', $user->id)
             ->whereBetween('fecha', [$inicioSemana, $finSemana])
             ->withCount('tareasAsignadas')
             ->get()
             ->sum('tareas_asignadas_count');
-        
+
         $limpiezasCompletadasSemana = TareaAsignada::whereHas('turno', function($query) use ($user, $inicioSemana, $finSemana) {
                 $query->where('user_id', $user->id)
                       ->whereBetween('fecha', [$inicioSemana, $finSemana]);
             })
             ->where('estado', 'completada')
             ->count();
-        
+
         $porcentajeSemana = $limpiezasSemana > 0 ? round(($limpiezasCompletadasSemana / $limpiezasSemana) * 100, 1) : 0;
-        
+
         // Obtener fichaje actual (comentado temporalmente por error de columna)
         $fichajeActual = null;
         // $fichajeActual = Fichaje::where('user_id', $user->id)
         //     ->whereNull('fecha_fin')
         //     ->first();
-        
+
         // Estadísticas de calidad (placeholder)
         $estadisticasCalidad = [];
-        
+
         return [
             'limpiezasHoy' => $limpiezasHoy,
             'limpiezasAsignadas' => $limpiezasAsignadas,
@@ -513,7 +513,7 @@ class GestionApartamentoController extends Controller
             'estadisticasCalidad' => $estadisticasCalidad
         ];
     }
-    
+
     /**
      * Obtener información de una tarea asignada
      */
@@ -524,14 +524,14 @@ class GestionApartamentoController extends Controller
             if ($tarea->turno->user_id !== Auth::id()) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
-            
+
             // Cargar relaciones necesarias
             $tarea->load(['tipoTarea', 'apartamento.edificio', 'zonaComun', 'turno.user']);
-            
+
             // Obtener checklist si existe
             $checklist = $tarea->checklist();
             $itemsChecklist = $tarea->itemChecklists();
-            
+
             // Preparar información de la tarea
             $info = [
                 'id' => $tarea->id,
@@ -548,7 +548,7 @@ class GestionApartamentoController extends Controller
                 'checklist' => null,
                 'items_checklist' => []
             ];
-            
+
             // Información del elemento (apartamento, zona común, etc.)
             if ($tarea->apartamento_id) {
                 $info['elemento'] = [
@@ -568,7 +568,7 @@ class GestionApartamentoController extends Controller
                     'nombre' => $tarea->tipoTarea->nombre
                 ];
             }
-            
+
             // Información del checklist
             if ($checklist) {
                 $info['checklist'] = [
@@ -576,7 +576,7 @@ class GestionApartamentoController extends Controller
                     'nombre' => $checklist->nombre,
                     'descripcion' => $checklist->descripcion ?? 'N/A'
                 ];
-                
+
                 $info['items_checklist'] = $itemsChecklist->map(function($item) {
                     return [
                         'id' => $item->id,
@@ -588,18 +588,18 @@ class GestionApartamentoController extends Controller
                     ];
                 });
             }
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $info
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error obteniendo información de tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
-    
+
     /**
      * Iniciar una tarea asignada
      */
@@ -610,20 +610,20 @@ class GestionApartamentoController extends Controller
             if ($tarea->turno->user_id !== Auth::id()) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
-            
+
             // Verificar que la tarea está en estado pendiente
             if ($tarea->estado !== 'pendiente') {
                 return response()->json(['error' => 'La tarea no está en estado pendiente'], 400);
             }
-            
+
             // Actualizar estado de la tarea usando el método del modelo que guarda fecha_inicio_real
             $tarea->iniciarTarea();
-            
+
             // Si es una tarea de apartamento o zona común, crear ApartamentoLimpieza real
             if ($tarea->apartamento_id || $tarea->zona_comun_id) {
                 $this->crearApartamentoLimpiezaParaTarea($tarea);
             }
-            
+
             // Log de la acción
             Log::info('Tarea iniciada', [
                 'tarea_id' => $tarea->id,
@@ -631,7 +631,7 @@ class GestionApartamentoController extends Controller
                 'tipo_tarea' => $tarea->tipoTarea->nombre,
                 'fecha_inicio_real' => $tarea->fecha_inicio_real
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tarea iniciada correctamente',
@@ -641,13 +641,13 @@ class GestionApartamentoController extends Controller
                     'fecha_inicio_real' => $tarea->fecha_inicio_real ? $tarea->fecha_inicio_real->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
                 ]
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error iniciando tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
-    
+
     /**
      * Finalizar una tarea asignada
      */
@@ -658,18 +658,18 @@ class GestionApartamentoController extends Controller
             if ($tarea->turno->user_id !== Auth::id()) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
-            
+
             // Verificar que la tarea está en estado en_progreso
             if ($tarea->estado !== 'en_progreso') {
                 return response()->json(['error' => 'La tarea no está en estado en progreso'], 400);
             }
-            
+
             // Actualizar estado de la tarea
             $tarea->update([
                 'estado' => 'completada',
                 'fecha_fin_real' => now()
             ]);
-            
+
             // Buscar y actualizar el ApartamentoLimpieza asociado
             $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
             if ($apartamentoLimpieza) {
@@ -678,49 +678,49 @@ class GestionApartamentoController extends Controller
                     'status_id' => 3, // Limpio
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 Log::info('ApartamentoLimpieza actualizado desde finalizarTarea', [
                     'limpieza_id' => $apartamentoLimpieza->id,
                     'tarea_id' => $tarea->id,
                     'status_id' => 3,
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 // Actualizar fecha_limpieza en la reserva si existe
                 $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
                 if ($reserva != null) {
                     $reserva->fecha_limpieza = $hoy;
                     $reserva->save();
-                    
+
                     Log::info('Reserva actualizada desde finalizarTarea', [
                         'reserva_id' => $reserva->id,
                         'fecha_limpieza' => $hoy
                 ]);
                 }
-                
+
                 // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
                 $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
-                
+
                 // Crear alerta si hay observaciones al finalizar la limpieza
                 if (!empty($apartamentoLimpieza->observacion)) {
                     $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
                     if ($apartamentoLimpieza->zona_comun_id) {
                         $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
                     }
-                    
+
                     AlertService::createCleaningObservationAlert(
                         $apartamentoLimpieza->id,
                         $apartamentoNombre,
                         $apartamentoLimpieza->observacion
                     );
-                    
+
                     Log::info('Alerta de observación creada desde finalizarTarea', [
                         'limpieza_id' => $apartamentoLimpieza->id,
                         'apartamento' => $apartamentoNombre
                     ]);
                 }
             }
-            
+
             // Log de la acción
             Log::info('Tarea finalizada', [
                 'tarea_id' => $tarea->id,
@@ -728,7 +728,7 @@ class GestionApartamentoController extends Controller
                 'tipo_tarea' => $tarea->tipoTarea->nombre,
                 'fecha_fin_real' => now()
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tarea finalizada correctamente',
@@ -738,13 +738,13 @@ class GestionApartamentoController extends Controller
                     'fecha_fin' => $tarea->fecha_fin_real ? $tarea->fecha_fin_real->format('d/m/Y H:i') : now()->format('d/m/Y H:i')
                 ]
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error finalizando tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
-    
+
     /**
      * Mostrar checklist de una tarea asignada
      */
@@ -753,7 +753,7 @@ class GestionApartamentoController extends Controller
         try {
             // Cargar la relación turno explícitamente
             $tarea->load('turno');
-            
+
             // Debug: Log de información de la tarea y usuario
             Log::info('Acceso a checklist de tarea', [
                 'tarea_id' => $tarea->id,
@@ -762,7 +762,7 @@ class GestionApartamentoController extends Controller
                 'auth_user_role' => Auth::user()->role ?? 'no_role',
                 'comparison' => $tarea->turno->user_id === Auth::id()
             ]);
-            
+
             // Verificar que la tarea pertenece al usuario autenticado
             // Solo verificar si la tarea tiene un turno asociado
             if ($tarea->turno && $tarea->turno->user_id !== Auth::id()) {
@@ -772,21 +772,21 @@ class GestionApartamentoController extends Controller
                     'tarea_turno_user_id' => $tarea->turno->user_id,
                     'auth_user_id' => Auth::id()
                 ]);
-                
+
                 if (request()->expectsJson()) {
                     return response()->json(['error' => 'No autorizado'], 403);
                 }
                 return redirect()->route('gestion.index')->with('error', 'No tienes autorización para acceder a esta tarea');
             }
-            
+
             // Cargar relaciones necesarias
             $tarea->load(['tipoTarea', 'apartamento.edificio', 'zonaComun', 'turno.user']);
-            
+
             // Obtener checklists según el tipo de tarea
             $checklists = collect();
             $itemsExistentes = [];
             $checklistsExistentes = [];
-            
+
             if ($tarea->apartamento_id) {
                 // Checklist de apartamento - Usar funcionalidad completa de gestion/edit
                 return $this->checklistTareaApartamento($tarea);
@@ -806,26 +806,26 @@ class GestionApartamentoController extends Controller
                     $checklists = collect([$checklistGeneral]);
                 }
             }
-            
+
             // Obtener elementos ya completados desde apartamento_limpieza_items
             $elementosCompletados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
                 ->whereNotNull('item_id')
                 ->where('estado', 1)
                 ->pluck('item_id')
                 ->toArray();
-            
+
             // Obtener amenities si es apartamento
             $amenities = collect();
             $amenitiesConRecomendaciones = [];
             $consumosExistentes = collect();
-            
+
             if ($tarea->apartamento_id) {
                 $amenities = \App\Models\Amenity::activos()
                     ->orderBy('categoria')
                     ->orderBy('nombre')
                     ->get()
                     ->groupBy('categoria');
-                
+
                 // Obtener consumos existentes (solo si la tabla existe)
                 try {
                     $consumosExistentes = \DB::table('consumos_amenities')
@@ -836,13 +836,13 @@ class GestionApartamentoController extends Controller
                     // Si la tabla no existe, usar colección vacía
                     $consumosExistentes = collect();
                 }
-                
+
                 // Calcular cantidades recomendadas para cada amenity
                 foreach ($amenities as $categoria => $amenitiesCategoria) {
                     foreach ($amenitiesCategoria as $amenity) {
                         $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, null, $tarea->apartamento);
                         $consumoExistente = $consumosExistentes->get($amenity->id);
-                        
+
                         $amenitiesConRecomendaciones[$categoria][] = [
                             'amenity' => $amenity,
                             'cantidad_recomendada' => $cantidadRecomendada,
@@ -851,21 +851,21 @@ class GestionApartamentoController extends Controller
                         ];
                     }
                 }
-                
+
                 // Añadir amenities automáticos para niños si la siguiente reserva tiene niños
                 $siguienteReserva = $this->obtenerSiguienteReserva($tarea->apartamento->id);
                 if ($siguienteReserva && $siguienteReserva->numero_ninos > 0) {
                     $amenitiesNinos = \App\Models\Amenity::paraNinos()->activos()->get();
-                    
+
                     foreach ($amenitiesNinos as $amenityNino) {
                         $cantidadParaNinos = $amenityNino->calcularCantidadParaNinos($siguienteReserva->numero_ninos, $siguienteReserva->edades_ninos ?? []);
-                        
+
                         if ($cantidadParaNinos > 0) {
                             $categoria = $amenityNino->categoria;
                             if (!isset($amenitiesConRecomendaciones[$categoria])) {
                                 $amenitiesConRecomendaciones[$categoria] = [];
                             }
-                            
+
                             // Verificar si ya existe este amenity
                             $existe = false;
                             foreach ($amenitiesConRecomendaciones[$categoria] as $amenityExistente) {
@@ -877,7 +877,7 @@ class GestionApartamentoController extends Controller
                                     break;
                                 }
                             }
-                            
+
                             if (!$existe) {
                                 $consumoExistente = $consumosExistentes->get($amenityNino->id);
                                 $amenitiesConRecomendaciones[$categoria][] = [
@@ -893,10 +893,10 @@ class GestionApartamentoController extends Controller
                     }
                 }
             }
-            
+
             // Obtener mensaje de amenities del session flash si existe
             $mensajeAmenities = session('mensajeAmenities');
-            
+
             // Devolver vista específica según el tipo de tarea
             if ($tarea->zona_comun_id) {
                 // Para zonas comunes, usar la vista específica
@@ -925,7 +925,7 @@ class GestionApartamentoController extends Controller
                     'mensajeAmenities'
                 ));
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error mostrando checklist de tarea: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al cargar el checklist de la tarea');
@@ -944,13 +944,13 @@ class GestionApartamentoController extends Controller
             }
 
             $accion = $request->input('accion', 'guardar');
-            
+
             if ($accion === 'finalizar') {
                 return $this->finalizarTareaChecklist($request, $tarea);
             } else {
                 return $this->guardarProgresoTarea($request, $tarea);
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error actualizando tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error al actualizar la tarea'], 500);
@@ -969,18 +969,18 @@ class GestionApartamentoController extends Controller
                 'checklist' => $request->input('checklist', []),
                 'amenities' => $request->input('amenities', [])
             ]);
-            
+
             DB::beginTransaction();
-            
+
             // Obtener items completados del formulario
             $itemsCompletados = $request->input('items', []);
             $checklistsCompletados = $request->input('checklist', []);
-            
+
             // Limpiar elementos completados existentes
             DB::table('tarea_checklist_completados')
                 ->where('tarea_asignada_id', $tarea->id)
                 ->delete();
-            
+
             // Guardar nuevos elementos completados
             foreach ($itemsCompletados as $itemId => $valor) {
                 if ($valor == '1') {
@@ -994,21 +994,21 @@ class GestionApartamentoController extends Controller
                     ]);
                 }
             }
-            
+
             // Los checklists se marcan como completados cuando todos sus items están completados
             // No se guardan directamente en la tabla tarea_checklist_completados
-            
+
             // Guardar amenities si es apartamento (usar sistema original)
             if ($tarea->apartamento_id) {
                 $amenities = $request->input('amenities', []);
-                
+
                 // Obtener la limpieza asociada a esta tarea
                 $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
-                
+
                 if ($apartamentoLimpieza) {
                     // IMPORTANTE: Antes de eliminar consumos, reponer el stock que ya fue descontado
                     $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->get();
-                    
+
                     foreach ($consumosExistentes as $consumoExistente) {
                         $amenity = \App\Models\Amenity::find($consumoExistente->amenity_id);
                         if ($amenity) {
@@ -1017,10 +1017,10 @@ class GestionApartamentoController extends Controller
                             \Log::info("Stock repuesto para amenity {$amenity->id}: +{$consumoExistente->cantidad_consumida} (antes de eliminar consumo ID {$consumoExistente->id})");
                         }
                     }
-                    
+
                     // Ahora sí, eliminar los consumos existentes (el stock ya fue repuesto)
                     \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)->delete();
-                    
+
                     // Guardar nuevos consumos
                     foreach ($amenities as $amenityId => $amenityData) {
                         try {
@@ -1030,13 +1030,13 @@ class GestionApartamentoController extends Controller
                                 \Log::warning("amenityId inválido: {$amenityId}");
                                 continue;
                             }
-                            
+
                             // Validar que amenityData sea un array
                             if (!is_array($amenityData)) {
                                 \Log::warning("amenityData no es un array para amenity {$amenityId}: " . gettype($amenityData) . " - Valor: " . var_export($amenityData, true));
                                 continue;
                             }
-                            
+
                             // Para amenities tipo "por_reserva", usar consumo_por_reserva en lugar de cantidad_dejada
                             $amenity = \App\Models\Amenity::lockForUpdate()->find($amenityId);
                             if ($amenity) {
@@ -1047,20 +1047,20 @@ class GestionApartamentoController extends Controller
                                     // Para otros tipos, usar cantidad_dejada manual
                                     $cantidad = floatval($amenityData['cantidad_dejada'] ?? 0);
                                 }
-                                
+
                                 if ($cantidad > 0) {
                                     // Refrescar el modelo para obtener el stock actualizado
                                     $amenity->refresh();
-                                    
+
                                     // Descontar stock de forma atómica y registrar consumo con cantidades reales
                                     $resultado = $amenity->descontarStock($cantidad);
-                                    
+
                                     // Validar que resultado sea un array
                                     if (!is_array($resultado)) {
                                         \Log::error("descontarStock no retornó un array para amenity {$amenityId}: " . gettype($resultado));
                                         throw new \Exception("Error al descontar stock: resultado inválido");
                                     }
-                                    
+
                                     \App\Models\AmenityConsumo::create([
                                         'limpieza_id' => $apartamentoLimpieza->id,
                                         'amenity_id' => $amenityId,
@@ -1073,7 +1073,7 @@ class GestionApartamentoController extends Controller
                                         'reserva_id' => $apartamentoLimpieza->reserva_id,
                                         'apartamento_id' => $apartamentoLimpieza->apartamento_id
                                     ]);
-                                    
+
                                     \Log::info("Consumo creado para amenity {$amenityId}: cantidad {$cantidad} (tipo: {$amenity->tipo_consumo}), stock {$resultado['stock_anterior']} -> {$resultado['stock_actual']}");
                                 } else {
                                     \Log::warning("Amenity {$amenityId} no encontrado o cantidad <= 0");
@@ -1090,14 +1090,14 @@ class GestionApartamentoController extends Controller
                     }
                 }
             }
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Progreso guardado correctamente'
             ]);
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error guardando progreso de tarea: ' . $e->getMessage());
@@ -1112,14 +1112,14 @@ class GestionApartamentoController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             // Guardar progreso primero
             $this->guardarProgresoTarea($request, $tarea);
-            
+
             // Verificar si necesita consentimiento
             $totalItems = 0;
             $itemsCompletados = 0;
-            
+
             if ($tarea->apartamento_id) {
                 $checklists = \App\Models\Checklist::with(['items'])
                     ->where('edificio_id', $tarea->apartamento->edificio_id)
@@ -1136,32 +1136,32 @@ class GestionApartamentoController extends Controller
                     ->first();
                 $checklists = $checklistGeneral ? collect([$checklistGeneral]) : collect();
             }
-            
+
             foreach ($checklists as $checklist) {
                 $totalItems += $checklist->items->count();
             }
-            
+
             // Obtener items completados desde tarea_checklist_completados (no desde ApartamentoLimpiezaItem)
             $itemsCompletadosIds = \DB::table('tarea_checklist_completados')
                 ->where('tarea_asignada_id', $tarea->id)
                 ->pluck('item_checklist_id')
                 ->toArray();
-            
+
             $itemsCompletados = count($itemsCompletadosIds);
             $porcentajeCompletado = $totalItems > 0 ? ($itemsCompletados / $totalItems) * 100 : 100;
-            
+
             // Si no está completo, verificar consentimiento
             if ($porcentajeCompletado < 100) {
                 $consentimiento = $request->input('consentimiento_finalizacion', false);
                 $motivo = $request->input('motivo_consentimiento', '');
                 $fechaConsentimiento = $request->input('fecha_consentimiento', now()->toISOString());
-                
+
                 if (!$consentimiento || !$motivo) {
                     return response()->json([
                         'error' => 'Se requiere consentimiento para finalizar sin completar todos los checklists'
                     ], 400);
                 }
-                
+
                 // Guardar consentimiento
                 $tarea->update([
                     'consentimiento_finalizacion' => true,
@@ -1169,14 +1169,14 @@ class GestionApartamentoController extends Controller
                     'fecha_consentimiento' => $fechaConsentimiento
                 ]);
             }
-            
+
             // Marcar tarea como completada
             $tarea->update([
                 'estado' => 'completada',
                 'fecha_fin_real' => now(),
                 'porcentaje_completado' => $porcentajeCompletado
             ]);
-            
+
             // Buscar y actualizar el ApartamentoLimpieza asociado
             $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
             if ($apartamentoLimpieza) {
@@ -1185,62 +1185,62 @@ class GestionApartamentoController extends Controller
                     'status_id' => 3, // Limpio
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 Log::info('ApartamentoLimpieza actualizado desde finalizarTareaChecklist', [
                     'limpieza_id' => $apartamentoLimpieza->id,
                     'tarea_id' => $tarea->id,
                     'status_id' => 3,
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 // Actualizar fecha_limpieza en la reserva si existe
                 $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
                 if ($reserva != null) {
                     $reserva->fecha_limpieza = $hoy;
                     $reserva->save();
-                    
+
                     Log::info('Reserva actualizada desde finalizarTareaChecklist', [
                         'reserva_id' => $reserva->id,
                         'fecha_limpieza' => $hoy
                     ]);
                 }
-                
+
                 // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
                 $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
-                
+
                 // Crear alerta si hay observaciones al finalizar la limpieza
                 if (!empty($apartamentoLimpieza->observacion)) {
                     $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
                     if ($apartamentoLimpieza->zona_comun_id) {
                         $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
                     }
-                    
+
                     AlertService::createCleaningObservationAlert(
                         $apartamentoLimpieza->id,
                         $apartamentoNombre,
                         $apartamentoLimpieza->observacion
                     );
-                    
+
                     Log::info('Alerta de observación creada desde finalizarTareaChecklist', [
                         'limpieza_id' => $apartamentoLimpieza->id,
                         'apartamento' => $apartamentoNombre
                     ]);
                 }
             }
-            
+
             // Crear nueva tarea si es necesario (para tareas recurrentes)
             if ($tarea->tipoTarea->es_recurrente) {
                 $this->crearTareaRecurrente($tarea);
             }
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tarea finalizada correctamente',
                 'porcentaje_completado' => $porcentajeCompletado
             ]);
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error finalizando tarea: ' . $e->getMessage());
@@ -1255,7 +1255,7 @@ class GestionApartamentoController extends Controller
     {
         try {
             $fechaSiguiente = $this->calcularFechaSiguienteTarea($tarea);
-            
+
             if ($fechaSiguiente) {
                 TareaAsignada::create([
                     'turno_id' => $tarea->turno_id,
@@ -1280,18 +1280,18 @@ class GestionApartamentoController extends Controller
     {
         $apartamento = $tarea->apartamento;
         $edificioId = $apartamento->edificio_id;
-        
+
         // Obtener checklists con items y artículos (igual que gestion/edit)
         $checklists = Checklist::with(['items.articulo'])->where('edificio_id', $edificioId)->get();
-        
+
         // Obtener o crear ApartamentoLimpieza real para esta tarea
         $apartamentoLimpieza = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
-        
+
         Log::info('Buscando ApartamentoLimpieza existente', [
             'tarea_id' => $tarea->id,
             'limpieza_encontrada' => $apartamentoLimpieza ? $apartamentoLimpieza->id : 'null'
         ]);
-        
+
         if (!$apartamentoLimpieza) {
             // Si no existe, crear uno nuevo
             Log::info('No se encontró ApartamentoLimpieza, creando nuevo');
@@ -1302,10 +1302,10 @@ class GestionApartamentoController extends Controller
                 'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
             ]);
         }
-        
+
         // Cargar relación apartamento
         $apartamentoLimpieza->load('apartamento');
-        
+
         // Obtener items marcados para esta tarea
         $item_check = \DB::table('tarea_checklist_completados')
             ->where('tarea_asignada_id', $tarea->id)
@@ -1313,30 +1313,30 @@ class GestionApartamentoController extends Controller
         $itemsExistentes = $item_check->pluck('estado', 'item_checklist_id')->toArray();
         $checklist_check = $item_check->whereNotNull('checklist_id');
         $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_id')->toArray();
-        
+
         // TODO: Verificar fotos cuando la tabla fotos_limpieza esté disponible
         // Por ahora, no verificamos fotos para evitar errores
-        
+
         // Obtener amenities para esta limpieza (igual que gestion/edit)
         $amenities = \App\Models\Amenity::activos()
             ->orderBy('categoria')
             ->orderBy('nombre')
             ->get()
             ->groupBy('categoria');
-        
+
         // Obtener consumos existentes para esta limpieza (usar tabla del sistema original)
         $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
             ->with('amenity')
             ->get()
             ->keyBy('amenity_id');
-        
+
         // Calcular cantidades recomendadas para cada amenity (igual que gestion/edit)
         $amenitiesConRecomendaciones = [];
         foreach ($amenities as $categoria => $amenitiesCategoria) {
             foreach ($amenitiesCategoria as $amenity) {
                 $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, null, $apartamento);
                 $consumoExistente = $consumosExistentes->get($amenity->id);
-                
+
                 $amenitiesConRecomendaciones[$categoria][] = [
                     'amenity' => $amenity,
                     'cantidad_recomendada' => $cantidadRecomendada,
@@ -1350,16 +1350,16 @@ class GestionApartamentoController extends Controller
         $siguienteReserva = $this->obtenerSiguienteReserva($apartamento->id);
         if ($siguienteReserva && $siguienteReserva->numero_ninos > 0) {
             $amenitiesNinos = \App\Models\Amenity::paraNinos()->activos()->get();
-            
+
             foreach ($amenitiesNinos as $amenityNino) {
                 $cantidadParaNinos = $amenityNino->calcularCantidadParaNinos($siguienteReserva->numero_ninos, $siguienteReserva->edades_ninos ?? []);
-                
+
                 if ($cantidadParaNinos > 0) {
                     $categoria = $amenityNino->categoria;
                     if (!isset($amenitiesConRecomendaciones[$categoria])) {
                         $amenitiesConRecomendaciones[$categoria] = [];
                     }
-                    
+
                     // Verificar si ya existe este amenity
                     $existe = false;
                     foreach ($amenitiesConRecomendaciones[$categoria] as $amenityExistente) {
@@ -1371,7 +1371,7 @@ class GestionApartamentoController extends Controller
                             break;
                         }
                     }
-                    
+
                     if (!$existe) {
                         $consumoExistente = $consumosExistentes->get($amenityNino->id);
                         $amenitiesConRecomendaciones[$categoria][] = [
@@ -1386,15 +1386,15 @@ class GestionApartamentoController extends Controller
                 }
             }
         }
-        
+
         // Obtener mensaje de amenities del session flash si existe
         $mensajeAmenities = session('mensajeAmenities');
-        
+
         // Artículos activos para el modal simple de reposición 1:1 (mostrar todos, incluso con stock 0)
         $articulosActivos = \App\Models\Articulo::activos()
             ->orderBy('nombre')
             ->get();
-        
+
         // Usar la vista de gestion/edit pero adaptada para tareas
         return view('gestion.edit-tarea', compact(
             'tarea',
@@ -1418,14 +1418,14 @@ class GestionApartamentoController extends Controller
         try {
             // Verificar si ya existe una limpieza para esta tarea
             $limpiezaExistente = ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
-            
+
             if ($limpiezaExistente) {
                 return $limpiezaExistente;
             }
-            
+
             // Determinar tipo de limpieza
             $tipoLimpieza = $tarea->apartamento_id ? 'apartamento' : 'zona_comun';
-            
+
             // Crear nueva limpieza
             $limpieza = ApartamentoLimpieza::create([
                 'apartamento_id' => $tarea->apartamento_id,
@@ -1437,7 +1437,7 @@ class GestionApartamentoController extends Controller
                 'tarea_asignada_id' => $tarea->id, // Relación con la tarea
                 'origen' => 'tarea_asignada'
             ]);
-            
+
             Log::info('ApartamentoLimpieza creado para tarea', [
                 'tarea_id' => $tarea->id,
                 'limpieza_id' => $limpieza->id,
@@ -1446,15 +1446,15 @@ class GestionApartamentoController extends Controller
                 'tipo_limpieza' => $tipoLimpieza,
                 'empleada_id' => $tarea->turno->user_id
             ]);
-            
+
             return $limpieza;
-            
+
         } catch (\Exception $e) {
             Log::error('Error creando ApartamentoLimpieza para tarea: ' . $e->getMessage());
             return null;
         }
     }
-    
+
     /**
      * Actualizar estado de un item del checklist
      */
@@ -1465,10 +1465,10 @@ class GestionApartamentoController extends Controller
             if ($tarea->turno->user_id !== Auth::id()) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
-            
+
             $itemId = $request->input('item_id');
             $completado = $request->input('completado', false);
-            
+
             if ($completado) {
                 // Marcar como completado
                 \DB::table('tarea_checklist_completados')->updateOrInsert(
@@ -1490,18 +1490,18 @@ class GestionApartamentoController extends Controller
                     ->where('item_checklist_id', $itemId)
                     ->delete();
             }
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Estado actualizado correctamente'
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error actualizando checklist de tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
     }
-    
+
     /**
      * Finalizar checklist y completar tarea
      */
@@ -1512,17 +1512,17 @@ class GestionApartamentoController extends Controller
             if ($tarea->turno->user_id !== Auth::id()) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
-            
+
             // Verificar que la tarea está en progreso
             if ($tarea->estado !== 'en_progreso') {
                 return response()->json(['error' => 'La tarea no está en estado en progreso'], 400);
             }
-            
+
             // Obtener items completados
             $itemsCompletados = \DB::table('tarea_checklist_completados')
                 ->where('tarea_asignada_id', $tarea->id)
                 ->count();
-            
+
             // Obtener total de items del checklist
             $totalItems = 0;
             if ($tarea->apartamento_id) {
@@ -1544,14 +1544,14 @@ class GestionApartamentoController extends Controller
                     $totalItems = $checklist->items()->activos()->count();
                 }
             }
-            
+
             // Actualizar estado de la tarea
             $tarea->update([
                 'estado' => 'completada',
                 'fecha_fin_real' => now(),
                 'observaciones' => $request->input('observaciones', '')
             ]);
-            
+
             // Buscar y actualizar el ApartamentoLimpieza asociado
             $apartamentoLimpieza = \App\Models\ApartamentoLimpieza::where('tarea_asignada_id', $tarea->id)->first();
             if ($apartamentoLimpieza) {
@@ -1560,49 +1560,49 @@ class GestionApartamentoController extends Controller
                     'status_id' => 3, // Limpio
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 Log::info('ApartamentoLimpieza actualizado desde finalizarChecklistTarea', [
                     'limpieza_id' => $apartamentoLimpieza->id,
                     'tarea_id' => $tarea->id,
                     'status_id' => 3,
                     'fecha_fin' => $hoy
                 ]);
-                
+
                 // Actualizar fecha_limpieza en la reserva si existe
                 $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
                 if ($reserva != null) {
                     $reserva->fecha_limpieza = $hoy;
                     $reserva->save();
-                    
+
                     Log::info('Reserva actualizada desde finalizarChecklistTarea', [
                         'reserva_id' => $reserva->id,
                         'fecha_limpieza' => $hoy
                 ]);
                 }
-                
+
                 // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
                 $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
-                
+
                 // Crear alerta si hay observaciones al finalizar la limpieza
                 if (!empty($apartamentoLimpieza->observacion)) {
                     $apartamentoNombre = $apartamentoLimpieza->apartamento->nombre ?? 'Apartamento';
                     if ($apartamentoLimpieza->zona_comun_id) {
                         $apartamentoNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
                     }
-                    
+
                     AlertService::createCleaningObservationAlert(
                         $apartamentoLimpieza->id,
                         $apartamentoNombre,
                         $apartamentoLimpieza->observacion
                     );
-                    
+
                     Log::info('Alerta de observación creada desde finalizarChecklistTarea', [
                         'limpieza_id' => $apartamentoLimpieza->id,
                         'apartamento' => $apartamentoNombre
                     ]);
                 }
             }
-            
+
             // Log de la acción
             Log::info('Tarea completada con checklist', [
                 'tarea_id' => $tarea->id,
@@ -1612,7 +1612,7 @@ class GestionApartamentoController extends Controller
                 'total_items' => $totalItems,
                 'fecha_fin_real' => now()
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tarea completada correctamente',
@@ -1624,7 +1624,7 @@ class GestionApartamentoController extends Controller
                     'total_items' => $totalItems
                 ]
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error finalizando checklist de tarea: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
@@ -1654,7 +1654,7 @@ class GestionApartamentoController extends Controller
                     Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
                     return redirect()->route('gestion.index');
                 }
-                
+
                 $apartamentoLimpieza = ApartamentoLimpieza::create([
                     'apartamento_id' => $apartamentoId,
                     'fecha_comienzo' => Carbon::now(),
@@ -1679,9 +1679,9 @@ class GestionApartamentoController extends Controller
         if (!$apartamento) {
             abort(404, 'Apartamento no encontrado');
         }
-        
+
         $edificioId = $apartamento->edificio_id;
-        
+
         // Verificar que el edificio existe
         if (!$edificioId) {
             abort(404, 'Edificio no encontrado para este apartamento');
@@ -1697,20 +1697,20 @@ class GestionApartamentoController extends Controller
             ->orderBy('nombre')
             ->get()
             ->groupBy('categoria');
-        
+
         // Obtener consumos existentes para esta limpieza
         $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
             ->with('amenity')
             ->get()
             ->keyBy('amenity_id');
-        
+
         // Calcular cantidades recomendadas para cada amenity
         $amenitiesConRecomendaciones = [];
         foreach ($amenities as $categoria => $amenitiesCategoria) {
             foreach ($amenitiesCategoria as $amenity) {
                 $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $reserva, $apartamentoLimpieza->apartamento);
                 $consumoExistente = $consumosExistentes->get($amenity->id);
-                
+
                 $amenitiesConRecomendaciones[$categoria][] = [
                     'amenity' => $amenity,
                     'cantidad_recomendada' => $cantidadRecomendada,
@@ -1755,27 +1755,27 @@ class GestionApartamentoController extends Controller
         // Buscar y actualizar la tarea asignada relacionada con esta reserva
         $usuarioActual = Auth::user();
         $tareaAsignada = null;
-        
+
         // Buscar la tarea asignada del usuario actual para este apartamento
         // Primero buscar el turno activo del usuario
         $turnoActivo = \App\Models\TurnoTrabajo::where('user_id', $usuarioActual->id)
             ->where('fecha', Carbon::today())
             ->where('estado', 'activo')
             ->first();
-        
+
         if ($turnoActivo) {
             // Buscar la tarea asignada para este apartamento en el turno activo
             $tareaAsignada = TareaAsignada::where('turno_id', $turnoActivo->id)
                 ->where('apartamento_id', $reserva->apartamento_id)
                 ->whereIn('estado', ['pendiente', null])
                 ->first();
-            
+
             // Si encontramos la tarea y está pendiente, actualizarla a "en_progreso"
             if ($tareaAsignada && ($tareaAsignada->estado === 'pendiente' || $tareaAsignada->estado === null)) {
                 $tareaAsignada->estado = 'en_progreso';
                 $tareaAsignada->fecha_inicio_real = $tareaAsignada->fecha_inicio_real ?? now();
                 $tareaAsignada->save();
-                
+
                 Log::info('Tarea actualizada a "en_progreso" al acceder a la limpieza', [
                     'tarea_id' => $tareaAsignada->id,
                     'reserva_id' => $id,
@@ -1792,7 +1792,7 @@ class GestionApartamentoController extends Controller
                 Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
                 return redirect()->route('gestion.index');
             }
-            
+
             $apartamentoLimpieza = ApartamentoLimpieza::create([
                 'apartamento_id' => $reserva->apartamento_id,
                 'fecha_comienzo' => Carbon::now(),
@@ -1805,7 +1805,7 @@ class GestionApartamentoController extends Controller
             $reserva->save();
         } else {
             $apartamentoLimpieza = $apartamentoLimpio;
-            
+
             // Si la limpieza ya existe pero no tiene tarea_asignada_id, actualizarla
             if (!$apartamentoLimpieza->tarea_asignada_id && $tareaAsignada) {
                 $apartamentoLimpieza->tarea_asignada_id = $tareaAsignada->id;
@@ -1819,9 +1819,9 @@ class GestionApartamentoController extends Controller
         if (!$apartamento) {
             abort(404, 'Apartamento no encontrado');
         }
-        
+
         $edificioId = $apartamento->edificio_id;
-        
+
         // Verificar que el edificio existe
         if (!$edificioId) {
             abort(404, 'Edificio no encontrado para este apartamento');
@@ -1837,20 +1837,20 @@ class GestionApartamentoController extends Controller
             ->orderBy('nombre')
             ->get()
             ->groupBy('categoria');
-        
+
         // Obtener consumos existentes para esta limpieza
         $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
             ->with('amenity')
             ->get()
             ->keyBy('amenity_id');
-        
+
         // Calcular cantidades recomendadas para cada amenity
         $amenitiesConRecomendaciones = [];
         foreach ($amenities as $categoria => $amenitiesCategoria) {
             foreach ($amenitiesCategoria as $amenity) {
                 $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $reserva, $apartamentoLimpieza->apartamento);
                 $consumoExistente = $consumosExistentes->get($amenity->id);
-                
+
                 $amenitiesConRecomendaciones[$categoria][] = [
                     'amenity' => $amenity,
                     'cantidad_recomendada' => $cantidadRecomendada,
@@ -1861,9 +1861,9 @@ class GestionApartamentoController extends Controller
         }
 
         return view('gestion.edit', compact(
-            'apartamentoLimpieza', 
-            'id', 
-            'checklists', 
+            'apartamentoLimpieza',
+            'id',
+            'checklists',
             'itemsExistentes',
             'amenitiesConRecomendaciones',
             'consumosExistentes'
@@ -1959,12 +1959,12 @@ class GestionApartamentoController extends Controller
         }
 
         $id = $apartamentoLimpieza->id;
-        
+
         // Debug temporal - ver en consola del navegador
         if (app()->environment('local')) {
             error_log("Debug ApartamentoLimpieza ID: {$apartamentoLimpieza->id}, Tipo: {$apartamentoLimpieza->tipo_limpieza}, ZonaComunID: {$apartamentoLimpieza->zona_comun_id}, ApartamentoID: {$apartamentoLimpieza->apartamento_id}");
         }
-        
+
         // Determinar si es una zona común o un apartamento
         if ($apartamentoLimpieza->tipo_limpieza === 'zona_comun') {
             // Es una zona común
@@ -1972,10 +1972,10 @@ class GestionApartamentoController extends Controller
             if (!$zonaComun) {
                 abort(404, 'Zona común no encontrada');
             }
-            
+
             // Obtener checklists específicos para zonas comunes
             $checklists = \App\Models\ChecklistZonaComun::activos()->ordenados()->with(['items.articulo'])->get();
-            
+
             // Obtener items marcados para esta limpieza
             $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
             $itemsExistentes = $item_check->pluck('estado', 'item_id')->toArray();
@@ -1983,28 +1983,28 @@ class GestionApartamentoController extends Controller
                 return $item->estado == 1;
             });
             $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_zona_comun_id')->toArray();
-            
+
             return view('gestion.edit-zona-comun', compact(
                 'apartamentoLimpieza',
                 'zonaComun',
-                'id', 
-                'checklists', 
-                'itemsExistentes', 
+                'id',
+                'checklists',
+                'itemsExistentes',
                 'checklistsExistentes'
             ));
-            
+
         } else {
             // Es un apartamento
             $apartamentoId = $apartamentoLimpieza->apartamento_id;
-            
+
             // Verificar que el apartamento existe
             $apartamento = Apartamento::find($apartamentoId);
             if (!$apartamento) {
                 abort(404, 'Apartamento no encontrado');
             }
-            
+
             $edificioId = $apartamento->edificio_id;
-            
+
             // Verificar que el edificio existe
             if (!$edificioId) {
                 abort(404, 'Edificio no encontrado para este apartamento');
@@ -2018,27 +2018,27 @@ class GestionApartamentoController extends Controller
             });
 
             $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_id')->toArray();
-            
+
             // Obtener amenities para esta limpieza
             $amenities = \App\Models\Amenity::activos()
                 ->orderBy('categoria')
                 ->orderBy('nombre')
                 ->get()
                 ->groupBy('categoria');
-            
+
             // Obtener consumos existentes para esta limpieza
             $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
                 ->with('amenity')
                 ->get()
                 ->keyBy('amenity_id');
-            
+
             // Calcular cantidades recomendadas para cada amenity
             $amenitiesConRecomendaciones = [];
             foreach ($amenities as $categoria => $amenitiesCategoria) {
                 foreach ($amenitiesCategoria as $amenity) {
                     $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $apartamentoLimpieza->origenReserva, $apartamentoLimpieza->apartamento);
                     $consumoExistente = $consumosExistentes->get($amenity->id);
-                    
+
                     $amenitiesConRecomendaciones[$categoria][] = [
                         'amenity' => $amenity,
                         'cantidad_recomendada' => $cantidadRecomendada,
@@ -2052,16 +2052,16 @@ class GestionApartamentoController extends Controller
             $siguienteReserva = $this->obtenerSiguienteReserva($apartamento->id);
             if ($siguienteReserva && $siguienteReserva->numero_ninos > 0) {
                 $amenitiesNinos = \App\Models\Amenity::paraNinos()->activos()->get();
-                
+
                 foreach ($amenitiesNinos as $amenityNino) {
                     $cantidadParaNinos = $amenityNino->calcularCantidadParaNinos($siguienteReserva->numero_ninos, $siguienteReserva->edades_ninos ?? []);
-                    
+
                     if ($cantidadParaNinos > 0) {
                         $categoria = $amenityNino->categoria;
                         if (!isset($amenitiesConRecomendaciones[$categoria])) {
                             $amenitiesConRecomendaciones[$categoria] = [];
                         }
-                        
+
                         // Verificar si ya existe este amenity
                         $existe = false;
                         foreach ($amenitiesConRecomendaciones[$categoria] as $amenityExistente) {
@@ -2073,7 +2073,7 @@ class GestionApartamentoController extends Controller
                                 break;
                             }
                         }
-                        
+
                         if (!$existe) {
                             $consumoExistente = $consumosExistentes->get($amenityNino->id);
                             $amenitiesConRecomendaciones[$categoria][] = [
@@ -2088,15 +2088,15 @@ class GestionApartamentoController extends Controller
                     }
                 }
             }
-            
+
             // Obtener mensaje de amenities del session flash si existe
             $mensajeAmenities = session('mensajeAmenities');
-            
+
             return view('gestion.edit', compact(
                 'apartamentoLimpieza',
-                'id', 
-                'checklists', 
-                'itemsExistentes', 
+                'id',
+                'checklists',
+                'itemsExistentes',
                 'checklistsExistentes',
                 'amenitiesConRecomendaciones',
                 'consumosExistentes',
@@ -2155,24 +2155,24 @@ class GestionApartamentoController extends Controller
     if ($request->has('amenities')) {
         // Debug: Log de los datos recibidos
         Log::info('Amenities recibidos:', $request->amenities);
-        
+
         $amenitiesGuardados = 0;
         $amenitiesCreados = 0;
         $amenitiesActualizados = 0;
-        
+
         foreach ($request->amenities as $amenityId => $amenityData) {
             try {
                 // Validar datos antes de insertar
                 $cantidadDejada = intval($amenityData['cantidad_dejada'] ?? 0);
                 $observaciones = $amenityData['observaciones'] ?? null;
-                
+
                 // Solo procesar si hay cantidad dejada
                 if ($cantidadDejada > 0) {
                     // Buscar si ya existe un consumo para este amenity
                     $consumoExistente = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
                         ->where('amenity_id', $amenityId)
                         ->first();
-                    
+
                     if ($consumoExistente) {
                         // ACTUALIZAR el consumo existente
                         // Usar lockForUpdate para evitar condiciones de carrera
@@ -2181,22 +2181,22 @@ class GestionApartamentoController extends Controller
                             \Log::error("No se pudo encontrar el amenity {$amenityId} para actualizar stock");
                             continue;
                         }
-                        
+
                         // Refrescar el modelo para obtener el stock más reciente
                         $amenity->refresh();
-                        
+
                         // Stock antes del ajuste
                         $stockAnterior = $amenity->stock_actual;
                         $cantidadConsumoAnterior = $consumoExistente->cantidad_consumida;
-                        
+
                         // Ajustar el stock basado en la diferencia de consumo
                         \Log::info("ANTES de ajustar stock - Amenity {$amenityId}: stock_actual = {$stockAnterior}, consumo anterior = {$cantidadConsumoAnterior}, consumo nuevo = {$cantidadDejada}");
-                        
+
                         $stockActual = $amenity->ajustarStock($cantidadConsumoAnterior, $cantidadDejada);
-                        
+
                         \Log::info("DESPUÉS de ajustar stock - Amenity {$amenityId}: stock_actual = {$stockActual}");
                         \Log::info("Stock del amenity {$amenityId} ajustado: diferencia " . ($cantidadDejada - $cantidadConsumoAnterior) . " (de {$cantidadConsumoAnterior} a {$cantidadDejada})");
-                        
+
                         // Actualizar el consumo con los valores reales del stock
                         $consumoExistente->update([
                             'cantidad_consumida' => $cantidadDejada,
@@ -2205,12 +2205,12 @@ class GestionApartamentoController extends Controller
                             'observaciones' => $observaciones,
                             'fecha_consumo' => now()
                         ]);
-                            
+
                             // Verificar si el stock está bajo después del ajuste
                             if ($amenity->verificarStockBajo()) {
                                 Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual})");
                         }
-                        
+
                         $amenitiesActualizados++;
                         \Log::info("Amenity {$amenityId} ACTUALIZADO con cantidad {$cantidadDejada} (stock: {$stockAnterior} -> {$stockActual})");
                     } else {
@@ -2221,22 +2221,22 @@ class GestionApartamentoController extends Controller
                             try {
                                 // Refrescar el modelo para obtener el stock más reciente
                                 $amenity->refresh();
-                                
+
                                 \Log::info("ANTES de descontar stock - Amenity {$amenityId}: stock_actual = {$amenity->stock_actual}");
                                 $resultadoDescuento = $amenity->descontarStock($cantidadDejada);
-                                
+
                                 // Validar que el resultado sea un array
                                 if (!is_array($resultadoDescuento)) {
                                     \Log::error("Error: descontarStock no devolvió un array para amenity {$amenityId}. Tipo: " . gettype($resultadoDescuento) . ", Valor: " . var_export($resultadoDescuento, true));
                                     throw new \Exception("Error al descontar stock: resultado inválido del método descontarStock()");
                                 }
-                                
+
                                 // Validar que tenga las claves necesarias
                                 if (!isset($resultadoDescuento['stock_anterior']) || !isset($resultadoDescuento['stock_actual'])) {
                                     \Log::error("Error: descontarStock no devolvió las claves esperadas para amenity {$amenityId}. Claves: " . implode(', ', array_keys($resultadoDescuento)));
                                     throw new \Exception("Error al descontar stock: resultado incompleto del método descontarStock()");
                                 }
-                                
+
                                 \Log::info("DESPUÉS de descontar stock - Amenity {$amenityId}: stock_actual = {$resultadoDescuento['stock_actual']}");
                                 \Log::info("Stock del amenity {$amenityId} descontado: -{$cantidadDejada} (nuevo consumo)");
 
@@ -2255,7 +2255,7 @@ class GestionApartamentoController extends Controller
                                     'observaciones' => $observaciones,
                                     'fecha_consumo' => now()
                                 ]);
-                                
+
                                 // Verificar si el stock está bajo después del descuento
                                 if ($amenity->verificarStockBajo()) {
                                     Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual})");
@@ -2267,11 +2267,11 @@ class GestionApartamentoController extends Controller
                         } else {
                             \Log::error("No se pudo encontrar el amenity {$amenityId} para descontar stock");
                         }
-                        
+
                         $amenitiesCreados++;
                         \Log::info("Amenity {$amenityId} CREADO con cantidad {$cantidadDejada}");
                     }
-                    
+
                     $amenitiesGuardados++;
                 }
             } catch (\Exception $e) {
@@ -2279,7 +2279,7 @@ class GestionApartamentoController extends Controller
                 \Log::error("Datos del amenity: " . json_encode($amenityData));
             }
         }
-        
+
         if ($amenitiesGuardados > 0) {
             $mensaje = "Se han procesado {$amenitiesGuardados} amenities: ";
             if ($amenitiesCreados > 0) {
@@ -2290,7 +2290,7 @@ class GestionApartamentoController extends Controller
                 $mensaje .= "{$amenitiesActualizados} actualizados";
             }
             $mensaje .= " correctamente";
-            
+
             // En lugar de Alert::success, pasamos el mensaje a la vista
             $mensajeAmenities = $mensaje;
         }
@@ -2304,15 +2304,15 @@ class GestionApartamentoController extends Controller
     Alert::success('Guardado con Éxito', 'Apartamento actualizado correctamente');
 
     $apartamentoId = $apartamentoLimpieza->apartamento_id;
-    
+
     // Verificar que el apartamento existe
     $apartamento = Apartamento::find($apartamentoId);
     if (!$apartamento) {
         abort(404, 'Apartamento no encontrado');
     }
-    
+
     $edificioId = $apartamento->edificio_id;
-    
+
     // Verificar que el edificio existe
     if (!$edificioId) {
         abort(404, 'Edificio no encontrado para este apartamento');
@@ -2333,20 +2333,20 @@ class GestionApartamentoController extends Controller
         ->orderBy('nombre')
         ->get()
         ->groupBy('categoria');
-    
+
     // Obtener consumos existentes para esta limpieza
     $consumosExistentes = \App\Models\AmenityConsumo::where('limpieza_id', $apartamentoLimpieza->id)
         ->with('amenity')
         ->get()
         ->keyBy('amenity_id');
-    
+
     // Calcular cantidades recomendadas para cada amenity
     $amenitiesConRecomendaciones = [];
     foreach ($amenities as $categoria => $amenitiesCategoria) {
         foreach ($amenitiesCategoria as $amenity) {
             $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $apartamentoLimpieza->origenReserva, $apartamentoLimpieza->apartamento);
             $consumoExistente = $consumosExistentes->get($amenity->id);
-            
+
             $amenitiesConRecomendaciones[$categoria][] = [
                 'amenity' => $amenity,
                 'cantidad_recomendada' => $cantidadRecomendada,
@@ -2368,13 +2368,13 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     if ($apartamentoLimpieza->tipo_limpieza !== 'zona_comun') {
         abort(400, 'Esta función solo es válida para zonas comunes');
     }
-    
+
     // Guardar observación
     $apartamentoLimpieza->observacion = $request->observacion;
     $apartamentoLimpieza->save();
-    
+
     Alert::success('Guardado con Éxito', 'Zona común actualizada correctamente');
-    
+
     return redirect()->route('gestion.edit', $apartamentoLimpieza);
 }
 
@@ -2387,61 +2387,61 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     {
         // Verificar que todos los checklists estén marcados
         $apartamentoId = $apartamentoLimpieza->apartamento_id;
-        
+
         // Verificar que el apartamento existe
         $apartamento = Apartamento::find($apartamentoId);
         if (!$apartamento) {
             abort(404, 'Apartamento no encontrado');
         }
-        
+
         $edificioId = $apartamento->edificio_id;
-        
+
         // Verificar que el edificio existe
         if (!$edificioId) {
             abort(404, 'Edificio no encontrado para este apartamento');
         }
-        
+
         $checklists = Checklist::where('edificio_id', $edificioId)->get();
-        
+
         // Obtener los checklists marcados
         $checklistsMarcados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
             ->whereNotNull('checklist_id')
             ->where('estado', 1)
             ->pluck('checklist_id')
             ->toArray();
-        
+
         // Verificar si faltan checklists por marcar
         $checklistsFaltantes = $checklists->whereNotIn('id', $checklistsMarcados);
-        
+
         // Si faltan checklists y no hay consentimiento, mostrar error
         if ($checklistsFaltantes->count() > 0) {
             $consentimiento = $request->input('consentimiento_finalizacion');
-            
+
             if ($consentimiento !== 'true') {
                 $nombresFaltantes = $checklistsFaltantes->pluck('nombre')->implode(', ');
                 Alert::error('No se puede finalizar', 'Debes completar todos los checklists antes de finalizar: ' . $nombresFaltantes . ' O marcar el consentimiento de finalización.');
-                
+
                 // Redirigir de vuelta al formulario de edición
                 return redirect()->route('gestion.edit', $apartamentoLimpieza);
             }
-            
+
             // Si hay consentimiento, guardar la información del consentimiento
             $apartamentoLimpieza->consentimiento_finalizacion = true;
             $apartamentoLimpieza->motivo_consentimiento = $request->input('motivo_consentimiento', 'Usuario confirmó que puede finalizar sin completar todos los checklists');
             $apartamentoLimpieza->fecha_consentimiento = now();
             $apartamentoLimpieza->user_id_consentimiento = auth()->id();
             $apartamentoLimpieza->save();
-            
+
             // Mostrar advertencia pero permitir continuar
             $nombresFaltantes = $checklistsFaltantes->pluck('nombre')->implode(', ');
             Alert::warning('Finalización con Checklists Incompletos', 'Has confirmado que puedes finalizar sin completar todos los checklists. Checklists faltantes: ' . $nombresFaltantes);
         }
-        
+
         $hoy = Carbon::now();
         $apartamentoLimpieza->status_id = 3;
         $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
-        
+
         // Actualizar tarea asignada si existe
         if ($apartamentoLimpieza->tarea_asignada_id) {
             $tarea = TareaAsignada::find($apartamentoLimpieza->tarea_asignada_id);
@@ -2450,7 +2450,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                     'estado' => 'completada',
                     'fecha_fin_real' => $hoy
                 ]);
-                
+
                 Log::info('Tarea finalizada desde limpieza', [
                     'tarea_id' => $tarea->id,
                     'limpieza_id' => $apartamentoLimpieza->id,
@@ -2458,7 +2458,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 ]);
             }
         }
-        
+
         $reserva = Reserva::find($apartamentoLimpieza->reserva_id);
         if ($reserva != null) {
             $reserva->fecha_limpieza = $hoy;
@@ -2522,7 +2522,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             ], 422);
         }
     }
-    
+
     /**
      * Finalizar limpieza de zona común
      */
@@ -2532,12 +2532,12 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         if ($apartamentoLimpieza->tipo_limpieza !== 'zona_comun') {
             abort(400, 'Esta función solo es válida para zonas comunes');
         }
-        
+
         $hoy = Carbon::now();
         $apartamentoLimpieza->status_id = 3; // Finalizado
         $apartamentoLimpieza->fecha_fin = $hoy;
         $apartamentoLimpieza->save();
-        
+
         // Actualizar tarea asignada si existe
         if ($apartamentoLimpieza->tarea_asignada_id) {
             $tarea = TareaAsignada::find($apartamentoLimpieza->tarea_asignada_id);
@@ -2546,7 +2546,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                     'estado' => 'completada',
                     'fecha_fin_real' => $hoy
                 ]);
-                
+
                 Log::info('Tarea finalizada desde limpieza de zona común', [
                     'tarea_id' => $tarea->id,
                     'limpieza_id' => $apartamentoLimpieza->id,
@@ -2554,10 +2554,10 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 ]);
             }
         }
-        
+
         // DESCUENTO AUTOMÁTICO DE AMENITIES DE LIMPIEZA
         $this->descontarAmenitiesLimpieza($apartamentoLimpieza);
-        
+
         // Crear alerta si hay observaciones al finalizar la limpieza
         if (!empty($apartamentoLimpieza->observacion)) {
             $zonaComunNombre = $apartamentoLimpieza->zonaComun->nombre ?? 'Zona Común';
@@ -2567,9 +2567,9 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 $apartamentoLimpieza->observacion
             );
         }
-        
+
         Alert::success('Finalizado con Éxito', 'Zona Común finalizada correctamente');
-        
+
         return redirect()->route('gestion.index');
     }
 
@@ -2656,7 +2656,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 $tareaId = $apartamentoLimpieza->tarea_asignada_id;
                 if (!$tareaId) {
                     Log::error('Tarea no encontrada en limpieza', [
-                        'limpieza_id' => $limpiezaId, 
+                        'limpieza_id' => $limpiezaId,
                         'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
                     ]);
                     return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
@@ -2700,7 +2700,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         ]
                     );
                     Log::info('Item marcado como completado', ['tarea_id' => $tareaId, 'item_id' => $id]);
-                    
+
                     // Actualizar estado de la tarea a "en_progreso" si está pendiente
                     if ($tarea->estado === 'pendiente' || $tarea->estado === null) {
                         $tarea->estado = 'en_progreso';
@@ -2756,30 +2756,30 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     public function checklistStatus(ApartamentoLimpieza $apartamentoLimpieza)
     {
         $apartamentoId = $apartamentoLimpieza->apartamento_id;
-        
+
         // Verificar que el apartamento existe
         $apartamento = Apartamento::find($apartamentoId);
         if (!$apartamento) {
             return response()->json(['error' => 'Apartamento no encontrado'], 404);
         }
-        
+
         $edificioId = $apartamento->edificio_id;
-        
+
         // Verificar que el edificio existe
         if (!$edificioId) {
             return response()->json(['error' => 'Edificio no encontrado para este apartamento'], 404);
         }
-        
+
         $checklists = Checklist::where('edificio_id', $edificioId)->get();
-        
+
         $checklistsMarcados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
             ->whereNotNull('checklist_id')
             ->where('estado', 1)
             ->pluck('checklist_id')
             ->toArray();
-        
+
         $checklistsFaltantes = $checklists->whereNotIn('id', $checklistsMarcados);
-        
+
         return response()->json([
             'total' => $checklists->count(),
             'completados' => count($checklistsMarcados),
@@ -2797,31 +2797,31 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             ->where('id', $id)
             ->where('tipo_limpieza', 'zona_comun')
             ->firstOrFail();
-        
+
         $zonaComun = $apartamentoLimpieza->zonaComun;
         if (!$zonaComun) {
             abort(404, 'Zona común no encontrada');
         }
-        
+
         // Obtener checklists para zonas comunes
         $checklists = \App\Models\ChecklistZonaComun::activos()->ordenados()->get();
-        
+
         // Obtener items existentes para esta limpieza
         $item_check = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)->get();
         $itemsExistentes = $item_check->pluck('estado', 'item_id')->toArray();
-        
+
         // Obtener checklists marcados
         $checklist_check = $item_check->whereNotNull('checklist_zona_comun_id')->filter(function ($item) {
             return $item->estado == 1;
         });
         $checklistsExistentes = $checklist_check->pluck('estado', 'checklist_zona_comun_id')->toArray();
-        
+
         return view('gestion.edit-zona-comun', compact(
             'apartamentoLimpieza',
             'zonaComun',
-            'id', 
-            'checklists', 
-            'itemsExistentes', 
+            'id',
+            'checklists',
+            'itemsExistentes',
             'checklistsExistentes'
         ));
     }
@@ -2832,7 +2832,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     public function createZonaComun($id)
     {
         $zonaComun = \App\Models\ZonaComun::findOrFail($id);
-        
+
         // Verificar si ya existe una limpieza activa para esta zona
         $limpiezaExistente = ApartamentoLimpieza::where('zona_comun_id', $id)
             ->where('tipo_limpieza', 'zona_comun')
@@ -2850,7 +2850,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             Alert::error('Error', 'No se puede crear la limpieza: el usuario está inactivo');
             return redirect()->route('gestion.index');
         }
-        
+
         $apartamentoLimpieza = ApartamentoLimpieza::create([
             'zona_comun_id' => $id,
             'tipo_limpieza' => 'zona_comun',
@@ -2874,15 +2874,15 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         }
 
         $checklists = \App\Models\ChecklistZonaComun::activos()->ordenados()->get();
-        
+
         $checklistsMarcados = ApartamentoLimpiezaItem::where('id_limpieza', $apartamentoLimpieza->id)
             ->whereNotNull('checklist_zona_comun_id')
             ->where('estado', 1)
             ->pluck('checklist_zona_comun_id')
             ->toArray();
-        
+
         $checklistsFaltantes = $checklists->whereNotIn('id', $checklistsMarcados);
-        
+
         return response()->json([
             'total' => $checklists->count(),
             'completados' => count($checklistsMarcados),
@@ -2890,7 +2890,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             'puedeFinalizar' => $checklistsFaltantes->count() === 0
         ]);
     }
-    
+
     /**
      * Calcular cantidad recomendada para un amenity según las reglas de consumo
      */
@@ -2914,9 +2914,9 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     public function verLimpiezaCompletada($id)
     {
         $apartamentoLimpieza = ApartamentoLimpieza::with([
-            'apartamento.edificio', 
-            'zonaComun', 
-            'empleada', 
+            'apartamento.edificio',
+            'zonaComun',
+            'empleada',
             'estado',
             'reserva',
             'fotos' => function($query) {
@@ -2941,9 +2941,9 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         }
 
         return view('gestion.ver-limpieza', compact(
-            'apartamentoLimpieza', 
-            'checklists', 
-            'itemsExistentes', 
+            'apartamentoLimpieza',
+            'checklists',
+            'itemsExistentes',
             'todasLasFotos'
         ));
     }
@@ -2955,51 +2955,51 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     {
         try {
             \Log::info('Iniciando descuento automático de amenities para limpieza ID: ' . $apartamentoLimpieza->id);
-            
+
             // Obtener TODOS los amenities activos (no solo los de limpieza)
             $amenitiesLimpieza = \App\Models\Amenity::where('activo', true)
                 ->get();
 
             \Log::info('Amenities activos encontrados: ' . $amenitiesLimpieza->count());
-            
+
             $totalGasto = 0;
             $amenitiesUsados = [];
 
             foreach ($amenitiesLimpieza as $amenity) {
                 \Log::info('Procesando amenity: ' . $amenity->nombre . ' (Categoría: ' . $amenity->categoria . ', Stock: ' . $amenity->stock_actual . ')');
-                
+
                 // Calcular cantidad recomendada para esta limpieza
                 $cantidadRecomendada = $this->calcularCantidadRecomendadaAmenity($amenity, $apartamentoLimpieza->reserva, $apartamentoLimpieza->apartamento);
-                
+
                 \Log::info('Cantidad recomendada calculada: ' . $cantidadRecomendada);
-                
+
                 if ($cantidadRecomendada > 0) {
                     \Log::info('Cantidad > 0, verificando stock...');
-                    
+
                     try {
                         // Usar el método estándar para descontar stock
                         \Log::info('Stock suficiente, procediendo con descuento...');
-                        
+
                         $resultadoDescuento = $amenity->descontarStock($cantidadRecomendada);
-                        
+
                         // Validar que el resultado sea un array
                         if (!is_array($resultadoDescuento)) {
                             \Log::error('Error: descontarStock no devolvió un array. Tipo: ' . gettype($resultadoDescuento) . ', Valor: ' . var_export($resultadoDescuento, true));
                             throw new \Exception("Error al descontar stock: resultado inválido del método descontarStock()");
                         }
-                        
+
                         // Validar que tenga las claves necesarias
                         if (!isset($resultadoDescuento['stock_anterior']) || !isset($resultadoDescuento['stock_actual'])) {
                             \Log::error('Error: descontarStock no devolvió las claves esperadas. Claves: ' . implode(', ', array_keys($resultadoDescuento)));
                             throw new \Exception("Error al descontar stock: resultado incompleto del método descontarStock()");
                         }
-                        
+
                         \Log::info('Stock actualizado: ' . $resultadoDescuento['stock_anterior'] . ' -> ' . $resultadoDescuento['stock_actual']);
 
                         // Calcular costo
                         $costoTotal = $cantidadRecomendada * $amenity->precio_compra;
                         $totalGasto += $costoTotal;
-                        
+
                         \Log::info('Costo calculado: €' . $costoTotal);
 
                         // Registrar el consumo con datos reales
@@ -3019,7 +3019,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                             'observaciones' => 'Descuento automático al finalizar limpieza',
                             'fecha_consumo' => now()
                         ]);
-                        
+
                         \Log::info('Consumo registrado exitosamente');
 
                         $amenitiesUsados[] = [
@@ -3033,7 +3033,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                         if ($amenity->verificarStockBajo()) {
                             \Alert::warning('Stock Bajo', "El amenity '{$amenity->nombre}' tiene stock bajo (actual: {$amenity->stock_actual} {$amenity->unidad_medida})");
                         }
-                        
+
                     } catch (\Exception $e) {
                         // Stock insuficiente
                         \Log::warning('Stock insuficiente: ' . $e->getMessage());
@@ -3049,7 +3049,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                     $mensaje .= "• {$amenity['nombre']}: {$amenity['cantidad']} {$amenity['unidad']} (€{$amenity['costo']})\n";
                 }
                 $mensaje .= "\nTotal gasto en amenities: €{$totalGasto}";
-                
+
                 \Alert::info('Amenities Aplicados', $mensaje);
             }
 
@@ -3066,7 +3066,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     {
         $user = Auth::user();
         $hoy = Carbon::today();
-        
+
         try {
             // Obtener apartamentos que SALEN hoy (necesitan limpieza) - misma lógica que /gestion
             $apartamentosPendientesHoy = \DB::table('reservas')
@@ -3075,45 +3075,45 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 ->whereDate('fecha_salida', $hoy)
                 ->pluck('apartamento_id')
                 ->toArray();
-            
+
             // Obtener limpiezas de fondo programadas para hoy
             $limpiezasFondoHoy = \DB::table('limpieza_fondo')
                 ->whereDate('fecha', $hoy)
                 ->pluck('apartamento_id')
                 ->toArray();
-            
+
             // Combinar todos los apartamentos que necesitan limpieza hoy
             $apartamentosNecesitanLimpieza = array_merge($apartamentosPendientesHoy, $limpiezasFondoHoy);
             $apartamentosNecesitanLimpieza = array_unique($apartamentosNecesitanLimpieza);
-            
+
             // Obtener limpiezas ya asignadas a esta empleada para hoy
             $limpiezasAsignadasHoy = \DB::table('apartamento_limpieza')
                 ->where('empleada_id', $user->id)
                 ->whereDate('fecha_comienzo', $hoy)
                 ->pluck('apartamento_id')
                 ->toArray();
-            
+
             // Apartamentos pendientes de limpieza (necesitan limpieza pero no están asignados)
             $apartamentosPendientes = array_diff($apartamentosNecesitanLimpieza, $limpiezasAsignadasHoy);
-            
+
             // Estadísticas del día
             $limpiezasHoy = count($apartamentosNecesitanLimpieza); // Total de apartamentos que necesitan limpieza
             $limpiezasAsignadas = count($limpiezasAsignadasHoy); // Total de limpiezas asignadas a esta empleada
-            
+
             // Obtener limpiezas completadas hoy por esta empleada
             $limpiezasCompletadasHoy = \DB::table('apartamento_limpieza')
                 ->where('empleada_id', $user->id)
                 ->whereDate('fecha_comienzo', $hoy)
                 ->where('status_id', 2) // Completada
                 ->count();
-                
+
             // Obtener limpiezas en proceso hoy por esta empleada
             $limpiezasPendientesHoy = \DB::table('apartamento_limpieza')
                 ->where('empleada_id', $user->id)
                 ->whereDate('fecha_comienzo', $hoy)
                 ->where('status_id', 1) // En proceso
                 ->count();
-                
+
             // Obtener incidencias pendientes del usuario
             $incidenciasPendientes = \DB::table('incidencias')
                 ->where('empleada_id', $user->id)
@@ -3121,32 +3121,32 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
-                
+
             // Obtener estadísticas de la semana
             $inicioSemana = $hoy->copy()->startOfWeek();
             $finSemana = $hoy->copy()->endOfWeek();
-            
+
             // Limpiezas asignadas a esta empleada en la semana
             $limpiezasSemana = \DB::table('apartamento_limpieza')
                 ->where('empleada_id', $user->id)
                 ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
                 ->count();
-                
+
             $limpiezasCompletadasSemana = \DB::table('apartamento_limpieza')
                 ->where('empleada_id', $user->id)
                 ->whereBetween('fecha_comienzo', [$inicioSemana, $finSemana])
                 ->where('status_id', 2)
                 ->count();
-                
+
             // Calcular porcentaje de completado de la semana
             $porcentajeSemana = $limpiezasSemana > 0 ? round(($limpiezasCompletadasSemana / $limpiezasSemana) * 100) : 0;
-                
+
             // Obtener estado del fichaje actual
             $fichajeActual = Fichaje::where('user_id', $user->id)
                 ->whereDate('hora_entrada', $hoy)
                 ->whereNull('hora_salida')
                 ->first();
-                
+
             // Obtener estadísticas de calidad de limpieza (si existen análisis)
             $analisisRecientes = [];
             try {
@@ -3162,7 +3162,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 // Si hay error, usar array vacío
                 $analisisRecientes = [];
             }
-            
+
             return [
                 'limpiezasHoy' => $limpiezasHoy,
                 'limpiezasAsignadas' => $limpiezasAsignadas,
@@ -3178,10 +3178,10 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 'hoy' => $hoy->format('d/m/Y'),
                 'diaSemana' => $hoy->locale('es')->dayName
             ];
-            
+
         } catch (\Exception $e) {
             \Log::error('Error obteniendo estadísticas del dashboard: ' . $e->getMessage());
-            
+
             return [
                 'limpiezasHoy' => 0,
                 'limpiezasAsignadas' => 0,
@@ -3209,17 +3209,17 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
         $user = Auth::user();
         $hoy = Carbon::today();
         $inicioMes = $hoy->copy()->startOfMonth();
-        
+
         // Estadísticas del mes
         $limpiezasMes = ApartamentoLimpieza::where('empleada_id', $user->id)
             ->whereBetween('fecha_comienzo', [$inicioMes, $hoy])
             ->count();
-            
+
         $limpiezasCompletadasMes = ApartamentoLimpieza::where('empleada_id', $user->id)
             ->whereBetween('fecha_comienzo', [$inicioMes, $hoy])
             ->where('status_id', 2)
             ->count();
-            
+
         // Calcular horas trabajadas del mes
         $horasTrabajadasMes = Fichaje::where('user_id', $user->id)
             ->whereBetween('hora_entrada', [$inicioMes->startOfDay(), $hoy->endOfDay()])
@@ -3233,7 +3233,7 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 }
                 return 0;
             });
-            
+
         return response()->json([
             'limpiezas_mes' => $limpiezasMes,
             'limpiezas_completadas_mes' => $limpiezasCompletadasMes,

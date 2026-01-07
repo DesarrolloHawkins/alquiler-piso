@@ -106,7 +106,7 @@ class ARIController extends Controller
         }
         //  dd($updates);
         // Petición a la API
-        $response = Http::withHeaders([
+        $response = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("{$this->apiUrl}/" . $urlVariable, ['values' => $updates]);
 
@@ -230,8 +230,8 @@ class ARIController extends Controller
             }
         }
 
-        // Hacer petición por cada apartamento
-        $response = Http::withHeaders([
+        // Hacer petición por cada apartamento (sin verificación SSL)
+        $response = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("{$this->apiUrl}/availability", [
             'values' => $updates,
@@ -290,7 +290,7 @@ class ARIController extends Controller
 
         try {
             // Usar el endpoint de availability que funciona
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'user-api-key' => $this->apiToken,
             ])->get("{$this->apiUrl}/availability", [
                 'filter[property_id]' => $validatedData['property_id'],
@@ -302,7 +302,7 @@ class ARIController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                
+
                 // Procesar los datos para obtener precios por día
                 $dailyPrices = [];
                 if (isset($data['data'])) {
@@ -311,7 +311,7 @@ class ARIController extends Controller
                         $date = $attributes['date'];
                         $rate = $attributes['rate'] ?? null;
                         $availability = $attributes['availability'] ?? null;
-                        
+
                         $dailyPrices[$date] = [
                             'rate' => $rate,
                             'availability' => $availability,
@@ -329,7 +329,7 @@ class ARIController extends Controller
                 $dailyPrices = [];
                 $startDate = \Carbon\Carbon::parse($validatedData['date_from']);
                 $endDate = \Carbon\Carbon::parse($validatedData['date_to']);
-                
+
                 for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
                     $dateStr = $date->format('Y-m-d');
                     $dailyPrices[$dateStr] = [
@@ -389,7 +389,7 @@ class ARIController extends Controller
                                         $attributes = $item['attributes'];
                                         $date = $attributes['date'];
                                         $rate = $attributes['rate'] ?? null;
-                                        
+
                                         $key = "{$apartamento->id}_{$date}";
                                         if (!isset($allPrices[$key]) || $rate > $allPrices[$key]['rate']) {
                                             $allPrices[$key] = [
@@ -416,30 +416,30 @@ class ARIController extends Controller
         if (empty($allPrices)) {
             $startDate = \Carbon\Carbon::parse($validatedData['date_from']);
             $endDate = \Carbon\Carbon::parse($validatedData['date_to']);
-            
+
             foreach ($apartamentos as $apartamento) {
                 // Obtener precios reales de Channex para este apartamento
                 $channexPrices = $this->getChannexPricesForProperty($apartamento->id_channex);
-                
+
                 for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
                     $dateStr = $date->format('Y-m-d');
                     $key = "{$apartamento->id}_{$dateStr}";
-                    
+
                     // Verificar si hay reservas para esta fecha
                     $hasReservation = \App\Models\Reserva::where('apartamento_id', $apartamento->id)
                         ->where('estado_id', '!=', 4) // Excluir canceladas
                         ->where('fecha_entrada', '<=', $dateStr)
                         ->where('fecha_salida', '>=', $dateStr)
                         ->exists();
-                    
+
                     // Usar precio de Channex si está disponible
                     $price = $channexPrices['base_rate'] ?? null;
-                    
+
                     // Si hay reserva, no mostrar precio
                     if ($hasReservation) {
                         $price = null;
                     }
-                    
+
                     $allPrices[$key] = [
                         'apartamento_id' => $apartamento->id,
                         'apartamento_nombre' => $apartamento->titulo,
@@ -467,7 +467,7 @@ class ARIController extends Controller
     {
         try {
             // Obtener rate plans de la propiedad
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'user-api-key' => $this->apiToken,
             ])->get("{$this->apiUrl}/rate_plans", [
                 'filter[property_id]' => $propertyId
@@ -475,13 +475,13 @@ class ARIController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                
+
                 if (isset($data['data']) && is_array($data['data'])) {
                     foreach ($data['data'] as $ratePlan) {
                         if (isset($ratePlan['attributes']['options']) && is_array($ratePlan['attributes']['options'])) {
                             foreach ($ratePlan['attributes']['options'] as $option) {
                                 // Buscar el rate plan principal (is_primary = true) con rate > 0
-                                if (isset($option['is_primary']) && $option['is_primary'] && 
+                                if (isset($option['is_primary']) && $option['is_primary'] &&
                                     isset($option['rate']) && $option['rate'] > 0) {
                                     return [
                                         'base_rate' => $option['rate'],
