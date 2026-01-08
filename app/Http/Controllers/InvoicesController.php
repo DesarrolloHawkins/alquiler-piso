@@ -128,7 +128,7 @@ class InvoicesController extends Controller
     {
         // Asegurar que el mes tenga formato de dos dígitos
         $mesFormateado = str_pad($mes, 2, '0', STR_PAD_LEFT);
-        
+
         do {
             // Buscar la última referencia autoincremental para el año y mes proporcionados
             $latestReference = InvoicesReferenceAutoincrement::where('year', $anio)
@@ -392,6 +392,12 @@ class InvoicesController extends Controller
 
 
     public function create(Request $request){
+        // Cálculo correcto de la base imponible y el IVA
+        // Asumimos que $request->precio es el precio SIN IVA
+        $base = $request->precio;
+        $iva = $base * 0.10; // IVA 10%
+        $total = $base + $iva; // Total = Base + IVA
+
         $data = [
             'budget_id' => null,
             'cliente_id' => $request->cliente_id,
@@ -403,10 +409,10 @@ class InvoicesController extends Controller
             'description' => $request->descripcion,
             'fecha' => $request->fecha,
             'fecha_cobro' => null,
-            'base' => $request->precio,
-            'iva' => $request->precio * 0.10,
+            'base' => round($base, 2),
+            'iva' => round($iva, 2),
             'descuento' => isset($request->descuento) ? $request->descuento : null,
-            'total' => $request->precio,
+            'total' => round($total, 2),
         ];
         $crear = Invoices::create($data);
         $referencia = $this->generateBudgetReference($crear);
@@ -577,7 +583,13 @@ class InvoicesController extends Controller
 
            if ($invoice == null) {
                $apartamentoTitulo = $reserva->apartamento->titulo ?? $reserva->apartamento->nombre ?? 'Apartamento #' . $reserva->apartamento_id;
-               
+
+               // Cálculo correcto de la base imponible y el IVA
+               // Asumimos que $reserva->precio es el precio SIN IVA
+               $base = $reserva->precio;
+               $iva = $base * 0.10; // IVA 10%
+               $total = $base + $iva; // Total = Base + IVA
+
                $data = [
                    'budget_id' => null,
                    'cliente_id' => $reserva->cliente_id,
@@ -587,10 +599,10 @@ class InvoicesController extends Controller
                    'description' => '',
                    'fecha' => $reserva->fecha_salida,
                    'fecha_cobro' => null,
-                   'base' => $reserva->precio,
-                   'iva' => $reserva->precio * 0.10,
+                   'base' => round($base, 2),
+                   'iva' => round($iva, 2),
                    'descuento' => null,
-                   'total' => $reserva->precio,
+                   'total' => round($total, 2),
                    'created_at' => $reserva->fecha_salida,
                    'updated_at' => $reserva->fecha_salida,
                ];
@@ -622,9 +634,9 @@ class InvoicesController extends Controller
                'error' => $e->getMessage(),
                'trace' => $e->getTraceAsString()
            ]);
-           
+
            return response()->json([
-               'success' => false, 
+               'success' => false,
                'message' => 'Error al generar la factura: ' . $e->getMessage()
            ], 500);
        }
@@ -633,16 +645,16 @@ class InvoicesController extends Controller
     public function edit($id)
     {
         $invoice = Invoices::with(['cliente', 'reserva', 'estado'])->findOrFail($id);
-        
+
         // Obtener estados de factura disponibles
         $estados = InvoicesStatus::all();
-        
+
         // Obtener clientes disponibles
         $clientes = Cliente::all();
-        
+
         // Obtener reservas disponibles (si es necesario)
         $reservas = Reserva::with(['apartamento', 'cliente'])->get();
-        
+
         return view('admin.invoices.edit', compact('invoice', 'estados', 'clientes', 'reservas'));
     }
 
@@ -663,7 +675,7 @@ class InvoicesController extends Controller
         ]);
 
         $invoice = Invoices::findOrFail($id);
-        
+
         $invoice->update([
             'cliente_id' => $request->cliente_id,
             'reserva_id' => $request->reserva_id,
@@ -688,7 +700,7 @@ class InvoicesController extends Controller
     public function createRectificativa($id)
     {
         $facturaOriginal = Invoices::with(['cliente', 'reserva', 'estado'])->findOrFail($id);
-        
+
         // Verificar que la factura original no sea ya una rectificativa
         if ($facturaOriginal->es_rectificativa) {
             return redirect()->back()
@@ -715,7 +727,7 @@ class InvoicesController extends Controller
         ]);
 
         $facturaOriginal = Invoices::findOrFail($id);
-        
+
         // Verificar que la factura original no sea ya una rectificativa
         if ($facturaOriginal->es_rectificativa) {
             return redirect()->back()
@@ -774,7 +786,7 @@ class InvoicesController extends Controller
     public function showRectificativas($id)
     {
         $facturaOriginal = Invoices::with(['cliente', 'reserva', 'estado', 'facturasRectificativas'])->findOrFail($id);
-        
+
         return view('admin.invoices.show-rectificativas', compact('facturaOriginal'));
     }
 
@@ -786,13 +798,13 @@ class InvoicesController extends Controller
     {
         // Obtener la referencia original
         $referenciaOriginal = $facturaOriginal->reference;
-        
+
         // Crear la referencia rectificativa con "R" al principio
         $referenciaRectificativa = 'R' . $referenciaOriginal;
-        
+
         // Verificar si ya existe una rectificativa con esta referencia
         $existe = Invoices::where('reference', $referenciaRectificativa)->exists();
-        
+
         if ($existe) {
             // Si ya existe, añadir un sufijo numérico
             $contador = 1;
@@ -802,7 +814,7 @@ class InvoicesController extends Controller
                 $contador++;
             } while ($existe);
         }
-        
+
         // Crear un registro en la tabla de referencias autoincrementales
         // para mantener la consistencia del sistema
         $referenceToSave = new InvoicesReferenceAutoincrement([
@@ -811,7 +823,7 @@ class InvoicesController extends Controller
             'month_num' => date('m'),
         ]);
         $referenceToSave->save();
-        
+
         return [
             'id' => $referenceToSave->id,
             'reference' => $referenciaRectificativa,
