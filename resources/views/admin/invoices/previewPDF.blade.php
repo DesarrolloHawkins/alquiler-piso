@@ -167,7 +167,7 @@
                                 <strong>
                                     {{ $concept->apartamento->titulo }}
                                 </strong>
-                            </td>
+                            </td><!-- Cambios para que la factura pdf vaya bien -->
                             <td style="text-align: right;">{{ $concept->fecha_entrada }}</td>
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
