@@ -445,6 +445,14 @@ class Kernel extends ConsoleKernel
                 if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                     $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeBienvenida >= 1) {
+                        // Verificar que el DNI esté subido antes de enviar las claves
+                        if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+                            Log::info('No se pueden enviar claves: el DNI no ha sido subido', [
+                                'reserva_id' => $reserva->id,
+                                'dni_entregado' => $reserva->dni_entregado
+                            ]);
+                            continue; // Saltar esta reserva y continuar con la siguiente
+                        }
                         // Obtenemos el codigo de entrada del apartamento
                         //$code = $this->codigoApartamento($reserva->apartamento_id);
                         // Obtenemos codigo de idioma
@@ -2179,6 +2187,15 @@ class Kernel extends ConsoleKernel
                return false;
            }
 
+           // Verificar que el DNI esté subido antes de enviar las claves
+           if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+               Log::info('No se puede enviar claves por Channex: el DNI no ha sido subido', [
+                   'reserva_id' => $reserva->id,
+                   'dni_entregado' => $reserva->dni_entregado
+               ]);
+               return false;
+           }
+
            // Verificar que no se hayan enviado ya las claves
            $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)
                ->where('categoria_id', 3)
@@ -2299,6 +2316,15 @@ class Kernel extends ConsoleKernel
            if (!$mensajeBienvenida) {
                Log::warning('No se puede enviar claves por Channex: falta mensaje de bienvenida', [
                    'reserva_id' => $reserva->id
+               ]);
+               return false;
+           }
+
+           // Verificar que el DNI esté subido antes de enviar las claves
+           if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+               Log::warning('No se puede enviar claves por Channex: el DNI no ha sido subido', [
+                   'reserva_id' => $reserva->id,
+                   'dni_entregado' => $reserva->dni_entregado
                ]);
                return false;
            }

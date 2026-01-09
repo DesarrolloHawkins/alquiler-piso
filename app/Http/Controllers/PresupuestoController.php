@@ -17,7 +17,9 @@ class PresupuestoController extends Controller
      */
     public function index()
     {
-        $presupuestos = Presupuesto::with('cliente')->paginate(10);
+        $presupuestos = Presupuesto::with('cliente')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         return view('admin.presupuestos.index', compact('presupuestos'));
     }
 
@@ -35,48 +37,65 @@ class PresupuestoController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'cliente_id' => 'nullable|exists:clientes,id',
-            'fecha' => 'required|date',
-            'conceptos' => 'required|array',
-            'conceptos.*.descripcion' => 'required|string|max:255',
-            'conceptos.*.fecha_entrada' => 'required|date',
-            'conceptos.*.fecha_salida' => 'required|date|after:conceptos.*.fecha_entrada',
-            'conceptos.*.precio_por_dia' => 'required|numeric|min:0',
-            'conceptos.*.dias_totales' => 'required|integer|min:1',
-            'conceptos.*.precio_total' => 'required|numeric|min:0',
-        ]);
-
-        $total = collect($validated['conceptos'])->sum('precio_total');
-
-        $presupuesto = Presupuesto::create([
-            'cliente_id' => $validated['cliente_id'],
-            'fecha' => $validated['fecha'],
-            'total' => $total,
-        ]);
-
-        foreach ($validated['conceptos'] as $conceptoData) {
-            // Concatenar concepto completo (se mantiene para visualización)
-            $conceptoTexto = $conceptoData['descripcion']
-                . ' (Del ' . $conceptoData['fecha_entrada']
-                . ' al ' . $conceptoData['fecha_salida']
-                . ' - ' . $conceptoData['dias_totales'] . ' días)';
-
-            $presupuesto->conceptos()->create([
-                'concepto' => $conceptoTexto,
-                'precio' => $conceptoData['precio_por_dia'],
-                'iva' => 0, // Puedes calcularlo si lo deseas
-                'subtotal' => $conceptoData['precio_total'],
-                // Guardar también los campos de detalle para posterior edición
-                'fecha_entrada' => $conceptoData['fecha_entrada'],
-                'fecha_salida' => $conceptoData['fecha_salida'],
-                'precio_por_dia' => $conceptoData['precio_por_dia'],
-                'dias_totales' => $conceptoData['dias_totales'],
-                'precio_total' => $conceptoData['precio_total'],
+        try {
+            $validated = $request->validate([
+                'cliente_id' => 'nullable|exists:clientes,id',
+                'fecha' => 'required|date',
+                'conceptos' => 'required|array',
+                'conceptos.*.descripcion' => 'required|string|max:255',
+                'conceptos.*.fecha_entrada' => 'required|date',
+                'conceptos.*.fecha_salida' => 'required|date|after:conceptos.*.fecha_entrada',
+                'conceptos.*.precio_por_dia' => 'required|numeric|min:0',
+                'conceptos.*.dias_totales' => 'required|integer|min:1',
+                'conceptos.*.precio_total' => 'required|numeric|min:0',
             ]);
-        }
 
-        return redirect()->route('presupuestos.index')->with('success', 'Presupuesto creado correctamente.');
+            $total = collect($validated['conceptos'])->sum('precio_total');
+
+            $presupuesto = Presupuesto::create([
+                'cliente_id' => $validated['cliente_id'] ?? null,
+                'fecha' => $validated['fecha'],
+                'total' => $total,
+                'estado' => 'pendiente',
+            ]);
+
+            Log::info('Presupuesto creado', ['presupuesto_id' => $presupuesto->id, 'total' => $total]);
+
+            foreach ($validated['conceptos'] as $conceptoData) {
+                // Concatenar concepto completo (se mantiene para visualización)
+                $conceptoTexto = $conceptoData['descripcion']
+                    . ' (Del ' . $conceptoData['fecha_entrada']
+                    . ' al ' . $conceptoData['fecha_salida']
+                    . ' - ' . $conceptoData['dias_totales'] . ' días)';
+
+                $presupuesto->conceptos()->create([
+                    'concepto' => $conceptoTexto,
+                    'precio' => $conceptoData['precio_por_dia'],
+                    'iva' => 0, // Puedes calcularlo si lo deseas
+                    'subtotal' => $conceptoData['precio_total'],
+                    // Guardar también los campos de detalle para posterior edición
+                    'fecha_entrada' => $conceptoData['fecha_entrada'],
+                    'fecha_salida' => $conceptoData['fecha_salida'],
+                    'precio_por_dia' => $conceptoData['precio_por_dia'],
+                    'dias_totales' => $conceptoData['dias_totales'],
+                    'precio_total' => $conceptoData['precio_total'],
+                ]);
+            }
+
+            Log::info('Conceptos del presupuesto creados', ['presupuesto_id' => $presupuesto->id, 'conceptos_count' => count($validated['conceptos'])]);
+
+            return redirect()->route('presupuestos.index')->with('success', 'Presupuesto creado correctamente.');
+        } catch (\Exception $e) {
+            Log::error('Error al crear presupuesto', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error al crear el presupuesto: ' . $e->getMessage());
+        }
     }
 
     public function facturar(Presupuesto $presupuesto)
@@ -178,10 +197,10 @@ class PresupuestoController extends Controller
     public function show($id)
     {
         $presupuesto = Presupuesto::with('cliente', 'conceptos')->findOrFail($id);
-        
+
         // Buscar la factura asociada a este presupuesto
         $factura = Invoices::where('budget_id', $id)->first();
-        
+
         return view('admin.presupuestos.show', compact('presupuesto', 'factura'));
     }
 
@@ -192,10 +211,10 @@ class PresupuestoController extends Controller
     {
         $presupuesto = Presupuesto::with('conceptos')->findOrFail($id);
         $clientes = Cliente::all();
-        
+
         // Buscar la factura asociada a este presupuesto
         $factura = Invoices::where('budget_id', $id)->first();
-        
+
         return view('admin.presupuestos.edit', compact('presupuesto', 'clientes', 'factura'));
     }
 

@@ -29,6 +29,7 @@ class EnviarClavesChannexCommand extends Command
         // 3. NO sean de la web (origen != 'web')
         // 4. Tengan id_channex (booking ID de Channex)
         // 5. Tengan mensaje de bienvenida enviado (categoria_id = 4)
+        // 6. Tengan DNI subido (dni_entregado = true)
         // NOTA: No verificamos si ya se enviaron las claves - esto es para reenvío manual si falla algo
         $reservas = Reserva::whereDate('fecha_entrada', '=', $fechaHoyStr)
             ->where(function($query) {
@@ -37,6 +38,7 @@ class EnviarClavesChannexCommand extends Command
             })
             ->where('origen', '!=', 'web')
             ->whereNotNull('id_channex') // Booking ID de Channex
+            ->where('dni_entregado', true) // DNI debe estar subido
             ->whereIn('id', function ($query) {
                 $query->select('reserva_id')
                     ->from('mensajes_auto')
@@ -67,6 +69,13 @@ class EnviarClavesChannexCommand extends Command
 
                 if (!$mensajeBienvenida) {
                     $this->warn("⚠️  Reserva #{$reserva->id}: No tiene mensaje de bienvenida. Saltando...");
+                    $omitidas++;
+                    continue;
+                }
+
+                // Verificar que el DNI esté subido
+                if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+                    $this->warn("⚠️  Reserva #{$reserva->id}: DNI no subido. Saltando...");
                     $omitidas++;
                     continue;
                 }

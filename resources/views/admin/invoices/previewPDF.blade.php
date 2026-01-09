@@ -96,7 +96,7 @@
                     <td align="right" style="width: 50%;padding-right: 20px;">
                         {{-- Usar datos de facturación dinámicos --}}
                         <h3>{{ $invoice->cliente->nombre_facturacion }}</h3>
-                        
+
                         <p class="margin-bottom:10px">
                             @if ($invoice->cliente->tipo_cliente === 'particular')
                                 @if ($invoice->cliente->tipo_documento != 'P')
@@ -108,12 +108,12 @@
                                 <strong>{{ $invoice->cliente->tipo_cliente === 'empresa' ? 'CIF:' : 'NIF:' }}</strong> {{ $invoice->cliente->nif_facturacion }}
                             @endif
                         </p>
-                        
+
                         <p class="margin-bottom:10px">
                             <strong>DIRECCIÓN:</strong>
                             <p class="margin-bottom:5px">{{ $invoice->cliente->direccion_facturacion }}</p>
                         </p>
-                        
+
                         <p class="margin-bottom:10px">
                             <strong>TELEFONO:</strong> {{ $invoice->cliente->telefono_facturacion }}
                         </p>
@@ -172,11 +172,11 @@
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
                             <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
-                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base - $invoice->iva , 2) }} €
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base, 2) }} €
                             </td>
                             <td style="text-align: right;">{{ $invoice->discount }}%</td>
                             <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
-                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base - $invoice->iva , 2) }} €
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base, 2) }} €
                             </td>
                         </tr>
                         @endforeach
