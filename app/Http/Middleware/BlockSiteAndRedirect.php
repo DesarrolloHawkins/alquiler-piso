@@ -12,19 +12,34 @@ class BlockSiteAndRedirect
     /**
      * Handle an incoming request.
      * 
-     * Bloquea el acceso a la web principal (apartamentosalgeciras.com)
-     * y redirige a una URL configurada en .env
-     * NUNCA bloquea el CRM (crm.apartamentosalgeciras.com)
+     * 1. Si se accede desde CRM (crm.apartamentosalgeciras.com) y la ruta es /web/*:
+     *    - Bloquea y redirige al dashboard del CRM (/admin)
+     * 
+     * 2. Si se accede desde el dominio principal (apartamentosalgeciras.com):
+     *    - Si el bloqueo está activado, redirige a la URL configurada en .env
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
+        $path = $request->path();
         $isMainDomain = $host === 'apartamentosalgeciras.com' || $host === 'www.apartamentosalgeciras.com';
         $isCrmDomain = str_starts_with($host, 'crm.');
         
-        // Si es el dominio CRM, NUNCA bloquear - permitir siempre el acceso
+        // Si es el dominio CRM y está intentando acceder a rutas /web/*, bloquear y redirigir al CRM
+        if ($isCrmDomain && (str_starts_with($path, 'web') || $path === 'web')) {
+            Log::info('BlockSiteAndRedirect: Bloqueando acceso a web pública desde CRM', [
+                'host' => $host,
+                'path' => $path,
+                'url' => $request->fullUrl(),
+            ]);
+            
+            // Redirigir al dashboard del CRM
+            return redirect('/admin', 302);
+        }
+        
+        // Si es el dominio CRM y NO es una ruta /web/*, permitir el acceso
         if ($isCrmDomain) {
             return $next($request);
         }
