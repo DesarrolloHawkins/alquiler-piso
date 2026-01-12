@@ -14,7 +14,7 @@ class BlockSiteAndRedirect
      * 
      * Bloquea el acceso a la web principal (apartamentosalgeciras.com)
      * y redirige a una URL configurada en .env
-     * También bloquea el CRM si está activado
+     * NUNCA bloquea el CRM (crm.apartamentosalgeciras.com)
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
@@ -24,26 +24,34 @@ class BlockSiteAndRedirect
         $isMainDomain = $host === 'apartamentosalgeciras.com' || $host === 'www.apartamentosalgeciras.com';
         $isCrmDomain = str_starts_with($host, 'crm.');
         
+        // Si es el dominio CRM, NUNCA bloquear - permitir siempre el acceso
+        if ($isCrmDomain) {
+            return $next($request);
+        }
+        
+        // Solo procesar bloqueo si es el dominio principal
+        if (!$isMainDomain) {
+            return $next($request);
+        }
+        
         // Obtener la URL de redirección del .env
         $redirectUrl = env('SITE_BLOCK_REDIRECT_URL', null);
         
-        // Si está activado el bloqueo global (bloquear también CRM)
-        $blockGlobal = filter_var(env('SITE_BLOCK_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+        // Si está activado el bloqueo de la web principal
+        $blockEnabled = filter_var(env('SITE_BLOCK_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
         
-        // Si está activado el bloqueo solo de la web principal
-        $blockMainSite = filter_var(env('SITE_BLOCK_MAIN_ONLY', false), FILTER_VALIDATE_BOOLEAN);
+        // Si está activado el bloqueo solo de la web principal (alias)
+        $blockMainOnly = filter_var(env('SITE_BLOCK_MAIN_ONLY', false), FILTER_VALIDATE_BOOLEAN);
         
-        // Bloquear si:
-        // 1. Bloqueo global activado (bloquea todo: web y CRM)
-        // 2. O bloqueo solo web principal activado Y es el dominio principal (no CRM)
-        $shouldBlock = $blockGlobal || ($blockMainSite && $isMainDomain);
+        // Bloquear solo si está activado el bloqueo (cualquiera de las dos opciones)
+        $shouldBlock = $blockEnabled || $blockMainOnly;
         
         if ($shouldBlock) {
             if (empty($redirectUrl)) {
                 Log::warning('BlockSiteAndRedirect: URL de redirección no configurada en .env', [
                     'host' => $host,
-                    'block_global' => $blockGlobal,
-                    'block_main_only' => $blockMainSite,
+                    'block_enabled' => $blockEnabled,
+                    'block_main_only' => $blockMainOnly,
                     'is_main_domain' => $isMainDomain,
                     'is_crm_domain' => $isCrmDomain,
                 ]);
@@ -56,8 +64,8 @@ class BlockSiteAndRedirect
                 'host' => $host,
                 'url' => $request->fullUrl(),
                 'redirect_to' => $redirectUrl,
-                'block_global' => $blockGlobal,
-                'block_main_only' => $blockMainSite,
+                'block_enabled' => $blockEnabled,
+                'block_main_only' => $blockMainOnly,
                 'is_main_domain' => $isMainDomain,
                 'is_crm_domain' => $isCrmDomain,
             ]);
