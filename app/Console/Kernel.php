@@ -351,8 +351,8 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         // Ejecutar el comando cada hora
-        $schedule->command('ari:fullsync')->hourly();
-        $schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
+       // $schedule->command('ari:fullsync')->hourly();
+        //$schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
