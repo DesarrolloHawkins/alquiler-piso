@@ -657,27 +657,42 @@ class WebhookController extends Controller
         if (!$apiToken || !$bookingId) {
             Log::error('Faltan credenciales o bookingId para enviar mensaje a Channex', [
                 'apiToken' => $apiToken ? 'presente' : 'ausente',
-                'bookingId' => $bookingId
+                'bookingId' => $bookingId,
+                'token_length' => $apiToken ? strlen($apiToken) : 0
             ]);
             return false;
         }
 
+        $url = "https://app.channex.io/api/v1/bookings/{$bookingId}/messages";
+        
+        $payload = [
+            'message' => [
+                'message' => $mensaje
+            ],
+        ];
+
+        // Loggear información antes de enviar
+        Log::info('Intentando enviar mensaje a Channex', [
+            'booking_id' => $bookingId,
+            'url' => $url,
+            'mensaje_length' => strlen($mensaje),
+            'mensaje_preview' => substr($mensaje, 0, 100),
+            'token_presente' => !empty($apiToken),
+            'token_length' => strlen($apiToken)
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-            CURLOPT_URL => "https://app.channex.io/api/v1/bookings/{$bookingId}/messages",
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 30, // Timeout de 30 segundos
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode([
-                'message' => [
-                    'message' => $mensaje
-                ],
-            ]),
+            CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_HTTPHEADER => [
                 'user-api-key: ' . $apiToken,
                 'Content-Type: application/json'
@@ -686,19 +701,54 @@ class WebhookController extends Controller
 
         $response = curl_exec($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        $curlErrno = curl_errno($curl);
         curl_close($curl);
 
+        // Loggear respuesta completa
+        Log::info('Respuesta de Channex API', [
+            'booking_id' => $bookingId,
+            'http_code' => $httpCode,
+            'curl_error' => $curlError ?: 'ninguno',
+            'curl_errno' => $curlErrno ?: 0,
+            'response_length' => strlen($response),
+            'response_preview' => substr($response, 0, 500),
+            'response_full' => $response
+        ]);
+
+        // Verificar errores de cURL
+        if ($curlError) {
+            Log::error('Error cURL al enviar mensaje a Channex', [
+                'booking_id' => $bookingId,
+                'curl_error' => $curlError,
+                'curl_errno' => $curlErrno,
+                'url' => $url
+            ]);
+            return false;
+        }
+
+        // Verificar código HTTP
         if ($httpCode === 200 || $httpCode === 201) {
             Log::info('Mensaje automático enviado exitosamente a Channex', [
                 'booking_id' => $bookingId,
-                'http_code' => $httpCode
+                'http_code' => $httpCode,
+                'response' => $response
             ]);
             return true;
         } else {
+            // Intentar parsear respuesta de error
+            $errorData = null;
+            if (!empty($response)) {
+                $errorData = json_decode($response, true);
+            }
+
             Log::error('Error al enviar mensaje automático a Channex', [
                 'booking_id' => $bookingId,
                 'http_code' => $httpCode,
-                'response' => $response
+                'response' => $response,
+                'response_parsed' => $errorData,
+                'url' => $url,
+                'payload' => $payload
             ]);
             return false;
         }
