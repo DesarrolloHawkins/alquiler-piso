@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Reserva;
 use App\Models\Cliente;
 use App\Models\Photo;
@@ -1476,56 +1477,89 @@ INSTRUCCIONES ESPECÍFICAS:
                 ];
             }
             
-            // Parsear respuesta
+            // Parsear respuesta con múltiples estrategias
             $responseData = json_decode($response, true);
+            $jsonError = json_last_error();
             
-            // Loggear la respuesta RAW completa de la IA
-            Log::info('Respuesta RAW de IA Hawkins', [
+            // Loggear la respuesta RAW completa de la IA (guardar en log diario para debugging)
+            Log::info('Respuesta de IA Hawkins', [
                 'url' => $fullUrl,
                 'http_code' => $httpCode,
-                'raw_response' => $response,
                 'response_length' => strlen($response),
-                'is_json' => json_last_error() === JSON_ERROR_NONE
+                'is_json' => $jsonError === JSON_ERROR_NONE,
+                'json_error' => $jsonError !== JSON_ERROR_NONE ? json_last_error_msg() : null,
+                'response_preview' => substr($response, 0, 1000), // Primeros 1000 caracteres para debugging
+                'response_structure' => is_array($responseData) ? array_keys($responseData) : 'not_array'
             ]);
             
-            if (empty($responseData)) {
-                Log::error('Respuesta vacía de IA Hawkins', [
-                    'url' => $fullUrl,
-                    'http_code' => $httpCode,
-                    'raw_response' => $response,
-                    'response_preview' => substr($response, 0, 500)
-                ]);
-                return [
-                    'success' => false,
-                    'message' => 'La IA no pudo procesar el documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
-                    'error' => 'Respuesta vacía del servidor de IA',
-                    'error_type' => 'ai_error',
-                    'ai_url' => $fullUrl,
-                    'ai_raw_response' => $response,
-                    'ai_http_code' => $httpCode
-                ];
+            // Guardar respuesta completa en storage para análisis detallado
+            try {
+                // Crear directorio si no existe
+                $directory = 'ai_responses';
+                if (!Storage::disk('local')->exists($directory)) {
+                    Storage::disk('local')->makeDirectory($directory);
+                }
+                
+                $logFileName = 'ai_response_' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.json';
+                Storage::disk('local')->put("{$directory}/{$logFileName}", $response);
+                Log::info('Respuesta completa guardada para análisis', ['file' => $logFileName]);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo guardar respuesta completa', ['error' => $e->getMessage()]);
             }
             
-            // Extraer datos de la respuesta
-            // La respuesta puede venir en diferentes formatos según la API
-            $extractedData = [];
+            // ESTRATEGIA 1: Si la respuesta es JSON válido, procesarla
+            if ($jsonError === JSON_ERROR_NONE && is_array($responseData) && !empty($responseData)) {
+                $extractedData = $this->extractDataFromStructuredResponse($responseData);
+                if (!empty($extractedData)) {
+                    Log::info('Datos extraídos usando estrategia 1 (JSON estructurado)', [
+                        'data_keys' => array_keys($extractedData)
+                    ]);
+                }
+            } else {
+                $extractedData = [];
+            }
             
-            // Formato 1: respuesta directa con JSON en 'respuesta'
-            if (isset($responseData['respuesta'])) {
-                $respuestaJson = $responseData['respuesta'];
-                if (is_string($respuestaJson)) {
-                    $extractedData = json_decode($respuestaJson, true) ?: [];
-                } else {
-                    $extractedData = $respuestaJson;
+            // ESTRATEGIA 2: Si no se encontraron datos, buscar JSON en texto plano
+            if (empty($extractedData)) {
+                Log::info('Intentando estrategia 2: extraer JSON de texto plano');
+                $extractedData = $this->extractJsonFromText($response);
+                if (!empty($extractedData)) {
+                    Log::info('Datos extraídos usando estrategia 2 (JSON en texto)', [
+                        'data_keys' => array_keys($extractedData)
+                    ]);
                 }
             }
-            // Formato 2: datos directamente en 'data'
-            elseif (isset($responseData['data']) && is_array($responseData['data'])) {
-                $extractedData = $responseData['data'];
+            
+            // ESTRATEGIA 3: Si aún no hay datos, intentar parsear la respuesta como string directamente
+            if (empty($extractedData) && is_string($response) && !empty($response)) {
+                Log::info('Intentando estrategia 3: parsear respuesta como string');
+                // Intentar limpiar y parsear
+                $cleaned = trim($response);
+                // Quitar posibles prefijos/sufijos de texto
+                $cleaned = preg_replace('/^[^{]*/', '', $cleaned); // Quitar texto antes de {
+                $cleaned = preg_replace('/[^}]*$/', '', $cleaned); // Quitar texto después de }
+                if (!empty($cleaned)) {
+                    $json = json_decode($cleaned, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                        $extractedData = $this->extractDataFromStructuredResponse($json);
+                        if (!empty($extractedData)) {
+                            Log::info('Datos extraídos usando estrategia 3 (string limpiado)', [
+                                'data_keys' => array_keys($extractedData)
+                            ]);
+                        }
+                    }
+                }
             }
-            // Formato 3: datos directamente en la raíz
-            elseif (isset($responseData['nombre']) || isset($responseData['dni']) || isset($responseData['numero'])) {
-                $extractedData = $responseData;
+            
+            // ESTRATEGIA 4: Si responseData existe pero no tiene estructura esperada, buscar en todos los campos
+            if (empty($extractedData) && is_array($responseData) && !empty($responseData)) {
+                Log::info('Intentando estrategia 4: buscar en todos los campos de responseData');
+                $extractedData = $this->extractJsonFromText($responseData);
+                if (!empty($extractedData)) {
+                    Log::info('Datos extraídos usando estrategia 4 (búsqueda recursiva)', [
+                        'data_keys' => array_keys($extractedData)
+                    ]);
+                }
             }
             
             // Normalizar campos según formato de respuesta
@@ -1533,13 +1567,19 @@ INSTRUCCIONES ESPECÍFICAS:
                 $extractedData = $this->normalizeExtractedData($extractedData, $side);
             }
             
+            // Si después de todas las estrategias no hay datos, devolver error detallado
             if (empty($extractedData)) {
-                Log::error('No se pudieron extraer datos de la respuesta', [
+                Log::error('No se pudieron extraer datos de la respuesta después de todas las estrategias', [
                     'url' => $fullUrl,
-                    'response_structure' => array_keys($responseData),
-                    'raw_response' => $response,
-                    'parsed_response' => $responseData
+                    'http_code' => $httpCode,
+                    'response_length' => strlen($response),
+                    'response_preview' => substr($response, 0, 1000),
+                    'response_structure' => is_array($responseData) ? array_keys($responseData) : 'not_array',
+                    'is_json_valid' => $jsonError === JSON_ERROR_NONE,
+                    'json_error_msg' => $jsonError !== JSON_ERROR_NONE ? json_last_error_msg() : null,
+                    'response_type' => gettype($responseData)
                 ]);
+                
                 return [
                     'success' => false,
                     'message' => 'No se pudieron extraer los datos del documento. Por favor, intenta de nuevo o envía las imágenes por WhatsApp.',
@@ -1548,8 +1588,9 @@ INSTRUCCIONES ESPECÍFICAS:
                     'ai_url' => $fullUrl,
                     'ai_raw_response' => $response,
                     'ai_response_parsed' => $responseData,
-                    'response_structure' => array_keys($responseData),
-                    'ai_http_code' => $httpCode
+                    'response_structure' => is_array($responseData) ? array_keys($responseData) : 'not_array',
+                    'ai_http_code' => $httpCode,
+                    'response_length' => strlen($response)
                 ];
             }
             
@@ -1732,6 +1773,184 @@ INSTRUCCIONES ESPECÍFICAS:
             Log::warning('Error parseando fecha: ' . $date);
             return null;
         }
+    }
+    
+    /**
+     * Extraer datos de una respuesta estructurada (JSON parseado)
+     * Busca datos en múltiples formatos comunes
+     * 
+     * @param array $responseData Respuesta parseada como array
+     * @return array Datos extraídos (puede estar vacío)
+     */
+    private function extractDataFromStructuredResponse($responseData)
+    {
+        if (!is_array($responseData) || empty($responseData)) {
+            return [];
+        }
+        
+        $extractedData = [];
+        
+        // Formato 1: respuesta directa con JSON en 'respuesta'
+        if (isset($responseData['respuesta'])) {
+            $respuestaJson = $responseData['respuesta'];
+            if (is_string($respuestaJson)) {
+                $decoded = json_decode($respuestaJson, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $extractedData = $decoded;
+                } else {
+                    // Si no es JSON válido, intentar extraer JSON del texto
+                    $extractedData = $this->extractJsonFromText($respuestaJson) ?? [];
+                }
+            } elseif (is_array($respuestaJson)) {
+                $extractedData = $respuestaJson;
+            }
+        }
+        
+        // Formato 2: datos directamente en 'data'
+        if (empty($extractedData) && isset($responseData['data'])) {
+            if (is_array($responseData['data'])) {
+                $extractedData = $responseData['data'];
+            } elseif (is_string($responseData['data'])) {
+                $decoded = json_decode($responseData['data'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $extractedData = $decoded;
+                } else {
+                    $extractedData = $this->extractJsonFromText($responseData['data']) ?? [];
+                }
+            }
+        }
+        
+        // Formato 3: datos directamente en la raíz (campos esperados)
+        if (empty($extractedData)) {
+            $expectedFields = ['nombre', 'dni', 'numero', 'numero_dni_o_pasaporte', 'direccion', 'localidad', 'apellido1', 'apellidos'];
+            $hasExpectedFields = false;
+            foreach ($expectedFields as $field) {
+                if (isset($responseData[$field])) {
+                    $hasExpectedFields = true;
+                    break;
+                }
+            }
+            if ($hasExpectedFields) {
+                $extractedData = $responseData;
+            }
+        }
+        
+        // Formato 4: buscar en 'result', 'resultado', 'content', 'message', etc.
+        if (empty($extractedData)) {
+            $possibleKeys = ['result', 'resultado', 'content', 'message', 'output', 'text', 'response'];
+            foreach ($possibleKeys as $key) {
+                if (isset($responseData[$key])) {
+                    $value = $responseData[$key];
+                    if (is_array($value)) {
+                        $extractedData = $value;
+                        break;
+                    } elseif (is_string($value)) {
+                        $decoded = json_decode($value, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $extractedData = $decoded;
+                            break;
+                        } else {
+                            $extracted = $this->extractJsonFromText($value);
+                            if ($extracted !== null) {
+                                $extractedData = $extracted;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $extractedData;
+    }
+    
+    /**
+     * Extraer JSON de texto plano - busca JSON en cualquier formato dentro del texto
+     * 
+     * @param string|array $data Datos a procesar (puede ser string, array o cualquier campo)
+     * @return array|null Datos extraídos o null si no se encuentra JSON válido
+     */
+    private function extractJsonFromText($data)
+    {
+        if (is_array($data)) {
+            // Si ya es un array, buscar JSON en campos de texto
+            foreach ($data as $key => $value) {
+                if (is_string($value) && !empty($value)) {
+                    $extracted = $this->extractJsonFromText($value);
+                    if ($extracted !== null) {
+                        return $extracted;
+                    }
+                } elseif (is_array($value)) {
+                    $extracted = $this->extractJsonFromText($value);
+                    if ($extracted !== null) {
+                        return $extracted;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        if (!is_string($data) || empty($data)) {
+            return null;
+        }
+        
+        // Estrategia 1: Intentar parsear directamente como JSON
+        $json = json_decode($data, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($json) && !empty($json)) {
+            Log::info('JSON encontrado directamente en respuesta', [
+                'json_keys' => array_keys($json)
+            ]);
+            return $json;
+        }
+        
+        // Estrategia 2: Buscar JSON entre llaves {} usando regex
+        // Buscar el primer objeto JSON válido
+        if (preg_match('/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s', $data, $matches)) {
+            $jsonStr = $matches[0];
+            $json = json_decode($jsonStr, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($json) && !empty($json)) {
+                Log::info('JSON extraído de texto usando regex', [
+                    'json_keys' => array_keys($json),
+                    'preview' => substr($jsonStr, 0, 200)
+                ]);
+                return $json;
+            }
+        }
+        
+        // Estrategia 3: Buscar JSON que empiece después de palabras clave comunes
+        $keywords = ['respuesta', 'data', 'resultado', 'json', 'result', 'content', 'message'];
+        foreach ($keywords as $keyword) {
+            // Buscar después de la palabra clave
+            $pattern = '/' . preg_quote($keyword, '/') . '\s*[:=]\s*(\{.*\})/is';
+            if (preg_match($pattern, $data, $matches)) {
+                $jsonStr = $matches[1];
+                $json = json_decode($jsonStr, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($json) && !empty($json)) {
+                    Log::info('JSON encontrado después de palabra clave', [
+                        'keyword' => $keyword,
+                        'json_keys' => array_keys($json)
+                    ]);
+                    return $json;
+                }
+            }
+        }
+        
+        // Estrategia 4: Intentar limpiar JSON malformado (quitar caracteres antes/después)
+        // Buscar la primera { y última } y extraer todo lo que hay entre ellas
+        $firstBrace = strpos($data, '{');
+        $lastBrace = strrpos($data, '}');
+        if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+            $jsonStr = substr($data, $firstBrace, $lastBrace - $firstBrace + 1);
+            $json = json_decode($jsonStr, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($json) && !empty($json)) {
+                Log::info('JSON extraído limpiando texto alrededor', [
+                    'json_keys' => array_keys($json)
+                ]);
+                return $json;
+            }
+        }
+        
+        return null;
     }
     
     /**
