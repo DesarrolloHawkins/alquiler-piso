@@ -1095,6 +1095,16 @@ class ReservasController extends Controller
             ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
             ->get();
         foreach( $reservas as $reserva){
+            // Cálculo correcto de la base imponible y el IVA
+            // El precio de la reserva YA INCLUYE el IVA al 10%
+            // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+            // Base = 180.00 / 1.10 = 163.64 €
+            // IVA = 180.00 - 163.64 = 16.36 €
+            // Total = 180.00 € (precio original)
+            $total = $reserva->precio; // Precio ya incluye IVA
+            $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+            $iva = $total - $base; // Calcular el IVA
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -1104,10 +1114,10 @@ class ReservasController extends Controller
                 'description' => '',
                 'fecha' => $reserva->fecha_salida,
                 'fecha_cobro' => null,
-                'base' => $reserva->precio - ($reserva->precio * 0.10),
-                'iva' => $reserva->precio * 0.10,
+                'base' => round($base, 2),
+                'iva' => round($iva, 2),
                 'descuento' => null,
-                'total' => $reserva->precio,
+                'total' => round($total, 2),
             ];
             $crear = Invoices::create($data);
             $referencia = $this->generateBudgetReference($crear);
@@ -1709,6 +1719,16 @@ class ReservasController extends Controller
             return response()->json('Añadido correctamente',200);
         }else {
 
+            // Cálculo correcto de la base imponible y el IVA
+            // El precio de la reserva YA INCLUYE el IVA al 10%
+            // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+            // Base = 180.00 / 1.10 = 163.64 €
+            // IVA = 180.00 - 163.64 = 16.36 €
+            // Total = 180.00 € (precio original)
+            $total = $reserva->precio; // Precio ya incluye IVA
+            $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+            $iva = $total - $base; // Calcular el IVA
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -1718,10 +1738,10 @@ class ReservasController extends Controller
                 'description' => null,
                 'fecha' => $reserva->fecha_entrada,
                 'fecha_cobro' => Carbon::now(),
-                'base' => $reserva->precio,
-                'iva' => $reserva->precio * 0.10,
+                'base' => round($base, 2),
+                'iva' => round($iva, 2),
                 'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
-                'total' => $reserva->precio,
+                'total' => round($total, 2),
             ];
 
             $crear = Invoices::create($data);

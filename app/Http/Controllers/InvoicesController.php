@@ -393,10 +393,14 @@ class InvoicesController extends Controller
 
     public function create(Request $request){
         // Cálculo correcto de la base imponible y el IVA
-        // Asumimos que $request->precio es el precio SIN IVA
-        $base = $request->precio;
-        $iva = $base * 0.10; // IVA 10%
-        $total = $base + $iva; // Total = Base + IVA
+        // El precio recibido YA INCLUYE el IVA al 10%
+        // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+        // Base = 180.00 / 1.10 = 163.64 €
+        // IVA = 180.00 - 163.64 = 16.36 €
+        // Total = 180.00 € (precio original)
+        $total = $request->precio; // Precio ya incluye IVA
+        $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+        $iva = $total - $base; // Calcular el IVA
 
         $data = [
             'budget_id' => null,
@@ -585,10 +589,14 @@ class InvoicesController extends Controller
                $apartamentoTitulo = $reserva->apartamento->titulo ?? $reserva->apartamento->nombre ?? 'Apartamento #' . $reserva->apartamento_id;
 
                // Cálculo correcto de la base imponible y el IVA
-               // Asumimos que $reserva->precio es el precio SIN IVA
-               $base = $reserva->precio;
-               $iva = $base * 0.10; // IVA 10%
-               $total = $base + $iva; // Total = Base + IVA
+               // El precio de la reserva YA INCLUYE el IVA al 10%
+               // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+               // Base = 180.00 / 1.10 = 163.64 €
+               // IVA = 180.00 - 163.64 = 16.36 €
+               // Total = 180.00 € (precio original)
+               $total = $reserva->precio; // Precio ya incluye IVA
+               $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+               $iva = $total - $base; // Calcular el IVA
 
                $data = [
                    'budget_id' => null,
