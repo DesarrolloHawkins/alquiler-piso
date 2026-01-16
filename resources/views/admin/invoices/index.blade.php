@@ -285,6 +285,14 @@
                                     <a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn btn-sm bg-color-segundo" title="Descargar PDF">
                                         <i class="fas fa-download"></i>
                                     </a>
+                                    @if($factura->reserva_id)
+                                        <button type="button" 
+                                                class="btn btn-sm btn-info recalcular-factura" 
+                                                data-invoice-id="{{ $factura->id }}"
+                                                title="Recalcular IVA desde precio de reserva">
+                                            <i class="fas fa-calculator"></i>
+                                        </button>
+                                    @endif
                                     @if(!$factura->es_rectificativa && !$factura->tieneRectificativas())
                                         <a href="{{route('admin.facturas.createRectificativa', $factura->id)}}" class="btn btn-sm btn-warning" title="Crear Factura Rectificativa">
                                             <i class="fas fa-undo"></i>
@@ -399,6 +407,75 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Error en la conexión.');
+                });
+            });
+        });
+
+        // Manejar el recálculo de facturas
+        document.querySelectorAll('.recalcular-factura').forEach(button => {
+            button.addEventListener('click', function() {
+                const invoiceId = this.dataset.invoiceId;
+                const button = this;
+                
+                // Confirmar acción
+                if (!confirm('¿Estás seguro de que deseas recalcular esta factura desde el precio de la reserva? Esto actualizará la base, IVA y total.')) {
+                    return;
+                }
+
+                // Deshabilitar botón mientras se procesa
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                fetch(`/facturas/${invoiceId}/recalcular`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let mensaje = '';
+                        
+                        // Si solo se actualizó la referencia (rectificativa o tiene rectificativas)
+                        if (data.data.solo_referencia) {
+                            mensaje = data.message;
+                            if (data.data.referencia_generada) {
+                                mensaje += `\n\n✅ Referencia asignada: ${data.data.referencia_nueva}`;
+                            }
+                        } else {
+                            // Recálculo completo de IVA
+                            mensaje = 'Factura recalculada correctamente.\n\n' +
+                                  'Valores anteriores:\n' +
+                                  `Base: ${data.data.valores_antiguos.base} €\n` +
+                                  `IVA: ${data.data.valores_antiguos.iva} €\n` +
+                                  `Total: ${data.data.valores_antiguos.total} €\n\n` +
+                                  'Valores nuevos:\n' +
+                                  `Base: ${data.data.valores_nuevos.base} €\n` +
+                                  `IVA: ${data.data.valores_nuevos.iva} €\n` +
+                                  `Total: ${data.data.valores_nuevos.total} €\n\n` +
+                                  `Precio de reserva: ${data.data.precio_reserva} €`;
+                            
+                            if (data.data.referencia_generada) {
+                                mensaje += `\n\n✅ Se ha asignado la referencia: ${data.data.referencia_nueva}`;
+                            }
+                        }
+                        
+                        alert(mensaje);
+                        // Recargar la página para ver los cambios
+                        location.reload();
+                    } else {
+                        alert('Error al recalcular la factura: ' + (data.message || 'Error desconocido'));
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-calculator"></i>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error en la conexión al recalcular la factura.');
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-calculator"></i>';
                 });
             });
         });

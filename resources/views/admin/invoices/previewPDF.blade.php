@@ -172,11 +172,11 @@
                             <td style="text-align: right;">{{ $concept->fecha_salida }}</td>
                             <td style="text-align: right;">1</td>
                             <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
-                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base, 2) }} €
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->total, 2) }} €
                             </td>
-                            <td style="text-align: right;">{{ $invoice->discount }}%</td>
+                            <td style="text-align: right;">{{ $invoice->discount ?? 0 }}%</td>
                             <td style="text-align: right; {{ $invoice->es_rectificativa ? 'color: red;' : '' }}">
-                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->base, 2) }} €
+                                {{ $invoice->es_rectificativa ? '-' : '' }}{{ number_format($invoice->total, 2) }} €
                             </td>
                         </tr>
                         @endforeach
