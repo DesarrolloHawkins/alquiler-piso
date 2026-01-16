@@ -456,6 +456,11 @@ class InvoicesController extends Controller
 
     public function generateBudgetReference(Invoices $invoices) {
 
+         // Cargar la relación reserva si no está cargada para evitar N+1 queries
+         if (!$invoices->relationLoaded('reserva') && $invoices->reserva_id) {
+             $invoices->load('reserva');
+         }
+
          // Obtener la fecha para usar en la generación de la referencia
          // Prioridad: fecha de la factura > fecha de salida de la reserva > fecha actual
        $budgetCreationDate = $invoices->fecha ?? ($invoices->reserva->fecha_salida ?? now());
@@ -467,7 +472,21 @@ class InvoicesController extends Controller
 
        // Buscar la última referencia autoincremental para el año y mes correspondiente
        // Usar un bucle para evitar colisiones si la referencia ya existe
+       $maxIterations = 1000; // Límite de seguridad para evitar bucles infinitos
+       $iteration = 0;
+       
        do {
+           $iteration++;
+           
+           if ($iteration > $maxIterations) {
+               Log::error('Error: Se alcanzó el límite de iteraciones al generar referencia', [
+                   'invoice_id' => $invoices->id,
+                   'year' => $year,
+                   'month' => $monthNum
+               ]);
+               throw new \Exception('No se pudo generar una referencia única después de ' . $maxIterations . ' intentos.');
+           }
+
            $latestReference = InvoicesReferenceAutoincrement::where('year', $year)
                                    ->where('month_num', $monthNum)
                                    ->orderBy('id', 'desc')
@@ -778,7 +797,8 @@ class InvoicesController extends Controller
     public function recalculateFromReserva($id)
     {
         try {
-            $invoice = Invoices::findOrFail($id);
+            // Cargar la factura con las relaciones necesarias para evitar N+1 queries
+            $invoice = Invoices::with(['reserva'])->findOrFail($id);
 
             // Valores antiguos para logging
             $valoresAntiguos = [
@@ -789,8 +809,9 @@ class InvoicesController extends Controller
             ];
 
             // Verificar si es rectificativa o tiene rectificativas
+            // Usar count() directamente en lugar de el método para evitar consultas adicionales
             $esRectificativa = $invoice->es_rectificativa ?? false;
-            $tieneRectificativas = $invoice->tieneRectificativas() ?? false;
+            $tieneRectificativas = $esRectificativa ? false : (Invoices::where('factura_original_id', $id)->exists());
 
             // Si es rectificativa o tiene rectificativas, solo actualizar la referencia
             if ($esRectificativa || $tieneRectificativas) {

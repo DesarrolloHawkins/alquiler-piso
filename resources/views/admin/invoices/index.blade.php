@@ -426,14 +426,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 button.disabled = true;
                 button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
+                // Crear un AbortController para poder cancelar la petición si tarda mucho
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
+
                 fetch(`/facturas/${invoiceId}/recalcular`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
-                    }
+                    },
+                    signal: controller.signal
                 })
                 .then(response => response.json())
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         let mensaje = '';
@@ -472,8 +484,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error:', error);
-                    alert('Error en la conexión al recalcular la factura.');
+                    
+                    let errorMessage = 'Error en la conexión al recalcular la factura.';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'La operación tardó demasiado tiempo. Por favor, intenta de nuevo.';
+                    } else if (error.message.includes('504')) {
+                        errorMessage = 'El servidor tardó demasiado en responder. Por favor, intenta de nuevo o contacta con el administrador.';
+                    }
+                    
+                    alert(errorMessage);
                     button.disabled = false;
                     button.innerHTML = '<i class="fas fa-calculator"></i>';
                 });
