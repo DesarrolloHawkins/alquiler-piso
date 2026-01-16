@@ -455,16 +455,39 @@ class InvoicesController extends Controller
 
 
     public function generateBudgetReference(Invoices $invoices) {
-
+        try {
          // Cargar la relación reserva si no está cargada para evitar N+1 queries
          if (!$invoices->relationLoaded('reserva') && $invoices->reserva_id) {
-             $invoices->load('reserva');
+             try {
+                 $invoices->load('reserva');
+             } catch (\Exception $e) {
+                 Log::warning('No se pudo cargar la relación reserva', [
+                     'invoice_id' => $invoices->id,
+                     'reserva_id' => $invoices->reserva_id,
+                     'error' => $e->getMessage()
+                 ]);
+             }
          }
 
          // Obtener la fecha para usar en la generación de la referencia
          // Prioridad: fecha de la factura > fecha de salida de la reserva > fecha actual
-       $budgetCreationDate = $invoices->fecha ?? ($invoices->reserva->fecha_salida ?? now());
-       $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+         $fechaReserva = null;
+         if ($invoices->reserva && isset($invoices->reserva->fecha_salida)) {
+             $fechaReserva = $invoices->reserva->fecha_salida;
+         }
+       $budgetCreationDate = $invoices->fecha ?? $fechaReserva ?? now();
+       
+       // Validar que la fecha sea válida
+       try {
+           $datetimeBudgetCreationDate = new \DateTime($budgetCreationDate);
+       } catch (\Exception $e) {
+           Log::error('Fecha inválida al generar referencia', [
+               'invoice_id' => $invoices->id,
+               'fecha' => $budgetCreationDate,
+               'error' => $e->getMessage()
+           ]);
+           $datetimeBudgetCreationDate = new \DateTime(); // Usar fecha actual como fallback
+       }
 
        // Formatear la fecha para obtener los componentes necesarios
        $year = $datetimeBudgetCreationDate->format('Y');
@@ -536,6 +559,16 @@ class InvoicesController extends Controller
                // Añade aquí más si es necesario
            ],
        ];
+       } catch (\Exception $e) {
+           Log::error('Error en generateBudgetReference', [
+               'invoice_id' => $invoices->id ?? null,
+               'error' => $e->getMessage(),
+               'file' => $e->getFile(),
+               'line' => $e->getLine(),
+               'trace' => $e->getTraceAsString()
+           ]);
+           throw $e; // Re-lanzar la excepción para que se maneje en el método que llama
+       }
    }
 
    public function updateFecha(Request $request, $id)
@@ -967,16 +1000,28 @@ class InvoicesController extends Controller
                 ]
             ]);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Factura no encontrada al recalcular', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Factura no encontrada.'
+            ], 404);
         } catch (\Exception $e) {
             Log::error('Error al recalcular factura', [
                 'invoice_id' => $id,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al recalcular la factura: ' . $e->getMessage()
+                'message' => 'Error al recalcular la factura: ' . $e->getMessage() . ' (Línea: ' . $e->getLine() . ')'
             ], 500);
         }
     }
