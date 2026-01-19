@@ -3,7 +3,7 @@
 @section('scriptHead')
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.9/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@3.10.2/dist/locale/es.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.9/locales/es.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 @endsection
 
@@ -438,12 +438,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     signal: controller.signal
                 })
-                .then(response => response.json())
                 .then(response => {
                     clearTimeout(timeoutId);
+                    // Verificar el status HTTP antes de parsear JSON
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        // Intentar parsear el JSON de error si existe
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }).catch(() => {
+                            // Si no se puede parsear, lanzar error genérico
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        });
                     }
+                    // Si todo está bien, parsear el JSON
                     return response.json();
                 })
                 .then(data => {
