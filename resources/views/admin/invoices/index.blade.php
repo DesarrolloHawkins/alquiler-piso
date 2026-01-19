@@ -230,6 +230,46 @@
 
                       <th scope="col">
                           <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'base',
+                            'direction' => (request()->get('order_by') == 'base' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                          ]) }}" class="{{ request('order_by') == 'base' ? 'active-sort' : 'inactive-sort' }}">
+                              Base Imponible
+                              @if(request('order_by') == 'base')
+                                  @if(request('direction') == 'asc')
+                                      &#9650;
+                                  @else
+                                      &#9660;
+                                  @endif
+                              @endif
+                          </a>
+                      </th>
+
+                      <th scope="col">
+                          <a href="{{ route('admin.facturas.index', [
+                            'order_by' => 'iva',
+                            'direction' => (request()->get('order_by') == 'iva' ? $orderDirection : 'asc'),
+                            'search' => request()->get('search'),
+                            'perPage' => request()->get('perPage'),
+                            'fecha_inicio' => request()->get('fecha_inicio'),
+                            'fecha_fin' => request()->get('fecha_fin')
+                          ]) }}" class="{{ request('order_by') == 'iva' ? 'active-sort' : 'inactive-sort' }}">
+                              IVA
+                              @if(request('order_by') == 'iva')
+                                  @if(request('direction') == 'asc')
+                                      &#9650;
+                                  @else
+                                      &#9660;
+                                  @endif
+                              @endif
+                          </a>
+                      </th>
+
+                      <th scope="col">
+                          <a href="{{ route('admin.facturas.index', [
                             'order_by' => 'invoice_status_id',
                             'direction' => (request()->get('order_by') == 'invoice_status_id' ? $orderDirection : 'asc'),
                             'search' => request()->get('search'),
@@ -278,7 +318,9 @@
                                 </span>
                                 <input type="date" class="fecha-input d-none" data-id="{{ $factura->id }}" value="{{ \Carbon\Carbon::parse($factura->fecha)->format('Y-m-d') }}">
                             </td>
-                            <td><strong>{{ $factura->total }} €</strong></td>
+                            <td><strong>{{ number_format($factura->total, 2, ',', '.') }} €</strong></td>
+                            <td>{{ number_format($factura->base ?? 0, 2, ',', '.') }} €</td>
+                            <td>{{ number_format($factura->iva ?? 0, 2, ',', '.') }} €</td>
                             <td>{{ $factura->estado->name }}</td>
                             <td>
                                 <div class="btn-group" role="group">
