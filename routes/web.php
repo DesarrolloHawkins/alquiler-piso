@@ -726,6 +726,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/invoice/pdf/{id}', [App\Http\Controllers\InvoicesController::class, 'generateInvoicePDF'])->name('admin.facturas.generatePdf');
     Route::post('/generar-factura',[App\Http\Controllers\InvoicesController::class, 'facturar'])->name('admin.facturas.facturar');
     Route::post('/facturas/update-fecha/{id}', [App\Http\Controllers\InvoicesController::class, 'updateFecha'])->name('admin.facturas.updateFecha');
+    Route::post('/facturas/{id}/update-fecha-referencia', [App\Http\Controllers\InvoicesController::class, 'updateFechaYRecalcularReferencia'])->name('admin.facturas.updateFechaReferencia');
     Route::post('/facturas/{id}/recalcular', [App\Http\Controllers\InvoicesController::class, 'recalculateFromReserva'])->name('admin.facturas.recalculate');
     Route::get('/admin/facturas/download-zip', [App\Http\Controllers\InvoicesController::class, 'downloadInvoicesZip'])->name('admin.facturas.downloadZip');
     

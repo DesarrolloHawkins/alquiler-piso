@@ -327,14 +327,22 @@
                                     <a href="{{route('admin.facturas.generatePdf', $factura->id)}}" class="btn btn-sm bg-color-segundo" title="Descargar PDF">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    @if($factura->reserva_id)
+                                    @if($factura->reserva_id || $factura->budget_id)
                                         <button type="button" 
                                                 class="btn btn-sm btn-info recalcular-factura" 
                                                 data-invoice-id="{{ $factura->id }}"
-                                                title="Recalcular IVA desde precio de reserva">
+                                                title="Recalcular IVA desde precio de reserva o presupuesto">
                                             <i class="fas fa-calculator"></i>
                                         </button>
                                     @endif
+                                    <button type="button" 
+                                            class="btn btn-sm btn-secondary actualizar-fecha-referencia" 
+                                            data-invoice-id="{{ $factura->id }}"
+                                            data-fecha-actual="{{ \Carbon\Carbon::parse($factura->fecha)->format('Y-m-d') }}"
+                                            data-referencia-actual="{{ $factura->reference }}"
+                                            title="Cambiar fecha y recalcular referencia">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </button>
                                     @if(!$factura->es_rectificativa && !$factura->tieneRectificativas())
                                         <a href="{{route('admin.facturas.createRectificativa', $factura->id)}}" class="btn btn-sm btn-warning" title="Crear Factura Rectificativa">
                                             <i class="fas fa-undo"></i>
@@ -460,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const button = this;
                 
                 // Confirmar acción
-                if (!confirm('¿Estás seguro de que deseas recalcular esta factura desde el precio de la reserva? Esto actualizará la base, IVA y total.')) {
+                if (!confirm('¿Estás seguro de que deseas recalcular esta factura? Esto actualizará la base, IVA y total desde el precio de la reserva o presupuesto.')) {
                     return;
                 }
 
@@ -516,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                   `Base: ${data.data.valores_nuevos.base} €\n` +
                                   `IVA: ${data.data.valores_nuevos.iva} €\n` +
                                   `Total: ${data.data.valores_nuevos.total} €\n\n` +
-                                  `Precio de reserva: ${data.data.precio_reserva} €`;
+                                  `Precio ${data.data.tipo_origen === 'reserva' ? 'de reserva' : 'del presupuesto'}: ${data.data.precio_origen} €`;
                             
                             if (data.data.referencia_generada) {
                                 mensaje += `\n\n✅ Se ha asignado la referencia: ${data.data.referencia_nueva}`;
@@ -546,6 +554,121 @@ document.addEventListener('DOMContentLoaded', function () {
                     alert(errorMessage);
                     button.disabled = false;
                     button.innerHTML = '<i class="fas fa-calculator"></i>';
+                });
+            });
+        });
+
+        // Manejar la actualización de fecha y recálculo de referencia
+        document.querySelectorAll('.actualizar-fecha-referencia').forEach(button => {
+            button.addEventListener('click', function() {
+                const invoiceId = this.dataset.invoiceId;
+                const fechaActual = this.dataset.fechaActual;
+                const referenciaActual = this.dataset.referenciaActual;
+                const button = this;
+
+                // Pedir nueva fecha al usuario
+                const nuevaFecha = prompt(
+                    `Cambiar fecha de factura y recalcular referencia\n\n` +
+                    `Fecha actual: ${fechaActual}\n` +
+                    `Referencia actual: ${referenciaActual}\n\n` +
+                    `Ingresa la nueva fecha (YYYY-MM-DD):`,
+                    fechaActual
+                );
+
+                if (!nuevaFecha) {
+                    return; // Usuario canceló
+                }
+
+                // Validar formato de fecha
+                const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+                if (!fechaRegex.test(nuevaFecha)) {
+                    alert('Formato de fecha inválido. Usa el formato YYYY-MM-DD (ej: 2025-12-31)');
+                    return;
+                }
+
+                // Validar que sea una fecha válida
+                const fechaObj = new Date(nuevaFecha);
+                if (isNaN(fechaObj.getTime())) {
+                    alert('La fecha ingresada no es válida.');
+                    return;
+                }
+
+                // Confirmar acción
+                if (!confirm(
+                    `¿Estás seguro de cambiar la fecha a ${nuevaFecha}?\n\n` +
+                    `Esto recalculará la referencia basándose en el año y mes de la nueva fecha.\n\n` +
+                    `Fecha actual: ${fechaActual}\n` +
+                    `Nueva fecha: ${nuevaFecha}\n` +
+                    `Referencia actual: ${referenciaActual}`
+                )) {
+                    return;
+                }
+
+                // Deshabilitar botón mientras se procesa
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                // Crear un AbortController para poder cancelar la petición si tarda mucho
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
+
+                fetch(`/facturas/${invoiceId}/update-fecha-referencia`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ fecha: nuevaFecha }),
+                    signal: controller.signal
+                })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    // Verificar el status HTTP antes de parsear JSON
+                    if (!response.ok) {
+                        // Intentar parsear el JSON de error si existe
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }).catch(() => {
+                            // Si no se puede parsear, lanzar error genérico
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        });
+                    }
+                    // Si todo está bien, parsear el JSON
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        let mensaje = 'Fecha y referencia actualizadas correctamente.\n\n' +
+                            `Fecha anterior: ${data.data.fecha_anterior}\n` +
+                            `Nueva fecha: ${data.data.nueva_fecha}\n\n` +
+                            `Referencia anterior: ${data.data.referencia_anterior}\n` +
+                            `Nueva referencia: ${data.data.nueva_referencia}`;
+                        
+                        alert(mensaje);
+                        // Recargar la página para ver los cambios
+                        location.reload();
+                    } else {
+                        alert('Error al actualizar fecha y referencia: ' + (data.message || 'Error desconocido'));
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-calendar-alt"></i>';
+                    }
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    console.error('Error:', error);
+                    
+                    let errorMessage = 'Error en la conexión al actualizar fecha y referencia.';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'La operación tardó demasiado tiempo. Por favor, intenta de nuevo.';
+                    } else if (error.message.includes('504')) {
+                        errorMessage = 'El servidor tardó demasiado en responder. Por favor, intenta de nuevo o contacta con el administrador.';
+                    } else {
+                        errorMessage = error.message || errorMessage;
+                    }
+                    
+                    alert(errorMessage);
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-calendar-alt"></i>';
                 });
             });
         });

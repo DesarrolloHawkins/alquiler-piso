@@ -589,6 +589,79 @@ class InvoicesController extends Controller
         return response()->json(['success' => true, 'message' => 'Fecha actualizada correctamente.']);
     }
 
+    /**
+     * Actualizar fecha de factura y recalcular la referencia basándose en la nueva fecha
+     */
+    public function updateFechaYRecalcularReferencia(Request $request, $id)
+    {
+        try {
+            Log::info('Iniciando actualización de fecha y recálculo de referencia', ['invoice_id' => $id]);
+            
+            $factura = Invoices::findOrFail($id);
+
+            $request->validate([
+                'fecha' => 'required|date',
+            ]);
+
+            $fechaAnterior = $factura->fecha;
+            $referenciaAnterior = $factura->reference;
+            $nuevaFecha = $request->input('fecha');
+
+            Log::info('Datos antes de actualizar', [
+                'invoice_id' => $id,
+                'fecha_anterior' => $fechaAnterior,
+                'referencia_anterior' => $referenciaAnterior,
+                'nueva_fecha' => $nuevaFecha
+            ]);
+
+            // Actualizar la fecha
+            $factura->fecha = $nuevaFecha;
+            $factura->save();
+
+            // Recalcular la referencia basándose en la nueva fecha
+            // El método generateBudgetReference usa $invoices->fecha como prioridad
+            $referencia = $this->generateBudgetReference($factura);
+            
+            // Actualizar la referencia en la factura
+            $factura->reference = $referencia['reference'];
+            $factura->reference_autoincrement_id = $referencia['id'];
+            $factura->save();
+
+            Log::info('Fecha y referencia actualizadas correctamente', [
+                'invoice_id' => $id,
+                'fecha_anterior' => $fechaAnterior,
+                'nueva_fecha' => $nuevaFecha,
+                'referencia_anterior' => $referenciaAnterior,
+                'nueva_referencia' => $referencia['reference']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fecha y referencia actualizadas correctamente.',
+                'data' => [
+                    'fecha_anterior' => $fechaAnterior,
+                    'nueva_fecha' => $nuevaFecha,
+                    'referencia_anterior' => $referenciaAnterior,
+                    'nueva_referencia' => $referencia['reference']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar fecha y recalcular referencia', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la fecha y recalcular la referencia: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
    public function exportInvoices(Request $request)
    {
@@ -926,31 +999,54 @@ class InvoicesController extends Controller
             }
 
             // Si no es rectificativa y no tiene rectificativas, proceder con recálculo normal
-            if (!$invoice->reserva_id) {
+            if (!$invoice->reserva_id && !$invoice->budget_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta factura no tiene una reserva asociada.'
+                    'message' => 'Esta factura no tiene una reserva ni un presupuesto asociado.'
                 ], 400);
             }
 
-            $reserva = Reserva::find($invoice->reserva_id);
-            
-            if (!$reserva) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La reserva asociada no existe.'
-                ], 404);
+            $total = null;
+            $precioOrigen = null;
+            $tipoOrigen = null;
+
+            // Si tiene reserva, usar el precio de la reserva
+            if ($invoice->reserva_id) {
+                $reserva = Reserva::find($invoice->reserva_id);
+                
+                if (!$reserva) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La reserva asociada no existe.'
+                    ], 404);
+                }
+
+                if (!$reserva->precio) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La reserva no tiene precio definido.'
+                    ], 400);
+                }
+
+                $total = $reserva->precio; // Precio ya incluye IVA
+                $precioOrigen = $reserva->precio;
+                $tipoOrigen = 'reserva';
+            } 
+            // Si tiene presupuesto, usar el total de la factura (que ya incluye IVA)
+            elseif ($invoice->budget_id) {
+                if (!$invoice->total || $invoice->total <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La factura no tiene un total válido para recalcular.'
+                    ], 400);
+                }
+
+                $total = $invoice->total; // El total de la factura ya incluye IVA
+                $precioOrigen = $invoice->total;
+                $tipoOrigen = 'presupuesto';
             }
 
-            if (!$reserva->precio) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La reserva no tiene precio definido.'
-                ], 400);
-            }
-
-            // Recalcular correctamente desde el precio de la reserva (que ya incluye IVA)
-            $total = $reserva->precio; // Precio ya incluye IVA
+            // Recalcular correctamente desde el total (que ya incluye IVA)
             $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
             $iva = $total - $base; // Calcular el IVA
 
@@ -1006,10 +1102,12 @@ class InvoicesController extends Controller
                 $referenciaNueva = $invoice->reference;
             }
 
-            Log::info('Factura recalculada desde precio de reserva', [
+            Log::info('Factura recalculada', [
                 'invoice_id' => $id,
+                'tipo_origen' => $tipoOrigen,
                 'reserva_id' => $invoice->reserva_id,
-                'precio_reserva' => $reserva->precio,
+                'budget_id' => $invoice->budget_id,
+                'precio_origen' => $precioOrigen,
                 'valores_antiguos' => $valoresAntiguos,
                 'valores_nuevos' => [
                     'base' => round($base, 2),
@@ -1035,7 +1133,8 @@ class InvoicesController extends Controller
                         'iva' => round($iva, 2),
                         'total' => round($total, 2)
                     ],
-                    'precio_reserva' => $reserva->precio,
+                    'precio_origen' => $precioOrigen,
+                    'tipo_origen' => $tipoOrigen,
                     'referencia_generada' => $referenciaGenerada,
                     'referencia_nueva' => $referenciaNueva
                 ]
