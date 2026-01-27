@@ -366,6 +366,8 @@ class Kernel extends ConsoleKernel
             /* ->where('dni_entregado', '!=', null) */
 
             foreach($reservas as $reserva){
+                // 🔄 Refrescar la reserva para obtener datos actualizados (especialmente dni_entregado)
+                $reserva->refresh();
 
                 // Apartamento
                 $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
@@ -415,6 +417,9 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeBienvenida después de crearlo para el siguiente check
+                        $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
+
                         // Si la reserva NO es de la web, enviar también al chat de Channex
                         if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
@@ -449,7 +454,8 @@ class Kernel extends ConsoleKernel
                         if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
                             Log::info('No se pueden enviar claves: el DNI no ha sido subido', [
                                 'reserva_id' => $reserva->id,
-                                'dni_entregado' => $reserva->dni_entregado
+                                'dni_entregado' => $reserva->dni_entregado,
+                                'dni_entregado_tipo' => gettype($reserva->dni_entregado)
                             ]);
                             continue; // Saltar esta reserva y continuar con la siguiente
                         }
@@ -495,6 +501,8 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeClaves después de crearlo para el siguiente check
+                        $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
 
                         if ($reserva->apartamento_id === 1) {
                             $mensaje = $this->clavesEmailAtico(
@@ -626,6 +634,9 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeConsulta después de crearlo para el siguiente check
+                        $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
+
                         // Si la reserva NO es de la web, enviar también al chat de Channex
                         if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
@@ -654,7 +665,8 @@ class Kernel extends ConsoleKernel
 
                 // MENSAJE DE OCIO
                 if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
-                    $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
+                    // 🔄 BUG FIX: Usar mensajeConsulta en lugar de mensajeClaves
+                    $tiempoDesdeConsulta = $mensajeConsulta->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeConsulta >= 1) {
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -671,6 +683,9 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+
+                        // 🔄 Refrescar mensajeOcio después de crearlo para el siguiente check
+                        $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
                         if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {

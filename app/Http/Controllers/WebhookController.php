@@ -95,6 +95,12 @@ class WebhookController extends Controller
                         'conversacion_plataforma' => $reserva->conversacion_plataforma
                     ]);
 
+                    // Asegurar que message nunca sea NULL
+                    $messageText = $payload['message'] ?? '';
+                    if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                        $messageText = '[Adjunto]';
+                    }
+
                     // Guardar el mensaje pero sin responder
                     MensajeChat::create([
                         'channex_message_id' => $messageId,
@@ -102,7 +108,7 @@ class WebhookController extends Controller
                         'thread_id' => $payload['message_thread_id'],
                         'property_id' => $payload['property_id'],
                         'sender' => $payload['sender'],
-                        'message' => $payload['message'],
+                        'message' => $messageText,
                         'attachments' => $payload['attachments'] ?? [],
                         'have_attachment' => $payload['have_attachment'] ?? false,
                         'received_at' => Carbon::parse($request->input('timestamp')),
@@ -118,17 +124,28 @@ class WebhookController extends Controller
 
                 // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
                 // Buscar mensajes idénticos del mismo booking_id en los últimos 10 minutos
+                // Asegurar que message nunca sea NULL para la verificación
+                $messageTextForVerification = $payload['message'] ?? '';
+                if (empty($messageTextForVerification) && ($payload['have_attachment'] ?? false)) {
+                    $messageTextForVerification = '[Adjunto]';
+                }
                 $mensajeRepetido = $this->verificarMensajeRepetidoChannex(
                     $payload['booking_id'],
-                    $payload['message'],
+                    $messageTextForVerification,
                     $payload['sender']
                 );
 
                 if ($mensajeRepetido) {
+                    // Asegurar que message nunca sea NULL
+                    $messageText = $payload['message'] ?? '';
+                    if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                        $messageText = '[Adjunto]';
+                    }
+
                     Log::info("🔄 Mensaje repetido detectado en Channex - No se responderá para evitar bucle con contestador automático", [
                         'booking_id' => $payload['booking_id'],
                         'sender' => $payload['sender'],
-                        'mensaje' => substr($payload['message'], 0, 100),
+                        'mensaje' => substr($messageText, 0, 100),
                         'mensaje_anterior_id' => $mensajeRepetido->id,
                         'fecha_mensaje_anterior' => $mensajeRepetido->received_at
                     ]);
@@ -140,7 +157,7 @@ class WebhookController extends Controller
                         'thread_id' => $payload['message_thread_id'],
                         'property_id' => $payload['property_id'],
                         'sender' => $payload['sender'],
-                        'message' => $payload['message'],
+                        'message' => $messageText,
                         'attachments' => $payload['attachments'] ?? [],
                         'have_attachment' => $payload['have_attachment'] ?? false,
                         'received_at' => Carbon::parse($request->input('timestamp')),
@@ -154,6 +171,12 @@ class WebhookController extends Controller
                     ]);
                 }
 
+                // Asegurar que message nunca sea NULL
+                $messageText = $payload['message'] ?? '';
+                if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                    $messageText = '[Adjunto]';
+                }
+
                 // Guardamos el mensaje en la base de datos
                 $mensajeChat = MensajeChat::create([
                     'channex_message_id' => $messageId,
@@ -161,7 +184,7 @@ class WebhookController extends Controller
                     'thread_id' => $payload['message_thread_id'], // Channex thread_id
                     'property_id' => $payload['property_id'],
                     'sender' => $payload['sender'],
-                    'message' => $payload['message'],
+                    'message' => $messageText,
                     'attachments' => $payload['attachments'] ?? [],
                     'have_attachment' => $payload['have_attachment'] ?? false,
                     'received_at' => Carbon::parse($request->input('timestamp')),
@@ -178,7 +201,7 @@ class WebhookController extends Controller
                 // $responseMessage = $this->procesarMensajeConAsistente($payload['message'], $openaiThreadId);
                 //function enviarMensajeOpenAiChatCompletions($id, $nuevoMensaje, $remitente)
 
-                $enviaChatGPT = $this->enviarMensajeOpenAiChatCompletions($mensajeChat->id, $payload['message'], $payload['sender']);
+                $enviaChatGPT = $this->enviarMensajeOpenAiChatCompletions($mensajeChat->id, $messageText, $payload['sender']);
                 // Enviar la respuesta a Channex
                 $this->enviarRespuestaAChannex($enviaChatGPT, $payload['booking_id']);
 
@@ -1015,6 +1038,11 @@ class WebhookController extends Controller
      */
     private function normalizarMensajeParaComparacion($mensaje)
     {
+        // Asegurar que el mensaje nunca sea NULL
+        if ($mensaje === null || $mensaje === '') {
+            return '';
+        }
+        
         // Convertir a minúsculas y eliminar espacios extra
         $normalizado = trim(strtolower($mensaje));
 
@@ -1070,6 +1098,9 @@ class WebhookController extends Controller
     private function verificarMensajeRepetidoChannex($bookingId, $contenido, $sender)
     {
         try {
+            // Asegurar que el contenido nunca sea NULL
+            $contenido = $contenido ?? '';
+            
             // Normalizar el contenido eliminando códigos, IDs y elementos variables
             $contenidoNormalizado = $this->normalizarMensajeParaComparacion($contenido);
 
