@@ -40,6 +40,7 @@ class ReservaPagoController extends Controller
             'fecha_salida' => $request->get('fecha_salida'),
             'adultos' => $request->get('adultos'),
             'ninos' => $request->get('ninos'),
+            'has_hold_token' => $request->filled('hold_token'),
         ]);
 
         // Si las reservas web están deshabilitadas, mostrar mensaje y no permitir continuar
@@ -88,18 +89,37 @@ class ReservaPagoController extends Controller
                 ->withInput();
         }
 
-        // Verificar si ya existe un hold activo para estas fechas (otro cliente)
-        $holdActivo = ReservaHold::where('apartamento_id', $apartamento->id)
+        // Si viene hold_token (p. ej. vuelta por errores de validación), reutilizar ese hold si es válido
+        $holdReutilizable = null;
+        if ($request->filled('hold_token')) {
+            $holdReutilizable = ReservaHold::where('hold_token', $request->hold_token)
+                ->where('apartamento_id', $apartamento->id)
+                ->where('fecha_entrada', $fechaEntrada->toDateString())
+                ->where('fecha_salida', $fechaSalida->toDateString())
+                ->where('estado', 'activo')
+                ->where('expires_at', '>', now())
+                ->first();
+            Log::info('[ReservaWeb] formularioReserva: hold_token en request', [
+                'hold_reutilizable' => (bool) $holdReutilizable,
+            ]);
+        }
+
+        // Verificar si ya existe un hold activo para estas fechas de OTRO cliente (excluir el nuestro si reutilizamos)
+        $holdActivoQuery = ReservaHold::where('apartamento_id', $apartamento->id)
             ->where('fecha_entrada', $fechaEntrada->toDateString())
             ->where('fecha_salida', $fechaSalida->toDateString())
             ->where('estado', 'activo')
-            ->where('expires_at', '>', now())
-            ->exists();
+            ->where('expires_at', '>', now());
+        if ($holdReutilizable) {
+            $holdActivoQuery->where('id', '!=', $holdReutilizable->id);
+        }
+        $holdActivo = $holdActivoQuery->exists();
 
         Log::info('[ReservaWeb] formularioReserva: comprobación hold activo', [
             'apartamento_id' => $apartamento->id,
             'fechas' => [$fechaEntrada->toDateString(), $fechaSalida->toDateString()],
             'hold_activo_existe' => $holdActivo,
+            'reutilizando_hold' => (bool) $holdReutilizable,
         ]);
 
         if ($holdActivo) {
@@ -142,17 +162,24 @@ class ReservaPagoController extends Controller
             'precio_total' => $precioTotal,
         ]);
 
-        // Crear hold temporal en Channex mientras el cliente completa el formulario
-        $holdToken = $this->crearHoldTemporal($apartamento, $fechaEntrada, $fechaSalida);
-
-        if (!$holdToken) {
-            Log::warning('[ReservaWeb] formularioReserva: fallo al crear hold temporal');
-            return redirect()->route('web.reservas.show', $apartamentoId)
-                ->with('error', 'No se pudo bloquear temporalmente el apartamento para completar la reserva. Por favor, inténtalo de nuevo.')
-                ->withInput();
+        // Reutilizar hold si venimos con uno válido; si no, crear uno nuevo
+        if ($holdReutilizable) {
+            $holdToken = $holdReutilizable->hold_token;
+            Log::info('[ReservaWeb] formularioReserva: reutilizando hold existente', [
+                'hold_id' => $holdReutilizable->id,
+                'hold_token_prefijo' => substr($holdToken, 0, 8) . '...',
+            ]);
+        } else {
+            $holdToken = $this->crearHoldTemporal($apartamento, $fechaEntrada, $fechaSalida);
+            if (!$holdToken) {
+                Log::warning('[ReservaWeb] formularioReserva: fallo al crear hold temporal');
+                return redirect()->route('web.reservas.show', $apartamentoId)
+                    ->with('error', 'No se pudo bloquear temporalmente el apartamento para completar la reserva. Por favor, inténtalo de nuevo.')
+                    ->withInput();
+            }
         }
 
-        Log::info('[ReservaWeb] formularioReserva: hold creado, mostrando formulario', [
+        Log::info('[ReservaWeb] formularioReserva: hold listo, mostrando formulario', [
             'apartamento_id' => $apartamento->id,
             'hold_token_prefijo' => substr($holdToken, 0, 8) . '...',
             'expires_at_minutos' => config('app.web_reservas_hold_minutes', 10),
@@ -203,16 +230,22 @@ class ReservaPagoController extends Controller
      */
     public function procesarReserva(Request $request)
     {
+        // Log completo del request para depuración del flujo de pago (sin datos personales)
+        $requestKeys = array_keys($request->all());
         Log::info('[ReservaWeb] procesarReserva: inicio', [
+            'request_keys' => $requestKeys,
             'apartamento_id' => $request->input('apartamento_id'),
             'fecha_entrada' => $request->input('fecha_entrada'),
             'fecha_salida' => $request->input('fecha_salida'),
-            'hold_token_prefijo' => $request->input('hold_token') ? substr($request->input('hold_token'), 0, 8) . '...' : null,
+            'has_hold_token' => $request->has('hold_token'),
+            'hold_token_length' => $request->input('hold_token') ? strlen($request->input('hold_token')) : 0,
+            'adultos' => $request->input('adultos'),
+            'ninos' => $request->input('ninos'),
         ]);
 
         // Si las reservas web están deshabilitadas, bloquear procesamiento
         if (!config('app.web_reservas_enabled', false)) {
-            Log::info('[ReservaWeb] procesarReserva: reservas web deshabilitadas, rechazando');
+            Log::warning('[ReservaWeb] procesarReserva: reservas web deshabilitadas, rechazando');
             return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'En este momento no se pueden realizar reservas online. Por favor, contacta con nosotros para reservar.');
         }
 
@@ -234,6 +267,7 @@ class ReservaPagoController extends Controller
                 'hold_encontrado' => (bool) $holdExiste,
                 'estado' => $holdExiste ? $holdExiste->estado : null,
                 'expires_at' => $holdExiste ? $holdExiste->expires_at?->toIso8601String() : null,
+                'request_tiene_fechas' => $request->has(['fecha_entrada', 'fecha_salida']),
             ]);
             return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'Tu sesión de reserva ha caducado. Por favor, vuelve a buscar disponibilidad y selecciona de nuevo el apartamento.');
         }
@@ -274,7 +308,12 @@ class ReservaPagoController extends Controller
             }
         }
 
-        Log::info('[ReservaWeb] procesarReserva: validando datos del formulario');
+        Log::info('[ReservaWeb] procesarReserva: validando datos del formulario', [
+            'tiene_nombre' => $request->has('nombre'),
+            'tiene_email' => $request->has('email'),
+            'tiene_provincia' => $request->has('provincia'),
+            'tiene_fecha_caducidad' => $request->has('fecha_caducidad'),
+        ]);
 
         // Validación base
         $rules = [
@@ -304,7 +343,18 @@ class ReservaPagoController extends Controller
             'notas' => 'nullable|string|max:1000',
         ];
 
-        $request->validate($rules);
+        try {
+            $request->validate($rules);
+            Log::info('[ReservaWeb] procesarReserva: validación OK');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[ReservaWeb] procesarReserva: validación fallida', [
+                'errors' => $e->errors(),
+                'apartamento_id' => $request->input('apartamento_id'),
+                'has_fecha_entrada' => $request->has('fecha_entrada'),
+                'has_fecha_salida' => $request->has('fecha_salida'),
+            ]);
+            throw $e;
+        }
 
         try {
             $apartamento = Apartamento::findOrFail($request->apartamento_id);
@@ -541,26 +591,39 @@ class ReservaPagoController extends Controller
             });
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::info('[ReservaWeb] procesarReserva: validación fallida', [
+            Log::warning('[ReservaWeb] procesarReserva: validación fallida (catch)', [
                 'errors' => $e->errors(),
+                'apartamento_id' => $request->input('apartamento_id'),
+                'has_fecha_entrada' => $request->has('fecha_entrada'),
+                'has_fecha_salida' => $request->has('fecha_salida'),
             ]);
             // Redirigir al formulario con errores para que el usuario vea los mensajes y no acabe en otra página
             $apartamentoId = $request->input('apartamento_id');
             if ($apartamentoId && $request->has(['fecha_entrada', 'fecha_salida'])) {
-                return redirect()->route('web.reservas.formulario', [
+                $params = [
                     'apartamento' => $apartamentoId,
                     'fecha_entrada' => $request->fecha_entrada,
                     'fecha_salida' => $request->fecha_salida,
                     'adultos' => $request->adultos ?? 1,
                     'ninos' => $request->ninos ?? 0,
-                ])->withErrors($e->errors())->withInput();
+                ];
+                if ($request->filled('hold_token')) {
+                    $params['hold_token'] = $request->hold_token;
+                }
+                Log::info('[ReservaWeb] procesarReserva: redirigiendo a formulario con errores de validación', ['con_hold_token' => $request->filled('hold_token')]);
+                return redirect()->route('web.reservas.formulario', $params)->withErrors($e->errors())->withInput();
             }
+            Log::warning('[ReservaWeb] procesarReserva: validación fallida pero request sin fechas, re-lanzando ValidationException');
             throw $e;
         } catch (\Exception $e) {
             Log::error('[ReservaWeb] procesarReserva: excepción', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
+                'exception_class' => get_class($e),
+                'apartamento_id' => $request->input('apartamento_id'),
+                'has_fecha_entrada' => $request->has('fecha_entrada'),
+                'has_fecha_salida' => $request->has('fecha_salida'),
             ]);
             return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.');
         }
@@ -573,16 +636,34 @@ class ReservaPagoController extends Controller
     private function redirectToFormularioOrShow(Request $request, $apartamentoId, string $errorMessage)
     {
         $apartamentoId = (int) $apartamentoId;
-        if ($apartamentoId && $request->has(['fecha_entrada', 'fecha_salida'])) {
-            return redirect()->route('web.reservas.formulario', [
+        $hasFechas = $request->has(['fecha_entrada', 'fecha_salida']);
+
+        Log::info('[ReservaWeb] redirectToFormularioOrShow', [
+            'apartamento_id' => $apartamentoId,
+            'has_fecha_entrada' => $request->has('fecha_entrada'),
+            'has_fecha_salida' => $request->has('fecha_salida'),
+            'destino' => ($apartamentoId && $hasFechas) ? 'formulario' : ($apartamentoId ? 'show' : 'back'),
+            'error_message' => $errorMessage,
+        ]);
+
+        if ($apartamentoId && $hasFechas) {
+            $params = [
                 'apartamento' => $apartamentoId,
                 'fecha_entrada' => $request->fecha_entrada,
                 'fecha_salida' => $request->fecha_salida,
                 'adultos' => $request->adultos ?? 1,
                 'ninos' => $request->ninos ?? 0,
-            ])->with('error', $errorMessage)->withInput();
+            ];
+            if ($request->filled('hold_token')) {
+                $params['hold_token'] = $request->hold_token;
+            }
+            return redirect()->route('web.reservas.formulario', $params)->with('error', $errorMessage)->withInput();
         }
         if ($apartamentoId) {
+            Log::warning('[ReservaWeb] redirectToFormularioOrShow: REDIRIGIENDO A SHOW (faltan fecha_entrada/fecha_salida en request)', [
+                'apartamento_id' => $apartamentoId,
+                'request_keys' => array_keys($request->all()),
+            ]);
             return redirect()->route('web.reservas.show', $apartamentoId)
                 ->with('error', $errorMessage)
                 ->withInput($request->only(['fecha_entrada', 'fecha_salida', 'adultos', 'ninos']));
