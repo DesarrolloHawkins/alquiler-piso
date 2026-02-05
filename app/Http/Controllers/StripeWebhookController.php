@@ -19,8 +19,13 @@ class StripeWebhookController extends Controller
         $sigHeader = $request->header('Stripe-Signature');
         $webhookSecret = config('services.stripe.webhook_secret');
 
+        Log::info('[ReservaWeb] Stripe webhook: recibido', [
+            'payload_length' => strlen($payload),
+            'signature_present' => !empty($sigHeader),
+        ]);
+
         if (!$webhookSecret) {
-            Log::warning('Stripe webhook secret no configurado');
+            Log::warning('[ReservaWeb] Stripe webhook: secret no configurado');
             return response()->json(['error' => 'Webhook secret no configurado'], 400);
         }
 
@@ -32,17 +37,21 @@ class StripeWebhookController extends Controller
                     $webhookSecret
                 );
             } else {
-                // Si Stripe no está instalado, registrar y continuar
-                Log::warning('Stripe SDK no disponible, procesando webhook básico');
+                Log::warning('[ReservaWeb] Stripe webhook: SDK no disponible, procesando básico');
                 $event = json_decode($payload, true);
             }
         } catch (\Exception $e) {
-            Log::error('Error al verificar webhook de Stripe: ' . $e->getMessage());
+            Log::error('[ReservaWeb] Stripe webhook: firma inválida', [
+                'message' => $e->getMessage(),
+            ]);
             return response()->json(['error' => 'Firma inválida'], 400);
         }
 
+        $eventType = $event['type'] ?? $event->type ?? null;
+        Log::info('[ReservaWeb] Stripe webhook: evento', ['type' => $eventType]);
+
         // Procesar el evento
-        switch ($event['type'] ?? $event->type ?? null) {
+        switch ($eventType) {
             case 'checkout.session.completed':
                 $this->handleCheckoutSessionCompleted($event['data']['object'] ?? $event->data->object ?? null);
                 break;
@@ -56,7 +65,9 @@ class StripeWebhookController extends Controller
                 break;
             
             default:
-                Log::info('Evento de Stripe no manejado: ' . ($event['type'] ?? $event->type ?? 'unknown'));
+                Log::info('[ReservaWeb] Stripe webhook: evento no manejado', [
+                    'type' => $eventType ?? 'unknown',
+                ]);
         }
 
         return response()->json(['received' => true]);
@@ -69,20 +80,34 @@ class StripeWebhookController extends Controller
     {
         try {
             $sessionId = $session['id'] ?? $session->id ?? null;
-            
+
+            Log::info('[ReservaWeb] Stripe checkout.session.completed: inicio', [
+                'session_id' => $sessionId ? substr($sessionId, 0, 24) . '...' : null,
+            ]);
+
             if (!$sessionId) {
+                Log::warning('[ReservaWeb] Stripe checkout.session.completed: sin session_id');
                 return;
             }
 
             $pago = Pago::where('stripe_checkout_session_id', $sessionId)->first();
-            
+
             if (!$pago) {
-                Log::warning("Pago no encontrado para sesión: {$sessionId}");
+                Log::warning('[ReservaWeb] Stripe checkout.session.completed: pago no encontrado', [
+                    'session_id_prefijo' => substr($sessionId, 0, 24),
+                ]);
                 return;
             }
 
             $paymentIntentId = $session['payment_intent'] ?? $session->payment_intent ?? null;
             $paymentStatus = $session['payment_status'] ?? $session->payment_status ?? 'unknown';
+
+            Log::info('[ReservaWeb] Stripe checkout.session.completed: pago encontrado', [
+                'pago_id' => $pago->id,
+                'reserva_id' => $pago->reserva_id,
+                'payment_status' => $paymentStatus,
+                'pago_estado_actual' => $pago->estado,
+            ]);
 
             if ($paymentStatus === 'paid' && $pago->estado !== 'completado') {
                 $pago->update([
@@ -91,10 +116,21 @@ class StripeWebhookController extends Controller
                     'fecha_pago' => now(),
                 ]);
 
+                Log::info('[ReservaWeb] Stripe checkout.session.completed: pago actualizado a completado', [
+                    'pago_id' => $pago->id,
+                    'payment_intent_id' => $paymentIntentId,
+                ]);
+
                 // Actualizar reserva a confirmada
                 if ($pago->reserva) {
                     $pago->reserva->update(['estado_id' => 1]); // Confirmada
-                    
+
+                    Log::info('[ReservaWeb] Stripe checkout.session.completed: reserva confirmada', [
+                        'reserva_id' => $pago->reserva->id,
+                        'codigo_reserva' => $pago->reserva->codigo_reserva,
+                        'apartamento_id' => $pago->reserva->apartamento_id,
+                    ]);
+
                     // Crear notificación
                     \App\Models\Notification::createForAdmins(
                         \App\Models\Notification::TYPE_RESERVA,
@@ -111,12 +147,17 @@ class StripeWebhookController extends Controller
                 }
 
                 // Actualizar intento de pago
-                IntentoPago::where('stripe_checkout_session_id', $sessionId)
+                $updated = IntentoPago::where('stripe_checkout_session_id', $sessionId)
                     ->update([
                         'estado' => 'exitoso',
                         'stripe_payment_intent_id' => $paymentIntentId,
                         'respuesta_stripe' => is_array($session) ? $session : (array)$session,
                     ]);
+
+                Log::info('[ReservaWeb] Stripe checkout.session.completed: intentos pago actualizados', [
+                    'session_id_prefijo' => substr($sessionId, 0, 24),
+                    'intentos_actualizados' => $updated,
+                ]);
 
                 // Si es un pago de extras, actualizar reserva_servicios
                 if (isset($pago->metadata['tipo']) && $pago->metadata['tipo'] === 'extras') {
@@ -126,14 +167,28 @@ class StripeWebhookController extends Controller
                             'fecha_pago' => now(),
                             'stripe_payment_intent_id' => $paymentIntentId,
                         ]);
-                    
-                    Log::info("Extras pagados para reserva: {$pago->reserva_id}");
+
+                    Log::info('[ReservaWeb] Stripe checkout.session.completed: extras marcados como pagados', [
+                        'reserva_id' => $pago->reserva_id,
+                    ]);
                 }
 
-                Log::info("Pago completado: {$pago->id} - Reserva: {$pago->reserva_id}");
+                Log::info('[ReservaWeb] Stripe checkout.session.completed: flujo completado', [
+                    'pago_id' => $pago->id,
+                    'reserva_id' => $pago->reserva_id,
+                ]);
+            } else {
+                Log::info('[ReservaWeb] Stripe checkout.session.completed: sin cambios (ya completado o status no paid)', [
+                    'payment_status' => $paymentStatus,
+                    'pago_estado' => $pago->estado,
+                ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error al procesar checkout.session.completed: ' . $e->getMessage());
+            Log::error('[ReservaWeb] Stripe checkout.session.completed: excepción', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
         }
     }
 

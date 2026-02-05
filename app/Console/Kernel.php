@@ -257,6 +257,9 @@ class Kernel extends ConsoleKernel
 
         })->everyMinute();
 
+        // Liberar holds de reserva web expirados en Channex
+        $schedule->command('ari:liberar-holds-expirados')->everyMinute();
+
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy

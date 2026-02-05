@@ -260,6 +260,9 @@
             <input type="hidden" name="fecha_salida" value="{{ $fechaSalida->format('Y-m-d') }}">
             <input type="hidden" name="adultos" value="{{ $adultos }}">
             <input type="hidden" name="ninos" value="{{ $ninos }}">
+            @if(!empty($holdToken))
+                <input type="hidden" name="hold_token" value="{{ $holdToken }}">
+            @endif
             @if(auth('cliente')->check())
                 <input type="hidden" name="es_para_mi" value="{{ $esParaMi ? '1' : '0' }}">
             @endif

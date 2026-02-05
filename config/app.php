@@ -59,6 +59,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public Web Reservations Hold Time (minutes)
+    |--------------------------------------------------------------------------
+    |
+    | Tiempo (en minutos) durante el cual se mantiene bloqueado un apartamento
+    | en Channex cuando un cliente inicia el formulario de reserva web.
+    |
+    */
+
+    'web_reservas_hold_minutes' => (int) env('WEB_RESERVAS_HOLD_MINUTES', 10),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
