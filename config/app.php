@@ -55,7 +55,7 @@ return [
     |
     */
 
-    'web_reservas_enabled' => env('WEB_RESERVAS_ENABLED', false),
+    'web_reservas_enabled' => filter_var(env('WEB_RESERVAS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------
