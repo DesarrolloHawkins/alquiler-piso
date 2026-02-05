@@ -33,6 +33,11 @@ class ReservaPagoController extends Controller
      */
     public function formularioReserva(Request $request, $apartamentoId)
     {
+        // Si las reservas web están deshabilitadas, mostrar mensaje y no permitir continuar
+        if (!config('app.web_reservas_enabled', false)) {
+            return response()->view('public.reservas.no-disponible', [], 200);
+        }
+
         $apartamento = Apartamento::with(['edificioName', 'photos'])
             ->whereNotNull('id_channex')
             ->findOrFail($apartamentoId);
@@ -125,6 +130,13 @@ class ReservaPagoController extends Controller
      */
     public function procesarReserva(Request $request)
     {
+        // Si las reservas web están deshabilitadas, bloquear procesamiento
+        if (!config('app.web_reservas_enabled', false)) {
+            return back()
+                ->with('error', 'En este momento no se pueden realizar reservas online. Por favor, contacta con nosotros para reservar.')
+                ->withInput();
+        }
+
         $clienteLogueado = Auth::guard('cliente')->user();
         $esParaMi = $request->get('es_para_mi', false);
 

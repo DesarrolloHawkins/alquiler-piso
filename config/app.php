@@ -41,8 +41,21 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
-
+   
     'debug' => (bool) env('APP_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Web Reservations Toggle
+    |--------------------------------------------------------------------------
+    |
+    | This flag controls whether reservations can be created from the public
+    | website (portal "web.reservas.*"). When set to false, the web stays
+    | visible but new online reservations are disabled.
+    |
+    */
+
+    'web_reservas_enabled' => env('WEB_RESERVAS_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

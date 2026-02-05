@@ -2208,6 +2208,9 @@ class Kernel extends ConsoleKernel
    public static function enviarClavesPorChannexSiEsNecesario($reserva)
    {
        try {
+           // 🔄 Refrescar la reserva para obtener datos actualizados (especialmente dni_entregado)
+           $reserva->refresh();
+           
            // Solo procesar si:
            // 1. NO es de la web
            // 2. Tiene id_channex
@@ -2247,7 +2250,8 @@ class Kernel extends ConsoleKernel
            if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
                Log::info('No se puede enviar claves por Channex: el DNI no ha sido subido', [
                    'reserva_id' => $reserva->id,
-                   'dni_entregado' => $reserva->dni_entregado
+                   'dni_entregado' => $reserva->dni_entregado,
+                   'dni_entregado_tipo' => gettype($reserva->dni_entregado)
                ]);
                return false;
            }
