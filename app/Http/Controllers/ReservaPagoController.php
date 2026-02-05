@@ -280,18 +280,27 @@ class ReservaPagoController extends Controller
             'expires_at' => $hold->expires_at->toIso8601String(),
         ]);
 
-        // Validar que el hold corresponde con los datos enviados
+        // Validar que el hold corresponde con los datos enviados (normalizar fechas: hold viene como Carbon, request como string)
+        $requestFechaEntrada = Carbon::parse($request->fecha_entrada)->toDateString();
+        $requestFechaSalida = Carbon::parse($request->fecha_salida)->toDateString();
+        $holdFechaEntrada = $hold->fecha_entrada instanceof \Carbon\Carbon
+            ? $hold->fecha_entrada->toDateString()
+            : Carbon::parse($hold->fecha_entrada)->toDateString();
+        $holdFechaSalida = $hold->fecha_salida instanceof \Carbon\Carbon
+            ? $hold->fecha_salida->toDateString()
+            : Carbon::parse($hold->fecha_salida)->toDateString();
+
         if (
             (int) $request->apartamento_id !== (int) $hold->apartamento_id ||
-            $request->fecha_entrada !== $hold->fecha_entrada ||
-            $request->fecha_salida !== $hold->fecha_salida
+            $requestFechaEntrada !== $holdFechaEntrada ||
+            $requestFechaSalida !== $holdFechaSalida
         ) {
             Log::warning('[ReservaWeb] procesarReserva: datos formulario no coinciden con hold', [
                 'hold_id' => $hold->id,
                 'request_apartamento_id' => $request->apartamento_id,
                 'hold_apartamento_id' => $hold->apartamento_id,
-                'request_fechas' => [$request->fecha_entrada, $request->fecha_salida],
-                'hold_fechas' => [$hold->fecha_entrada, $hold->fecha_salida],
+                'request_fechas' => [$requestFechaEntrada, $requestFechaSalida],
+                'hold_fechas' => [$holdFechaEntrada, $holdFechaSalida],
             ]);
             return $this->redirectToFormularioOrShow($request, $hold->apartamento_id, 'Los datos de la reserva no coinciden con el bloqueo temporal. Por favor, vuelve a empezar el proceso.');
         }
