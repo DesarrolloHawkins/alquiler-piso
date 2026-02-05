@@ -12,6 +12,9 @@ class Servicio extends Model
 {
     use HasFactory, SoftDeletes, Translatable;
 
+    /** Slug del servicio Alquiler de coche: reserva con rango de fechas, siempre no disponible */
+    public const SLUG_ALQUILER_COCHE = 'alquiler-de-coche';
+
     protected $table = 'servicios';
 
     protected $fillable = [
@@ -114,5 +117,13 @@ class Servicio extends Model
             ->orderBy('categoria')
             ->pluck('categoria')
             ->filter();
+    }
+
+    /**
+     * Indica si este servicio es "Alquiler de coche" (reserva con rango de fechas, siempre no disponible).
+     */
+    public function esAlquilerCoche(): bool
+    {
+        return $this->slug === self::SLUG_ALQUILER_COCHE;
     }
 }

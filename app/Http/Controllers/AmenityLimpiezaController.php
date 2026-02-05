@@ -291,7 +291,7 @@ class AmenityLimpiezaController extends Controller
                 foreach ($amenitiesCategoria as $amenity) {
                     $cantidadRecomendada = $this->calcularCantidadRecomendada($amenity, $limpieza->reserva, $limpieza->apartamento);
                     $consumoReal = $consumosReales->get($amenity->id);
-                    $cantidadReal = $consumoReal ? $consumoReal->cantidad_dejada : 0;
+                    $cantidadReal = $consumoReal ? (float) $consumoReal->cantidad_consumida : 0;
                     
                     // Determinar estado del amenity
                     $estado = 'completo';

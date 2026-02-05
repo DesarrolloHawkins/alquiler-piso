@@ -37,9 +37,15 @@
                         <span style="font-size: 24px; font-weight: 700; color: #003580;">
                             {{ number_format($servicio->precio, 2, ',', '.') }} €
                         </span>
-                        <a href="{{ route('web.extras.buscar') }}" style="background: #333; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s;">
-                            {{ __('services.buy_now') }} →
-                        </a>
+                        @if($servicio->esAlquilerCoche())
+                            <a href="{{ route('web.servicios.reserva-rango', ['servicio' => $servicio->slug]) }}" style="background: #333; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s;">
+                                {{ __('services.buy_now') }} →
+                            </a>
+                        @else
+                            <a href="{{ route('web.extras.buscar') }}" style="background: #333; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s;">
+                                {{ __('services.buy_now') }} →
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>

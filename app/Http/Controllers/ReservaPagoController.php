@@ -213,9 +213,7 @@ class ReservaPagoController extends Controller
         // Si las reservas web están deshabilitadas, bloquear procesamiento
         if (!config('app.web_reservas_enabled', false)) {
             Log::info('[ReservaWeb] procesarReserva: reservas web deshabilitadas, rechazando');
-            return back()
-                ->with('error', 'En este momento no se pueden realizar reservas online. Por favor, contacta con nosotros para reservar.')
-                ->withInput();
+            return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'En este momento no se pueden realizar reservas online. Por favor, contacta con nosotros para reservar.');
         }
 
         $clienteLogueado = Auth::guard('cliente')->user();
@@ -237,9 +235,7 @@ class ReservaPagoController extends Controller
                 'estado' => $holdExiste ? $holdExiste->estado : null,
                 'expires_at' => $holdExiste ? $holdExiste->expires_at?->toIso8601String() : null,
             ]);
-            return back()
-                ->with('error', 'Tu sesión de reserva ha caducado. Por favor, vuelve a buscar disponibilidad y selecciona de nuevo el apartamento.')
-                ->withInput();
+            return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'Tu sesión de reserva ha caducado. Por favor, vuelve a buscar disponibilidad y selecciona de nuevo el apartamento.');
         }
 
         Log::info('[ReservaWeb] procesarReserva: hold válido', [
@@ -263,9 +259,7 @@ class ReservaPagoController extends Controller
                 'request_fechas' => [$request->fecha_entrada, $request->fecha_salida],
                 'hold_fechas' => [$hold->fecha_entrada, $hold->fecha_salida],
             ]);
-            return back()
-                ->with('error', 'Los datos de la reserva no coinciden con el bloqueo temporal. Por favor, vuelve a empezar el proceso.')
-                ->withInput();
+            return $this->redirectToFormularioOrShow($request, $hold->apartamento_id, 'Los datos de la reserva no coinciden con el bloqueo temporal. Por favor, vuelve a empezar el proceso.');
         }
 
         // Si está logueado y es para él, validar datos MIR
@@ -276,7 +270,7 @@ class ReservaPagoController extends Controller
                     'cliente_id' => $clienteLogueado->id,
                     'datos_faltantes' => $datosFaltantes,
                 ]);
-                return back()->with('error', 'Faltan datos necesarios para completar la reserva. Por favor, completa tu perfil.')->withInput();
+                return $this->redirectToFormularioOrShow($request, $request->apartamento_id, 'Faltan datos necesarios para completar la reserva. Por favor, completa tu perfil.');
             }
         }
 
@@ -325,7 +319,7 @@ class ReservaPagoController extends Controller
             ]);
             if (!$disponible) {
                 Log::warning('[ReservaWeb] procesarReserva: ya no disponible al procesar');
-                return back()->with('error', 'El apartamento ya no está disponible para las fechas seleccionadas.')->withInput();
+                return $this->redirectToFormularioOrShow($request, $apartamento->id, 'El apartamento ya no está disponible para las fechas seleccionadas.');
             }
 
             // Calcular precio
@@ -348,12 +342,12 @@ class ReservaPagoController extends Controller
 
             if (!$stripeSecret) {
                 Log::error('[ReservaWeb] procesarReserva: Stripe secret key no configurada');
-                return back()->with('error', 'El sistema de pagos no está configurado. Por favor, contacta con nosotros.')->withInput();
+                return $this->redirectToFormularioOrShow($request, $apartamento->id, 'El sistema de pagos no está configurado. Por favor, contacta con nosotros.');
             }
 
             if (!class_exists('\Stripe\Stripe')) {
                 Log::error('[ReservaWeb] procesarReserva: Stripe SDK no disponible');
-                return back()->with('error', 'El sistema de pagos no está disponible. Por favor, contacta con nosotros.')->withInput();
+                return $this->redirectToFormularioOrShow($request, $apartamento->id, 'El sistema de pagos no está disponible. Por favor, contacta con nosotros.');
             }
 
             Log::info('[ReservaWeb] procesarReserva: iniciando transacción (reserva, pago, hold, Stripe)');
@@ -550,6 +544,17 @@ class ReservaPagoController extends Controller
             Log::info('[ReservaWeb] procesarReserva: validación fallida', [
                 'errors' => $e->errors(),
             ]);
+            // Redirigir al formulario con errores para que el usuario vea los mensajes y no acabe en otra página
+            $apartamentoId = $request->input('apartamento_id');
+            if ($apartamentoId && $request->has(['fecha_entrada', 'fecha_salida'])) {
+                return redirect()->route('web.reservas.formulario', [
+                    'apartamento' => $apartamentoId,
+                    'fecha_entrada' => $request->fecha_entrada,
+                    'fecha_salida' => $request->fecha_salida,
+                    'adultos' => $request->adultos ?? 1,
+                    'ninos' => $request->ninos ?? 0,
+                ])->withErrors($e->errors())->withInput();
+            }
             throw $e;
         } catch (\Exception $e) {
             Log::error('[ReservaWeb] procesarReserva: excepción', [
@@ -557,8 +562,32 @@ class ReservaPagoController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            return back()->with('error', 'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.')->withInput();
+            return $this->redirectToFormularioOrShow($request, $request->input('apartamento_id'), 'Hubo un error al procesar tu reserva. Por favor, inténtalo de nuevo.');
         }
+    }
+
+    /**
+     * Redirige al formulario de reserva (con parámetros para obtener nuevo hold) o a la ficha del apartamento si faltan datos.
+     * Evita que back() lleve al usuario a una URL incorrecta (p. ej. página del apartamento sin mensaje).
+     */
+    private function redirectToFormularioOrShow(Request $request, $apartamentoId, string $errorMessage)
+    {
+        $apartamentoId = (int) $apartamentoId;
+        if ($apartamentoId && $request->has(['fecha_entrada', 'fecha_salida'])) {
+            return redirect()->route('web.reservas.formulario', [
+                'apartamento' => $apartamentoId,
+                'fecha_entrada' => $request->fecha_entrada,
+                'fecha_salida' => $request->fecha_salida,
+                'adultos' => $request->adultos ?? 1,
+                'ninos' => $request->ninos ?? 0,
+            ])->with('error', $errorMessage)->withInput();
+        }
+        if ($apartamentoId) {
+            return redirect()->route('web.reservas.show', $apartamentoId)
+                ->with('error', $errorMessage)
+                ->withInput($request->only(['fecha_entrada', 'fecha_salida', 'adultos', 'ninos']));
+        }
+        return back()->with('error', $errorMessage)->withInput();
     }
 
     /**

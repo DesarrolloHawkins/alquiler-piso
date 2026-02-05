@@ -211,10 +211,13 @@
             <i class="fas fa-user me-2"></i>{{ __('reservation.guest_data') }}
         </h2>
         
-        @if($errors->any())
+        @if($errors->any() || session('error'))
             <div style="background: #f8d7da; color: #721c24; padding: 16px; border-radius: 6px; margin-bottom: 24px;">
                 <strong><i class="fas fa-exclamation-circle me-2"></i>{{ __('reservation.errors_title') }}</strong>
                 <ul style="margin: 8px 0 0 20px;">
+                    @if(session('error'))
+                        <li>{{ session('error') }}</li>
+                    @endif
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach

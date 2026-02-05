@@ -118,6 +118,8 @@ Route::prefix('web')->name('web.')->group(function () {
     
     // Página de servicios
     Route::get('/servicios', [App\Http\Controllers\ServiciosController::class, 'index'])->name('servicios');
+    Route::get('/servicios/{servicio}/reserva-rango', [App\Http\Controllers\ServiciosController::class, 'reservaRango'])->name('servicios.reserva-rango');
+    Route::post('/servicios/{servicio}/comprobar-disponibilidad', [App\Http\Controllers\ServiciosController::class, 'comprobarDisponibilidad'])->name('servicios.comprobar-disponibilidad');
     
     // Política de Cancelaciones
     Route::get('/politica-cancelaciones', [App\Http\Controllers\PublicPoliticaCancelacionController::class, 'index'])->name('politica-cancelaciones');

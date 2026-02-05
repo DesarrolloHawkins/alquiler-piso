@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Amenity extends Model
 {
@@ -153,37 +154,53 @@ class Amenity extends Model
         }
     }
 
-    // Métodos para gestionar el stock
+    // Métodos para gestionar el stock (atómicos para evitar condiciones de carrera)
     public function descontarStock($cantidad)
     {
-        \Log::info("Descontando stock del amenity {$this->id}: stock_actual = {$this->stock_actual}, cantidad = {$cantidad}");
-        
-        // Validar que hay stock suficiente
-        if ($this->stock_actual < $cantidad) {
+        $cantidad = (float) $cantidad;
+        if ($cantidad <= 0) {
+            return [
+                'stock_anterior' => $this->stock_actual,
+                'stock_actual' => $this->stock_actual,
+                'cantidad_descontada' => 0,
+            ];
+        }
+
+        // Actualización atómica: solo resta si hay stock suficiente (evita race conditions)
+        $affected = DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->whereRaw('stock_actual >= ?', [$cantidad])
+            ->decrement('stock_actual', $cantidad);
+
+        if ($affected === 0) {
+            $this->refresh();
             \Log::warning("Stock insuficiente para amenity {$this->id}: disponible = {$this->stock_actual}, solicitado = {$cantidad}");
             throw new \Exception("Stock insuficiente. Disponible: {$this->stock_actual} {$this->unidad_medida}, Solicitado: {$cantidad} {$this->unidad_medida}");
         }
-        
-        $stockAnterior = $this->stock_actual;
-        $this->stock_actual = $this->stock_actual - $cantidad;
-        \Log::info("Nuevo stock calculado: {$stockAnterior} - {$cantidad} = {$this->stock_actual}");
-        
-        $resultado = $this->save();
-        \Log::info("Resultado del save(): " . ($resultado ? 'true' : 'false'));
-        \Log::info("Stock final después de save(): {$this->stock_actual}");
-        
+
+        $this->refresh();
+        $stockAnterior = (float) $this->stock_actual + $cantidad;
+
         return [
             'stock_anterior' => $stockAnterior,
-            'stock_actual' => $this->stock_actual,
-            'cantidad_descontada' => $cantidad
+            'stock_actual' => (float) $this->stock_actual,
+            'cantidad_descontada' => $cantidad,
         ];
     }
 
     public function reponerStock($cantidad)
     {
-        $this->stock_actual = $this->stock_actual + $cantidad;
-        $this->save();
-        return $this->stock_actual;
+        $cantidad = (float) $cantidad;
+        if ($cantidad <= 0) {
+            return $this->stock_actual;
+        }
+
+        DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->increment('stock_actual', $cantidad);
+
+        $this->refresh();
+        return (float) $this->stock_actual;
     }
 
     public function ajustarStock($cantidadAnterior, $cantidadNueva)
