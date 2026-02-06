@@ -2682,10 +2682,18 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
                 // Si se envía tarea_id directamente, usarlo
                 $tarea = TareaAsignada::find($tareaId);
                 if (!$tarea) {
-                    Log::error('Tarea no encontrada por ID', ['tarea_id' => $tareaId]);
-                    return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                    // Puede venir un tarea_id "stale" (la limpieza apunta a una tarea inexistente).
+                    // En ese caso, intentamos recuperar la tarea desde la limpieza / turno del usuario.
+                    Log::warning('Tarea no encontrada por ID (posible referencia obsoleta), intentando resolver por limpieza', [
+                        'tarea_id' => $tareaId,
+                        'limpieza_id' => $limpiezaId,
+                    ]);
+
+                    $tareaId = null;
                 }
-                $tareaId = $tarea->id;
+                if ($tarea) {
+                    $tareaId = $tarea->id;
+                }
             } elseif ($limpiezaId) {
                 // Si se envía limpieza_id, buscar la tarea a través de la limpieza
                 $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
@@ -2717,6 +2725,23 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             } else {
                 Log::error('No se proporcionó tarea_id ni limpieza_id');
                 return response()->json(['success' => false, 'message' => 'Se requiere tarea_id o limpieza_id'], 400);
+            }
+
+            // Si tras intentar por tarea_id seguimos sin tarea, intentar resolver por limpieza_id si está disponible
+            if (!$tareaId && $limpiezaId) {
+                $apartamentoLimpieza = ApartamentoLimpieza::find($limpiezaId);
+                if ($apartamentoLimpieza) {
+                    $tareaAsignada = $this->resolverTareaParaLimpieza($apartamentoLimpieza);
+                    if ($tareaAsignada) {
+                        $apartamentoLimpieza->tarea_asignada_id = $tareaAsignada->id;
+                        $apartamentoLimpieza->save();
+                        $tareaId = $tareaAsignada->id;
+                        Log::info('Tarea resuelta por limpieza tras tarea_id inexistente', [
+                            'limpieza_id' => $limpiezaId,
+                            'tarea_id' => $tareaId,
+                        ]);
+                    }
+                }
             }
 
             // Obtener la tarea para verificar permisos y actualizar estado
