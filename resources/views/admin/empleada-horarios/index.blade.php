@@ -55,9 +55,14 @@
                                 <div class="col-md-6 col-lg-4 mb-4">
                                     <div class="card h-100">
                                         <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h5 class="card-title mb-0">
-                                                <i class="fas fa-user me-1"></i>{{ $horario->user->name }}
-                                            </h5>
+                                            <div>
+                                                <h5 class="card-title mb-0">
+                                                    <i class="fas fa-user me-1"></i>{{ $horario->user->name }}
+                                                </h5>
+                                                @if($horario->user->email)
+                                                    <small class="text-muted d-block mt-0">{{ $horario->user->email }}</small>
+                                                @endif
+                                            </div>
                                             <span class="badge bg-{{ $horario->activo ? 'success' : 'secondary' }}">
                                                 {{ $horario->activo ? 'Activo' : 'Inactivo' }}
                                             </span>

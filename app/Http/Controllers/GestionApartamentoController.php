@@ -2654,6 +2654,16 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             ->where($estadosTareaValidos)
             ->first();
 
+        if (!$tarea) {
+            Log::warning('resolverTareaParaLimpieza: no se encontró tarea', [
+                'user_id' => $userId,
+                'apartamento_id' => $apartamentoId,
+                'limpieza_id' => $apartamentoLimpieza->id,
+                'hoy' => $hoy->toDateString(),
+                'turno_encontrado' => $turnoHoy ? $turnoHoy->id : null,
+            ]);
+        }
+
         return $tarea;
     }
 
