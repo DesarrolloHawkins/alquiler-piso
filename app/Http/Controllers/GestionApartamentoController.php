@@ -1757,10 +1757,10 @@ class GestionApartamentoController extends Controller
         $tareaAsignada = null;
 
         // Buscar la tarea asignada del usuario actual para este apartamento
-        // Buscar turno de hoy (activo o programado: si aún no ha iniciado el turno, sigue siendo "programado")
+        // Buscar turno de hoy: programado, en_progreso (cuando ya activó el turno) o activo
         $turnoActivo = \App\Models\TurnoTrabajo::where('user_id', $usuarioActual->id)
             ->where('fecha', Carbon::today())
-            ->whereIn('estado', ['activo', 'programado'])
+            ->whereIn('estado', ['activo', 'programado', 'en_progreso'])
             ->first();
 
         if ($turnoActivo) {
@@ -2630,10 +2630,10 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
             $query->whereIn('estado', ['pendiente', 'en_progreso'])->orWhereNull('estado');
         };
 
-        // Turno de hoy del usuario (activo o programado: si no ha iniciado el turno, está "programado")
+        // Turno de hoy del usuario: programado, en_progreso (cuando ya activó el turno) o activo
         $turnoHoy = TurnoTrabajo::where('user_id', $userId)
             ->where('fecha', $hoy)
-            ->whereIn('estado', ['activo', 'programado'])
+            ->whereIn('estado', ['activo', 'programado', 'en_progreso'])
             ->first();
 
         if ($turnoHoy) {
