@@ -1757,10 +1757,10 @@ class GestionApartamentoController extends Controller
         $tareaAsignada = null;
 
         // Buscar la tarea asignada del usuario actual para este apartamento
-        // Primero buscar el turno activo del usuario
+        // Buscar turno de hoy (activo o programado: si aún no ha iniciado el turno, sigue siendo "programado")
         $turnoActivo = \App\Models\TurnoTrabajo::where('user_id', $usuarioActual->id)
             ->where('fecha', Carbon::today())
-            ->where('estado', 'activo')
+            ->whereIn('estado', ['activo', 'programado'])
             ->first();
 
         if ($turnoActivo) {
@@ -2617,6 +2617,47 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
     }
 
     /**
+     * Resuelve una TareaAsignada para la limpieza cuando no tiene tarea_asignada_id.
+     * Busca una tarea del usuario actual para el mismo apartamento (turno de hoy, activo o con tarea pendiente/en_progreso).
+     */
+    protected function resolverTareaParaLimpieza(ApartamentoLimpieza $apartamentoLimpieza): ?TareaAsignada
+    {
+        $userId = Auth::id();
+        $apartamentoId = $apartamentoLimpieza->apartamento_id;
+        $hoy = Carbon::today();
+
+        $estadosTareaValidos = function ($query) {
+            $query->whereIn('estado', ['pendiente', 'en_progreso'])->orWhereNull('estado');
+        };
+
+        // Turno de hoy del usuario (activo o programado: si no ha iniciado el turno, está "programado")
+        $turnoHoy = TurnoTrabajo::where('user_id', $userId)
+            ->where('fecha', $hoy)
+            ->whereIn('estado', ['activo', 'programado'])
+            ->first();
+
+        if ($turnoHoy) {
+            $tarea = TareaAsignada::where('turno_id', $turnoHoy->id)
+                ->where('apartamento_id', $apartamentoId)
+                ->where($estadosTareaValidos)
+                ->first();
+            if ($tarea) {
+                return $tarea;
+            }
+        }
+
+        // Cualquier turno de hoy del usuario con tarea para este apartamento (por si el estado del turno difiere)
+        $tarea = TareaAsignada::whereHas('turno', function ($q) use ($userId, $hoy) {
+            $q->where('user_id', $userId)->where('fecha', $hoy);
+        })
+            ->where('apartamento_id', $apartamentoId)
+            ->where($estadosTareaValidos)
+            ->first();
+
+        return $tarea;
+    }
+
+    /**
      * Update checkbox state via AJAX
      */
     public function updateCheckbox(Request $request)
@@ -2655,11 +2696,23 @@ public function updateZonaComun(Request $request, ApartamentoLimpieza $apartamen
 
                 $tareaId = $apartamentoLimpieza->tarea_asignada_id;
                 if (!$tareaId) {
-                    Log::error('Tarea no encontrada en limpieza', [
-                        'limpieza_id' => $limpiezaId,
-                        'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
-                    ]);
-                    return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                    // Limpieza sin tarea asociada (ej. entrada por gestion-create sin turno activo): intentar resolver tarea del usuario para este apartamento
+                    $tareaAsignada = $this->resolverTareaParaLimpieza($apartamentoLimpieza);
+                    if ($tareaAsignada) {
+                        $apartamentoLimpieza->tarea_asignada_id = $tareaAsignada->id;
+                        $apartamentoLimpieza->save();
+                        $tareaId = $tareaAsignada->id;
+                        Log::info('Tarea asociada a limpieza (resuelta por usuario y apartamento)', [
+                            'limpieza_id' => $limpiezaId,
+                            'tarea_id' => $tareaId,
+                        ]);
+                    } else {
+                        Log::error('Tarea no encontrada en limpieza', [
+                            'limpieza_id' => $limpiezaId,
+                            'tarea_asignada_id' => $apartamentoLimpieza->tarea_asignada_id
+                        ]);
+                        return response()->json(['success' => false, 'message' => 'Tarea no encontrada'], 404);
+                    }
                 }
             } else {
                 Log::error('No se proporcionó tarea_id ni limpieza_id');
