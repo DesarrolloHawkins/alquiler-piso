@@ -841,8 +841,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/gestion-finalizar-zona-comun/{apartamentoLimpieza}', [App\Http\Controllers\GestionApartamentoController::class, 'finalizarZonaComun'])->name('gestion.finalizarZonaComun');
     Route::get('/gestion-edit/{apartamentoLimpieza}/checklist-status', [App\Http\Controllers\GestionApartamentoController::class, 'checklistStatus'])->name('gestion.checklistStatus');
     Route::post('/gestion-store-column', [App\Http\Controllers\GestionApartamentoController::class, 'storeColumn'])->name('gestion.storeColumn');
-    Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
+    // Ruta fija ANTES que las con parámetros para que POST /gestion/update-checkbox no sea capturada por /gestion/{id}/upload-photo
     Route::post('/gestion/update-checkbox', [GestionApartamentoController::class, 'updateCheckbox'])->name('gestion.updateCheckbox');
+    Route::post('/gestion/{id}/upload-photo', [GestionApartamentoController::class, 'uploadPhoto'])->name('photo.upload');
     Route::get('/gestion-create-fondo/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'create_fondo'])->name('gestion.create_fondo');
     Route::get('/gestion-edit-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'editZonaComun'])->name('gestion.editZonaComun');
     Route::get('/gestion-create-zona-comun/{id}', [App\Http\Controllers\GestionApartamentoController::class, 'createZonaComun'])->name('gestion.createZonaComun');

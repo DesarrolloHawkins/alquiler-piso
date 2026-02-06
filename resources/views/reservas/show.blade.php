@@ -317,9 +317,13 @@
                     <div>
                         <h6 class="mb-1 fw-semibold">Enlace para DNI</h6>
                         <p class="mb-0">
-                            <a href="http://crm.apartamentosalgeciras.com/dni-user/{{ $reserva->token }}" target="_blank" class="text-decoration-none">
-                                <i class="fas fa-external-link-alt me-1"></i>Ver enlace
-                            </a>
+                            @if(!empty($reserva->token))
+                                <a href="{{ config('app.url') }}/dni-user/{{ $reserva->token }}" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-1"></i>Ver enlace
+                                </a>
+                            @else
+                                <span class="text-muted small"><i class="fas fa-clock me-1"></i>Enlace en preparación (se generará en breve)</span>
+                            @endif
                         </p>
                     </div>
                 </div>

@@ -55,6 +55,9 @@ class Kernel extends ConsoleKernel
         //$schedule->command('reservas:sincronizar')->hourly(); // o daily(), hourly(), etc.
         $schedule->command('reservas:check-overlaps')->everyMinute();
 
+        // Generar token DNI en reservas activas que no tienen token (enlace DNI roto)
+        $schedule->command('reservas:generar-token-dni')->everyMinute();
+
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
         
         // Enviar claves por Channex todos los días a las 14:00
