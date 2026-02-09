@@ -310,10 +310,11 @@
             </div>
             
             
-            @if(isset($ingresosMismaEmpresa) && isset($gastosMismaEmpresa) && ($ingresosMismaEmpresa > 0 || $gastosMismaEmpresa > 0))
+            {{-- Sección Obra / Contabilización Separada: siempre visible para ver datos de obra (aunque sean 0) --}}
+            @if(isset($ingresosMismaEmpresa) && isset($gastosMismaEmpresa))
             <div class="row justify-content-start align-items-stretch mt-4">
                 <h5 class="text-left mt-1 text-warning">
-                    <i class="fas fa-building me-2"></i>Contabilización Separada (Misma Empresa)
+                    <i class="fas fa-hard-hat me-2"></i>Obra / Contabilización Separada (Misma Empresa)
                 </h5>
                 <hr>
                 <div class="col-xl-3 col-md-6">
@@ -332,7 +333,7 @@
                     <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalGastosSeparados" style="background-color: #f8d7da; border-left: 4px solid #dc3545; cursor: pointer;">
                         <div class="col-6">
                             <h4 class="text-start mb-0 fs-6 text-danger">
-                                <i class="fas fa-arrow-down me-1"></i>Gastos Separados
+                                <i class="fas fa-arrow-down me-1"></i>Gastos Obra / Separados
                             </h4>
                         </div>
                         <div class="col-6">

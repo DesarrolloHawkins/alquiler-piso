@@ -1854,6 +1854,22 @@
     document.addEventListener('DOMContentLoaded', function() {
         verificarEstadoJornada();
     });
+
+    // Lista de tareas del día para depuración en consola
+    @if(isset($tareasParaConsola))
+    (function() {
+        var datos = @json($tareasParaConsola);
+        console.log('[Gestión] Tareas del día:', datos);
+        console.log('[Gestión] Fecha consultada:', datos.fecha);
+        console.log('[Gestión] ¿Tiene turno hoy?', datos.tieneTurnoHoy);
+        if (datos.tareas && datos.tareas.length) {
+            console.log('[Gestión] Lista de tareas (' + datos.tareas.length + '):', datos.tareas);
+        }
+        if (datos.mensaje) {
+            console.log('[Gestión] Mensaje:', datos.mensaje);
+        }
+    })();
+    @endif
 </script>
 @endsection
 
@@ -1900,7 +1916,12 @@
                     </div>
                 </div>
                 <div id="collapsePendientes" class="apple-card-body collapse" aria-labelledby="headingPendientes" data-bs-parent="#accordionExample">
-                    @if ($reservasPendientes != null)
+                    @if(isset($sinTurnoHoy) && $sinTurnoHoy && (!$reservasPendientes || count($reservasPendientes) === 0))
+                        <p class="text-muted mb-0 py-3 px-2">
+                            <i class="fa-solid fa-info-circle"></i>
+                            No tienes tareas asignadas para hoy. Revisa <a href="{{ route('gestion.mis-turnos') }}">Mis Turnos</a> para ver tus tareas por fecha.
+                        </p>
+                    @elseif ($reservasPendientes != null)
                         <div class="apple-list">
                             @foreach($reservasPendientes as $reserva)
                             <div class="apple-list-item @if(isset($reserva->limpieza_fondo)) apple-list-item-info @else apple-list-item-warning @endif">

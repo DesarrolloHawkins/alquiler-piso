@@ -57,7 +57,13 @@ class GestionApartamentoController extends Controller
             return $this->indexConTurnos($turnoHoy, $hoy);
         }
 
-        // Si no hay turno, usar el sistema antiguo
+        // Si no hay turno para hoy: si la empleada usa turnos, mostrar jornada vacía
+        $usaTurnos = TurnoTrabajo::where('user_id', $user->id)->exists();
+        if ($usaTurnos) {
+            return $this->indexSinTurnoHoy($hoy);
+        }
+
+        // Si no hay turno y no usa turnos, usar el sistema antiguo (listado global)
         $reservasPendientes = Reserva::apartamentosPendiente();
 
         // Cargar la relación siguienteReserva con campos de niños para cada reserva pendiente
@@ -254,6 +260,13 @@ class GestionApartamentoController extends Controller
         // Obtener estadísticas del dashboard de limpieza
         $dashboardStats = $this->getDashboardStats();
 
+        $tareasParaConsola = [
+            'fecha' => $hoy,
+            'tieneTurnoHoy' => false,
+            'tareas' => [],
+            'mensaje' => 'Sistema antiguo: se muestran apartamentos pendientes del día (no filtrado por turno).',
+        ];
+
         return view('gestion.index', compact(
             'reservasPendientes',
             'reservasOcupados',
@@ -264,7 +277,49 @@ class GestionApartamentoController extends Controller
             'reservasManana',
             'amenities',
             'consumosExistentes',
-            'dashboardStats'
+            'dashboardStats',
+            'tareasParaConsola'
+        ));
+    }
+
+    /**
+     * Vista de gestión cuando la empleada usa turnos pero no tiene turno para hoy (jornada vacía)
+     */
+    private function indexSinTurnoHoy($hoy)
+    {
+        $user = Auth::user();
+        $reservasPendientes = collect();
+        $reservasEnLimpieza = collect();
+        $reservasLimpieza = collect();
+        $reservasOcupados = collect();
+        $reservasSalida = collect();
+        $reservasManana = collect();
+        $limpiezaFondo = collect();
+        $amenities = \App\Models\Amenity::activos()->where('categoria', 'Otros')->orderBy('categoria')->orderBy('nombre')->get()->groupBy('categoria');
+        $consumosExistentes = collect();
+        $dashboardStats = $this->getDashboardStats();
+
+        $tareasParaConsola = [
+            'fecha' => $hoy->toDateString(),
+            'tieneTurnoHoy' => false,
+            'tareas' => [],
+            'mensaje' => 'No tienes turno asignado para hoy. Las tareas que tienes pueden estar en otra fecha. Revisa "Mis Turnos" para ver tus tareas por día.',
+        ];
+        $sinTurnoHoy = true;
+
+        return view('gestion.index', compact(
+            'reservasPendientes',
+            'reservasOcupados',
+            'reservasSalida',
+            'reservasLimpieza',
+            'reservasEnLimpieza',
+            'limpiezaFondo',
+            'reservasManana',
+            'amenities',
+            'consumosExistentes',
+            'dashboardStats',
+            'tareasParaConsola',
+            'sinTurnoHoy'
         ));
     }
 
@@ -429,6 +484,18 @@ class GestionApartamentoController extends Controller
         $reservasManana = collect();
         $consumosExistentes = collect();
 
+        // Lista de tareas para depuración en consola
+        $tareasParaConsola = [
+            'fecha' => $hoy->toDateString(),
+            'tieneTurnoHoy' => true,
+            'tareas' => $tareasAsignadas->map(function ($t) {
+                $elemento = $t->apartamento_id ? ($t->apartamento->titulo ?? '') : ($t->zona_comun_id ? ($t->zonaComun->nombre ?? '') : $t->tipoTarea->nombre ?? '');
+                return ['id' => $t->id, 'tipo' => $t->tipoTarea->nombre ?? '', 'elemento' => $elemento, 'estado' => $t->estado];
+            })->toArray(),
+            'total' => $tareasAsignadas->count(),
+            'mensaje' => null,
+        ];
+
         return view('gestion.index', compact(
             'reservasPendientes',
             'reservasOcupados',
@@ -440,7 +507,8 @@ class GestionApartamentoController extends Controller
             'amenities',
             'consumosExistentes',
             'dashboardStats',
-            'turnoHoy'
+            'turnoHoy',
+            'tareasParaConsola'
         ));
     }
 
