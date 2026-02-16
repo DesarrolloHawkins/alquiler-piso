@@ -357,6 +357,19 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Comandos de Descuento
     Route::post('/admin/ejecutar-comando-descuentos', [ComandoDescuentoController::class, 'ejecutarComando'])->name('admin.ejecutar-comando-descuentos');
 
+    // Cupones de Descuento
+    Route::prefix('cupones')->name('admin.cupones.')->group(function () {
+        Route::get('/', [App\Http\Controllers\CuponController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\CuponController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\CuponController::class, 'store'])->name('store');
+        Route::get('/{cupon}', [App\Http\Controllers\CuponController::class, 'show'])->name('show');
+        Route::get('/{cupon}/edit', [App\Http\Controllers\CuponController::class, 'edit'])->name('edit');
+        Route::put('/{cupon}', [App\Http\Controllers\CuponController::class, 'update'])->name('update');
+        Route::delete('/{cupon}', [App\Http\Controllers\CuponController::class, 'destroy'])->name('destroy');
+        Route::patch('/{cupon}/toggle-activo', [App\Http\Controllers\CuponController::class, 'toggleActivo'])->name('toggle-activo');
+        Route::post('/{cupon}/duplicate', [App\Http\Controllers\CuponController::class, 'duplicate'])->name('duplicate');
+    });
+
 // Rutas para historial de descuentos
 Route::get('/admin/historial-descuentos', [HistorialDescuentoController::class, 'index'])->name('admin.historial-descuentos.index');
 Route::get('/admin/historial-descuentos/{historial}', [HistorialDescuentoController::class, 'show'])->name('admin.historial-descuentos.show');
@@ -418,6 +431,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/{reserva}/show', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');
     Route::post('/reservas/{reserva}/enviar-mir', [App\Http\Controllers\ReservasController::class, 'enviarMIR'])->name('reservas.enviar-mir');
+    Route::post('/reservas/{reserva}/enviar-plataforma', [App\Http\Controllers\ReservasController::class, 'enviarPlataforma'])->name('reservas.enviar-plataforma');
     Route::post('/reservas/{reserva}/toggle-conversacion-plataforma', [App\Http\Controllers\ReservasController::class, 'toggleConversacionPlataforma'])->name('reservas.toggle-conversacion-plataforma');
     Route::get('/reservas/create', [App\Http\Controllers\ReservasController::class, 'create'])->name('reservas.create');
     Route::post('/reservas/store', [App\Http\Controllers\ReservasController::class, 'store'])->name('reservas.store');
