@@ -916,9 +916,11 @@ class ReservaPagoController extends Controller
         ]);
 
         // Enviar actualización a Channex (sin verificación SSL)
-        $response = Http::withoutVerifying()->withHeaders([
-            'user-api-key' => $this->apiToken,
-        ])->post("{$this->apiUrl}/availability", ['values' => $values]);
+        $response = Http::timeout(30)
+            ->withoutVerifying()
+            ->withHeaders([
+                'user-api-key' => $this->apiToken,
+            ])->post("{$this->apiUrl}/availability", ['values' => $values]);
 
         if (!$response->successful()) {
             Log::error('[ReservaWeb] updateChannexAvailability: error Channex', [
@@ -995,11 +997,12 @@ class ReservaPagoController extends Controller
             'room_type_id' => $roomType->id_channex,
         ]);
 
-        $response = Http::withHeaders([
-            'user-api-key' => $this->apiToken,
-        ])->post($url, [
-            'values' => $values,
-        ]);
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'user-api-key' => $this->apiToken,
+            ])->post($url, [
+                'values' => $values,
+            ]);
 
         if (!$response->successful()) {
             Log::error('[ReservaWeb] crearHoldTemporal: Channex rechazó la petición', [
