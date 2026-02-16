@@ -342,10 +342,19 @@
 
                                 <!-- Descuentos -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') || request()->is('historial-descuentos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') || request()->is('historial-descuentos*') || request()->is('cupones*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-percentage me-1"></i>Descuentos
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header"><i class="fas fa-ticket-alt me-1"></i>Cupones</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cupones.index') }}">
+                                            <i class="fas fa-list me-2"></i>Ver Cupones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cupones.create') }}">
+                                            <i class="fas fa-plus me-2"></i>Crear Cupón
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-cog me-1"></i>Descuentos Automáticos</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.index') }}">
                                             <i class="fas fa-cog me-2"></i>Configuración
                                         </a></li>

@@ -714,6 +714,38 @@
                 </div>
             @endif
             
+            <!-- Cupón de Descuento -->
+            <h3 class="form-section-title" style="margin-top: 32px;">
+                <i class="fas fa-tag me-2"></i>¿Tienes un cupón de descuento?
+            </h3>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label for="codigo_cupon">Código del cupón</label>
+                        <input 
+                            type="text" 
+                            name="codigo_cupon" 
+                            id="codigo_cupon" 
+                            placeholder="Ej: VERANO2024"
+                            value="{{ old('codigo_cupon') }}"
+                            style="text-transform: uppercase;">
+                        <small class="text-muted">Si tienes un código de descuento, introdúcelo aquí</small>
+                        @error('codigo_cupon')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                        @if(session('cupon_error'))
+                            <div class="error-message">{{ session('cupon_error') }}</div>
+                        @endif
+                        @if(session('cupon_aplicado'))
+                            <div style="color: #28a745; font-size: 14px; margin-top: 4px;">
+                                <i class="fas fa-check-circle me-1"></i>{{ session('cupon_aplicado') }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <!-- Notas Adicionales -->
             <h3 class="form-section-title" style="margin-top: 32px;">{{ __('reservation.notes_label') }}</h3>
             

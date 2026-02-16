@@ -396,6 +396,55 @@ class ReservaPagoController extends Controller
                 $precioTotal += $apartamento->cleaning_fee;
             }
 
+            // Validar y aplicar cupón de descuento
+            $cuponAplicado = null;
+            $descuentoCupon = 0;
+            $precioOriginal = $precioTotal;
+
+            if ($request->filled('codigo_cupon')) {
+                $codigoCupon = strtoupper(trim($request->codigo_cupon));
+                $cupon = \App\Models\Cupon::where('codigo', $codigoCupon)->disponibles()->first();
+
+                if (!$cupon) {
+                    Log::warning('[ReservaWeb] procesarReserva: cupón no encontrado o no disponible', [
+                        'codigo' => $codigoCupon,
+                    ]);
+                    return $this->redirectToFormularioOrShow($request, $apartamento->id, 'El cupón "' . $codigoCupon . '" no es válido o ha expirado.')
+                        ->withInput();
+                }
+
+                // Validar si el cupón es aplicable
+                $validacion = $cupon->esAplicable(
+                    $precioTotal,
+                    $fechaEntrada,
+                    $fechaSalida,
+                    $apartamento->id,
+                    $clienteLogueado?->id
+                );
+
+                if (!$validacion['valido']) {
+                    $errores = implode(' ', $validacion['errores']);
+                    Log::warning('[ReservaWeb] procesarReserva: cupón no aplicable', [
+                        'codigo' => $codigoCupon,
+                        'errores' => $validacion['errores'],
+                    ]);
+                    return $this->redirectToFormularioOrShow($request, $apartamento->id, 'Cupón no válido: ' . $errores)
+                        ->withInput();
+                }
+
+                // Calcular descuento
+                $descuentoCupon = $cupon->calcularDescuento($precioTotal);
+                $precioTotal = max(0, $precioTotal - $descuentoCupon);
+                $cuponAplicado = $cupon;
+
+                Log::info('[ReservaWeb] procesarReserva: cupón aplicado', [
+                    'codigo' => $codigoCupon,
+                    'precio_original' => $precioOriginal,
+                    'descuento' => $descuentoCupon,
+                    'precio_final' => $precioTotal,
+                ]);
+            }
+
             // VERIFICAR STRIPE PRIMERO antes de crear nada
             $stripeSecret = config('services.stripe.secret');
 
@@ -412,7 +461,7 @@ class ReservaPagoController extends Controller
             Log::info('[ReservaWeb] procesarReserva: iniciando transacción (reserva, pago, hold, Stripe)');
 
             // Usar transacción para asegurar que todo se cree correctamente o se revierta
-            return DB::transaction(function () use ($request, $apartamento, $fechaEntrada, $fechaSalida, $precioTotal, $noches, $stripeSecret, $clienteLogueado, $esParaMi, $hold) {
+            return DB::transaction(function () use ($request, $apartamento, $fechaEntrada, $fechaSalida, $precioTotal, $noches, $stripeSecret, $clienteLogueado, $esParaMi, $hold, $cuponAplicado, $descuentoCupon, $precioOriginal) {
                 // Determinar cliente y huésped
                 if ($clienteLogueado && $esParaMi) {
                     // Es para el cliente logueado
@@ -519,6 +568,23 @@ class ReservaPagoController extends Controller
                         'es_para_otro' => $clienteComprador ? true : false,
                     ],
                 ]);
+
+                // Registrar uso del cupón si se aplicó
+                if ($cuponAplicado) {
+                    $cuponAplicado->registrarUso(
+                        $reserva->id,
+                        $cliente->id,
+                        $precioOriginal,
+                        $descuentoCupon,
+                        $precioTotal,
+                        $request->ip()
+                    );
+                    Log::info('[ReservaWeb] procesarReserva: uso de cupón registrado', [
+                        'cupon_id' => $cuponAplicado->id,
+                        'codigo' => $cuponAplicado->codigo,
+                        'reserva_id' => $reserva->id,
+                    ]);
+                }
 
                 // Asociar el hold a la reserva y marcarlo como confirmado
                 $hold->reserva_id = $reserva->id;
