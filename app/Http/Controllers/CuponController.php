@@ -41,11 +41,11 @@ class CuponController extends Controller
     }
 
     /**
-     * Mostrar formulario de creación
+     * Mostrar formulario de creaci?n
      */
     public function create()
     {
-        $cupon = new Cupon(); // Cupón vacío para el formulario
+        $cupon = new Cupon(); // Cup?n vac?o para el formulario
         $apartamentos = Apartamento::orderBy('titulo')->get();
         $edificios = Edificio::orderBy('nombre')->get();
 
@@ -53,7 +53,7 @@ class CuponController extends Controller
     }
 
     /**
-     * Guardar nuevo cupón
+     * Guardar nuevo cup?n
      */
     public function store(Request $request)
     {
@@ -76,11 +76,10 @@ class CuponController extends Controller
             'apartamentos_ids.*' => 'exists:apartamentos,id',
             'edificios_ids' => 'nullable|array',
             'edificios_ids.*' => 'exists:edificios,id',
-            'activo' => 'boolean',
         ], [
-            'codigo.required' => 'El código del cupón es obligatorio',
-            'codigo.unique' => 'Ya existe un cupón con este código',
-            'nombre.required' => 'El nombre del cupón es obligatorio',
+            'codigo.required' => 'El c?digo del cup?n es obligatorio',
+            'codigo.unique' => 'Ya existe un cup?n con este c?digo',
+            'nombre.required' => 'El nombre del cup?n es obligatorio',
             'tipo_descuento.required' => 'Debes seleccionar el tipo de descuento',
             'valor_descuento.required' => 'El valor del descuento es obligatorio',
             'valor_descuento.min' => 'El valor del descuento debe ser mayor a 0',
@@ -91,22 +90,22 @@ class CuponController extends Controller
         // Convertir código a mayúsculas
         $validated['codigo'] = strtoupper($validated['codigo']);
         $validated['creado_por'] = Auth::id();
-        $validated['activo'] = $request->has('activo');
+        $validated['activo'] = $request->has('activo') ? 1 : 0;
 
         $cupon = Cupon::create($validated);
 
-        Log::info('Cupón creado', [
+        Log::info('Cup?n creado', [
             'cupon_id' => $cupon->id,
             'codigo' => $cupon->codigo,
             'usuario_id' => Auth::id(),
         ]);
 
         return redirect()->route('admin.cupones.index')
-            ->with('success', 'Cupón creado correctamente: ' . $cupon->codigo);
+            ->with('success', 'Cup?n creado correctamente: ' . $cupon->codigo);
     }
 
     /**
-     * Mostrar detalles del cupón
+     * Mostrar detalles del cup?n
      */
     public function show(Cupon $cupon)
     {
@@ -116,7 +115,7 @@ class CuponController extends Controller
     }
 
     /**
-     * Mostrar formulario de edición
+     * Mostrar formulario de edici?n
      */
     public function edit(Cupon $cupon)
     {
@@ -127,7 +126,7 @@ class CuponController extends Controller
     }
 
     /**
-     * Actualizar cupón
+     * Actualizar cup?n
      */
     public function update(Request $request, Cupon $cupon)
     {
@@ -150,26 +149,25 @@ class CuponController extends Controller
             'apartamentos_ids.*' => 'exists:apartamentos,id',
             'edificios_ids' => 'nullable|array',
             'edificios_ids.*' => 'exists:edificios,id',
-            'activo' => 'boolean',
         ]);
 
         $validated['codigo'] = strtoupper($validated['codigo']);
-        $validated['activo'] = $request->has('activo');
+        $validated['activo'] = $request->has('activo') ? 1 : 0;
 
         $cupon->update($validated);
 
-        Log::info('Cupón actualizado', [
+        Log::info('Cup?n actualizado', [
             'cupon_id' => $cupon->id,
             'codigo' => $cupon->codigo,
             'usuario_id' => Auth::id(),
         ]);
 
         return redirect()->route('admin.cupones.index')
-            ->with('success', 'Cupón actualizado correctamente');
+            ->with('success', 'Cup?n actualizado correctamente');
     }
 
     /**
-     * Eliminar cupón
+     * Eliminar cup?n
      */
     public function destroy(Cupon $cupon)
     {
@@ -177,14 +175,14 @@ class CuponController extends Controller
         
         $cupon->delete();
 
-        Log::info('Cupón eliminado', [
+        Log::info('Cup?n eliminado', [
             'cupon_id' => $cupon->id,
             'codigo' => $codigo,
             'usuario_id' => Auth::id(),
         ]);
 
         return redirect()->route('admin.cupones.index')
-            ->with('success', 'Cupón eliminado correctamente');
+            ->with('success', 'Cup?n eliminado correctamente');
     }
 
     /**
@@ -197,7 +195,7 @@ class CuponController extends Controller
 
         $estado = $cupon->activo ? 'activado' : 'desactivado';
 
-        Log::info('Estado de cupón cambiado', [
+        Log::info('Estado de cup?n cambiado', [
             'cupon_id' => $cupon->id,
             'codigo' => $cupon->codigo,
             'nuevo_estado' => $estado,
@@ -205,11 +203,11 @@ class CuponController extends Controller
         ]);
 
         return redirect()->back()
-            ->with('success', "Cupón {$estado} correctamente");
+            ->with('success', "Cup?n {$estado} correctamente");
     }
 
     /**
-     * Duplicar cupón
+     * Duplicar cup?n
      */
     public function duplicate(Cupon $cupon)
     {
@@ -221,13 +219,13 @@ class CuponController extends Controller
         $nuevoCupon->creado_por = Auth::id();
         $nuevoCupon->save();
 
-        Log::info('Cupón duplicado', [
+        Log::info('Cup?n duplicado', [
             'cupon_original_id' => $cupon->id,
             'cupon_nuevo_id' => $nuevoCupon->id,
             'usuario_id' => Auth::id(),
         ]);
 
         return redirect()->route('admin.cupones.edit', $nuevoCupon)
-            ->with('success', 'Cupón duplicado correctamente. Recuerda cambiar el código antes de activarlo.');
+            ->with('success', 'Cup?n duplicado correctamente. Recuerda cambiar el c?digo antes de activarlo.');
     }
 }
