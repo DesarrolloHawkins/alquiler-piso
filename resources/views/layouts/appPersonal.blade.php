@@ -1200,7 +1200,7 @@
         <nav class="apple-header">
             <div class="apple-header-content">
                 <div class="apple-header-left">
-                    @if(!in_array(Route::currentRouteName(), ['dashboard.index', 'inicio']))
+                    @if(!in_array(Route::currentRouteName(), ['dashboard.index', 'inicio', 'limpiadora.dashboard', 'mantenimiento.dashboard']))
                         <a href="{{ url()->previous() }}" class="apple-back-button">
                             <i class="fa-solid fa-chevron-left"></i>
                         </a>
@@ -1233,14 +1233,26 @@
         </main>
         <footer class="apple-tab-bar">
             <div class="apple-tab-bar-content">
-                {{-- <a href="{{ Auth::user()->role === 'LIMPIEZA' ? route('limpiadora.dashboard') : route('gestion.index') }}" class="apple-tab-item {{ request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
+                @if(Auth::user()->role === 'MANTENIMIENTO')
+                <a href="{{ route('mantenimiento.dashboard') }}" class="apple-tab-item {{ request()->routeIs('mantenimiento.dashboard') ? 'active' : '' }}">
                     <div class="apple-tab-icon">
                         <i class="fa-solid fa-house"></i>
                     </div>
                     <span class="apple-tab-label">Inicio</span>
-                </a> --}}
-                 
-                
+                </a>
+                <a href="{{ route('mantenimiento.incidencias.index') }}" class="apple-tab-item {{ request()->routeIs('mantenimiento.incidencias.*') ? 'active' : '' }}">
+                    <div class="apple-tab-icon">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                    </div>
+                    <span class="apple-tab-label">Incidencias</span>
+                </a>
+                @else
+                <a href="{{ Auth::user()->role === 'LIMPIEZA' ? route('limpiadora.dashboard') : route('gestion.index') }}" class="apple-tab-item {{ request()->routeIs('limpiadora.dashboard') ? 'active' : '' }}">
+                    <div class="apple-tab-icon">
+                        <i class="fa-solid fa-house"></i>
+                    </div>
+                    <span class="apple-tab-label">Inicio</span>
+                </a>
                 <a href="{{route('gestion.index')}}" class="apple-tab-item {{ request()->routeIs('gestion.index') ? 'active' : '' }}">
                     <div class="apple-tab-icon">
                         <i class="fa-solid fa-tasks"></i>
@@ -1282,7 +1294,7 @@
                     </div>
                     <span class="apple-tab-label">Ayuda</span>
                 </a>
-                
+                @endif
                 <a href="{{ route('logout') }}" 
                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();" 
                    class="apple-tab-item">

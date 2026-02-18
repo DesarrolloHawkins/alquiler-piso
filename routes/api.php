@@ -41,6 +41,18 @@ Route::post('/apartamentos-disponibles', [App\Http\Controllers\Api\ApiController
 Route::post('/agregar-compra-reserva', [App\Http\Controllers\Api\ApiController::class, 'agregarCompraReserva'])->name('agregarCompraReserva');
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('api.reserva.agregar');
 
+// Edificios para integraciones externas
+Route::get('/edificios', [App\Http\Controllers\Api\ApiController::class, 'obtenerEdificios'])
+    ->name('api.edificios.index');
+
+// Apartamentos activos en Channex (id_channex no nulo)
+Route::get('/apartamentos', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentosChannex'])
+    ->name('api.apartamentos.index');
+
+// Reservas para integraciones externas (con filtros)
+Route::get('/reservas', [App\Http\Controllers\Api\ApiController::class, 'obtenerReservas'])
+    ->name('api.reservas.index');
+
 Route::get('/room-types/{propertyId}', [RatePlanController::class, 'getRoomTypes']);
 
 // Webhooks

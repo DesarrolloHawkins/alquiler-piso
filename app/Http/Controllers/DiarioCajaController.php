@@ -14,6 +14,7 @@ use App\Models\SubCuentaContable;
 use App\Models\SubCuentaHijo;
 use App\Models\SubGrupoContable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 
 use DataTables;
@@ -347,28 +348,38 @@ class DiarioCajaController extends Controller
         $estados = EstadosDiario::all();
         return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento','estados'));
     }
+    /**
+     * Elimina una línea del diario de caja y el ingreso o gasto asociado (soft delete).
+     */
     public function destroyDiarioCaja($id)
     {
         $diario = DiarioCaja::findOrFail($id);
 
-        // Verificar si hay un ingreso relacionado
-        if ($diario->ingreso_id) {
-            $ingreso = Ingresos::find($diario->ingreso_id);
-            if ($ingreso) {
-                $ingreso->delete();
+        DB::transaction(function () use ($diario) {
+            // 1) Borrar el hash asociado (si existe) para que no quede huérfano
+            if (\Schema::hasColumn('hash_movimientos', 'diario_caja_id')) {
+                DB::table('hash_movimientos')->where('diario_caja_id', $diario->id)->delete();
             }
-        }
 
-        // Verificar si hay un gasto relacionado
-        if ($diario->gasto_id) {
-            $gasto = Gastos::find($diario->gasto_id);
-            if ($gasto) {
-                $gasto->delete();
+            // 2) Borrar el ingreso asociado (si existe)
+            if ($diario->ingreso_id) {
+                $ingreso = Ingresos::find($diario->ingreso_id);
+                if ($ingreso) {
+                    $ingreso->delete();
+                }
             }
-        }
 
-        // Eliminar la línea del Diario de Caja
-        $diario->delete();
+            // 3) Borrar el gasto asociado (si existe)
+            if ($diario->gasto_id) {
+                $gasto = Gastos::find($diario->gasto_id);
+                if ($gasto) {
+                    $gasto->delete();
+                }
+            }
+
+            // 4) Borrar la línea del diario de caja
+            $diario->delete();
+        });
 
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Registro del Diario de Caja eliminado con éxito.');
     }

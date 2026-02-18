@@ -31,6 +31,8 @@ class RedirectAfterLogin
                 return redirect('/home');
             } elseif ($user->role === 'LIMPIEZA') {
                 return redirect('/limpiadora/dashboard');
+            } elseif ($user->role === 'MANTENIMIENTO') {
+                return redirect('/mantenimiento/dashboard');
             }
         }
 

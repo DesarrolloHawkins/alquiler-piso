@@ -12,9 +12,9 @@
                         <span>Limpieza Completada - Vista de Información</span>
                     </div>
                     <div class="apple-card-actions">
-                        <a href="{{ route('gestion.index') }}" class="btn btn-light btn-sm">
+                        <a href="{{ route($back_route ?? 'gestion.index') }}" class="btn btn-light btn-sm">
                             <i class="fa fa-arrow-left me-2"></i>
-                            Volver a Gestión
+                            {{ $back_label ?? 'Volver a Gestión' }}
                         </a>
                     </div>
                 </div>

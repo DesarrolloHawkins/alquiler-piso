@@ -27,6 +27,10 @@ class LoginController extends Controller
             } elseif ($user->role === 'USER') {
                 // Para usuarios normales, ir a gestión
                 return '/gestion';
+            } elseif ($user->role === 'LIMPIEZA') {
+                return '/limpiadora/dashboard';
+            } elseif ($user->role === 'MANTENIMIENTO') {
+                return '/mantenimiento/dashboard';
             }
         }
 

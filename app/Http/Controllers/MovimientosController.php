@@ -159,6 +159,7 @@ class MovimientosController extends Controller
 
         // Procesar cada fila
         foreach ($filteredRows as $index => $row) {
+            $diarioCajaIdParaHash = null;
             try {
                 // Convertir el número de fecha de Excel en una fecha válida de Carbon
                 $fecha_contable = Carbon::createFromFormat('Y-m-d', \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[0])->format('Y-m-d'));
@@ -307,8 +308,8 @@ class MovimientosController extends Controller
                         'estado_id' => 1
                     ]);
 
-                    // Reflejar el ingreso en el Diario de Caja
-                    DiarioCaja::create([
+                    // Reflejar el ingreso en el Diario de Caja (guardar instancia para vincular hash)
+                    $diarioCaja = DiarioCaja::create([
                         'asiento_contable' => $this->generarAsientoContable(),
                         'cuenta_id' => 1, // Aquí seleccionas la cuenta contable adecuada
                         'ingreso_id' => $ingreso->id,
@@ -318,6 +319,7 @@ class MovimientosController extends Controller
                         'tipo' => 'ingreso',
                         'estado_id' => 1
                     ]);
+                    $diarioCajaIdParaHash = $diarioCaja->id;
 
                     $ingresosCreados++;
                     $registroProcesado = true;
@@ -343,8 +345,8 @@ class MovimientosController extends Controller
                         'estado_id' => 1
                     ]);
 
-                    // Reflejar el gasto en el Diario de Caja
-                    DiarioCaja::create([
+                    // Reflejar el gasto en el Diario de Caja (guardar instancia para vincular hash)
+                    $diarioCaja = DiarioCaja::create([
                         'asiento_contable' => $this->generarAsientoContable(),
                         'cuenta_id' => 1, // Aquí seleccionas la cuenta contable adecuada
                         'gasto_id' => $gasto->id,
@@ -354,20 +356,24 @@ class MovimientosController extends Controller
                         'tipo' => 'gasto',
                         'estado_id' => 1
                     ]);
+                    $diarioCajaIdParaHash = $diarioCaja->id;
 
                     $gastosCreados++;
                     $registroProcesado = true;
                 }
             }
 
-            // Solo guardar el hash si se procesó algún registro
+            // Solo guardar el hash si se procesó algún registro (con diario_caja_id para poder borrarlo al eliminar la línea)
             if ($registroProcesado) {
-                // Guardar el hash en la tabla de hash_movimientos para evitar duplicados futuros
-                DB::table('hash_movimientos')->insert([
+                $insertHash = [
                     'hash' => $hash,
                     'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                    'updated_at' => now(),
+                ];
+                if (isset($diarioCajaIdParaHash) && \Schema::hasColumn('hash_movimientos', 'diario_caja_id')) {
+                    $insertHash['diario_caja_id'] = $diarioCajaIdParaHash;
+                }
+                DB::table('hash_movimientos')->insert($insertHash);
                 $procesados++;
             }
         }

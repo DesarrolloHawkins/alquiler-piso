@@ -408,6 +408,75 @@ class ReservasController extends Controller
     }
 
     /**
+     * Enviar datos de la reserva a la plataforma externa (URL en PLATAFORMA_RESERVAS_URL).
+     * Envía: fecha_entrada, fecha_salida, codigo_reserva, apartamento_id, nombre_apartamento, id_channex.
+     */
+    public function enviarPlataforma(Reserva $reserva)
+    {
+        $url = config('services.plataforma_reservas_url');
+
+        if (empty($url)) {
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'No está configurada la URL de la plataforma. Añade PLATAFORMA_RESERVAS_URL en el .env');
+        }
+
+        $reserva->loadMissing('apartamento');
+
+        $payload = [
+            'fecha_entrada' => $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('Y-m-d') : null,
+            'fecha_salida'  => $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('Y-m-d') : null,
+            'codigo_reserva' => $reserva->codigo_reserva,
+            'apartamento_id' => $reserva->apartamento_id,
+            'nombre_apartamento' => $reserva->apartamento?->titulo ?? null,
+            'id_channex' => $reserva->apartamento?->id_channex ?? null,
+        ];
+
+        try {
+            // Petición POST con body JSON (la plataforma debe aceptar POST en su ruta)
+            $response = Http::timeout(15)
+                ->asJson()
+                ->acceptJson()
+                ->post($url, $payload);
+
+            $status = $response->status();
+            $body = $response->json() ?? $response->body();
+
+            Log::info('Petición a plataforma externa', [
+                'reserva_id' => $reserva->id,
+                'codigo_reserva' => $reserva->codigo_reserva,
+                'url' => $url,
+                'status' => $status,
+            ]);
+
+            $payloadJson = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+            if ($response->successful()) {
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('success', 'Datos enviados correctamente a la plataforma. Respuesta: ' . (is_array($body) ? json_encode($body) : $body))
+                    ->with('plataforma_payload', $payloadJson)
+                    ->with('plataforma_response', is_array($body) ? json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $body);
+            }
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'La plataforma respondió con error (HTTP ' . $status . '). Respuesta: ' . (is_array($body) ? json_encode($body) : substr((string) $body, 0, 500)))
+                ->with('plataforma_payload', $payloadJson)
+                ->with('plataforma_response', is_array($body) ? json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : substr((string) $body, 0, 1000));
+        } catch (\Exception $e) {
+            Log::error('Error al enviar reserva a plataforma', [
+                'reserva_id' => $reserva->id,
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+
+            $payloadJson = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error al conectar con la plataforma: ' . $e->getMessage())
+                ->with('plataforma_payload', $payloadJson);
+        }
+    }
+
+    /**
      * Enviar reserva a MIR (Servicio de Hospedajes)
      */
     public function enviarMIR(Reserva $reserva)

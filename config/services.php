@@ -63,4 +63,10 @@ return [
         'model' => env('AI_TRANSLATION_MODEL', 'gpt-oss:120b-cloud'),
     ],
 
+    /*
+     * URL del endpoint externo al que se envían datos de reserva (fecha entrada, salida, código).
+     * Si está vacío, el botón "Enviar a plataforma" no realizará la petición.
+     */
+    'plataforma_reservas_url' => env('PLATAFORMA_RESERVAS_URL', ''),
+
 ];

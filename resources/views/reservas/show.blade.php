@@ -23,6 +23,20 @@
         </nav>
     </div>
     <div class="d-flex gap-2">
+        @if(config('services.plataforma_reservas_url'))
+        <form action="{{ route('reservas.enviar-plataforma', $reserva->id) }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-info" onclick="return confirm('¿Enviar datos de esta reserva a la plataforma externa?')" title="URL: {{ config('services.plataforma_reservas_url') }}">
+                <i class="fas fa-external-link-alt me-2"></i>
+                Enviar a plataforma
+            </button>
+        </form>
+        @else
+        <button type="button" class="btn btn-secondary" disabled title="Configura PLATAFORMA_RESERVAS_URL en el .env">
+            <i class="fas fa-external-link-alt me-2"></i>
+            Enviar a plataforma (no configurado)
+        </button>
+        @endif
         <a href="{{ route('reservas.edit', $reserva->id) }}" class="btn btn-warning">
             <i class="fas fa-edit me-2"></i>
             Editar
@@ -48,6 +62,22 @@
         <i class="fas fa-exclamation-circle me-2"></i>
         {{ session('error') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if (session('plataforma_payload'))
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-code me-2"></i>Payload enviado a la plataforma</h6>
+            <small class="text-muted">Última petición</small>
+        </div>
+        <div class="card-body">
+            <pre class="mb-0 bg-dark text-light p-3 rounded small" style="max-height: 220px; overflow: auto;"><code>{{ session('plataforma_payload') }}</code></pre>
+            @if (session('plataforma_response'))
+                <h6 class="mt-3 mb-2"><i class="fas fa-reply me-2"></i>Respuesta de la plataforma</h6>
+                <pre class="mb-0 bg-secondary text-light p-3 rounded small" style="max-height: 180px; overflow: auto;"><code>{{ session('plataforma_response') }}</code></pre>
+            @endif
+        </div>
     </div>
 @endif
 

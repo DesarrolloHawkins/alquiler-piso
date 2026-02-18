@@ -55,6 +55,8 @@ Route::get('/', function () {
             return redirect('/home');
         } elseif ($user->role === 'LIMPIEZA') {
             return redirect('/limpiadora/dashboard');
+        } elseif ($user->role === 'MANTENIMIENTO') {
+            return redirect('/mantenimiento/dashboard');
         } else {
             // Fallback para roles no reconocidos
             return redirect('/home');
@@ -1268,6 +1270,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
 // Rutas para panel de limpiadoras
 Route::middleware(['auth'])->prefix('limpiadora')->name('limpiadora.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\LimpiadoraDashboardController::class, 'index'])->name('dashboard');
     // Turnos de limpiadoras
     Route::get('/turnos', [App\Http\Controllers\LimpiadoraTurnosController::class, 'index'])->name('turnos.index');
     Route::get('/turnos/{turno}', [App\Http\Controllers\LimpiadoraTurnosController::class, 'show'])->name('turnos.show');
@@ -1280,6 +1283,15 @@ Route::middleware(['auth'])->prefix('limpiadora')->name('limpiadora.')->group(fu
     
     // Estadísticas de limpiadoras
     Route::get('/estadisticas', [App\Http\Controllers\LimpiadoraTurnosController::class, 'estadisticas'])->name('estadisticas');
+});
+
+// Rutas para panel de mantenimiento
+Route::middleware(['auth', 'role:MANTENIMIENTO'])->prefix('mantenimiento')->name('mantenimiento.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\MantenimientoDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/limpieza/{id}/ver', [App\Http\Controllers\MantenimientoLimpiezaController::class, 'show'])->name('limpieza.ver');
+    Route::get('/incidencias', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'index'])->name('incidencias.index');
+    Route::post('/incidencias/{incidencia}/resolver', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'resolver'])->name('incidencias.resolver');
+    Route::get('/incidencias/{incidencia}', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'show'])->name('incidencias.show');
 });
 
 // Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)

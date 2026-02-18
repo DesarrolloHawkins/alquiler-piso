@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <meta name="google-site-verification" content="QvaJOvKK9ohbvk-q1He1trOmEYufMDHYGyKcTvjj_Wk" />
     @php
         $routeName = request()->route() ? request()->route()->getName() : null;
         $seoMeta = $routeName ? \App\Models\SeoMeta::getByRoute($routeName) : null;
