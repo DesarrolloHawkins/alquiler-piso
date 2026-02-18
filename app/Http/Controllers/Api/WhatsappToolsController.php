@@ -25,7 +25,7 @@ class WhatsappToolsController extends Controller
 
         Log::info("🔑 OBTENER CLAVES - Código: {$codigoReserva}");
 
-        $reserva = Reserva::with('apartamento')->where('codigo_reserva', $codigoReserva)->first();
+        $reserva = Reserva::with(['apartamento', 'apartamento.edificioName'])->where('codigo_reserva', $codigoReserva)->first();
 
         if (!$reserva) {
             return response()->json([
@@ -75,6 +75,12 @@ class WhatsappToolsController extends Controller
             ], 400);
         }
 
+        // Clave del edificio (según el apartamento)
+        $claveEdificio = null;
+        if ($reserva->apartamento && $reserva->apartamento->edificioName) {
+            $claveEdificio = $reserva->apartamento->edificioName->clave ?? null;
+        }
+
         // Si todo está correcto, devolver las claves
         return response()->json([
             'success' => true,
@@ -83,6 +89,7 @@ class WhatsappToolsController extends Controller
                 'codigo_reserva' => $reserva->codigo_reserva,
                 'apartamento' => $reserva->apartamento->titulo ?? 'N/A',
                 'claves' => $reserva->apartamento->claves ?? 'Contacta con nosotros para obtener las claves',
+                'clave_edificio' => $claveEdificio,
                 'fecha_entrada' => $reserva->fecha_entrada,
                 'fecha_salida' => $reserva->fecha_salida,
                 'dni_entregado' => true
