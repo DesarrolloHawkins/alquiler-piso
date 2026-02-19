@@ -263,6 +263,9 @@ class Kernel extends ConsoleKernel
         // Liberar holds de reserva web expirados en Channex
         $schedule->command('ari:liberar-holds-expirados')->everyMinute();
 
+        // Cancelar reservas web con pago pendiente tras X minutos (config: web_reservas_hold_minutes, por defecto 10)
+        $schedule->command('ari:cancelar-reservas-web-pago-pendiente')->everyMinute();
+
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
             // Obtener la fecha de hoy
