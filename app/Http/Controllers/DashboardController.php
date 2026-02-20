@@ -217,7 +217,8 @@ class DashboardController extends Controller
         if (!empty($categoriasGastosSeparadasParaExclusion)) {
             $gastos = $gastos->whereNotIn('categoria_id', $categoriasGastosSeparadasParaExclusion);
         }
-        $gastos = abs($gastos->sum('quantity'));
+        // Suma de ABS(quantity) por fila para que coincida con el total del modal (cada fila muestra abs(quantity))
+        $gastos = $gastos->sum(DB::raw('ABS(quantity)'));
 
         // **Calcular ingresos para beneficio (excluyendo categorías de contabilización separada y EXCLUIDO)**
         $ingresosBeneficio = Ingresos::whereBetween('date', [$fechaInicio, $fechaFin]);
@@ -231,7 +232,7 @@ class DashboardController extends Controller
         if (!empty($categoriasGastosSeparadasParaExclusion)) {
             $gastosBeneficio = $gastosBeneficio->whereNotIn('categoria_id', $categoriasGastosSeparadasParaExclusion);
         }
-        $gastosBeneficio = abs($gastosBeneficio->sum('quantity'));
+        $gastosBeneficio = $gastosBeneficio->sum(DB::raw('ABS(quantity)'));
 
         // **Calcular ingresos y gastos de categorías marcadas para contabilización separada**
         $ingresosMismaEmpresa = 0;
