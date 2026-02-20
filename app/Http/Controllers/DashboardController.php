@@ -246,10 +246,11 @@ class DashboardController extends Controller
         
         // **Gastos separados SOLO para categorías de obra (con check activo), EXCLUYENDO 45 y 53**
         if (!empty($categoriasGastosSeparadasObra)) {
-            $gastosMismaEmpresa = abs(Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
+            // Suma de ABS(quantity) por fila para que coincida con el total del modal
+            $gastosMismaEmpresa = Gastos::whereBetween('date', [$fechaInicio, $fechaFin])
                 ->whereIn('categoria_id', $categoriasGastosSeparadasObra)
                 ->whereNotIn('categoria_id', [45, 53]) // Forzar exclusión de 45 y 53
-                ->sum('quantity'));
+                ->sum(DB::raw('ABS(quantity)'));
         }
 
         // **Calcular categorías específicas 45 y 53 por separado**
