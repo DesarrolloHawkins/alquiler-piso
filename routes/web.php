@@ -1291,6 +1291,8 @@ Route::middleware(['auth', 'role:MANTENIMIENTO'])->prefix('mantenimiento')->name
     Route::get('/dashboard', [App\Http\Controllers\MantenimientoDashboardController::class, 'index'])->name('dashboard');
     Route::get('/limpieza/{id}/ver', [App\Http\Controllers\MantenimientoLimpiezaController::class, 'show'])->name('limpieza.ver');
     Route::get('/incidencias', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'index'])->name('incidencias.index');
+    Route::get('/incidencias/create', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'create'])->name('incidencias.create');
+    Route::post('/incidencias/store', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'store'])->name('incidencias.store');
     Route::post('/incidencias/{incidencia}/resolver', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'resolver'])->name('incidencias.resolver');
     Route::post('/incidencias/{incidencia}/add-photos', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'addPhotos'])->name('incidencias.add-photos');
     Route::get('/incidencias/{incidencia}', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'show'])->name('incidencias.show');

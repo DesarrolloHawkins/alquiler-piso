@@ -19,9 +19,14 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('mantenimiento.dashboard') }}" class="apple-btn apple-btn-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Inicio
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('mantenimiento.incidencias.create') }}" class="apple-btn apple-btn-primary">
+                    <i class="fas fa-plus me-1"></i> Nueva Incidencia
+                </a>
+                <a href="{{ route('mantenimiento.dashboard') }}" class="apple-btn apple-btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Inicio
+                </a>
+            </div>
         </div>
 
         <div class="apple-stats-section">
