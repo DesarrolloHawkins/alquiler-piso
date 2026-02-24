@@ -119,7 +119,7 @@
         </div>
     </div>
 
-    @if($incidencia->fotos && count($incidencia->fotos) > 0)
+    <!-- Fotos -->
     <div class="apple-card">
         <div class="apple-card-header">
             <div class="header-content">
@@ -128,13 +128,20 @@
                         <div class="apartment-icon"><i class="fas fa-camera"></i></div>
                         <div class="apartment-details">
                             <h2 class="apartment-title">Fotos del Problema</h2>
-                            <p class="apartment-subtitle">{{ count($incidencia->fotos) }} foto(s)</p>
+                            <p class="apartment-subtitle">
+                                @if($incidencia->fotos && count($incidencia->fotos) > 0)
+                                    {{ count($incidencia->fotos) }} foto(s)
+                                @else
+                                    No hay fotos subidas
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="apple-card-body">
+            @if($incidencia->fotos && count($incidencia->fotos) > 0)
             <div class="photos-grid">
                 @foreach($incidencia->fotos as $foto)
                 <div class="photo-item">
@@ -142,9 +149,55 @@
                 </div>
                 @endforeach
             </div>
+            @else
+            <div class="text-center py-4">
+                <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay fotos subidas para esta incidencia</p>
+            </div>
+            @endif
+
+            <!-- Formulario para añadir fotos adicionales -->
+            <div class="add-photos-section mt-4 pt-4 border-top">
+                <h5 class="mb-3">
+                    <i class="fas fa-plus-circle text-primary"></i>
+                    Añadir Fotos Adicionales
+                </h5>
+                <form action="{{ route('mantenimiento.incidencias.add-photos', $incidencia) }}" 
+                      method="POST" 
+                      enctype="multipart/form-data" 
+                      id="addPhotosForm">
+                    @csrf
+                    <div class="form-group mb-3">
+                        <label for="fotos_adicionales" class="form-label">Seleccionar Fotos</label>
+                        <input type="file" 
+                               class="form-control @error('fotos.*') is-invalid @enderror" 
+                               id="fotos_adicionales" 
+                               name="fotos[]" 
+                               multiple 
+                               accept="image/*">
+                        <small class="form-text text-muted">
+                            Puedes subir múltiples fotos. Formatos: JPG, PNG. Máximo 2MB por foto.
+                        </small>
+                        @error('fotos.*')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div id="fotosPreview" style="display: none;" class="mt-3">
+                        <label class="form-label">Vista Previa:</label>
+                        <div id="fotosGrid" class="photos-grid"></div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="submit" class="apple-btn apple-btn-primary">
+                            <i class="fas fa-upload"></i>
+                            <span>Subir Fotos</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-    @endif
 
     @if($incidencia->estado === 'resuelta' && $incidencia->solucion)
     <div class="apple-card">
@@ -282,6 +335,40 @@ function closePhotoModal() {
     document.body.style.overflow = 'auto';
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePhotoModal(); });
+
+// Preview de fotos adicionales
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('fotos_adicionales');
+    const fotoPreview = document.getElementById('fotosPreview');
+    const fotoGrid = document.getElementById('fotosGrid');
+    
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function() {
+            fotoGrid.innerHTML = '';
+            
+            if (this.files.length > 0) {
+                fotoPreview.style.display = 'block';
+                
+                Array.from(this.files).forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const fotoItem = document.createElement('div');
+                            fotoItem.className = 'photo-item';
+                            fotoItem.innerHTML = `
+                                <img src="${e.target.result}" alt="Preview" class="incident-photo">
+                            `;
+                            fotoGrid.appendChild(fotoItem);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                fotoPreview.style.display = 'none';
+            }
+        });
+    }
+});
 </script>
 @endpush
 @endsection

@@ -47,7 +47,7 @@ use App\Models\Reserva;
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
-        
+
         // Redirigir según el rol del usuario
         if ($user->role === 'ADMIN') {
             return redirect('/admin');
@@ -62,7 +62,7 @@ Route::get('/', function () {
             return redirect('/home');
         }
     }
-    
+
     // Si no está autenticado, redirigir al portal web público
     return redirect()->route('web.index');
 })->name('inicio.welcome');
@@ -77,23 +77,23 @@ Route::get('/calendario/apartamento/{id}.ics', [CalendarioController::class, 'ic
 Route::prefix('web')->name('web.')->group(function () {
     // Cambio de idioma
     Route::get('/language/{locale}', [App\Http\Controllers\LanguageController::class, 'changeLanguage'])->name('language.change');
-    
+
     // Página inicial del portal público
     Route::get('/', [App\Http\Controllers\PublicReservasController::class, 'index'])->name('index');
-    
+
     // Lista de apartamentos
     Route::get('/apartamentos', [App\Http\Controllers\PublicReservasController::class, 'apartamentos'])->name('apartamentos');
-    
+
     // Página Sobre Nosotros
     Route::get('/sobre-nosotros', [App\Http\Controllers\PublicReservasController::class, 'sobreNosotros'])->name('sobre-nosotros');
-    
+
     // Página Contacto
     Route::get('/contacto', [App\Http\Controllers\PublicReservasController::class, 'contacto'])->name('contacto');
     Route::post('/contacto', [App\Http\Controllers\PublicReservasController::class, 'enviarContacto'])->name('contacto.enviar');
-    
+
     // Página Video Exterior - Instrucciones de acceso
     Route::get('/video-exterior', [App\Http\Controllers\PublicReservasController::class, 'videoExterior'])->name('video-exterior');
-    
+
     // Rutas de reservas públicas
     Route::prefix('reservas')->name('reservas.')->group(function () {
         Route::get('/buscador', [App\Http\Controllers\PublicReservasController::class, 'iframe'])->name('iframe');
@@ -101,14 +101,14 @@ Route::prefix('web')->name('web.')->group(function () {
         Route::post('/buscar', [App\Http\Controllers\PublicReservasController::class, 'buscar'])->name('buscar.post');
         Route::get('/portal', [App\Http\Controllers\PublicReservasController::class, 'portal'])->name('portal');
         Route::get('/apartamento/{id}', [App\Http\Controllers\PublicReservasController::class, 'show'])->name('show');
-        
+
         // Proceso de reserva y pago
         Route::get('/formulario/{apartamento}', [App\Http\Controllers\ReservaPagoController::class, 'formularioReserva'])->name('formulario');
         Route::post('/procesar', [App\Http\Controllers\ReservaPagoController::class, 'procesarReserva'])->name('procesar');
         Route::get('/pago/exito', [App\Http\Controllers\ReservaPagoController::class, 'exito'])->name('pago.exito');
         Route::get('/pago/cancelado', [App\Http\Controllers\ReservaPagoController::class, 'cancelado'])->name('pago.cancelado');
     });
-    
+
     // Servicios y Extras
     Route::prefix('extras')->name('extras.')->group(function () {
         Route::get('/buscar', [App\Http\Controllers\ReservaExtrasController::class, 'buscarReserva'])->name('buscar');
@@ -117,21 +117,21 @@ Route::prefix('web')->name('web.')->group(function () {
         Route::get('/pago/exito', [App\Http\Controllers\ReservaExtrasController::class, 'exito'])->name('pago.exito');
         Route::get('/pago/cancelado', [App\Http\Controllers\ReservaExtrasController::class, 'cancelado'])->name('pago.cancelado');
     });
-    
+
     // Página de servicios
     Route::get('/servicios', [App\Http\Controllers\ServiciosController::class, 'index'])->name('servicios');
     Route::get('/servicios/{servicio}/reserva-rango', [App\Http\Controllers\ServiciosController::class, 'reservaRango'])->name('servicios.reserva-rango');
     Route::post('/servicios/{servicio}/comprobar-disponibilidad', [App\Http\Controllers\ServiciosController::class, 'comprobarDisponibilidad'])->name('servicios.comprobar-disponibilidad');
-    
+
     // Política de Cancelaciones
     Route::get('/politica-cancelaciones', [App\Http\Controllers\PublicPoliticaCancelacionController::class, 'index'])->name('politica-cancelaciones');
-    
+
     // Páginas Legales
     Route::get('/pagina-legal/{slug}', [App\Http\Controllers\PublicPaginaLegalController::class, 'show'])->name('pagina-legal.show');
-    
+
     // Preguntas Frecuentes
     Route::get('/preguntas-frecuentes', [App\Http\Controllers\PublicPreguntasFrecuentesController::class, 'index'])->name('preguntas-frecuentes');
-    
+
     // Autenticación Pública (Clientes)
     Route::get('/login', [App\Http\Controllers\PublicAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [App\Http\Controllers\PublicAuthController::class, 'login']);
@@ -142,7 +142,7 @@ Route::prefix('web')->name('web.')->group(function () {
     Route::get('/establecer-password', [App\Http\Controllers\PublicAuthController::class, 'showEstablecerPasswordForm'])->name('establecer-password');
     Route::post('/establecer-password', [App\Http\Controllers\PublicAuthController::class, 'establecerPassword']);
     Route::post('/logout', [App\Http\Controllers\PublicAuthController::class, 'logout'])->name('logout');
-    
+
     // Perfil de Cliente (requiere autenticación)
     Route::middleware('auth:cliente')->group(function () {
         Route::get('/perfil', [App\Http\Controllers\PublicPerfilController::class, 'index'])->name('perfil');
@@ -152,12 +152,12 @@ Route::prefix('web')->name('web.')->group(function () {
         Route::delete('/perfil/metodo-pago/{paymentMethodId}', [App\Http\Controllers\PublicPerfilController::class, 'eliminarMetodoPago'])->name('perfil.metodo-pago.delete');
         Route::get('/perfil/reserva/{id}', [App\Http\Controllers\PublicPerfilController::class, 'showReserva'])->name('perfil.reserva.show');
     });
-    
+
     // Webhook de Stripe (sin CSRF)
     Route::post('/webhooks/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])
         ->middleware('web')
         ->name('webhooks.stripe');
-    
+
     // Aquí puedes añadir más rutas públicas en el futuro
     // Ejemplo:
     // Route::prefix('contacto')->name('contacto.')->group(function () {
@@ -246,7 +246,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('/apartamentos/store', [App\Http\Controllers\ApartamentosController::class, 'storeAdmin'])->name('apartamentos.admin.store');
     Route::put('/apartamentos/{id}/update', [App\Http\Controllers\ApartamentosController::class, 'updateAdmin'])->name('apartamentos.admin.update');
     Route::post('/apartamentos/{id}/destroy', [App\Http\Controllers\ApartamentosController::class, 'destroy'])->name('apartamentos.admin.destroy');
-    
+
     // Rutas para gestión de fotos
     Route::post('/apartamentos/{id}/photos/upload', [App\Http\Controllers\ApartamentosController::class, 'uploadPhotos'])->name('apartamentos.photos.upload');
     Route::delete('/apartamentos/{id}/photos/{photoId}', [App\Http\Controllers\ApartamentosController::class, 'deletePhoto'])->name('apartamentos.photos.delete');
@@ -262,11 +262,11 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         'update' => 'admin.servicios.update',
         'destroy' => 'admin.servicios.destroy',
     ]);
-    
+
     // Política de Cancelaciones
     Route::get('/politica-cancelacion/edit', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'edit'])->name('admin.politica-cancelacion.edit');
     Route::put('/politica-cancelacion', [App\Http\Controllers\Admin\PoliticaCancelacionController::class, 'update'])->name('admin.politica-cancelacion.update');
-    
+
     // Páginas Legales
     Route::resource('paginas-legales', App\Http\Controllers\Admin\PaginasLegalesController::class)->names([
         'index' => 'admin.paginas-legales.index',
@@ -277,7 +277,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         'update' => 'admin.paginas-legales.update',
         'destroy' => 'admin.paginas-legales.destroy',
     ]);
-    
+
     // Preguntas Frecuentes
     Route::resource('preguntas-frecuentes', App\Http\Controllers\Admin\PreguntasFrecuentesController::class)->names([
         'index' => 'admin.preguntas-frecuentes.index',
@@ -297,7 +297,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         Route::get('/{serviciosTecnico}/edit', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'edit'])->name('edit');
         Route::put('/{serviciosTecnico}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'update'])->name('update');
         Route::delete('/{serviciosTecnico}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'destroy'])->name('destroy');
-        
+
         // Rutas para categorías
         Route::post('/categorias', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'storeCategoria'])->name('storeCategoria');
         Route::put('/categorias/{categoria}', [App\Http\Controllers\Admin\ServiciosTecnicosController::class, 'updateCategoria'])->name('updateCategoria');
@@ -355,7 +355,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     // Configuración de Descuentos
     Route::resource('configuracion-descuentos', ConfiguracionDescuentoController::class);
     Route::post('/configuracion-descuentos/{configuracionDescuento}/toggle-status', [ConfiguracionDescuentoController::class, 'toggleStatus'])->name('configuracion-descuentos.toggle-status');
-    
+
     // Comandos de Descuento
     Route::post('/admin/ejecutar-comando-descuentos', [ComandoDescuentoController::class, 'ejecutarComando'])->name('admin.ejecutar-comando-descuentos');
 
@@ -383,13 +383,13 @@ Route::get('/test-datos-momento/{id}', function($id) {
     if (!$historial) {
         return response()->json(['error' => 'Historial no encontrado']);
     }
-    
+
     if (!$historial->datos_momento) {
         return response()->json(['error' => 'No hay datos del momento disponibles']);
     }
-    
+
     $verificacion = $historial->verificarRequisitosCumplidos();
-    
+
     return response()->json([
         'datos' => $historial->datos_momento,
         'verificacion' => $verificacion,
@@ -446,7 +446,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::get('/reservas/{reserva}/edit', [App\Http\Controllers\ReservasController::class, 'edit'])->name('reservas.edit');
     Route::delete('/reservas/{id}', [App\Http\Controllers\ReservasController::class, 'destroy'])->name('reservas.destroy');
     Route::post('/reservas/{id}/restore', [App\Http\Controllers\ReservasController::class, 'restore'])->name('reservas.restore');
-    
+
     // Cerrar Apartamento
     Route::get('/cerrar-apartamento', [CerrarApartamentoController::class, 'index'])->name('admin.cerrar-apartamento.index');
     Route::get('/cerrar-apartamento/create', [CerrarApartamentoController::class, 'create'])->name('admin.cerrar-apartamento.create');
@@ -627,39 +627,39 @@ Route::get('/test-datos-momento/{id}', function($id) {
     // ============================================
     Route::prefix('configuracion')->name('configuracion.')->group(function () {
         // IMPORTANTE: Las rutas específicas deben ir ANTES de las genéricas con {id}
-        
+
         // Sección: SEO y SEM
         Route::prefix('seo')->name('seo.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'seo'])->name('index');
             Route::post('/update', [App\Http\Controllers\ConfiguracionesController::class, 'updateSeo'])->name('update');
         });
-        
+
         // Sección: MIR Hospedajes (debe ir antes de las rutas genéricas)
         Route::prefix('mir')->name('mir.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'mirHospedajes'])->name('index');
             Route::post('/update', [App\Http\Controllers\ConfiguracionesController::class, 'updateMIR'])->name('update');
         });
-        
+
         // Sección: Portal Público
         Route::prefix('portal-publico')->name('portal-publico.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'portalPublico'])->name('index');
             Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'updatePortalPublico'])->name('update');
         });
-        
+
         // Sección: Credenciales
         Route::prefix('credenciales')->name('credenciales.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'credenciales'])->name('index');
             Route::get('/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('edit');
             Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('update');
         });
-        
+
         // Sección: Contabilidad
         Route::prefix('contabilidad')->name('contabilidad.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'contabilidad'])->name('index');
             Route::post('/saldo-inicial', [App\Http\Controllers\ConfiguracionesController::class, 'saldoInicial'])->name('saldo-inicial');
             Route::post('/update-anio', [App\Http\Controllers\ConfiguracionesController::class, 'updateAnio'])->name('update-anio');
         });
-        
+
         // Sección: Reparaciones
         Route::prefix('reparaciones')->name('reparaciones.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'reparaciones'])->name('index');
@@ -667,7 +667,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
             Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateReparaciones'])->name('update');
             Route::delete('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteReparaciones'])->name('destroy');
         });
-        
+
         // Sección: Limpiadoras
         Route::prefix('limpiadoras')->name('limpiadoras.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'limpiadoras'])->name('index');
@@ -675,7 +675,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
             Route::put('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateLimpiadora'])->name('update');
             Route::delete('/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteLimpiadora'])->name('destroy');
         });
-        
+
         // Sección: Notificaciones
         Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'notificaciones'])->name('index');
@@ -683,19 +683,19 @@ Route::get('/test-datos-momento/{id}', function($id) {
             Route::put('/emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'updateEmailNotificaciones'])->name('emails.update');
             Route::delete('/emails/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteEmailNotificaciones'])->name('emails.destroy');
         });
-        
+
         // Sección: Prompt IA
         Route::prefix('prompt-ia')->name('prompt-ia.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'promptIa'])->name('index');
             Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'actualizarPrompt'])->name('update');
         });
-        
+
         // Sección: Plataforma Estado
         Route::prefix('plataforma-estado')->name('plataforma-estado.')->group(function () {
             Route::get('/', [App\Http\Controllers\ConfiguracionesController::class, 'plataformaEstado'])->name('index');
             Route::post('/', [App\Http\Controllers\ConfiguracionesController::class, 'updateEstado'])->name('update');
         });
-        
+
         // Rutas genéricas legacy (deben ir AL FINAL para no interferir con rutas específicas)
         Route::get('/{id}/edit', [App\Http\Controllers\ConfiguracionesController::class, 'edit'])->name('edit');
         Route::post('/{id}/update', [App\Http\Controllers\ConfiguracionesController::class, 'update'])->name('update');
@@ -747,7 +747,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/facturas/{id}/update-fecha-referencia', [App\Http\Controllers\InvoicesController::class, 'updateFechaYRecalcularReferencia'])->name('admin.facturas.updateFechaReferencia');
     Route::post('/facturas/{id}/recalcular', [App\Http\Controllers\InvoicesController::class, 'recalculateFromReserva'])->name('admin.facturas.recalculate');
     Route::get('/admin/facturas/download-zip', [App\Http\Controllers\InvoicesController::class, 'downloadInvoicesZip'])->name('admin.facturas.downloadZip');
-    
+
     // Facturas Rectificativas
     Route::get('/facturas/{id}/rectificar', [App\Http\Controllers\InvoicesController::class, 'createRectificativa'])->name('admin.facturas.createRectificativa');
     Route::post('/facturas/{id}/rectificar', [App\Http\Controllers\InvoicesController::class, 'storeRectificativa'])->name('admin.facturas.storeRectificativa');
@@ -828,7 +828,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard',[App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/pisos',[App\Http\Controllers\ApartamentosController::class, 'index'])->name('apartamentos.index');
-    
+
 
     Route::get('/reservas-calendar', [App\Http\Controllers\ReservasController::class, 'calendar'])->name('reservas.calendar');
 
@@ -837,13 +837,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/fichajes/pausa/iniciar', [App\Http\Controllers\FichajeController::class, 'iniciarPausa'])->name('fichajes.pausa.iniciar');
     Route::post('/fichajes/pausa/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarPausa'])->name('fichajes.pausa.finalizar');
     Route::post('/fichajes/finalizar', [App\Http\Controllers\FichajeController::class, 'finalizarJornada'])->name('fichajes.finalizar');
-    
+
     //Holidays(Vacaciones users)
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holiday.index');
     Route::get('/holidays/edit/{id}', [HolidayController::class, 'edit'])->name('holiday.edit');
     Route::post('/holidays/store', [HolidayController::class, 'store'])->name('holiday.store');
     Route::get('/holidays/create', [HolidayController::class, 'create'])->name('holiday.create');
-    
+
     // Gestion del Apartamento
     Route::get('/gestion', [App\Http\Controllers\GestionApartamentoController::class, 'index'])->name('gestion.index');
     Route::get('/gestion/estadisticas', [App\Http\Controllers\GestionApartamentoController::class, 'estadisticas'])->name('gestion.estadisticas');
@@ -881,22 +881,22 @@ Route::middleware('auth')->group(function () {
     Route::get('gestion/reservas/apartamentos', [App\Http\Controllers\GestionReservasController::class, 'obtenerApartamentos'])->name('gestion.reservas.apartamentos');
     Route::get('gestion/reservas/estadisticas', [App\Http\Controllers\GestionReservasController::class, 'estadisticas'])->name('gestion.reservas.estadisticas');
     Route::get('gestion/reservas/{id}', [App\Http\Controllers\GestionReservasController::class, 'show'])->name('gestion.reservas.show');
-    
+
     // Rutas de acciones de limpieza (reponer stock y reportar averías)
     Route::post('gestion/limpieza/reponer-stock', [App\Http\Controllers\LimpiezaAccionesController::class, 'reponerStock'])->name('gestion.limpieza.reponer-stock');
     Route::post('gestion/limpieza/reportar-averia', [App\Http\Controllers\LimpiezaAccionesController::class, 'reportarAveria'])->name('gestion.limpieza.reportar-averia');
     Route::get('gestion/limpieza/item-info', [App\Http\Controllers\LimpiezaAccionesController::class, 'getItemInfo'])->name('gestion.limpieza.item-info');
-    
+
     // Rutas de gestión de turnos y tareas
     Route::resource('gestion/turnos', App\Http\Controllers\Admin\TurnosTrabajoController::class)->names('gestion.turnos');
     Route::post('gestion/turnos/generar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'generarTurnos'])->name('gestion.turnos.generar');
     Route::post('gestion/turnos/{turno}/iniciar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'iniciarTurno'])->name('gestion.turnos.iniciar');
     Route::post('gestion/turnos/{turno}/finalizar', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'finalizarTurno'])->name('gestion.turnos.finalizar');
     Route::get('gestion/turnos/estadisticas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'estadisticas'])->name('gestion.turnos.estadisticas');
-    
+
     // Ruta para que las limpiadoras vean sus turnos
     Route::get('gestion/mis-turnos', [App\Http\Controllers\LimpiadoraTurnosController::class, 'index'])->name('gestion.mis-turnos');
-    
+
     // Rutas para gestión de tareas asignadas
     Route::get('gestion/tareas/{tarea}/info', [App\Http\Controllers\GestionApartamentoController::class, 'infoTarea'])->name('gestion.tareas.info');
     Route::post('gestion/tareas/{tarea}/iniciar', [App\Http\Controllers\GestionApartamentoController::class, 'iniciarTarea'])->name('gestion.tareas.iniciar');
@@ -915,7 +915,7 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::resource('admin/tipos-tareas', App\Http\Controllers\Admin\TiposTareasController::class)->names('admin.tipos-tareas');
     Route::post('admin/tipos-tareas/{tiposTarea}/toggle-active', [App\Http\Controllers\Admin\TiposTareasController::class, 'toggleActive'])->name('admin.tipos-tareas.toggle-active');
     Route::post('admin/tipos-tareas/{tiposTarea}/duplicar', [App\Http\Controllers\Admin\TiposTareasController::class, 'duplicar'])->name('admin.tipos-tareas.duplicar');
-    
+
     // Horas extras
     Route::resource('admin/horas-extras', App\Http\Controllers\Admin\HorasExtrasController::class)->names('admin.horas-extras');
     Route::post('admin/horas-extras/{horasExtras}/aprobar', [App\Http\Controllers\Admin\HorasExtrasController::class, 'aprobar'])->name('admin.horas-extras.aprobar');
@@ -924,12 +924,12 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('admin/horas-extras/rechazar-multiples', [App\Http\Controllers\Admin\HorasExtrasController::class, 'rechazarMultiples'])->name('admin.horas-extras.rechazar-multiples');
     Route::get('admin/horas-extras/exportar', [App\Http\Controllers\Admin\HorasExtrasController::class, 'exportar'])->name('admin.horas-extras.exportar');
     Route::get('admin/horas-extras/estadisticas', [App\Http\Controllers\Admin\HorasExtrasController::class, 'estadisticas'])->name('admin.horas-extras.estadisticas');
-    
+
     // Horarios de empleadas
     Route::resource('admin/empleada-horarios', App\Http\Controllers\Admin\EmpleadaHorariosController::class)->names('admin.empleada-horarios');
     Route::post('admin/empleada-horarios/{empleadaHorario}/toggle-active', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'toggleActive'])->name('admin.empleada-horarios.toggle-active');
     Route::get('admin/empleada-horarios/empleadas-sin-horario', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'empleadasSinHorario'])->name('admin.empleada-horarios.empleadas-sin-horario');
-    
+
     // Gestión de tareas en turnos
     Route::post('admin/turnos/tareas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'addTask'])->name('admin.turnos.tareas.store');
     Route::get('admin/turnos/tareas/{tarea}', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'showTask'])->name('admin.turnos.tareas.show');
@@ -939,13 +939,13 @@ Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::post('admin/turnos/tareas/{tarea}/toggle', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'toggleTask'])->name('admin.turnos.tareas.toggle');
     Route::post('admin/turnos/{turno}/reordenar-tareas', [App\Http\Controllers\Admin\TurnosTrabajoController::class, 'reordenarTareas'])->name('admin.turnos.reordenar-tareas');
     Route::post('admin/empleada-horarios/crear-horario-rapido', [App\Http\Controllers\Admin\EmpleadaHorariosController::class, 'crearHorarioRapido'])->name('admin.empleada-horarios.crear-horario-rapido');
-    
+
     // Rutas para gestión de días libres por semana
     Route::get('admin/empleada-horarios/{empleadaHorario}/dias-libres', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'index'])->name('admin.empleada-dias-libres.index');
     Route::get('admin/empleada-horarios/{empleadaHorario}/dias-libres/create', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'create'])->name('admin.empleada-dias-libres.create');
     Route::post('admin/empleada-horarios/{empleadaHorario}/dias-libres', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'store'])->name('admin.empleada-dias-libres.store');
     Route::delete('admin/empleada-horarios/{empleadaHorario}/dias-libres/{semanaInicio}', [App\Http\Controllers\Admin\EmpleadaDiasLibresController::class, 'destroy'])->name('admin.empleada-dias-libres.destroy');
-    
+
     // RUTA DE TEST TEMPORAL - Eliminar después de debuggear
     Route::get('/test-fichaje', function() {
         return response()->json([
@@ -1196,7 +1196,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/alerts/mark-read', [App\Http\Controllers\AlertController::class, 'markAsRead'])->name('alerts.mark-read');
     Route::post('/alerts/mark-all-read', [App\Http\Controllers\AlertController::class, 'markAllAsRead'])->name('alerts.mark-all-read');
     Route::delete('/alerts/{id}', [App\Http\Controllers\AlertController::class, 'destroy'])->name('alerts.destroy');
-    
+
     // Rutas solo para administradores
     Route::middleware(['auth', 'role:ADMIN'])->group(function () {
         Route::post('/alerts/create', [App\Http\Controllers\AlertController::class, 'create'])->name('alerts.create');
@@ -1209,7 +1209,7 @@ Route::middleware(['auth'])->group(function () {
         // Usar la misma ruta que usa el sistema ARI existente
         return redirect("/channex/ari/room-types/{$propertyId}");
     });
-    
+
     Route::get('/api/properties/{propertyId}/room-types/{roomTypeId}/rate-plans', function($propertyId, $roomTypeId) {
         // Usar la misma ruta que usa el sistema ARI existente
         return redirect("/channex/rate-plans/{$propertyId}/{$roomTypeId}");
@@ -1220,15 +1220,15 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/limpiezas', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'index'])->name('limpiezas.index');
     Route::get('/limpiezas/{id}', [App\Http\Controllers\Admin\AdminLimpiezasController::class, 'show'])->name('limpiezas.show');
-    
+
     // Gestión de Zonas Comunes
     Route::resource('zonas-comunes', App\Http\Controllers\Admin\ZonaComunController::class);
     Route::post('/zonas-comunes/{id}/toggle-status', [App\Http\Controllers\Admin\ZonaComunController::class, 'toggleStatus'])->name('zonas-comunes.toggle-status');
-    
+
     // Gestión de Checklists de Zonas Comunes
     Route::resource('checklists-zonas-comunes', App\Http\Controllers\Admin\ChecklistZonaComunController::class);
     Route::post('/checklists-zonas-comunes/{id}/toggle-status', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'toggleStatus'])->name('checklists-zonas-comunes.toggle-status');
-    
+
     // Sistema de Logs
     Route::prefix('logs')->name('logs.')->group(function () {
         Route::get('/', [App\Http\Controllers\LogsController::class, 'index'])->name('index');
@@ -1240,15 +1240,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     });
     Route::get('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'manageItems'])->name('checklists-zonas-comunes.items');
     Route::post('/checklists-zonas-comunes/{id}/items', [App\Http\Controllers\Admin\ChecklistZonaComunController::class, 'storeItem'])->name('checklists-zonas-comunes.store-item');
-    
+
     // Contactos desde la Web
     Route::resource('contactos-web', App\Http\Controllers\Admin\ContactosWebController::class);
     Route::post('/contactos-web/{contactosWeb}/toggle-leido', [App\Http\Controllers\Admin\ContactosWebController::class, 'toggleLeido'])->name('contactos-web.toggle-leido');
-    
+
     // Pagos y Reservas
     Route::resource('pagos', App\Http\Controllers\Admin\PagosController::class);
     Route::get('/pagos/intentos/listado', [App\Http\Controllers\Admin\PagosController::class, 'intentos'])->name('pagos.intentos');
-    
+
     // Gestión de Amenities
     Route::resource('amenities', App\Http\Controllers\Admin\AmenityController::class);
     Route::post('/amenities/{id}/toggle-status', [App\Http\Controllers\Admin\AmenityController::class, 'toggleStatus'])->name('amenities.toggle-status');
@@ -1256,14 +1256,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/amenities/{id}/reposicion', [App\Http\Controllers\Admin\AmenityController::class, 'registrarReposicion'])->name('amenities.reposicion');
     Route::post('/amenities/calcular-consumo', [App\Http\Controllers\Admin\AmenityController::class, 'calcularConsumoReserva'])->name('amenities.calcular-consumo');
     Route::get('/amenities/{id}/consumos', [App\Http\Controllers\Admin\AmenityController::class, 'consumos'])->name('amenities.consumos');
-    
+
     // Sistema de Inventario - Gestión de Proveedores
     Route::resource('proveedores', App\Http\Controllers\Admin\ProveedorController::class);
-    
+
     // Sistema de Inventario - Gestión de Artículos
     Route::resource('articulos', App\Http\Controllers\Admin\ArticuloController::class);
     Route::post('/articulos/{id}/reponer-stock', [App\Http\Controllers\Admin\ArticuloController::class, 'reponerStock'])->name('articulos.reponer-stock');
-    
+
     // Sistema de Inventario - Gestión de Movimientos de Stock
     Route::resource('movimientos-stock', App\Http\Controllers\Admin\MovimientoStockController::class);
     Route::get('/movimientos-stock/exportar', [App\Http\Controllers\Admin\MovimientoStockController::class, 'exportar'])->name('movimientos-stock.exportar');
@@ -1277,11 +1277,11 @@ Route::middleware(['auth'])->prefix('limpiadora')->name('limpiadora.')->group(fu
     Route::get('/turnos/{turno}', [App\Http\Controllers\LimpiadoraTurnosController::class, 'show'])->name('turnos.show');
     Route::post('/turnos/{turno}/iniciar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'iniciarTurno'])->name('turnos.iniciar');
     Route::post('/turnos/{turno}/finalizar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'finalizarTurno'])->name('turnos.finalizar');
-    
+
     // Tareas de limpiadoras
     Route::post('/turnos/tareas/{tarea}/iniciar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'iniciarTarea'])->name('turnos.tareas.iniciar');
     Route::post('/turnos/tareas/{tarea}/completar', [App\Http\Controllers\LimpiadoraTurnosController::class, 'completarTarea'])->name('turnos.tareas.completar');
-    
+
     // Estadísticas de limpiadoras
     Route::get('/estadisticas', [App\Http\Controllers\LimpiadoraTurnosController::class, 'estadisticas'])->name('estadisticas');
 });
@@ -1292,6 +1292,7 @@ Route::middleware(['auth', 'role:MANTENIMIENTO'])->prefix('mantenimiento')->name
     Route::get('/limpieza/{id}/ver', [App\Http\Controllers\MantenimientoLimpiezaController::class, 'show'])->name('limpieza.ver');
     Route::get('/incidencias', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'index'])->name('incidencias.index');
     Route::post('/incidencias/{incidencia}/resolver', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'resolver'])->name('incidencias.resolver');
+    Route::post('/incidencias/{incidencia}/add-photos', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'addPhotos'])->name('incidencias.add-photos');
     Route::get('/incidencias/{incidencia}', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'show'])->name('incidencias.show');
 });
 
@@ -1300,7 +1301,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/amenities-limpieza/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'show'])->name('amenity.limpieza.show');
     Route::post('/amenities-limpieza/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'store'])->name('amenity.limpieza.store');
     Route::get('/amenities/{id}/historial', [App\Http\Controllers\AmenityLimpiezaController::class, 'historial'])->name('amenity.historial');
-    
+
     // Nueva ruta para cargar amenities de una reserva
 Route::get('/amenities-reserva/{reservaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesReserva'])->name('amenity.reserva.get');
 
