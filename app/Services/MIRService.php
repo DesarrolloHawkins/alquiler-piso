@@ -40,18 +40,19 @@ class MIRService
      * Generar el XML para un parte de viajeros (PV)
      * Estructura correcta según documentación MIR:
      * <solicitud> -> <codigoEstablecimiento> + <comunicacion> -> <contrato> + <persona> (para cada viajero)
+     * NOTA: Usar <persona> (NO <viajero>) y envolver en <comunicacion> (NO <reserva>)
      */
     private function generarXMLReserva(Reserva $reserva, $codigoEstablecimiento)
     {
         $cliente = $reserva->cliente;
         $apartamento = $reserva->apartamento;
-        
+
         // Formatear fechas con horas realistas (entrada 14:00, salida 12:00)
         $fechaEntrada = \Carbon\Carbon::parse($reserva->fecha_entrada)->setTime(14, 0, 0);
         $fechaSalida = \Carbon\Carbon::parse($reserva->fecha_salida)->setTime(12, 0, 0);
         $fechaEntradaStr = $fechaEntrada->format('Y-m-d\TH:i:s');
         $fechaSalidaStr = $fechaSalida->format('Y-m-d\TH:i:s');
-        
+
         // Normalizar nacionalidad a código ISO de 3 letras (ESP, FRA, etc.)
         $normalizarNacionalidad = function($nacionalidad) {
             if (empty($nacionalidad)) {
@@ -77,7 +78,7 @@ class MIRService
             // Por defecto, devolver ESP
             return 'ESP';
         };
-        
+
         // Normalizar código de provincia (ej: "Cádiz" -> "CA")
         $normalizarProvincia = function($provincia) {
             if (empty($provincia)) {
@@ -92,7 +93,7 @@ class MIRService
             $provinciaUpper = ucfirst($provincia);
             return $mapaProvincias[$provinciaUpper] ?? strtoupper(substr($provincia, 0, 2));
         };
-        
+
         // Obtener sexo del cliente (H/M)
         $obtenerSexo = function($sexo, $sexoStr = null) {
             // Priorizar sexo_str si está disponible
@@ -102,40 +103,41 @@ class MIRService
                     return $sexoStrUpper === 'F' ? 'M' : 'H'; // F = Mujer = M, M = Hombre = H
                 }
             }
-            
+
             if (empty($sexo)) {
                 return 'H'; // Por defecto
             }
-            
+
             $sexoUpper = strtoupper($sexo);
-            
+
             // Mapeo de valores comunes
             if (in_array($sexoUpper, ['H', 'M', 'HOMBRE', 'MUJER', 'MALE', 'FEMALE', 'FEMENINO', 'MASCULINO'])) {
                 if (in_array($sexoUpper, ['HOMBRE', 'MALE', 'MASCULINO', 'H'])) return 'H';
                 if (in_array($sexoUpper, ['MUJER', 'FEMALE', 'FEMENINO', 'F', 'M'])) return 'M';
             }
-            
+
             // Si empieza con F, es Femenino = M
             if (substr($sexoUpper, 0, 1) === 'F') {
                 return 'M';
             }
-            
+
             return 'H'; // Por defecto
         };
-        
+
         // Construir XML con la estructura correcta según documentación oficial MIR
-        // Formato correcto: <loteReservas> -> <reserva> -> <contrato> + <viajero>
-        // IMPORTANTE: 
-        // - Raíz: <loteReservas xmlns="http://www.mir.es/hospedajes/esquema">
-        // - NO usar <comunicacion> ni <persona>, usar <reserva> y <viajero>
-        // - El archivo dentro del ZIP debe llamarse loteReservas.xml
+        // Formato correcto: <solicitud> -> <comunicacion> -> <contrato> + <persona>
+        // IMPORTANTE:
+        // - Raíz: <solicitud> (SIN namespace)
+        // - Usar <comunicacion> envolviendo el contrato y las personas
+        // - Usar <persona> (NO <viajero>) para cada viajero
+        // - El archivo dentro del ZIP debe llamarse solicitud.xml
         // - Usar indentación de 2 espacios como en el ejemplo oficial
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<loteReservas xmlns="http://www.mir.es/hospedajes/esquema">' . "\n";
+        $xml .= '<solicitud>' . "\n";
         $xml .= '  <codigoEstablecimiento>' . htmlspecialchars($codigoEstablecimiento) . '</codigoEstablecimiento>' . "\n";
-        $xml .= '  <reserva>' . "\n";
-        
-        // Sección contrato (dentro de <reserva>)
+        $xml .= '  <comunicacion>' . "\n";
+
+        // Sección contrato (dentro de <comunicacion>)
         $xml .= '    <contrato>' . "\n";
         $xml .= '      <referencia>' . htmlspecialchars($reserva->codigo_reserva) . '</referencia>' . "\n";
         $xml .= '      <fechaContrato>' . $fechaEntrada->format('Y-m-d') . '</fechaContrato>' . "\n";
@@ -148,15 +150,15 @@ class MIRService
         $xml .= '        <metodo>' . htmlspecialchars($reserva->tipo_pago ?? 'Efectivo') . '</metodo>' . "\n";
         $xml .= '      </pago>' . "\n";
         $xml .= '    </contrato>' . "\n";
-        
+
         // Cliente principal (persona 1)
         $dniCliente = $cliente->num_identificacion ?? null;
         if (empty($dniCliente)) {
             throw new \Exception('El cliente principal no tiene DNI configurado (num_identificacion). Es obligatorio para el envío a MIR.');
         }
-        
-        // Cliente principal como <viajero> (NO <persona>)
-        $xml .= '    <viajero>' . "\n";
+
+        // Cliente principal como <persona> (formato correcto según documentación MIR)
+        $xml .= '    <persona>' . "\n";
         $xml .= '      <rol>VI</rol>' . "\n"; // VI = Viajero
         $xml .= '      <nombre>' . htmlspecialchars($cliente->nombre ?? '') . '</nombre>' . "\n";
         $xml .= '      <apellido1>' . htmlspecialchars($cliente->apellido1 ?? '') . '</apellido1>' . "\n";
@@ -170,18 +172,18 @@ class MIRService
         }
         $xml .= '      <nacionalidad>' . $normalizarNacionalidad($cliente->nacionalidad ?? 'ES') . '</nacionalidad>' . "\n";
         $xml .= '      <sexo>' . $obtenerSexo($cliente->sexo ?? null, $cliente->sexo_str ?? null) . '</sexo>' . "\n";
-        
-        // NOTA: Según el ejemplo de MIR, <viajero> NO incluye dirección, teléfono ni correo
-        // Solo incluye: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
-        
-        $xml .= '    </viajero>' . "\n";
-        
+
+        // NOTA: Según el ejemplo de MIR, <persona> puede incluir dirección, teléfono y correo (opcionales)
+        // Campos básicos: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
+
+        $xml .= '    </persona>' . "\n";
+
         // Huéspedes adicionales (personas 2, 3, ...)
         $huespedes = \App\Models\Huesped::where('reserva_id', $reserva->id)->get();
         foreach ($huespedes as $huesped) {
             $apellido1 = $huesped->primer_apellido ?? $huesped->apellido1 ?? '';
             $apellido2 = $huesped->segundo_apellido ?? $huesped->apellido2 ?? '';
-            
+
             // Validar que el huésped tenga al menos nombre y apellido1
             if (empty($huesped->nombre) || empty($apellido1)) {
                 Log::warning('Huésped con datos incompletos omitido del XML MIR', [
@@ -191,14 +193,14 @@ class MIRService
                 ]);
                 continue;
             }
-            
+
             $dniHuesped = $huesped->numero_identificacion ?? null;
             if (empty($dniHuesped)) {
                 throw new \Exception("El huésped {$huesped->nombre} {$apellido1} no tiene DNI configurado (numero_identificacion). Es obligatorio para el envío a MIR.");
             }
-            
-            // Huéspedes adicionales como <viajero> (NO <persona>)
-            $xml .= '    <viajero>' . "\n";
+
+            // Huéspedes adicionales como <persona> (formato correcto según documentación MIR)
+            $xml .= '    <persona>' . "\n";
             $xml .= '      <rol>VI</rol>' . "\n";
             $xml .= '      <nombre>' . htmlspecialchars($huesped->nombre) . '</nombre>' . "\n";
             $xml .= '      <apellido1>' . htmlspecialchars($apellido1) . '</apellido1>' . "\n";
@@ -212,19 +214,19 @@ class MIRService
             }
             $xml .= '      <nacionalidad>' . $normalizarNacionalidad($huesped->nacionalidad ?? 'ES') . '</nacionalidad>' . "\n";
             $xml .= '      <sexo>' . $obtenerSexo($huesped->sexo ?? null, $huesped->sexo_str ?? null) . '</sexo>' . "\n";
-            
-            // NOTA: Según el ejemplo de MIR, <viajero> NO incluye dirección, teléfono ni correo
-            // Solo incluye: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
-            
-            $xml .= '    </viajero>' . "\n";
+
+            // NOTA: Según el ejemplo de MIR, <persona> puede incluir dirección, teléfono y correo (opcionales)
+            // Campos básicos: rol, nombre, apellido1, apellido2 (opcional), tipoDocumento, numeroDocumento, fechaNacimiento, nacionalidad, sexo
+
+            $xml .= '    </persona>' . "\n";
         }
-        
-        $xml .= '    </reserva>' . "\n";
-        $xml .= '</loteReservas>';
-        
+
+        $xml .= '  </comunicacion>' . "\n";
+        $xml .= '</solicitud>';
+
         return $xml;
     }
-    
+
     /**
      * Determinar el tipo de documento según el formato del DNI para MIR
      * MIR usa: DNI, NIE, PAS (no PASAPORTE)
@@ -234,17 +236,17 @@ class MIRService
         if (empty($dni)) {
             return 'DNI';
         }
-        
+
         // Si empieza con letra y tiene 8 dígitos, es NIE
         if (preg_match('/^[XYZ][0-9]{7}[A-Z]$/i', $dni)) {
             return 'NIE';
         }
-        
+
         // Si tiene 9 caracteres (8 dígitos + letra), es DNI español
         if (preg_match('/^[0-9]{8}[A-Z]$/i', $dni)) {
             return 'DNI';
         }
-        
+
         // Por defecto, asumimos pasaporte (PAS en MIR)
         return 'PAS';
     }
@@ -257,17 +259,17 @@ class MIRService
         if (empty($dni)) {
             return 'DNI';
         }
-        
+
         // Si empieza con letra y tiene 8 dígitos, es NIE
         if (preg_match('/^[XYZ][0-9]{7}[A-Z]$/i', $dni)) {
             return 'NIE';
         }
-        
+
         // Si tiene 9 caracteres (8 dígitos + letra), es DNI español
         if (preg_match('/^[0-9]{8}[A-Z]$/i', $dni)) {
             return 'DNI';
         }
-        
+
         // Por defecto, asumimos pasaporte
         return 'PASAPORTE';
     }
@@ -279,19 +281,19 @@ class MIRService
     {
         $tempZip = tempnam(sys_get_temp_dir(), 'mir_');
         $zip = new ZipArchive();
-        
+
         if ($zip->open($tempZip, ZipArchive::CREATE) !== TRUE) {
             throw new \Exception('No se pudo crear el archivo ZIP');
         }
-        
+
         $zip->addFromString($nombreArchivo, $xml);
         $zip->close();
-        
+
         $zipContent = file_get_contents($tempZip);
         $base64 = base64_encode($zipContent);
-        
+
         unlink($tempZip);
-        
+
         return $base64;
     }
 
@@ -302,28 +304,28 @@ class MIRService
     {
         try {
             $config = $this->getConfig();
-            
+
             // Validar configuración
             if (empty($config['codigo_arrendador']) || empty($config['usuario']) || empty($config['password'])) {
                 throw new \Exception('La configuración de MIR no está completa. Por favor, configure los datos en Configuración > MIR.');
             }
-            
+
             // Cargar las relaciones necesarias de forma explícita
             $reserva->load('apartamento');
             $apartamento = $reserva->apartamento;
-            
+
             if (!$apartamento) {
                 throw new \Exception('La reserva no tiene un apartamento asociado.');
             }
-            
+
             // Cargar explícitamente la relación edificio del apartamento
             $apartamento->load('edificio');
-            
+
             // Obtener código de establecimiento
             // NOTA: En sandbox, puede ser necesario usar el código de las credenciales en lugar del de la reserva
             // si el código de la reserva no está asociado al arrendador en el sistema MIR
             $codigoEstablecimiento = null;
-            
+
             // En sandbox, priorizar el código de la configuración (de las credenciales)
             // porque puede que el código de la reserva no esté asociado al arrendador
             if ($config['entorno'] === 'sandbox' && !empty($config['codigo_establecimiento'])) {
@@ -346,11 +348,11 @@ class MIRService
                     } else {
                         $edificio = $apartamento->edificio;
                     }
-                    
+
                     if ($edificio && !empty($edificio->codigo_establecimiento)) {
                         $codigoEstablecimiento = $edificio->codigo_establecimiento;
                     }
-                    
+
                     // Si aún no tenemos el código, intentar consultar directamente desde DB
                     if (empty($codigoEstablecimiento) && $apartamento->edificio_id) {
                         $codigoEstablecimiento = \DB::table('edificios')
@@ -358,7 +360,7 @@ class MIRService
                             ->value('codigo_establecimiento');
                     }
                 }
-                
+
                 // Si no se encontró en la reserva, usar el de la configuración
                 if (empty($codigoEstablecimiento)) {
                     $codigoEstablecimiento = $config['codigo_establecimiento'];
@@ -367,21 +369,21 @@ class MIRService
                     ]);
                 }
             }
-            
+
             if (empty($codigoEstablecimiento)) {
                 throw new \Exception('No se pudo obtener el código de establecimiento. Verifica que el apartamento, su edificio o la configuración MIR tengan el código configurado.');
             }
-            
+
             Log::info('Código de establecimiento obtenido para MIR', [
                 'reserva_id' => $reserva->id,
                 'codigo_establecimiento' => $codigoEstablecimiento,
                 'apartamento_id' => $apartamento->id,
                 'edificio_id' => $edificio->id ?? null,
             ]);
-            
+
             // Generar XML (pasar codigoEstablecimiento para incluirlo en el XML interno)
             $xml = $this->generarXMLReserva($reserva, $codigoEstablecimiento);
-            
+
             // Validar que el XML esté bien formado
             libxml_use_internal_errors(true);
             $xmlDoc = simplexml_load_string($xml);
@@ -394,12 +396,12 @@ class MIRService
                 libxml_clear_errors();
                 throw new \Exception('El XML generado no está bien formado: ' . implode('; ', $errorMessages));
             }
-            
+
             // Comprimir y codificar
-            // IMPORTANTE: El nombre del archivo dentro del ZIP debe ser EXACTAMENTE "loteReservas.xml"
+            // IMPORTANTE: El nombre del archivo dentro del ZIP debe ser EXACTAMENTE "solicitud.xml"
             // según la especificación MIR para partes de viajeros (PV)
-            $solicitudBase64 = $this->comprimirYCodificar($xml, 'loteReservas.xml');
-            
+            $solicitudBase64 = $this->comprimirYCodificar($xml, 'solicitud.xml');
+
             // Construir XML con formato SOAP según especificación MIR
             // Formato correcto según respuesta del soporte MIR:
             // - SOAP Envelope con namespaces
@@ -422,7 +424,7 @@ class MIRService
             $requestXml .= '      </com:comunicacionRequest>' . "\n";
             $requestXml .= '   </soapenv:Body>' . "\n";
             $requestXml .= '</soapenv:Envelope>';
-            
+
             // Log del XML generado para debugging (solo en sandbox)
             if ($config['entorno'] === 'sandbox') {
                 Log::info('XML generado para MIR (sandbox)', [
@@ -434,26 +436,26 @@ class MIRService
                     'codigo_arrendador' => $config['codigo_arrendador'],
                     'base64_length' => strlen($solicitudBase64),
                 ]);
-                
+
                 // Guardar XML completo en archivo temporal para debugging (sobrescribir si existe)
                 $tempFile = storage_path('logs/mir_request_' . $reserva->id . '.xml');
                 file_put_contents($tempFile, $requestXml);
                 Log::info('XML completo guardado en', ['file' => $tempFile]);
             }
-            
+
             // Preparar autenticación
             $credentials = base64_encode($config['usuario'] . ':' . $config['password']);
-            
+
             // Realizar petición
             $endpoint = $this->getEndpointUrl($config['entorno']);
-            
+
             Log::info('Enviando reserva a MIR', [
                 'reserva_id' => $reserva->id,
                 'codigo_reserva' => $reserva->codigo_reserva,
                 'endpoint' => $endpoint,
                 'entorno' => $config['entorno'],
             ]);
-            
+
             // Configurar la petición HTTP usando cURL directamente
             // Headers para SOAP según especificación MIR
             $headers = [
@@ -463,13 +465,13 @@ class MIRService
                 'Accept: text/xml',
                 'User-Agent: PHP-cURL/8.2'
             ];
-            
+
             Log::info('Headers HTTP configurados', [
                 'headers_count' => count($headers),
                 'has_auth' => !empty($credentials),
                 'endpoint' => $endpoint,
             ]);
-            
+
             $ch = curl_init($endpoint);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
@@ -481,24 +483,24 @@ class MIRService
                 CURLOPT_VERBOSE => $config['entorno'] === 'sandbox', // Log detallado en sandbox
                 CURLOPT_POSTFIELDS => $requestXml, // Asegurar que se envíe el XML
             ]);
-            
+
             // En sandbox, deshabilitar verificación SSL (solo para desarrollo)
             if ($config['entorno'] === 'sandbox') {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             }
-            
+
             // Ejecutar petición
             try {
                 $responseBody = curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
                 curl_close($ch);
-                
+
                 if ($curlError) {
                     throw new \Exception('Error cURL: ' . $curlError);
                 }
-                
+
             } catch (\Exception $e) {
                 if (isset($ch) && is_resource($ch)) {
                     curl_close($ch);
@@ -510,9 +512,9 @@ class MIRService
                 ]);
                 throw $e;
             }
-            
+
             $statusCode = $httpCode;
-            
+
             // Log detallado de la respuesta
             Log::info('Respuesta de MIR', [
                 'reserva_id' => $reserva->id,
@@ -520,7 +522,7 @@ class MIRService
                 'response_body' => $responseBody,
                 'response_length' => strlen($responseBody),
             ]);
-            
+
             // Si hay errores en la respuesta, loguearlos con más detalle
             if ($statusCode >= 400) {
                 // Intentar parsear la respuesta JSON si es posible
@@ -531,7 +533,7 @@ class MIRService
                         $responseData = $jsonResponse;
                     }
                 }
-                
+
                 Log::error('Error en respuesta MIR', [
                     'reserva_id' => $reserva->id,
                     'status_code' => $statusCode,
@@ -542,17 +544,17 @@ class MIRService
                     'codigo_arrendador' => $config['codigo_arrendador'],
                 ]);
             }
-            
+
             // Procesar respuesta
             if ($statusCode === 200) {
                 // Intentar parsear la respuesta XML
                 $xmlResponse = simplexml_load_string($responseBody);
-                
+
                 if ($xmlResponse !== false) {
                     $codigoReferencia = (string) ($xmlResponse->codigoReferencia ?? '');
                     $estado = (string) ($xmlResponse->estado ?? 'enviado');
                     $mensaje = (string) ($xmlResponse->mensaje ?? '');
-                    
+
                     return [
                         'success' => true,
                         'estado' => $estado,
@@ -579,14 +581,14 @@ class MIRService
                     'respuesta_completa' => $responseBody,
                 ];
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error al enviar reserva a MIR', [
                 'reserva_id' => $reserva->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return [
                 'success' => false,
                 'estado' => 'error',

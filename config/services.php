@@ -33,24 +33,24 @@ return [
     'channex' => [
         'webhook_url' => env('CHANNEX_WEBHOOK_URL', 'https://tu-dominio.com/webhook-handler'),
     ],
-    
+
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_MODEL', 'gpt-4o'),
         'max_tokens' => env('OPENAI_MAX_TOKENS', 500),
     ],
-    
+
     'hawkins_ai' => [
         'base_url' => env('HAWKINS_AI_URL', 'https://192.168.1.45/chat'),
         'api_key' => env('HAWKINS_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
         'model' => env('HAWKINS_AI_MODEL', 'qwen2.5vl:latest'),
     ],
-    
+
     'recaptcha' => [
         'site_key' => env('RECAPTCHA_SITE_KEY'),
         'secret_key' => env('RECAPTCHA_SECRET_KEY'),
     ],
-    
+
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),

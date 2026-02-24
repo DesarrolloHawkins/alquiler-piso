@@ -872,6 +872,7 @@ Route::middleware('auth')->group(function () {
     Route::get('gestion/incidencias/{id}', [GestionIncidenciasController::class, 'show'])->name('gestion.incidencias.show');
     Route::get('gestion/incidencias/{id}/edit', [GestionIncidenciasController::class, 'edit'])->name('gestion.incidencias.edit');
     Route::post('gestion/incidencias/{id}/update', [GestionIncidenciasController::class, 'update'])->name('gestion.incidencias.update');
+    Route::post('gestion/incidencias/{id}/add-photos', [GestionIncidenciasController::class, 'addPhotos'])->name('gestion.incidencias.add-photos');
     Route::post('gestion/incidencias/{id}/destroy', [GestionIncidenciasController::class, 'destroy'])->name('gestion.incidencias.destroy');
 
     // Rutas de gestión de reservas
