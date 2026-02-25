@@ -16,9 +16,26 @@ class AlertController extends Controller
     {
         $alerts = AlertService::getUnreadAlerts();
         
+        // Serializar las alertas para que incluyan todos los campos necesarios
+        $alertsArray = $alerts->map(function ($alert) {
+            return [
+                'id' => $alert->id,
+                'type' => $alert->type,
+                'scenario' => $alert->scenario,
+                'title' => $alert->title,
+                'content' => $alert->content,
+                'action_url' => $alert->action_url,
+                'action_text' => $alert->action_text,
+                'is_read' => $alert->is_read,
+                'is_dismissible' => $alert->is_dismissible,
+                'created_at' => $alert->created_at?->toIso8601String() ?? $alert->created_at,
+                'metadata' => $alert->metadata,
+            ];
+        });
+        
         return response()->json([
             'success' => true,
-            'alerts' => $alerts
+            'alerts' => $alertsArray
         ]);
     }
 
