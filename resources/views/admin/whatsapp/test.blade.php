@@ -149,6 +149,237 @@
         </div>
     </div>
 
+    @if(session('debug_data'))
+        <div class="test-card">
+            <div class="test-card-header">
+                <h5>
+                    <i class="fas fa-bug"></i> Información de Debug
+                    <button class="btn btn-sm btn-outline-secondary float-end" onclick="toggleDebug()">
+                        <i class="fas fa-chevron-down" id="debug-toggle-icon"></i>
+                    </button>
+                </h5>
+            </div>
+            <div class="test-card-body" id="debug-section" style="display: none;">
+                @php
+                    $debug = session('debug_data');
+                @endphp
+
+                <!-- Resumen -->
+                <div class="mb-4">
+                    <h6 class="text-primary"><i class="fas fa-info-circle"></i> Resumen</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <th width="200">Timestamp</th>
+                                <td>{{ $debug['timestamp'] ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Template</th>
+                                <td>
+                                    {{ $debug['template_name'] ?? 'N/A' }}
+                                    @if(isset($debug['template_status']))
+                                        <span class="badge bg-{{ $debug['template_status'] === 'APPROVED' ? 'success' : 'warning' }}">
+                                            {{ $debug['template_status'] }}
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Teléfono Original</th>
+                                <td>{{ $debug['phone_original'] ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Teléfono Normalizado</th>
+                                <td>{{ $debug['phone_normalized'] ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status Code HTTP</th>
+                                <td>
+                                    <span class="badge bg-{{ ($debug['status_code'] ?? 0) >= 200 && ($debug['status_code'] ?? 0) < 300 ? 'success' : 'danger' }}">
+                                        {{ $debug['status_code'] ?? 'N/A' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @if(isset($debug['message_id']))
+                            <tr>
+                                <th>Message ID</th>
+                                <td>
+                                    <code>{{ $debug['message_id'] }}</code>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="refreshMessageStatus('{{ $debug['message_id'] }}')">
+                                        <i class="fas fa-sync-alt"></i> Actualizar Estado
+                                    </button>
+                                </td>
+                            </tr>
+                            @endif
+                            @if(isset($debug['success']))
+                            <tr>
+                                <th>Resultado</th>
+                                <td>
+                                    <span class="badge bg-success">Éxito</span>
+                                </td>
+                            </tr>
+                            @endif
+                            @if(isset($debug['error']))
+                            <tr>
+                                <th>Error</th>
+                                <td>
+                                    <span class="badge bg-danger">Error {{ $debug['error']['code'] ?? 'N/A' }}</span>
+                                </td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Errores -->
+                @if(isset($debug['error']))
+                <div class="mb-4">
+                    <h6 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Detalles del Error</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <th width="200">Código</th>
+                                <td><code>{{ $debug['error']['code'] ?? 'N/A' }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Tipo</th>
+                                <td>{{ $debug['error']['type'] ?? 'N/A' }}</td>
+                            </tr>
+                            @if(isset($debug['error']['subcode']))
+                            <tr>
+                                <th>Subcódigo</th>
+                                <td><code>{{ $debug['error']['subcode'] }}</code></td>
+                            </tr>
+                            @endif
+                            <tr>
+                                <th>Mensaje</th>
+                                <td>{{ $debug['error']['message'] ?? 'N/A' }}</td>
+                            </tr>
+                            @if(isset($debug['error']['fbtrace_id']))
+                            <tr>
+                                <th>FB Trace ID</th>
+                                <td><code>{{ $debug['error']['fbtrace_id'] }}</code></td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Estado del Mensaje en BD -->
+                @if(isset($debug['mensaje_db']))
+                <div class="mb-4">
+                    <h6 class="text-info"><i class="fas fa-database"></i> Estado en Base de Datos</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <th width="200">ID Mensaje</th>
+                                <td>{{ $debug['mensaje_db']['id'] ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Estado Actual</th>
+                                <td>
+                                    <span class="badge bg-{{ $debug['mensaje_db']['estado_actual'] === 'delivered' ? 'success' : ($debug['mensaje_db']['estado_actual'] === 'failed' ? 'danger' : 'warning') }}">
+                                        {{ $debug['mensaje_db']['estado_actual'] ?? 'N/A' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @if(!empty($debug['mensaje_db']['estados_historial']))
+                            <tr>
+                                <th>Historial de Estados</th>
+                                <td>
+                                    <ul class="mb-0">
+                                        @foreach($debug['mensaje_db']['estados_historial'] as $estado)
+                                        <li>
+                                            <span class="badge bg-secondary">{{ $estado['estado'] }}</span>
+                                            - {{ $estado['fecha'] ?? 'N/A' }}
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endif
+                            @if(!empty($debug['mensaje_db']['errores']))
+                            <tr>
+                                <th>Errores</th>
+                                <td>
+                                    <pre class="bg-light p-2 rounded"><code>{{ json_encode($debug['mensaje_db']['errores'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                </td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Payload Enviado -->
+                @if(isset($debug['payload']))
+                <div class="mb-4">
+                    <h6 class="text-primary"><i class="fas fa-paper-plane"></i> Payload Enviado</h6>
+                    <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"><code>{{ json_encode($debug['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                </div>
+                @endif
+
+                <!-- Respuesta de la API -->
+                @if(isset($debug['response_json']))
+                <div class="mb-4">
+                    <h6 class="text-success"><i class="fas fa-reply"></i> Respuesta de WhatsApp API</h6>
+                    <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"><code>{{ json_encode($debug['response_json'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                </div>
+                @endif
+
+                <!-- Response Body Raw -->
+                @if(isset($debug['response_body']))
+                <div class="mb-4">
+                    <h6 class="text-secondary"><i class="fas fa-file-code"></i> Response Body (Raw)</h6>
+                    <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"><code>{{ $debug['response_body'] }}</code></pre>
+                </div>
+                @endif
+
+                <!-- URL -->
+                @if(isset($debug['url']))
+                <div class="mb-4">
+                    <h6 class="text-info"><i class="fas fa-link"></i> URL de la API</h6>
+                    <code>{{ $debug['url'] }}</code>
+                </div>
+                @endif
+
+                <!-- Excepciones -->
+                @if(isset($debug['exception']))
+                <div class="mb-4">
+                    <h6 class="text-danger"><i class="fas fa-exclamation-circle"></i> Excepción</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <th width="200">Mensaje</th>
+                                <td>{{ $debug['error_message'] ?? 'N/A' }}</td>
+                            </tr>
+                            @if(isset($debug['error_trace']))
+                            <tr>
+                                <th>Stack Trace</th>
+                                <td>
+                                    <pre class="bg-light p-2 rounded" style="max-height: 200px; overflow-y: auto; font-size: 11px;"><code>{{ $debug['error_trace'] }}</code></pre>
+                                </td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Error de BD -->
+                @if(isset($debug['db_error']))
+                <div class="mb-4">
+                    <h6 class="text-warning"><i class="fas fa-database"></i> Error al Guardar en BD</h6>
+                    <div class="alert alert-warning">
+                        {{ $debug['db_error'] }}
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <div class="test-card">
         <div class="test-card-header">
             <h5>Información</h5>
@@ -157,11 +388,93 @@
             <p><strong>Nota:</strong> Este test enviará un mensaje real de WhatsApp al número especificado usando el template seleccionado.</p>
             <p>Los parámetros del template se pueden dejar vacíos si el template no los requiere.</p>
             <p>Si el envío falla, se creará una alerta en el panel de administrador.</p>
+            <p><strong>Debug:</strong> Después de cada envío, se mostrará una sección con toda la información técnica (payload, respuesta, errores, etc.)</p>
         </div>
     </div>
 </div>
 
 <script>
+function toggleDebug() {
+    const debugSection = document.getElementById('debug-section');
+    const toggleIcon = document.getElementById('debug-toggle-icon');
+    
+    if (debugSection.style.display === 'none') {
+        debugSection.style.display = 'block';
+        toggleIcon.classList.remove('fa-chevron-down');
+        toggleIcon.classList.add('fa-chevron-up');
+    } else {
+        debugSection.style.display = 'none';
+        toggleIcon.classList.remove('fa-chevron-up');
+        toggleIcon.classList.add('fa-chevron-down');
+    }
+}
+
+// Auto-expandir debug si hay errores
+document.addEventListener('DOMContentLoaded', function() {
+    @php
+        $hasError = session('debug_data') && (isset(session('debug_data')['error']) || isset(session('debug_data')['exception']));
+    @endphp
+    @if($hasError)
+        toggleDebug();
+    @endif
+});
+
+function refreshMessageStatus(messageId) {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    
+    // Mostrar loading
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    fetch(`/admin/whatsapp/test/message/${messageId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar la sección de estado en BD
+                const estadoSection = document.querySelector('#debug-section .text-info');
+                if (estadoSection) {
+                    const estadoRow = estadoSection.closest('.mb-4').querySelector('table');
+                    if (estadoRow) {
+                        // Actualizar estado actual
+                        const estadoBadge = estadoRow.querySelector('tr:nth-child(2) td');
+                        if (estadoBadge) {
+                            const badgeClass = data.mensaje.estado_actual === 'delivered' ? 'success' : 
+                                             (data.mensaje.estado_actual === 'failed' ? 'danger' : 'warning');
+                            estadoBadge.innerHTML = `<span class="badge bg-${badgeClass}">${data.mensaje.estado_actual}</span>`;
+                        }
+                        
+                        // Actualizar historial
+                        if (data.mensaje.estados_historial && data.mensaje.estados_historial.length > 0) {
+                            const historialRow = estadoRow.querySelector('tr:nth-child(3)');
+                            if (historialRow) {
+                                let historialHtml = '<ul class="mb-0">';
+                                data.mensaje.estados_historial.forEach(estado => {
+                                    historialHtml += `<li><span class="badge bg-secondary">${estado.estado}</span> - ${estado.fecha || 'N/A'}</li>`;
+                                });
+                                historialHtml += '</ul>';
+                                historialRow.querySelector('td').innerHTML = historialHtml;
+                            }
+                        }
+                    }
+                }
+                
+                // Mostrar notificación
+                alert('Estado actualizado: ' + data.mensaje.estado_actual);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al consultar el estado del mensaje');
+        })
+        .finally(() => {
+            icon.classList.remove('fa-spin');
+            btn.disabled = false;
+        });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const templateSelect = document.getElementById('template_name');
     const parametersList = document.getElementById('parameters-list');

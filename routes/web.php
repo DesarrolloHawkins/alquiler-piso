@@ -1194,6 +1194,7 @@ Route::put('/templates/{template}', [WhatsappTemplateController::class, 'update'
 Route::middleware(['auth', 'role:ADMIN'])->group(function () {
     Route::get('/admin/whatsapp/test', [App\Http\Controllers\Admin\WhatsappTestController::class, 'index'])->name('admin.whatsapp.test');
     Route::post('/admin/whatsapp/test/send', [App\Http\Controllers\Admin\WhatsappTestController::class, 'sendTest'])->name('admin.whatsapp.test.send');
+    Route::get('/admin/whatsapp/test/message/{messageId}/status', [App\Http\Controllers\Admin\WhatsappTestController::class, 'getMessageStatus'])->name('admin.whatsapp.test.message.status');
 });
 
 // Rutas para alertas
