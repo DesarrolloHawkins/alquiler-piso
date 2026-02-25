@@ -279,11 +279,44 @@
                             <tr>
                                 <th>Estado Actual</th>
                                 <td>
-                                    <span class="badge bg-{{ $debug['mensaje_db']['estado_actual'] === 'delivered' ? 'success' : ($debug['mensaje_db']['estado_actual'] === 'failed' ? 'danger' : 'warning') }}">
-                                        {{ $debug['mensaje_db']['estado_actual'] ?? 'N/A' }}
+                                    @php
+                                        $estado = $debug['mensaje_db']['estado_actual'] ?? 'unknown';
+                                        $badgeClass = $estado === 'delivered' ? 'success' : 
+                                                     ($estado === 'failed' ? 'danger' : 
+                                                     ($estado === 'read' ? 'info' : 'warning'));
+                                    @endphp
+                                    <span class="badge bg-{{ $badgeClass }}">
+                                        {{ $estado }}
                                     </span>
+                                    @if($estado === 'failed')
+                                        <span class="text-danger ms-2"><i class="fas fa-exclamation-triangle"></i> El mensaje falló</span>
+                                    @endif
                                 </td>
                             </tr>
+                            @if(isset($debug['mensaje_db']['conversacion_id']))
+                            <tr>
+                                <th>Conversación ID</th>
+                                <td><code>{{ $debug['mensaje_db']['conversacion_id'] }}</code></td>
+                            </tr>
+                            @endif
+                            @if(isset($debug['mensaje_db']['categoria_precio']))
+                            <tr>
+                                <th>Categoría Precio</th>
+                                <td>{{ $debug['mensaje_db']['categoria_precio'] }}</td>
+                            </tr>
+                            @endif
+                            @if(isset($debug['mensaje_db']['billable']))
+                            <tr>
+                                <th>Facturable</th>
+                                <td>{{ $debug['mensaje_db']['billable'] ? 'Sí' : 'No' }}</td>
+                            </tr>
+                            @endif
+                            @if(isset($debug['mensaje_db']['fecha_mensaje']))
+                            <tr>
+                                <th>Fecha Mensaje</th>
+                                <td>{{ $debug['mensaje_db']['fecha_mensaje'] }}</td>
+                            </tr>
+                            @endif
                             @if(!empty($debug['mensaje_db']['estados_historial']))
                             <tr>
                                 <th>Historial de Estados</th>
@@ -291,7 +324,12 @@
                                     <ul class="mb-0">
                                         @foreach($debug['mensaje_db']['estados_historial'] as $estado)
                                         <li>
-                                            <span class="badge bg-secondary">{{ $estado['estado'] }}</span>
+                                            @php
+                                                $badgeClass = $estado['estado'] === 'delivered' ? 'success' : 
+                                                             ($estado['estado'] === 'failed' ? 'danger' : 
+                                                             ($estado['estado'] === 'read' ? 'info' : 'secondary'));
+                                            @endphp
+                                            <span class="badge bg-{{ $badgeClass }}">{{ $estado['estado'] }}</span>
                                             - {{ $estado['fecha'] ?? 'N/A' }}
                                         </li>
                                         @endforeach
@@ -299,9 +337,35 @@
                                 </td>
                             </tr>
                             @endif
-                            @if(!empty($debug['mensaje_db']['errores']))
+                            @if(!empty($debug['mensaje_db']['errores_detalle']))
                             <tr>
-                                <th>Errores</th>
+                                <th>Errores Detallados</th>
+                                <td>
+                                    @foreach($debug['mensaje_db']['errores_detalle'] as $error)
+                                    <div class="alert alert-danger mb-2">
+                                        <strong><i class="fas fa-exclamation-circle"></i> Error {{ $error['codigo'] ?? 'N/A' }}</strong>
+                                        @if(isset($error['tipo']))
+                                            <span class="badge bg-secondary ms-2">{{ $error['tipo'] }}</span>
+                                        @endif
+                                        @if(isset($error['subcodigo']))
+                                            <span class="badge bg-warning ms-2">Subcódigo: {{ $error['subcodigo'] }}</span>
+                                        @endif
+                                        <br>
+                                        <strong>Título:</strong> {{ $error['titulo'] ?? 'N/A' }}<br>
+                                        <strong>Mensaje:</strong> {{ $error['mensaje'] ?? 'N/A' }}
+                                        @if(isset($error['raw']))
+                                        <details class="mt-2">
+                                            <summary class="text-muted" style="cursor: pointer;">Ver detalles técnicos</summary>
+                                            <pre class="bg-light p-2 rounded mt-2" style="font-size: 11px;"><code>{{ json_encode($error['raw'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                        </details>
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                </td>
+                            </tr>
+                            @elseif(!empty($debug['mensaje_db']['errores']))
+                            <tr>
+                                <th>Errores (Raw)</th>
                                 <td>
                                     <pre class="bg-light p-2 rounded"><code>{{ json_encode($debug['mensaje_db']['errores'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
                                 </td>
@@ -431,36 +495,8 @@ function refreshMessageStatus(messageId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar la sección de estado en BD
-                const estadoSection = document.querySelector('#debug-section .text-info');
-                if (estadoSection) {
-                    const estadoRow = estadoSection.closest('.mb-4').querySelector('table');
-                    if (estadoRow) {
-                        // Actualizar estado actual
-                        const estadoBadge = estadoRow.querySelector('tr:nth-child(2) td');
-                        if (estadoBadge) {
-                            const badgeClass = data.mensaje.estado_actual === 'delivered' ? 'success' : 
-                                             (data.mensaje.estado_actual === 'failed' ? 'danger' : 'warning');
-                            estadoBadge.innerHTML = `<span class="badge bg-${badgeClass}">${data.mensaje.estado_actual}</span>`;
-                        }
-                        
-                        // Actualizar historial
-                        if (data.mensaje.estados_historial && data.mensaje.estados_historial.length > 0) {
-                            const historialRow = estadoRow.querySelector('tr:nth-child(3)');
-                            if (historialRow) {
-                                let historialHtml = '<ul class="mb-0">';
-                                data.mensaje.estados_historial.forEach(estado => {
-                                    historialHtml += `<li><span class="badge bg-secondary">${estado.estado}</span> - ${estado.fecha || 'N/A'}</li>`;
-                                });
-                                historialHtml += '</ul>';
-                                historialRow.querySelector('td').innerHTML = historialHtml;
-                            }
-                        }
-                    }
-                }
-                
-                // Mostrar notificación
-                alert('Estado actualizado: ' + data.mensaje.estado_actual);
+                // Recargar la página para mostrar toda la información actualizada
+                window.location.reload();
             } else {
                 alert('Error: ' + data.message);
             }
