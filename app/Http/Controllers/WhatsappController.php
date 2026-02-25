@@ -87,14 +87,32 @@ class WhatsappController extends Controller
         // 4. Procesar mensajes entrantes
         if (isset($entry['messages'])) {
             foreach ($entry['messages'] as $mensaje) {
-                $this->procesarMensajeYResponder($mensaje, $entry);
+                try {
+                    $this->procesarMensajeYResponder($mensaje, $entry);
+                } catch (\Exception $e) {
+                    Log::error('Error procesando mensaje de WhatsApp', [
+                        'mensaje_id' => $mensaje['id'] ?? 'unknown',
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Continuar con el siguiente mensaje aunque este falle
+                }
             }
         }
 
         // 5. Procesar estados de mensajes enviados
         if (isset($entry['statuses'])) {
             foreach ($entry['statuses'] as $status) {
-                $this->procesarStatus($status);
+                try {
+                    $this->procesarStatus($status);
+                } catch (\Exception $e) {
+                    Log::error('Error procesando estado de WhatsApp', [
+                        'status_id' => $status['id'] ?? 'unknown',
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Continuar con el siguiente estado aunque este falle
+                }
             }
         }
 
@@ -154,14 +172,17 @@ class WhatsappController extends Controller
             $contenido = '[Documento] ' . ($mensaje['document']['filename'] ?? 'sin nombre');
         }
 
-        $whatsappMensaje = WhatsappMensaje::create([
-            'mensaje_id' => $id,
-            'tipo' => $tipo,
-            'contenido' => $contenido,
-            'remitente' => $waId,
-            'fecha_mensaje' => $timestamp ? Carbon::createFromTimestamp($timestamp) : now(),
-            'metadata' => $mensaje
-        ]);
+        // Usar firstOrCreate para evitar errores de duplicado cuando WhatsApp reenvía el webhook
+        $whatsappMensaje = WhatsappMensaje::firstOrCreate(
+            ['mensaje_id' => $id],
+            [
+                'tipo' => $tipo,
+                'contenido' => $contenido,
+                'remitente' => $waId,
+                'fecha_mensaje' => $timestamp ? Carbon::createFromTimestamp($timestamp) : now(),
+                'metadata' => $mensaje
+            ]
+        );
 
         // Solo si es texto, responde con ChatGPT
         if ($tipo === 'text') {
@@ -1529,14 +1550,17 @@ class WhatsappController extends Controller
         if (isset($responseJson['messages'][0]['id'])) {
             $whatsappMessageId = $responseJson['messages'][0]['id'];
 
-            WhatsappMensaje::create([
-                'mensaje_id' => $whatsappMessageId,
-                'tipo' => 'text',
-                'contenido' => $texto,
-                'remitente' => null, // este es un mensaje saliente, puedes usar un valor especial
-                'fecha_mensaje' => now(),
-                'metadata' => $mensajePersonalizado,
-            ]);
+            // Usar firstOrCreate para evitar duplicados si se llama múltiples veces
+            WhatsappMensaje::firstOrCreate(
+                ['mensaje_id' => $whatsappMessageId],
+                [
+                    'tipo' => 'text',
+                    'contenido' => $texto,
+                    'remitente' => null, // este es un mensaje saliente, puedes usar un valor especial
+                    'fecha_mensaje' => now(),
+                    'metadata' => $mensajePersonalizado,
+                ]
+            );
 
             if ($chatGptId) {
                 ChatGpt::where('id', $chatGptId)->update([
