@@ -1303,7 +1303,6 @@ Route::middleware(['auth', 'role:MANTENIMIENTO'])->prefix('mantenimiento')->name
     Route::post('/incidencias/{incidencia}/add-photos', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'addPhotos'])->name('incidencias.add-photos');
     Route::get('/incidencias/{incidencia}', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'show'])->name('incidencias.show');
 });
-});
 
 // Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)
 Route::middleware(['auth'])->group(function () {
@@ -1312,10 +1311,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/amenities/{id}/historial', [App\Http\Controllers\AmenityLimpiezaController::class, 'historial'])->name('amenity.historial');
 
     // Nueva ruta para cargar amenities de una reserva
-Route::get('/amenities-reserva/{reservaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesReserva'])->name('amenity.reserva.get');
+    Route::get('/amenities-reserva/{reservaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesReserva'])->name('amenity.reserva.get');
 
-// Nueva ruta para cargar amenities de una limpieza completada
-Route::get('/amenities-limpieza-completada/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesLimpiezaCompletada'])->name('amenity.limpieza.completada');
+    // Nueva ruta para cargar amenities de una limpieza completada
+    Route::get('/amenities-limpieza-completada/{limpiezaId}', [App\Http\Controllers\AmenityLimpiezaController::class, 'getAmenitiesLimpiezaCompletada'])->name('amenity.limpieza.completada');
 });
 
 // Ruta específica para estadísticas de admin (FUERA del grupo para evitar conflictos)
