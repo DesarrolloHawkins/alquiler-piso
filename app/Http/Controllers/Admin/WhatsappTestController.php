@@ -278,11 +278,6 @@ class WhatsappTestController extends Controller
                     $debugData['mensaje_db'] = [
                         'id' => $mensajeGuardado->id,
                         'estado_actual' => $mensajeGuardado->estado,
-                        'conversacion_id' => $mensajeGuardado->conversacion_id,
-                        'categoria_precio' => $mensajeGuardado->categoria_precio,
-                        'modelo_precio' => $mensajeGuardado->modelo_precio,
-                        'billable' => $mensajeGuardado->billable,
-                        'fecha_mensaje' => $mensajeGuardado->fecha_mensaje,
                         'estados_historial' => $mensajeGuardado->estados->map(function($estado) {
                             return [
                                 'estado' => $estado->estado,
@@ -290,7 +285,6 @@ class WhatsappTestController extends Controller
                             ];
                         })->toArray(),
                         'errores' => $mensajeGuardado->errores,
-                        'errores_detalle' => $this->formatErrores($mensajeGuardado->errores),
                     ];
                 }
                 
@@ -369,13 +363,8 @@ class WhatsappTestController extends Controller
                     'id' => $mensaje->id,
                     'mensaje_id' => $mensaje->mensaje_id,
                     'estado_actual' => $mensaje->estado,
-                    'conversacion_id' => $mensaje->conversacion_id,
-                    'categoria_precio' => $mensaje->categoria_precio,
-                    'modelo_precio' => $mensaje->modelo_precio,
-                    'billable' => $mensaje->billable,
                     'fecha_mensaje' => $mensaje->fecha_mensaje,
                     'errores' => $mensaje->errores,
-                    'errores_detalle' => $this->formatErrores($mensaje->errores),
                     'estados_historial' => $mensaje->estados->map(function($estado) {
                         return [
                             'estado' => $estado->estado,
@@ -390,39 +379,5 @@ class WhatsappTestController extends Controller
                 'message' => 'Error al consultar estado: ' . $e->getMessage(),
             ], 500);
         }
-    }
-
-    /**
-     * Formatear errores para mostrar de forma legible
-     */
-    private function formatErrores($errores)
-    {
-        if (empty($errores)) {
-            return null;
-        }
-
-        if (!is_array($errores)) {
-            return $errores;
-        }
-
-        $formateados = [];
-        
-        // Los errores pueden venir como array de objetos o como array simple
-        foreach ($errores as $error) {
-            if (is_array($error)) {
-                $formateados[] = [
-                    'codigo' => $error['code'] ?? $error['error_code'] ?? 'N/A',
-                    'titulo' => $error['title'] ?? $error['error_title'] ?? 'Error',
-                    'mensaje' => $error['message'] ?? $error['error_message'] ?? 'Sin mensaje',
-                    'tipo' => $error['type'] ?? $error['error_type'] ?? 'unknown',
-                    'subcodigo' => $error['error_subcode'] ?? $error['subcode'] ?? null,
-                    'raw' => $error,
-                ];
-            } else {
-                $formateados[] = ['raw' => $error];
-            }
-        }
-
-        return $formateados;
     }
 }
