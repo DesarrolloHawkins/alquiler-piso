@@ -495,172 +495,20 @@ function refreshMessageStatus(messageId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Actualizar la sección de estado en BD sin recargar la página
-                updateEstadoSection(data.mensaje);
-                
-                // Mostrar notificación de éxito
-                showNotification('Estado actualizado: ' + data.mensaje.estado_actual, 'success');
+                // Recargar la página para mostrar toda la información actualizada
+                window.location.reload();
             } else {
-                showNotification('Error: ' + data.message, 'error');
+                alert('Error: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('Error al consultar el estado del mensaje', 'error');
+            alert('Error al consultar el estado del mensaje');
         })
         .finally(() => {
             icon.classList.remove('fa-spin');
             btn.disabled = false;
         });
-}
-
-function updateEstadoSection(mensaje) {
-    const estadoSection = document.querySelector('#debug-section .text-info');
-    if (!estadoSection) return;
-    
-    const table = estadoSection.closest('.mb-4').querySelector('table');
-    if (!table) return;
-    
-    // Actualizar estado actual (segunda fila)
-    const estadoRow = table.querySelector('tr:nth-child(2)');
-    if (estadoRow) {
-        const badgeClass = mensaje.estado_actual === 'delivered' ? 'success' : 
-                          (mensaje.estado_actual === 'failed' ? 'danger' : 
-                          (mensaje.estado_actual === 'read' ? 'info' : 'warning'));
-        
-        let estadoHtml = `<span class="badge bg-${badgeClass}">${mensaje.estado_actual}</span>`;
-        if (mensaje.estado_actual === 'failed') {
-            estadoHtml += ' <span class="text-danger ms-2"><i class="fas fa-exclamation-triangle"></i> El mensaje falló</span>';
-        }
-        
-        estadoRow.querySelector('td').innerHTML = estadoHtml;
-    }
-    
-    // Actualizar historial de estados
-    if (mensaje.estados_historial && mensaje.estados_historial.length > 0) {
-        // Buscar fila de historial
-        let historialRow = null;
-        const rows = table.querySelectorAll('tr');
-        rows.forEach(row => {
-            const th = row.querySelector('th');
-            if (th && th.textContent.includes('Historial de Estados')) {
-                historialRow = row;
-            }
-        });
-        
-        if (!historialRow) {
-            // Crear nueva fila si no existe
-            const tbody = table.querySelector('tbody') || table;
-            historialRow = document.createElement('tr');
-            historialRow.innerHTML = '<th width="200">Historial de Estados</th><td></td>';
-            tbody.appendChild(historialRow);
-        }
-        
-        let historialHtml = '<ul class="mb-0">';
-        mensaje.estados_historial.forEach(estado => {
-            const badgeClass = estado.estado === 'delivered' ? 'success' : 
-                              (estado.estado === 'failed' ? 'danger' : 
-                              (estado.estado === 'read' ? 'info' : 'secondary'));
-            historialHtml += `<li><span class="badge bg-${badgeClass}">${estado.estado}</span> - ${estado.fecha || 'N/A'}</li>`;
-        });
-        historialHtml += '</ul>';
-        historialRow.querySelector('td').innerHTML = historialHtml;
-    }
-    
-    // Actualizar errores si existen
-    if (mensaje.errores_detalle && mensaje.errores_detalle.length > 0) {
-        // Buscar fila de errores
-        let erroresRow = null;
-        const rows = table.querySelectorAll('tr');
-        rows.forEach(row => {
-            const th = row.querySelector('th');
-            if (th && (th.textContent.includes('Errores Detallados') || th.textContent.includes('Errores'))) {
-                erroresRow = row;
-            }
-        });
-        
-        if (!erroresRow) {
-            // Crear nueva fila si no existe
-            const tbody = table.querySelector('tbody') || table;
-            erroresRow = document.createElement('tr');
-            erroresRow.innerHTML = '<th width="200">Errores Detallados</th><td></td>';
-            tbody.appendChild(erroresRow);
-        }
-        
-        let erroresHtml = '';
-        mensaje.errores_detalle.forEach(error => {
-            erroresHtml += `
-                <div class="alert alert-danger mb-2">
-                    <strong><i class="fas fa-exclamation-circle"></i> Error ${error.codigo || 'N/A'}</strong>
-                    ${error.tipo ? `<span class="badge bg-secondary ms-2">${error.tipo}</span>` : ''}
-                    ${error.subcodigo ? `<span class="badge bg-warning ms-2">Subcódigo: ${error.subcodigo}</span>` : ''}
-                    <br>
-                    <strong>Título:</strong> ${error.titulo || 'N/A'}<br>
-                    <strong>Mensaje:</strong> ${error.mensaje || 'N/A'}
-                    ${error.raw ? `
-                        <details class="mt-2">
-                            <summary class="text-muted" style="cursor: pointer;">Ver detalles técnicos</summary>
-                            <pre class="bg-light p-2 rounded mt-2" style="font-size: 11px;"><code>${JSON.stringify(error.raw, null, 2)}</code></pre>
-                        </details>
-                    ` : ''}
-                </div>
-            `;
-        });
-        erroresRow.querySelector('td').innerHTML = erroresHtml;
-    } else if (mensaje.errores && Array.isArray(mensaje.errores) && mensaje.errores.length > 0) {
-        // Buscar fila de errores
-        let erroresRow = null;
-        const rows = table.querySelectorAll('tr');
-        rows.forEach(row => {
-            const th = row.querySelector('th');
-            if (th && (th.textContent.includes('Errores') || th.textContent.includes('Errores (Raw)'))) {
-                erroresRow = row;
-            }
-        });
-        
-        if (!erroresRow) {
-            const tbody = table.querySelector('tbody') || table;
-            erroresRow = document.createElement('tr');
-            erroresRow.innerHTML = '<th width="200">Errores (Raw)</th><td></td>';
-            tbody.appendChild(erroresRow);
-        }
-        erroresRow.querySelector('td').innerHTML = `<pre class="bg-light p-2 rounded"><code>${JSON.stringify(mensaje.errores, null, 2)}</code></pre>`;
-    }
-}
-
-function showNotification(message, type) {
-    // Crear o actualizar notificación
-    let notification = document.getElementById('status-notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'status-notification';
-        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-        notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.zIndex = '9999';
-        notification.style.minWidth = '300px';
-        document.body.appendChild(notification);
-    } else {
-        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    }
-    
-    notification.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    
-    // Auto-ocultar después de 5 segundos
-    setTimeout(() => {
-        if (notification && notification.parentNode) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification && notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 150);
-        }
-    }, 5000);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
