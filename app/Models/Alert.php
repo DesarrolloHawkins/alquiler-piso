@@ -49,7 +49,6 @@ class Alert extends Model
         'check_in_reminder' => 'Recordatorio de Check-in',
         'check_out_reminder' => 'Recordatorio de Check-out',
         'system_notification' => 'Notificación del Sistema',
-        'whatsapp_error' => 'Error de WhatsApp',
         'custom' => 'Personalizada'
     ];
 

@@ -1190,12 +1190,6 @@ Route::get('/templates/{template}', [WhatsappTemplateController::class, 'show'])
 Route::get('/templates/{template}/edit', [WhatsappTemplateController::class, 'edit'])->name('templates.edit');
 Route::put('/templates/{template}', [WhatsappTemplateController::class, 'update'])->name('templates.update');
 
-// Rutas para test de WhatsApp (solo admin)
-Route::middleware(['auth', 'role:ADMIN'])->group(function () {
-    Route::get('/admin/whatsapp/test', [App\Http\Controllers\Admin\WhatsappTestController::class, 'index'])->name('admin.whatsapp.test');
-    Route::post('/admin/whatsapp/test/send', [App\Http\Controllers\Admin\WhatsappTestController::class, 'sendTest'])->name('admin.whatsapp.test.send');
-});
-
 // Rutas para alertas
 Route::middleware(['auth'])->group(function () {
     Route::get('/alerts/unread', [App\Http\Controllers\AlertController::class, 'getUnreadAlerts'])->name('alerts.unread');
@@ -1302,7 +1296,6 @@ Route::middleware(['auth', 'role:MANTENIMIENTO'])->prefix('mantenimiento')->name
     Route::post('/incidencias/{incidencia}/resolver', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'resolver'])->name('incidencias.resolver');
     Route::post('/incidencias/{incidencia}/add-photos', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'addPhotos'])->name('incidencias.add-photos');
     Route::get('/incidencias/{incidencia}', [App\Http\Controllers\MantenimientoIncidenciasController::class, 'show'])->name('incidencias.show');
-});
 });
 
 // Rutas de Amenities para Limpieza (disponibles para usuarios autenticados)
