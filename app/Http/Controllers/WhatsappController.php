@@ -121,17 +121,11 @@ class WhatsappController extends Controller
 
     public function procesarStatus(array $status)
     {
-        $recipientId = $status['id'] ?? null;
-        $statusValue = $status['status'] ?? 'unknown';
-        
-        // Buscar por recipient_id (el ID que devuelve WhatsApp al enviar)
-        $mensaje = WhatsappMensaje::where('recipient_id', $recipientId)
-            ->orWhere('mensaje_id', $recipientId) // También buscar por mensaje_id por si acaso
-            ->first();
+        $mensaje = WhatsappMensaje::where('recipient_id', $status['id'])->first(); // CAMBIO AQUÍ
 
         if ($mensaje) {
             // Guardar último estado
-            $mensaje->estado = $statusValue;
+            $mensaje->estado = $status['status'];
             $mensaje->conversacion_id = $status['conversation']['id'] ?? null;
             $mensaje->origen_conversacion = $status['conversation']['origin']['type'] ?? null;
             $mensaje->expiracion_conversacion = isset($status['conversation']['expiration_timestamp'])
@@ -143,66 +137,18 @@ class WhatsappController extends Controller
             $mensaje->errores = $status['errors'] ?? null;
             $mensaje->save();
 
-            // Log detallado del estado
-            Log::info('WhatsappController: Estado de mensaje actualizado', [
-                'recipient_id' => $recipientId,
-                'estado' => $statusValue,
-                'mensaje_id' => $mensaje->id,
-                'errores' => $status['errors'] ?? null,
-                'conversacion_id' => $mensaje->conversacion_id,
-            ]);
-
-            // Si el estado es "failed", log de error con más detalle
-            if ($statusValue === 'failed') {
-                $errorDetails = $status['errors'] ?? [];
-                Log::error('WhatsappController: Mensaje falló al entregar', [
-                    'recipient_id' => $recipientId,
-                    'mensaje_id' => $mensaje->id,
-                    'errores' => $errorDetails,
-                    'status_completo' => $status,
-                ]);
-                
-                // Si es un mensaje de test, crear alerta
-                $metadata = $mensaje->metadata ?? [];
-                if (isset($metadata['test']) && $metadata['test'] === true) {
-                    $phone = $metadata['phone'] ?? 'desconocido';
-                    $errorMessage = $errorDetails[0]['message'] ?? 'Error desconocido';
-                    $errorCode = $errorDetails[0]['code'] ?? 'unknown';
-                    
-                    $adminUser = User::where('role', 'ADMIN')->first();
-                    if ($adminUser) {
-                        AlertService::createForUser(
-                            $adminUser,
-                            'whatsapp_error',
-                            "Mensaje de test falló: {$errorMessage} (Código: {$errorCode})",
-                            [
-                                'phone' => $phone,
-                                'message_id' => $recipientId,
-                                'error_code' => $errorCode,
-                                'error_message' => $errorMessage,
-                            ]
-                        );
-                    }
-                }
-            }
-
             // Guardar en histórico
             WhatsappEstadoMensaje::create([
                 'whatsapp_mensaje_id' => $mensaje->id,
-                'estado' => $statusValue,
-                'recipient_id' => $status['recipient_id'] ?? $recipientId,
+                'estado' => $status['status'],
+                'recipient_id' => $status['recipient_id'] ?? null,
                 'fecha_estado' => isset($status['timestamp']) ? Carbon::createFromTimestamp($status['timestamp']) : now(),
             ]);
-            
             return response()->json(['status' => 'ok', 'mensaje' => $mensaje]);
         } else {
-            Log::warning("⚠️ No se encontró mensaje con recipient_id = {$recipientId} para guardar estado.", [
-                'recipient_id' => $recipientId,
-                'status' => $statusValue,
-                'status_completo' => $status,
-            ]);
+            Log::warning("⚠️ No se encontró mensaje con recipient_id = {$status['id']} para guardar estado.");
         }
-        return response()->json(['status' => 'failed', 'message' => 'Mensaje no encontrado']);
+        return response()->json(['status' => 'faile']);
 
     }
 
