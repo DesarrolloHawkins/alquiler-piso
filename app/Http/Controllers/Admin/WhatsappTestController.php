@@ -161,20 +161,6 @@ class WhatsappTestController extends Controller
                 'response_json' => $responseJson,
             ]);
 
-            // Preparar datos de debug para mostrar en la vista
-            $debugData = [
-                'payload' => $payload,
-                'url' => $url,
-                'status_code' => $statusCode,
-                'response_body' => $responseBody,
-                'response_json' => $responseJson,
-                'timestamp' => now()->toDateTimeString(),
-                'phone_original' => $request->phone,
-                'phone_normalized' => $phone,
-                'template_name' => $template->name,
-                'template_status' => $template->status,
-            ];
-
             // Verificar errores (incluso si el status code es 200)
             if ($response->failed() || isset($responseJson['error'])) {
                 $errorMessage = $responseJson['error']['message'] ?? 'Error desconocido';
@@ -182,14 +168,6 @@ class WhatsappTestController extends Controller
                 $errorType = $responseJson['error']['type'] ?? 'unknown';
                 $errorSubcode = $responseJson['error']['error_subcode'] ?? null;
                 $errorFbtraceId = $responseJson['error']['fbtrace_id'] ?? null;
-
-                $debugData['error'] = [
-                    'code' => $errorCode,
-                    'type' => $errorType,
-                    'subcode' => $errorSubcode,
-                    'message' => $errorMessage,
-                    'fbtrace_id' => $errorFbtraceId,
-                ];
 
                 Log::error('WhatsappTestController: Error enviando test', [
                     'template' => $template->name,
@@ -222,9 +200,7 @@ class WhatsappTestController extends Controller
                     $userMessage .= "\n\nEl número de parámetros no coincide con el template.";
                 }
 
-                return back()
-                    ->with('error', $userMessage)
-                    ->with('debug_data', $debugData);
+                return back()->with('error', $userMessage);
             }
 
             // Verificar que tenemos un message ID
@@ -234,24 +210,15 @@ class WhatsappTestController extends Controller
                 Log::warning('WhatsappTestController: Respuesta exitosa pero sin message ID', [
                     'response' => $responseJson,
                 ]);
-                
-                $debugData['warning'] = 'Respuesta exitosa pero sin message ID';
-                
-                return back()
-                    ->with('error', 
-                        "La API respondió correctamente pero no se recibió un Message ID. " .
-                        "Revisa los logs para más detalles."
-                    )
-                    ->with('debug_data', $debugData);
+                return back()->with('error', 
+                    "La API respondió correctamente pero no se recibió un Message ID. " .
+                    "Revisa los logs para más detalles."
+                );
             }
 
-            $debugData['message_id'] = $messageId;
-            $debugData['success'] = true;
-
             // Guardar el mensaje en la BD para poder rastrear su estado
-            $mensajeGuardado = null;
             try {
-                $mensajeGuardado = WhatsappMensaje::firstOrCreate(
+                WhatsappMensaje::firstOrCreate(
                     ['mensaje_id' => $messageId],
                     [
                         'tipo' => 'template',
@@ -272,22 +239,6 @@ class WhatsappTestController extends Controller
                     ]
                 );
                 
-                // Cargar estados si existen
-                if ($mensajeGuardado) {
-                    $mensajeGuardado->load('estados');
-                    $debugData['mensaje_db'] = [
-                        'id' => $mensajeGuardado->id,
-                        'estado_actual' => $mensajeGuardado->estado,
-                        'estados_historial' => $mensajeGuardado->estados->map(function($estado) {
-                            return [
-                                'estado' => $estado->estado,
-                                'fecha' => $estado->fecha_estado,
-                            ];
-                        })->toArray(),
-                        'errores' => $mensajeGuardado->errores,
-                    ];
-                }
-                
                 Log::info('WhatsappTestController: Mensaje guardado en BD', [
                     'message_id' => $messageId,
                     'recipient_id' => $messageId,
@@ -297,7 +248,6 @@ class WhatsappTestController extends Controller
                     'message_id' => $messageId,
                     'error' => $e->getMessage(),
                 ]);
-                $debugData['db_error'] = $e->getMessage();
                 // No fallar el envío si hay error al guardar
             }
 
@@ -308,23 +258,12 @@ class WhatsappTestController extends Controller
                 'status_code' => $statusCode,
             ]);
 
-            return back()
-                ->with('success', 
-                    "Mensaje enviado correctamente. Message ID: {$messageId}\n\n" .
-                    "Nota: El mensaje puede tardar unos segundos en llegar. " .
-                    "Si no llega, verifica que el número esté registrado en WhatsApp y que el template esté aprobado."
-                )
-                ->with('debug_data', $debugData)
-                ->with('message_id', $messageId);
+            return back()->with('success', 
+                "Mensaje enviado correctamente. Message ID: {$messageId}\n\n" .
+                "Nota: El mensaje puede tardar unos segundos en llegar. " .
+                "Si no llega, verifica que el número esté registrado en WhatsApp y que el template esté aprobado."
+            );
         } catch (\Exception $e) {
-            $debugData = [
-                'exception' => true,
-                'error_message' => $e->getMessage(),
-                'error_trace' => $e->getTraceAsString(),
-                'timestamp' => now()->toDateTimeString(),
-                'payload' => $payload ?? null,
-            ];
-
             Log::error('WhatsappTestController: Excepción al enviar test', [
                 'template' => $template->name,
                 'phone' => $phone,
@@ -332,52 +271,7 @@ class WhatsappTestController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()
-                ->with('error', "Error inesperado: {$e->getMessage()}")
-                ->with('debug_data', $debugData);
-        }
-    }
-
-    /**
-     * Consultar el estado actualizado de un mensaje
-     */
-    public function getMessageStatus($messageId)
-    {
-        try {
-            $mensaje = WhatsappMensaje::where('mensaje_id', $messageId)
-                ->orWhere('recipient_id', $messageId)
-                ->first();
-
-            if (!$mensaje) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Mensaje no encontrado',
-                ], 404);
-            }
-
-            $mensaje->load('estados');
-
-            return response()->json([
-                'success' => true,
-                'mensaje' => [
-                    'id' => $mensaje->id,
-                    'mensaje_id' => $mensaje->mensaje_id,
-                    'estado_actual' => $mensaje->estado,
-                    'fecha_mensaje' => $mensaje->fecha_mensaje,
-                    'errores' => $mensaje->errores,
-                    'estados_historial' => $mensaje->estados->map(function($estado) {
-                        return [
-                            'estado' => $estado->estado,
-                            'fecha' => $estado->fecha_estado,
-                        ];
-                    })->toArray(),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al consultar estado: ' . $e->getMessage(),
-            ], 500);
+            return back()->with('error', "Error inesperado: {$e->getMessage()}");
         }
     }
 }
