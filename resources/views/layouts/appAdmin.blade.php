@@ -448,9 +448,6 @@
                                         <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">
                                             <i class="fab fa-whatsapp me-2"></i>Conversaciones
                                         </a></li>
-                                        <li><a class="dropdown-item {{ request()->routeIs('admin.whatsapp.test*') ? 'active' : '' }}" href="{{ route('admin.whatsapp.test') }}">
-                                            <i class="fab fa-whatsapp me-2"></i>Test de Templates
-                                        </a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.contactos-web.index') }}">
                                             <i class="fas fa-envelope-open-text me-2"></i>Contactos desde la Web
@@ -493,9 +490,6 @@
                                         <li><a class="dropdown-item {{ request()->routeIs('configuracion.notificaciones.*') ? 'active' : '' }}" href="{{ route('configuracion.notificaciones.index') }}">
                                             <i class="fas fa-bell me-2"></i>Notificaciones
                                         </a></li>
-                                        <li><a class="dropdown-item {{ request()->routeIs('admin.alerts.*') ? 'active' : '' }}" href="{{ route('admin.alerts.index') }}">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Alertas del Sistema
-                                        </a></li>
                                         <li><a class="dropdown-item {{ request()->routeIs('configuracion.prompt-ia.*') ? 'active' : '' }}" href="{{ route('configuracion.prompt-ia.index') }}">
                                             <i class="fas fa-robot me-2"></i>Prompt IA
                                         </a></li>
@@ -504,10 +498,6 @@
                                         </a></li>
                                         <li><a class="dropdown-item {{ request()->routeIs('configuracion.mir.*') ? 'active' : '' }}" href="{{ route('configuracion.mir.index') }}">
                                             <i class="fas fa-shield-alt me-2"></i>MIR Hospedajes
-                                        </a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item {{ request()->routeIs('admin.whatsapp.test*') ? 'active' : '' }}" href="{{ route('admin.whatsapp.test') }}">
-                                            <i class="fab fa-whatsapp me-2"></i>Test de WhatsApp
                                         </a></li>
                                     </ul>
                                 </li>

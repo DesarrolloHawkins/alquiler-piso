@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadAlerts() {
-    fetch('/alerts/unread')
+    fetch('/api/alerts/unread')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -277,7 +277,7 @@ function getTimeAgo(createdAt) {
 }
 
 function markAsRead(alertId) {
-    fetch('/alerts/mark-read', {
+    fetch('/api/alerts/mark-read', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ function markAsRead(alertId) {
 }
 
 function markAllAsRead() {
-    fetch('/alerts/mark-all-read', {
+    fetch('/api/alerts/mark-all-read', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
