@@ -46,71 +46,26 @@ class WhatsappTestController extends Controller
             ],
         ];
 
-        // Obtener el número de parámetros requeridos del template
-        $components = $template->components ?? [];
-        $bodyComponent = collect($components)->firstWhere(function ($comp) {
-            return strtolower($comp['type'] ?? '') === 'body';
-        });
-        
-        $requiredParamsCount = 0;
-        
-        if ($bodyComponent) {
-            // Método 1: Contar variables en el texto del body ({{1}}, {{2}}, etc.)
-            $bodyText = $bodyComponent['text'] ?? $bodyComponent['body'] ?? '';
-            if (!empty($bodyText)) {
-                preg_match_all('/\{\{(\d+)\}\}/', $bodyText, $matches);
-                if (!empty($matches[1])) {
-                    $requiredParamsCount = max(array_map('intval', $matches[1]));
+        // Agregar parámetros si existen
+        if (!empty($request->parameters)) {
+            $bodyParameters = [];
+            foreach ($request->parameters as $param) {
+                if (!empty($param)) {
+                    $bodyParameters[] = [
+                        'type' => 'text',
+                        'text' => $param,
+                    ];
                 }
             }
-            
-            // Método 2: Si tiene parámetros definidos en example
-            if ($requiredParamsCount === 0 && isset($bodyComponent['example'])) {
-                $exampleBody = $bodyComponent['example']['body_text'] ?? [];
-                if (is_array($exampleBody) && !empty($exampleBody)) {
-                    $requiredParamsCount = count($exampleBody[0] ?? []);
-                }
-            }
-        }
 
-        // Construir parámetros - enviar TODOS los requeridos
-        $bodyParameters = [];
-        $receivedParams = array_filter($request->parameters ?? [], function($p) {
-            return !empty(trim($p));
-        });
-        
-        // Validar que tenemos todos los parámetros requeridos
-        if ($requiredParamsCount > 0 && count($receivedParams) < $requiredParamsCount) {
-            return back()->with('error', 
-                "El template requiere {$requiredParamsCount} parámetros, pero solo se proporcionaron " . count($receivedParams) . ". " .
-                "Por favor, completa todos los campos de parámetros."
-            );
-        }
-        
-        // Construir array de parámetros
-        for ($i = 0; $i < $requiredParamsCount; $i++) {
-            $paramValue = trim($receivedParams[$i] ?? '');
-            
-            if (empty($paramValue)) {
-                return back()->with('error', 
-                    "El parámetro " . ($i + 1) . " es requerido. Por favor, completa todos los campos."
-                );
+            if (!empty($bodyParameters)) {
+                $payload['template']['components'] = [
+                    [
+                        'type' => 'body',
+                        'parameters' => $bodyParameters,
+                    ],
+                ];
             }
-            
-            $bodyParameters[] = [
-                'type' => 'text',
-                'text' => $paramValue,
-            ];
-        }
-
-        // Solo agregar componentes si hay parámetros requeridos
-        if ($requiredParamsCount > 0 && !empty($bodyParameters)) {
-            $payload['template']['components'] = [
-                [
-                    'type' => 'body',
-                    'parameters' => $bodyParameters,
-                ],
-            ];
         }
 
         $url = 'https://graph.facebook.com/v16.0/102360642838173/messages';

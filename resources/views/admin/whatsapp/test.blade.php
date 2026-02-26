@@ -172,63 +172,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         parametersList.innerHTML = '';
 
-        // Buscar componentes de tipo body (puede ser 'body', 'BODY', etc.)
-        const bodyComponent = components.find(c => {
-            const type = (c.type || '').toLowerCase();
-            return type === 'body';
-        });
+        // Buscar componentes de tipo body para obtener los parámetros
+        const bodyComponent = components.find(c => c.type === 'body');
         
-        if (bodyComponent) {
-            let paramCount = 0;
-            
-            // Método 1: Contar variables en el texto del body ({{1}}, {{2}}, etc.)
-            const bodyText = bodyComponent.text || bodyComponent.body || bodyComponent.body_text || '';
-            if (bodyText) {
-                const matches = bodyText.match(/\{\{(\d+)\}\}/g);
-                if (matches) {
-                    const numbers = matches.map(m => parseInt(m.replace(/\{\{|\}\}/g, '')));
-                    paramCount = numbers.length > 0 ? Math.max(...numbers) : 0;
-                }
-            }
-            
-            // Método 2: Si tiene example, contar los parámetros del ejemplo
-            if (paramCount === 0 && bodyComponent.example) {
-                const exampleBody = bodyComponent.example.body_text || bodyComponent.example.body || [];
-                if (Array.isArray(exampleBody) && exampleBody.length > 0) {
-                    const firstExample = exampleBody[0];
-                    if (Array.isArray(firstExample)) {
-                        paramCount = firstExample.length;
-                    }
-                }
-            }
-            
-            // Método 3: Si tiene parámetros definidos directamente
-            if (paramCount === 0 && bodyComponent.parameters && Array.isArray(bodyComponent.parameters)) {
-                paramCount = bodyComponent.parameters.length;
-            }
-            
-            if (paramCount > 0) {
-                parametersList.innerHTML = `<p class="text-info mb-3"><i class="fas fa-info-circle"></i> Este template requiere <strong>${paramCount}</strong> parámetros</p>`;
-                
-                for (let i = 0; i < paramCount; i++) {
-                    const div = document.createElement('div');
-                    div.className = 'parameter-input';
-                    div.innerHTML = `
-                        <label for="param_${i}" class="form-label">Parámetro ${i + 1} <span class="text-danger">*</span></label>
-                        <input type="text" 
-                               name="parameters[]" 
-                               id="param_${i}" 
-                               class="form-control" 
-                               placeholder="Valor para el parámetro ${i + 1}"
-                               required>
-                    `;
-                    parametersList.appendChild(div);
-                }
-            } else {
-                parametersList.innerHTML = '<p class="text-muted"><i class="fas fa-check-circle"></i> Este template no requiere parámetros en el body</p>';
-            }
+        if (bodyComponent && bodyComponent.parameters) {
+            bodyComponent.parameters.forEach((param, index) => {
+                const div = document.createElement('div');
+                div.className = 'parameter-input';
+                div.innerHTML = `
+                    <label for="param_${index}" class="form-label">Parámetro ${index + 1}</label>
+                    <input type="text" 
+                           name="parameters[]" 
+                           id="param_${index}" 
+                           class="form-control" 
+                           placeholder="Valor para el parámetro ${index + 1}">
+                `;
+                parametersList.appendChild(div);
+            });
         } else {
-            parametersList.innerHTML = '<p class="text-warning"><i class="fas fa-exclamation-triangle"></i> No se pudo detectar la estructura del template. Intenta sincronizar los templates desde el panel de administración.</p>';
+            parametersList.innerHTML = '<p class="text-muted">Este template no requiere parámetros</p>';
         }
     });
 });
