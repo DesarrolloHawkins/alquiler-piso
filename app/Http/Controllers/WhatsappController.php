@@ -284,13 +284,16 @@ class WhatsappController extends Controller
         $promptAsistente = PromptAsistente::first();
         $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
 
-        // Obtener historial de conversación primero (igual que OpenAI original)
+        // Obtener historial de conversación (igual que OpenAI original)
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
+        // Solo incluir mensajes que tienen respuesta para evitar bucles
         $historialArray = ChatGpt::where('remitente', $remitente)
-            ->orderBy('date', 'desc')
+            ->where('status', 1) // Solo mensajes respondidos
+            ->whereNotNull('respuesta')
+            ->where('respuesta', '!=', '')
+            ->orderBy('date', 'asc') // Orden cronológico ascendente
             ->limit(20)
             ->get()
-            ->reverse()
             ->flatMap(function ($chat) {
                 $mensajes = [];
                 if (!empty($chat->mensaje)) {
@@ -303,35 +306,8 @@ class WhatsappController extends Controller
             })
             ->toArray();
 
-        // Convertir a string para búsqueda de códigos
+        // Convertir a string para pasar a funciones si es necesario
         $historialTexto = implode("\n", $historialArray);
-
-        // Detectar código de reserva en el mensaje y también en el historial
-        $codigoReservaDetectado = $this->detectarCodigoReserva($nuevoMensaje);
-
-        // Si no se encontró en el mensaje actual, buscar en el historial reciente
-        if (!$codigoReservaDetectado && !empty($historialTexto)) {
-            $codigoEnHistorial = $this->detectarCodigoReserva($historialTexto);
-            if ($codigoEnHistorial) {
-                $codigoReservaDetectado = $codigoEnHistorial;
-                Log::info("🔍 Código de reserva encontrado en historial: {$codigoReservaDetectado}");
-            }
-        }
-
-        // Si se detecta código de reserva Y el usuario menciona problemas de acceso, ejecutar automáticamente
-        $problemaAcceso = stripos($nuevoMensaje, 'no puedo entrar') !== false ||
-                          stripos($nuevoMensaje, 'no me llega') !== false ||
-                          stripos($nuevoMensaje, 'pin') !== false ||
-                          stripos($nuevoMensaje, 'clave') !== false ||
-                          stripos($nuevoMensaje, 'código') !== false;
-
-        if ($codigoReservaDetectado && $problemaAcceso) {
-            Log::info("🚀 Ejecutando automáticamente obtener_claves para código: {$codigoReservaDetectado}");
-            // Ejecutar directamente la función sin pasar por la IA
-            // Construir promptSystem básico para la función
-            $promptSystemBasico = $promptBase;
-            return $this->ejecutarObtenerClaves($codigoReservaDetectado, $remitente, $promptSystemBasico, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
-        }
 
         // Construir instrucciones sobre funciones disponibles (formato original simple)
         $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
