@@ -181,13 +181,13 @@ class WhatsappController extends Controller
             if (trim($contenido) === '/clear' || strtolower(trim($contenido)) === '/clear') {
                 $this->limpiarHistorialConversacion($waId);
 
-                // Crear registro del comando
+                // Crear registro del comando con status especial para que no se incluya en historial
                 $chat = ChatGpt::create([
                     'id_mensaje' => $id,
                     'remitente' => $waId,
                     'mensaje' => $contenido,
                     'respuesta' => '✅ Historial de conversación limpiado. Empezamos de nuevo.',
-                    'status' => 1,
+                    'status' => 3, // Status 3 = comando /clear, no incluir en historial
                     'type' => 'text',
                     'date' => now(),
                 ]);
@@ -308,41 +308,71 @@ class WhatsappController extends Controller
         $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
 
         // Obtener historial de conversación (igual que OpenAI original)
-        // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
+        // Historial: últimos 20 pares de mensaje/respuesta válidos
         // Solo incluir mensajes que tienen respuesta para evitar bucles
         // Si hay un /clear previo, solo incluir mensajes después de ese /clear
-        $query = ChatGpt::where('remitente', $remitente)
-            ->where('status', 1) // Solo mensajes respondidos
-            ->whereNotNull('respuesta')
-            ->where('respuesta', '!=', '');
 
-        // Buscar el último mensaje /clear para este remitente
+        // Buscar el último mensaje /clear para este remitente (sin filtro de status)
         $ultimoClear = ChatGpt::where('remitente', $remitente)
-            ->where('mensaje', '/clear')
-            ->orderBy('date', 'desc')
+            ->where(function($q) {
+                $q->where('mensaje', '/clear')
+                  ->orWhere('mensaje', 'like', '/clear%');
+            })
+            ->orderByRaw('COALESCE(date, created_at) DESC')
             ->first();
+
+        // Construir query base con filtros
+        $query = ChatGpt::where('remitente', $remitente)
+            ->where('status', 1) // Solo mensajes respondidos normalmente (excluye status 2 y 3)
+            ->whereNotNull('respuesta')
+            ->where('respuesta', '!=', '')
+            ->where(function($q) {
+                $q->where('mensaje', '!=', '/clear')
+                  ->where('mensaje', 'not like', '/clear%');
+            });
 
         // Si hay un /clear previo, solo incluir mensajes después de ese /clear
         if ($ultimoClear) {
-            $query->where('date', '>', $ultimoClear->date);
+            $fechaClear = $ultimoClear->date ?? $ultimoClear->created_at;
+            if ($fechaClear) {
+                $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear]);
+            }
         }
 
-        $historialArray = $query
-            ->orderBy('date', 'asc') // Orden cronológico ascendente
-            ->limit(20)
-            ->get()
-            ->flatMap(function ($chat) {
-                $mensajes = [];
-                // No incluir el mensaje /clear en el historial
-                if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
-                    $mensajes[] = "Usuario: " . trim($chat->mensaje);
-                }
-                if (!empty($chat->respuesta)) {
-                    $mensajes[] = "Asistente: " . trim($chat->respuesta);
-                }
-                return $mensajes;
-            })
-            ->toArray();
+        // Obtener todos los mensajes válidos ordenados cronológicamente
+        // No limitar aquí, lo haremos después de procesar
+        $mensajesHistorial = $query
+            ->orderByRaw('COALESCE(date, created_at) ASC') // Orden cronológico ascendente
+            ->get();
+
+        // Procesar y construir el historial como pares mensaje/respuesta
+        $historialArray = [];
+        foreach ($mensajesHistorial as $chat) {
+            // No incluir el mensaje /clear en el historial
+            $mensajeLimpio = trim($chat->mensaje ?? '');
+            if (!empty($mensajeLimpio) &&
+                $mensajeLimpio !== '/clear' &&
+                strpos($mensajeLimpio, '/clear') !== 0) {
+                $historialArray[] = "Usuario: " . $mensajeLimpio;
+            }
+            if (!empty($chat->respuesta)) {
+                $historialArray[] = "Asistente: " . trim($chat->respuesta);
+            }
+        }
+
+        // Limitar a los últimos 20 pares (40 líneas máximo: 20 mensajes + 20 respuestas)
+        // Pero mantener el orden cronológico, así que tomamos los últimos 40 elementos
+        if (count($historialArray) > 40) {
+            $historialArray = array_slice($historialArray, -40);
+        }
+
+        // Filtrar mensajes vacíos
+        $historialArray = array_filter($historialArray, function($mensaje) {
+            return !empty(trim($mensaje));
+        });
+
+        // Reindexar array después del filtro
+        $historialArray = array_values($historialArray);
 
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = implode("\n", $historialArray);
@@ -380,7 +410,9 @@ class WhatsappController extends Controller
             'codigo_detectado' => $codigoEnMensaje,
             'historial_lineas' => count($historialArray),
             'tiene_historial' => !empty($historialArray),
-            'ultimas_lineas_historial' => array_slice($historialArray, -4) // Últimas 4 líneas para debug
+            'ultimo_clear_encontrado' => $ultimoClear ? ($ultimoClear->date ?? $ultimoClear->created_at) : null,
+            'mensajes_en_bd' => $mensajesHistorial->count(),
+            'ultimas_lineas_historial' => array_slice($historialArray, -6) // Últimas 6 líneas para debug
         ]);
 
         // Llamar a la API local
