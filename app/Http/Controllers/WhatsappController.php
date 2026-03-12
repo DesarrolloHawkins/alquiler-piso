@@ -305,95 +305,136 @@ class WhatsappController extends Controller
         $modelo = $config['model'];
 
         $promptAsistente = PromptAsistente::first();
-        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
+        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente virtual de apartamentos turísticos Hawkins. Tu objetivo es ayudar a los clientes de forma educada, formal pero cercana.";
 
-        // Obtener historial de conversación (igual que OpenAI original)
-        // Historial: últimos 20 pares de mensaje/respuesta válidos
+        // Obtener historial de conversación
+        // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
         // Solo incluir mensajes que tienen respuesta para evitar bucles
         // Si hay un /clear previo, solo incluir mensajes después de ese /clear
+        try {
+            $query = ChatGpt::where('remitente', $remitente)
+                ->where('status', 1) // Solo mensajes respondidos normalmente (excluye status 2 y 3)
+                ->whereNotNull('respuesta')
+                ->where('respuesta', '!=', '')
+                ->where('mensaje', '!=', '/clear'); // También excluir mensajes /clear explícitamente
 
-        // Buscar el último mensaje /clear para este remitente (sin filtro de status)
-        $ultimoClear = ChatGpt::where('remitente', $remitente)
-            ->where(function($q) {
-                $q->where('mensaje', '/clear')
-                  ->orWhere('mensaje', 'like', '/clear%');
-            })
-            ->orderByRaw('COALESCE(date, created_at) DESC')
-            ->first();
+            // Buscar el último mensaje /clear para este remitente
+            $ultimoClear = ChatGpt::where('remitente', $remitente)
+                ->where('mensaje', '/clear')
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
 
-        // Construir query base con filtros
-        $query = ChatGpt::where('remitente', $remitente)
-            ->where('status', 1) // Solo mensajes respondidos normalmente (excluye status 2 y 3)
-            ->whereNotNull('respuesta')
-            ->where('respuesta', '!=', '')
-            ->where(function($q) {
-                $q->where('mensaje', '!=', '/clear')
-                  ->where('mensaje', 'not like', '/clear%');
-            });
-
-        // Si hay un /clear previo, solo incluir mensajes después de ese /clear
-        if ($ultimoClear) {
-            $fechaClear = $ultimoClear->date ?? $ultimoClear->created_at;
-            if ($fechaClear) {
-                $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear]);
+            // Si hay un /clear previo, solo incluir mensajes después de ese /clear
+            if ($ultimoClear) {
+                $fechaClear = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
+                if ($fechaClear) {
+                    try {
+                        // Usar whereRaw con COALESCE para manejar ambos campos de fecha
+                        $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear]);
+                    } catch (\Exception $e) {
+                        // Si falla el whereRaw, usar una alternativa más simple
+                        Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
+                        if ($ultimoClear->date) {
+                            $query->where('date', '>', $fechaClear);
+                        } else {
+                            $query->where('created_at', '>', $fechaClear);
+                        }
+                    }
+                }
             }
+
+            $historialArray = $query
+                ->orderBy('date', 'asc') // Orden cronológico ascendente
+                ->orderBy('created_at', 'asc')
+                ->limit(20)
+                ->get()
+                ->flatMap(function ($chat) {
+                    $mensajes = [];
+                    // No incluir el mensaje /clear en el historial
+                    if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
+                        $mensajes[] = "Usuario: " . trim($chat->mensaje);
+                    }
+                    if (!empty($chat->respuesta)) {
+                        $mensajes[] = "Asistente: " . trim($chat->respuesta);
+                    }
+                    return $mensajes;
+                })
+                ->filter(function($mensaje) {
+                    // Filtrar mensajes vacíos
+                    return !empty(trim($mensaje));
+                })
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error("❌ Error obteniendo historial: " . $e->getMessage());
+            // En caso de error, intentar obtener historial básico sin filtros complejos
+            $historialArray = ChatGpt::where('remitente', $remitente)
+                ->where('status', 1)
+                ->whereNotNull('respuesta')
+                ->where('respuesta', '!=', '')
+                ->where('mensaje', '!=', '/clear')
+                ->orderBy('created_at', 'asc')
+                ->limit(20)
+                ->get()
+                ->flatMap(function ($chat) {
+                    $mensajes = [];
+                    if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
+                        $mensajes[] = "Usuario: " . trim($chat->mensaje);
+                    }
+                    if (!empty($chat->respuesta)) {
+                        $mensajes[] = "Asistente: " . trim($chat->respuesta);
+                    }
+                    return $mensajes;
+                })
+                ->filter(function($mensaje) {
+                    return !empty(trim($mensaje));
+                })
+                ->toArray();
         }
-
-        // Obtener todos los mensajes válidos ordenados cronológicamente
-        // No limitar aquí, lo haremos después de procesar
-        $mensajesHistorial = $query
-            ->orderByRaw('COALESCE(date, created_at) ASC') // Orden cronológico ascendente
-            ->get();
-
-        // Procesar y construir el historial como pares mensaje/respuesta
-        $historialArray = [];
-        foreach ($mensajesHistorial as $chat) {
-            // No incluir el mensaje /clear en el historial
-            $mensajeLimpio = trim($chat->mensaje ?? '');
-            if (!empty($mensajeLimpio) &&
-                $mensajeLimpio !== '/clear' &&
-                strpos($mensajeLimpio, '/clear') !== 0) {
-                $historialArray[] = "Usuario: " . $mensajeLimpio;
-            }
-            if (!empty($chat->respuesta)) {
-                $historialArray[] = "Asistente: " . trim($chat->respuesta);
-            }
-        }
-
-        // Limitar a los últimos 20 pares (40 líneas máximo: 20 mensajes + 20 respuestas)
-        // Pero mantener el orden cronológico, así que tomamos los últimos 40 elementos
-        if (count($historialArray) > 40) {
-            $historialArray = array_slice($historialArray, -40);
-        }
-
-        // Filtrar mensajes vacíos
-        $historialArray = array_filter($historialArray, function($mensaje) {
-            return !empty(trim($mensaje));
-        });
-
-        // Reindexar array después del filtro
-        $historialArray = array_values($historialArray);
 
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = implode("\n", $historialArray);
 
-        // Construir instrucciones sobre funciones disponibles
-        $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
-            "Cuando el usuario te proporcione un código de reserva y necesite las claves, DEBES usar: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
-            "Cuando haya un problema técnico o avería que requiera intervención, usa: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
-            "Cuando soliciten limpieza, usa: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
-            "IMPORTANTE: Si el usuario menciona un código de reserva y necesita claves, usa obtener_claves INMEDIATAMENTE.\n" .
-            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
+        // Verificar si ya hay un código de reserva en el historial
+        $codigoEnHistorial = null;
+        if (!empty($historialTexto)) {
+            $codigoEnHistorial = $this->detectarCodigoReserva($historialTexto);
+        }
+        $codigoEnMensajeActual = $this->detectarCodigoReserva($nuevoMensaje);
+        $codigoDisponible = $codigoEnMensajeActual ?: $codigoEnHistorial;
 
-        $promptSystem = $promptBase . $instruccionesFunciones;
+        // Construir instrucciones sobre funciones disponibles y comportamiento
+        $instruccionesComportamiento = "\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n" .
+            "1. Mantén conversaciones naturales, educadas, formales pero cercanas.\n" .
+            "2. Cuando un cliente pregunte por las claves de acceso:\n" .
+            "   - Si NO has recibido su código de reserva aún, pídelo de forma amable: 'Para poder proporcionarte las claves, necesito tu código de reserva, por favor.'\n" .
+            "   - Si YA tienes el código de reserva (en este mensaje o en mensajes anteriores), usa la función obtener_claves inmediatamente.\n" .
+            "3. Solo proporciona información adicional (direcciones, contraseñas, etc.) si el cliente lo solicita explícitamente.\n" .
+            "4. Mantén el contexto de la conversación. Lee el historial completo para entender qué se ha hablado antes.\n" .
+            "5. Responde de forma concisa pero completa. No des información innecesaria.\n" .
+            "6. Si el cliente ya proporcionó su código de reserva en mensajes anteriores, NO vuelvas a pedirlo.\n\n" .
+            "FUNCIONES DISPONIBLES:\n" .
+            "- Cuando tengas un código de reserva y el cliente necesite las claves, usa: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "- Cuando haya un problema técnico o avería que requiera intervención, usa: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "- Cuando soliciten limpieza, usa: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n";
 
-        // Construir prompt completo igual que OpenAI original
+        if ($codigoDisponible) {
+            $instruccionesComportamiento .= "IMPORTANTE: El cliente ya ha proporcionado el código de reserva: {$codigoDisponible}. Si necesita las claves, usa obtener_claves ahora.\n";
+        } else {
+            $instruccionesComportamiento .= "IMPORTANTE: Si el usuario necesita claves pero aún no has recibido su código de reserva, pídelo primero de forma amable.\n";
+        }
+
+        $instruccionesComportamiento .= "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
+
+        $promptSystem = $promptBase . $instruccionesComportamiento;
+
+        // Construir prompt completo con mejor estructura para mantener contexto
         // 1. Prompt del sistema (con instrucciones de funciones)
         $promptCompleto = $promptSystem;
 
         // 2. Historial de conversación (ya obtenido arriba)
         if (!empty($historialArray)) {
-            $promptCompleto .= "\n\n" . implode("\n", $historialArray);
+            $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
         }
 
         // 3. Nuevo mensaje del usuario
@@ -411,8 +452,7 @@ class WhatsappController extends Controller
             'historial_lineas' => count($historialArray),
             'tiene_historial' => !empty($historialArray),
             'ultimo_clear_encontrado' => $ultimoClear ? ($ultimoClear->date ?? $ultimoClear->created_at) : null,
-            'mensajes_en_bd' => $mensajesHistorial->count(),
-            'ultimas_lineas_historial' => array_slice($historialArray, -6) // Últimas 6 líneas para debug
+            'ultimas_lineas_historial' => array_slice($historialArray, -4) // Últimas 4 líneas para debug
         ]);
 
         // Llamar a la API local
@@ -442,6 +482,20 @@ class WhatsappController extends Controller
             'tiene_funcion' => preg_match('/\[FUNCION:/', $respuestaTexto) ? 'sí' : 'no'
         ]);
 
+        // Detectar si el usuario está pidiendo claves y tiene código disponible
+        $pideClaves = stripos($nuevoMensaje, 'clave') !== false ||
+                      stripos($nuevoMensaje, 'código') !== false ||
+                      stripos($nuevoMensaje, 'acceso') !== false ||
+                      stripos($nuevoMensaje, 'entrar') !== false;
+
+        $codigoDisponibleParaClaves = $codigoDisponible ?? null;
+        if (!$codigoDisponibleParaClaves) {
+            $codigoDisponibleParaClaves = $this->detectarCodigoReserva($nuevoMensaje);
+            if (!$codigoDisponibleParaClaves) {
+                $codigoDisponibleParaClaves = $this->detectarCodigoReserva($historialTexto);
+            }
+        }
+
         // Detectar si la respuesta contiene una llamada a función (más flexible)
         // Buscar patrones como [FUNCION:nombre:parametros] o variaciones
         $funcionDetectada = false;
@@ -452,14 +506,18 @@ class WhatsappController extends Controller
             $parametrosStr = $matches[2];
             $funcionDetectada = true;
         }
+        // Si el usuario pide claves y tiene código disponible, ejecutar función automáticamente
+        elseif ($pideClaves && $codigoDisponibleParaClaves) {
+            $nombreFuncion = 'obtener_claves';
+            $parametrosStr = 'codigo_reserva=' . $codigoDisponibleParaClaves;
+            $funcionDetectada = true;
+            Log::info("🔧 Función inferida automáticamente: obtener_claves para código: {$codigoDisponibleParaClaves}");
+        }
         // Si no encuentra el patrón exacto, buscar si menciona obtener claves y hay código de reserva
         elseif (stripos($respuestaTexto, 'obtener_claves') !== false ||
                 (stripos($respuestaTexto, 'clave') !== false && stripos($respuestaTexto, 'código') !== false)) {
             // Intentar detectar código de reserva en el mensaje o historial
-            $codigoDetectado = $this->detectarCodigoReserva($nuevoMensaje);
-            if (!$codigoDetectado) {
-                $codigoDetectado = $this->detectarCodigoReserva($historialTexto);
-            }
+            $codigoDetectado = $codigoDisponibleParaClaves;
             if ($codigoDetectado) {
                 $nombreFuncion = 'obtener_claves';
                 $parametrosStr = 'codigo_reserva=' . $codigoDetectado;
@@ -542,19 +600,12 @@ class WhatsappController extends Controller
      */
     private function ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo)
     {
-        // Si no se proporciona código, intentar detectarlo del mensaje
+        // Si no se proporciona código, intentar detectarlo del mensaje y del historial
         if (!$codigoReserva) {
             $codigoReserva = $this->detectarCodigoReserva($nuevoMensaje);
             if (!$codigoReserva && !empty($historial)) {
-                // Buscar en historial
-                $historialArray = explode("\n---\n", $historial);
-                foreach (array_reverse($historialArray) as $linea) {
-                    $codigoEnHistorial = $this->detectarCodigoReserva($linea);
-                    if ($codigoEnHistorial) {
-                        $codigoReserva = $codigoEnHistorial;
-                        break;
-                    }
-                }
+                // Buscar en historial (el historial viene como string con saltos de línea)
+                $codigoReserva = $this->detectarCodigoReserva($historial);
             }
         }
 
@@ -575,22 +626,23 @@ class WhatsappController extends Controller
 
         if (empty($reserva->dni_entregado)) {
             $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
-            $mensajeFuncion = "Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: {$url}";
+            $mensajeFuncion = "Para poder proporcionarte las claves de acceso, necesitamos que completes el formulario con tus datos de identificación. Puedes hacerlo en el siguiente enlace: {$url}";
             return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
         }
 
         if ($fechaEntrada->isToday()) {
-            if ($horaActual < '14:00') {
-                $mensajeFuncion = "Las claves estarán disponibles a partir de las 14:00 del día de entrada.";
+            if ($horaActual < '15:00') {
+                $mensajeFuncion = "Las claves estarán disponibles a partir de las 15:00 del día de entrada.";
                 return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
             }
 
             $clave = $reserva->apartamento->claves ?? 'No asignada aún';
             $clave2 = $reserva->apartamento->edificioName->clave ?? 'No asignada aún';
-            $mensajeFuncion = "Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\nClave de la puerta del edificio: *{$clave2}*\nApartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
+            // Solo proporcionar los códigos, sin información adicional a menos que se solicite
+            $mensajeFuncion = "Código de la puerta del edificio: *{$clave2}*\nCódigo del apartamento: *{$clave}*";
             return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
         } else {
-            $mensajeFuncion = "Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
+            $mensajeFuncion = "Las claves solo se entregan el día de entrada. Tu reserva es para el {$fechaEntrada->format('d/m/Y')}.";
             return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
         }
     }
@@ -660,13 +712,13 @@ class WhatsappController extends Controller
 
         // Agregar historial
         if (!empty($historialArray)) {
-            $promptCompleto .= "\n\n" . implode("\n", $historialArray);
+            $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
         }
 
         // Agregar mensaje actual y resultado de función
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
-            "Ahora responde al usuario de forma natural y útil con esta información:";
+            "Ahora responde al usuario de forma natural, educada y cercana con esta información. Mantén el contexto de la conversación.";
 
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
