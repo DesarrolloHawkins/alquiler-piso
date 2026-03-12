@@ -307,7 +307,7 @@ class WhatsappController extends Controller
         $promptAsistente = PromptAsistente::first();
         $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente virtual de apartamentos turísticos Hawkins. Tu objetivo es ayudar a los clientes de forma educada, formal pero cercana.";
 
-        // Obtener historial de conversación
+        // Obtener historial de conversación PRIMERO para poder verificar contexto
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
         // Solo incluir mensajes que tienen respuesta para evitar bucles
         // Si hay un /clear previo, solo incluir mensajes después de ese /clear
@@ -395,13 +395,65 @@ class WhatsappController extends Controller
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = implode("\n", $historialArray);
 
+        // Detectar si el mensaje actual es SOLO un código de reserva (sin otras palabras)
+        $codigoEnMensajeActual = $this->detectarCodigoReserva($nuevoMensaje);
+        $mensajeEsSoloCodigo = false;
+        if ($codigoEnMensajeActual) {
+            // Verificar si el mensaje es básicamente solo el código (puede tener espacios o caracteres especiales al inicio/fin)
+            $mensajeLimpio = trim(preg_replace('/[^A-Z0-9]/i', '', $nuevoMensaje));
+            if (strlen($mensajeLimpio) >= 8 && strlen($mensajeLimpio) <= 15 &&
+                (strtoupper($mensajeLimpio) === strtoupper($codigoEnMensajeActual) ||
+                 str_replace(' ', '', strtoupper($mensajeLimpio)) === str_replace(' ', '', strtoupper($codigoEnMensajeActual)))) {
+                $mensajeEsSoloCodigo = true;
+                Log::info("🔍 Mensaje detectado como SOLO código de reserva: {$codigoEnMensajeActual}");
+            }
+        }
+
         // Verificar si ya hay un código de reserva en el historial
         $codigoEnHistorial = null;
         if (!empty($historialTexto)) {
             $codigoEnHistorial = $this->detectarCodigoReserva($historialTexto);
         }
-        $codigoEnMensajeActual = $this->detectarCodigoReserva($nuevoMensaje);
         $codigoDisponible = $codigoEnMensajeActual ?: $codigoEnHistorial;
+
+        // Si el mensaje es SOLO un código y hay contexto de pedir claves, ejecutar función directamente
+        if ($mensajeEsSoloCodigo && $codigoEnMensajeActual) {
+            // Verificar si en el historial hay una petición de claves
+            $hayPeticionClaves = false;
+            if (!empty($historialTexto)) {
+                // Buscar en las últimas respuestas del asistente si pidió el código
+                $ultimasRespuestas = array_slice($historialArray, -6); // Últimas 6 líneas
+                foreach ($ultimasRespuestas as $linea) {
+                    if (stripos($linea, 'Asistente:') === 0) {
+                        $textoRespuesta = strtolower($linea);
+                        if (stripos($textoRespuesta, 'código de reserva') !== false ||
+                            stripos($textoRespuesta, 'codigo de reserva') !== false ||
+                            stripos($textoRespuesta, 'necesito tu código') !== false ||
+                            stripos($textoRespuesta, 'proporcionarte las claves') !== false) {
+                            $hayPeticionClaves = true;
+                            Log::info("✅ Contexto detectado: El asistente pidió el código anteriormente");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Si hay petición de claves o el historial está vacío (primera interacción con código)
+            if ($hayPeticionClaves || empty($historialArray)) {
+                Log::info("🚀 Ejecutando obtener_claves automáticamente - Mensaje es solo código: {$codigoEnMensajeActual}");
+                $resultadoFuncion = $this->ejecutarObtenerClaves(
+                    $codigoEnMensajeActual,
+                    $remitente,
+                    $promptBase,
+                    $historialTexto,
+                    $nuevoMensaje,
+                    $endpoint,
+                    $apiKey,
+                    $modelo
+                );
+                return $resultadoFuncion;
+            }
+        }
 
         // Construir instrucciones sobre funciones disponibles y comportamiento
         $instruccionesComportamiento = "\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n" .
@@ -570,27 +622,31 @@ class WhatsappController extends Controller
 
     /**
      * Detectar código de reserva en el mensaje
-     * Busca patrones alfanuméricos que parezcan códigos de reserva
+     * Busca patrones alfanuméricos o numéricos que parezcan códigos de reserva
      */
     private function detectarCodigoReserva($mensaje)
     {
         // Limpiar el mensaje
         $mensajeLimpio = trim($mensaje);
 
-        // Buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
+        // Primero buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
         // Patrón: letras y números, sin espacios, entre 8 y 15 caracteres
         if (preg_match('/\b([A-Z0-9]{8,15})\b/i', $mensajeLimpio, $matches)) {
             $codigo = strtoupper($matches[1]);
 
-            // Verificar que no sea solo números (los códigos suelen tener letras)
-            if (preg_match('/[A-Z]/i', $codigo)) {
+            // Aceptar códigos con letras o solo numéricos (pero con al menos 8 dígitos)
+            if (preg_match('/[A-Z]/i', $codigo) || (preg_match('/^[0-9]{8,15}$/', $codigo))) {
                 Log::info("🔍 Código de reserva detectado: {$codigo}");
                 return $codigo;
             }
         }
 
-        // También buscar en el historial si no se encontró en el mensaje actual
-        // Esto se hará en el método principal si es necesario
+        // También buscar códigos numéricos de 8-15 dígitos (para códigos como 5215046897)
+        if (preg_match('/\b([0-9]{8,15})\b/', $mensajeLimpio, $matches)) {
+            $codigo = $matches[1];
+            Log::info("🔍 Código de reserva numérico detectado: {$codigo}");
+            return $codigo;
+        }
 
         return null;
     }
