@@ -282,15 +282,62 @@ class WhatsappController extends Controller
         $modelo = $config['model'];
         
         $promptAsistente = PromptAsistente::first();
-        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
+        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente profesional de apartamentos turísticos. Eres amable, eficiente y resolutivo.";
 
-        // Construir instrucciones sobre funciones disponibles
-        $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
-            "Cuando necesites ejecutar una función, responde SOLO con el formato exacto:\n" .
-            "- Para obtener claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
-            "- Para notificar técnico: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
-            "- Para notificar limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
-            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario.";
+        // Detectar código de reserva en el mensaje y también en el historial
+        $codigoReservaDetectado = $this->detectarCodigoReserva($nuevoMensaje);
+        
+        // Si no se encontró en el mensaje actual, buscar en el historial reciente
+        if (!$codigoReservaDetectado && !empty($historial)) {
+            // Buscar códigos en el historial (últimos mensajes)
+            $historialArray = explode("\n---\n", $historial);
+            foreach (array_reverse($historialArray) as $linea) {
+                $codigoEnHistorial = $this->detectarCodigoReserva($linea);
+                if ($codigoEnHistorial) {
+                    $codigoReservaDetectado = $codigoEnHistorial;
+                    Log::info("🔍 Código de reserva encontrado en historial: {$codigoReservaDetectado}");
+                    break;
+                }
+            }
+        }
+        
+        // Si se detecta código de reserva Y el usuario menciona problemas de acceso, ejecutar automáticamente
+        $problemaAcceso = stripos($nuevoMensaje, 'no puedo entrar') !== false || 
+                          stripos($nuevoMensaje, 'no me llega') !== false ||
+                          stripos($nuevoMensaje, 'pin') !== false ||
+                          stripos($nuevoMensaje, 'clave') !== false ||
+                          stripos($nuevoMensaje, 'código') !== false;
+        
+        if ($codigoReservaDetectado && $problemaAcceso) {
+            Log::info("🚀 Ejecutando automáticamente obtener_claves para código: {$codigoReservaDetectado}");
+            // Ejecutar directamente la función sin pasar por la IA
+            // Construir promptSystem básico para la función
+            $promptSystemBasico = $promptBase . "\n\nEres un asistente profesional. Responde de forma natural y útil.";
+            return $this->ejecutarObtenerClaves($codigoReservaDetectado, $remitente, $promptSystemBasico, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+        }
+        
+        // Construir instrucciones sobre funciones disponibles - MÁS CLARAS Y ESPECÍFICAS
+        $instruccionesFunciones = "\n\n=== FUNCIONES DISPONIBLES (USA SIEMPRE QUE SEA NECESARIO) ===\n\n" .
+            "IMPORTANTE: Cuando el usuario mencione un código de reserva o necesite claves, DEBES usar la función obtener_claves.\n" .
+            "Cuando haya un problema técnico o avería, DEBES usar notificar_tecnico.\n" .
+            "Cuando soliciten limpieza, DEBES usar notificar_limpieza.\n\n" .
+            "FORMATO EXACTO para usar funciones (responde SOLO con esto cuando necesites ejecutar una función):\n" .
+            "- Código de reserva detectado o solicitud de claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "- Problema técnico/avería: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "- Solicitud de limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
+            "REGLAS IMPORTANTES:\n" .
+            "1. NO repitas saludos si ya saludaste en esta conversación. Lee el historial.\n" .
+            "2. Si el usuario da un código de reserva, USA INMEDIATAMENTE obtener_claves.\n" .
+            "3. Si el usuario dice que no puede entrar o tiene un problema, usa obtener_claves si tiene código.\n" .
+            "4. Responde de forma natural y útil, sin repetir información que ya se dijo en el historial.\n" .
+            "5. Usa el contexto del historial para entender qué ya se dijo y qué información falta.\n" .
+            "6. Si NO necesitas ejecutar ninguna función, responde normalmente pero de forma útil y contextual.";
+
+        // Si se detectó un código de reserva, agregarlo al prompt
+        if ($codigoReservaDetectado) {
+            $instruccionesFunciones .= "\n\n⚠️ ATENCIÓN: Se detectó un código de reserva en el mensaje o historial: {$codigoReservaDetectado}\n" .
+                "DEBES usar la función obtener_claves con este código si el usuario necesita las claves.";
+        }
 
         $promptSystem = $promptBase . $instruccionesFunciones;
 
@@ -403,14 +450,62 @@ class WhatsappController extends Controller
     }
 
     /**
+     * Detectar código de reserva en el mensaje
+     * Busca patrones alfanuméricos que parezcan códigos de reserva
+     */
+    private function detectarCodigoReserva($mensaje)
+    {
+        // Limpiar el mensaje
+        $mensajeLimpio = trim($mensaje);
+        
+        // Buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
+        // Patrón: letras y números, sin espacios, entre 8 y 15 caracteres
+        if (preg_match('/\b([A-Z0-9]{8,15})\b/i', $mensajeLimpio, $matches)) {
+            $codigo = strtoupper($matches[1]);
+            
+            // Verificar que no sea solo números (los códigos suelen tener letras)
+            if (preg_match('/[A-Z]/i', $codigo)) {
+                Log::info("🔍 Código de reserva detectado: {$codigo}");
+                return $codigo;
+            }
+        }
+        
+        // También buscar en el historial si no se encontró en el mensaje actual
+        // Esto se hará en el método principal si es necesario
+        
+        return null;
+    }
+
+    /**
      * Ejecutar función obtener_claves
      */
     private function ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo)
     {
+        // Si no se proporciona código, intentar detectarlo del mensaje
+        if (!$codigoReserva) {
+            $codigoReserva = $this->detectarCodigoReserva($nuevoMensaje);
+            if (!$codigoReserva && !empty($historial)) {
+                // Buscar en historial
+                $historialArray = explode("\n---\n", $historial);
+                foreach (array_reverse($historialArray) as $linea) {
+                    $codigoEnHistorial = $this->detectarCodigoReserva($linea);
+                    if ($codigoEnHistorial) {
+                        $codigoReserva = $codigoEnHistorial;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!$codigoReserva) {
+            $mensajeError = "No se pudo identificar el código de reserva. Por favor, proporciona tu código de reserva.";
+            return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
+        }
+        
         $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
 
         if (!$reserva) {
-            $mensajeError = "No se encontró ninguna reserva con el código: {$codigoReserva}";
+            $mensajeError = "No se encontró ninguna reserva con el código: {$codigoReserva}. Por favor, verifica que el código sea correcto.";
             return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
         }
 
