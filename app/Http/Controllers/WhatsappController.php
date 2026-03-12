@@ -180,7 +180,7 @@ class WhatsappController extends Controller
             // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
             // Buscar mensajes idénticos del mismo remitente en los últimos 10 minutos
             $mensajeRepetido = $this->verificarMensajeRepetido($waId, $contenido);
-            
+
             if ($mensajeRepetido) {
                 Log::info("🔄 Mensaje repetido detectado - No se responderá para evitar bucle con contestador automático", [
                     'remitente' => $waId,
@@ -188,7 +188,7 @@ class WhatsappController extends Controller
                     'mensaje_anterior_id' => $mensajeRepetido->id,
                     'fecha_mensaje_anterior' => $mensajeRepetido->date
                 ]);
-                
+
                 // Crear registro pero sin responder
                 $chat = ChatGpt::create([
                     'id_mensaje' => $id,
@@ -200,13 +200,13 @@ class WhatsappController extends Controller
                     'type' => 'text',
                     'date' => now(),
                 ]);
-                
+
                 return response()->json([
                     'status' => 'ignored',
                     'reason' => 'Mensaje repetido detectado - No se responde para evitar bucle'
                 ]);
             }
-            
+
             // 1. Siempre crear el registro de entrada
             $chat = ChatGpt::create([
                 'id_mensaje' => $id,
@@ -224,7 +224,7 @@ class WhatsappController extends Controller
                 Log::info("🔍 Iniciando clasificación del mensaje: {$contenido}");
                 $categoria = $this->clasificarMensaje($contenido);
                 Log::info("📋 Mensaje clasificado como: {$categoria}");
-                
+
                 if ($categoria === 'averia') {
                     Log::info("🚨 Mensaje clasificado como AVERÍA - Iniciando gestión");
                     $this->gestionarAveria($waId, $contenido);
@@ -266,7 +266,7 @@ class WhatsappController extends Controller
         // Configuración de la IA local Hawkins
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
-        
+
         // Asegurar que la URL termine en /chat/chat
         if (!str_ends_with($endpoint, '/chat/chat')) {
             // Si termina en /chat, agregar /chat
@@ -277,109 +277,91 @@ class WhatsappController extends Controller
                 $endpoint = rtrim($endpoint, '/') . '/chat/chat';
             }
         }
-        
+
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
-        
+
         $promptAsistente = PromptAsistente::first();
-        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente profesional de apartamentos turísticos. Eres amable, eficiente y resolutivo.";
+        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
+
+        // Obtener historial de conversación primero (igual que OpenAI original)
+        // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
+        $historialArray = ChatGpt::where('remitente', $remitente)
+            ->orderBy('date', 'desc')
+            ->limit(20)
+            ->get()
+            ->reverse()
+            ->flatMap(function ($chat) {
+                $mensajes = [];
+                if (!empty($chat->mensaje)) {
+                    $mensajes[] = "Usuario: " . trim($chat->mensaje);
+                }
+                if (!empty($chat->respuesta)) {
+                    $mensajes[] = "Asistente: " . trim($chat->respuesta);
+                }
+                return $mensajes;
+            })
+            ->toArray();
+
+        // Convertir a string para búsqueda de códigos
+        $historialTexto = implode("\n", $historialArray);
 
         // Detectar código de reserva en el mensaje y también en el historial
         $codigoReservaDetectado = $this->detectarCodigoReserva($nuevoMensaje);
-        
+
         // Si no se encontró en el mensaje actual, buscar en el historial reciente
-        if (!$codigoReservaDetectado && !empty($historial)) {
-            // Buscar códigos en el historial (últimos mensajes)
-            $historialArray = explode("\n---\n", $historial);
-            foreach (array_reverse($historialArray) as $linea) {
-                $codigoEnHistorial = $this->detectarCodigoReserva($linea);
-                if ($codigoEnHistorial) {
-                    $codigoReservaDetectado = $codigoEnHistorial;
-                    Log::info("🔍 Código de reserva encontrado en historial: {$codigoReservaDetectado}");
-                    break;
-                }
+        if (!$codigoReservaDetectado && !empty($historialTexto)) {
+            $codigoEnHistorial = $this->detectarCodigoReserva($historialTexto);
+            if ($codigoEnHistorial) {
+                $codigoReservaDetectado = $codigoEnHistorial;
+                Log::info("🔍 Código de reserva encontrado en historial: {$codigoReservaDetectado}");
             }
         }
-        
+
         // Si se detecta código de reserva Y el usuario menciona problemas de acceso, ejecutar automáticamente
-        $problemaAcceso = stripos($nuevoMensaje, 'no puedo entrar') !== false || 
+        $problemaAcceso = stripos($nuevoMensaje, 'no puedo entrar') !== false ||
                           stripos($nuevoMensaje, 'no me llega') !== false ||
                           stripos($nuevoMensaje, 'pin') !== false ||
                           stripos($nuevoMensaje, 'clave') !== false ||
                           stripos($nuevoMensaje, 'código') !== false;
-        
+
         if ($codigoReservaDetectado && $problemaAcceso) {
             Log::info("🚀 Ejecutando automáticamente obtener_claves para código: {$codigoReservaDetectado}");
             // Ejecutar directamente la función sin pasar por la IA
             // Construir promptSystem básico para la función
-            $promptSystemBasico = $promptBase . "\n\nEres un asistente profesional. Responde de forma natural y útil.";
-            return $this->ejecutarObtenerClaves($codigoReservaDetectado, $remitente, $promptSystemBasico, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+            $promptSystemBasico = $promptBase;
+            return $this->ejecutarObtenerClaves($codigoReservaDetectado, $remitente, $promptSystemBasico, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
         }
-        
-        // Construir instrucciones sobre funciones disponibles - MÁS CLARAS Y ESPECÍFICAS
-        $instruccionesFunciones = "\n\n=== FUNCIONES DISPONIBLES (USA SIEMPRE QUE SEA NECESARIO) ===\n\n" .
-            "IMPORTANTE: Cuando el usuario mencione un código de reserva o necesite claves, DEBES usar la función obtener_claves.\n" .
-            "Cuando haya un problema técnico o avería, DEBES usar notificar_tecnico.\n" .
-            "Cuando soliciten limpieza, DEBES usar notificar_limpieza.\n\n" .
-            "FORMATO EXACTO para usar funciones (responde SOLO con esto cuando necesites ejecutar una función):\n" .
-            "- Código de reserva detectado o solicitud de claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
-            "- Problema técnico/avería: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
-            "- Solicitud de limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
-            "REGLAS IMPORTANTES:\n" .
-            "1. NO repitas saludos si ya saludaste en esta conversación. Lee el historial.\n" .
-            "2. Si el usuario da un código de reserva, USA INMEDIATAMENTE obtener_claves.\n" .
-            "3. Si el usuario dice que no puede entrar o tiene un problema, usa obtener_claves si tiene código.\n" .
-            "4. Responde de forma natural y útil, sin repetir información que ya se dijo en el historial.\n" .
-            "5. Usa el contexto del historial para entender qué ya se dijo y qué información falta.\n" .
-            "6. Si NO necesitas ejecutar ninguna función, responde normalmente pero de forma útil y contextual.";
 
-        // Si se detectó un código de reserva, agregarlo al prompt
-        if ($codigoReservaDetectado) {
-            $instruccionesFunciones .= "\n\n⚠️ ATENCIÓN: Se detectó un código de reserva en el mensaje o historial: {$codigoReservaDetectado}\n" .
-                "DEBES usar la función obtener_claves con este código si el usuario necesita las claves.";
-        }
+        // Construir instrucciones sobre funciones disponibles (formato original simple)
+        $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
+            "Cuando necesites ejecutar una función, responde SOLO con el formato exacto:\n" .
+            "- Para obtener claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "- Para notificar técnico: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "- Para notificar limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
+            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario.";
 
         $promptSystem = $promptBase . $instruccionesFunciones;
 
-        // Obtener historial de conversación (solo mensajes completos con respuesta)
-        // Excluir el mensaje actual que aún no tiene respuesta
-        $historial = ChatGpt::where('remitente', $remitente)
-            ->where('status', 1) // Solo mensajes respondidos
-            ->whereNotNull('respuesta') // Que tengan respuesta
-            ->where('respuesta', '!=', '') // Respuesta no vacía
-            ->orderBy('date', 'asc') // Orden cronológico ascendente
-            ->limit(20) // Últimos 20 intercambios completos
-            ->get()
-            ->map(function ($chat) {
-                // Formato claro: Usuario dice X, Asistente responde Y
-                $texto = "Usuario: " . trim($chat->mensaje ?? '') . "\n";
-                $texto .= "Asistente: " . trim($chat->respuesta ?? '') . "\n";
-                return $texto;
-            })
-            ->filter(function ($texto) {
-                // Filtrar entradas vacías
-                return !empty(trim($texto));
-            })
-            ->implode("\n---\n");
-
-        // Construir prompt completo con historial y nuevo mensaje
+        // Construir prompt completo igual que OpenAI original
+        // 1. Prompt del sistema (con instrucciones de funciones)
         $promptCompleto = $promptSystem;
-        
-        if (!empty($historial)) {
-            $promptCompleto .= "\n\n--- HISTORIAL DE CONVERSACIÓN ANTERIOR ---\n" . $historial;
+
+        // 2. Historial de conversación (ya obtenido arriba)
+        if (!empty($historialArray)) {
+            $promptCompleto .= "\n\n" . implode("\n", $historialArray);
         }
-        
-        $promptCompleto .= "\n\n--- MENSAJE ACTUAL DEL USUARIO ---\n" .
-            "Usuario: " . $nuevoMensaje . "\n" .
-            "Asistente:";
+
+        // 3. Nuevo mensaje del usuario
+        $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\nAsistente:";
 
         Log::info("🤖 Enviando mensaje a IA local Hawkins", [
             'endpoint' => $endpoint,
             'modelo' => $modelo,
             'remitente' => $remitente,
             'mensaje' => substr($nuevoMensaje, 0, 100),
-            'historial_lineas' => substr_count($historial, "\n") + 1,
-            'tiene_historial' => !empty($historial)
+            'historial_lineas' => count($historialArray),
+            'tiene_historial' => !empty($historialArray)
         ]);
 
         // Llamar a la API local
@@ -414,7 +396,7 @@ class WhatsappController extends Controller
         if (preg_match('/\[FUNCION:([^:]+):(.+)\]/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             $parametrosStr = $matches[2];
-            
+
             // Parsear parámetros
             $parametros = [];
             foreach (explode(':', $parametrosStr) as $param) {
@@ -429,19 +411,19 @@ class WhatsappController extends Controller
             // Ejecutar función correspondiente
             if ($nombreFuncion === 'obtener_claves') {
                 $codigoReserva = $parametros['codigo_reserva'] ?? null;
-                $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
-                
+
             } elseif ($nombreFuncion === 'notificar_tecnico') {
                 $descripcion = $parametros['descripcion_problema'] ?? ($parametros['descripcion'] ?? '');
                 $urgencia = $parametros['urgencia'] ?? 'media';
-                $resultadoFuncion = $this->ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                $resultadoFuncion = $this->ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
-                
+
             } elseif ($nombreFuncion === 'notificar_limpieza') {
                 $tipoLimpieza = $parametros['tipo_limpieza'] ?? '';
                 $observaciones = $parametros['observaciones'] ?? '';
-                $resultadoFuncion = $this->ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                $resultadoFuncion = $this->ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
             }
         }
@@ -457,22 +439,22 @@ class WhatsappController extends Controller
     {
         // Limpiar el mensaje
         $mensajeLimpio = trim($mensaje);
-        
+
         // Buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
         // Patrón: letras y números, sin espacios, entre 8 y 15 caracteres
         if (preg_match('/\b([A-Z0-9]{8,15})\b/i', $mensajeLimpio, $matches)) {
             $codigo = strtoupper($matches[1]);
-            
+
             // Verificar que no sea solo números (los códigos suelen tener letras)
             if (preg_match('/[A-Z]/i', $codigo)) {
                 Log::info("🔍 Código de reserva detectado: {$codigo}");
                 return $codigo;
             }
         }
-        
+
         // También buscar en el historial si no se encontró en el mensaje actual
         // Esto se hará en el método principal si es necesario
-        
+
         return null;
     }
 
@@ -496,12 +478,12 @@ class WhatsappController extends Controller
                 }
             }
         }
-        
+
         if (!$codigoReserva) {
             $mensajeError = "No se pudo identificar el código de reserva. Por favor, proporciona tu código de reserva.";
             return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
         }
-        
+
         $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
 
         if (!$reserva) {
@@ -561,11 +543,11 @@ class WhatsappController extends Controller
     private function llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $resultadoFuncion, $endpoint, $apiKey, $modelo)
     {
         $promptCompleto = $promptSystem;
-        
+
         if (!empty($historial)) {
             $promptCompleto .= "\n\n--- HISTORIAL DE CONVERSACIÓN ANTERIOR ---\n" . $historial;
         }
-        
+
         $promptCompleto .= "\n\n--- MENSAJE ACTUAL DEL USUARIO ---\n" .
             "Usuario: " . $nuevoMensaje . "\n" .
             "\n--- INFORMACIÓN OBTENIDA ---\n" .
@@ -593,11 +575,11 @@ class WhatsappController extends Controller
     public function clasificarMensaje($mensaje)
     {
         Log::info("🤖 CLASIFICAR MENSAJE - Iniciando para: {$mensaje}");
-        
+
         // Configuración de la IA local Hawkins
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
-        
+
         // Asegurar que la URL termine en /chat/chat
         if (!str_ends_with($endpoint, '/chat/chat')) {
             if (str_ends_with($endpoint, '/chat')) {
@@ -606,14 +588,14 @@ class WhatsappController extends Controller
                 $endpoint = rtrim($endpoint, '/') . '/chat/chat';
             }
         }
-        
+
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
 
         $prompt = "Eres un asistente que clasifica mensajes. Responde ÚNICAMENTE con una de estas palabras: \"averia\", \"limpieza\", \"reserva_apartamento\", o \"otro\". No agregues explicaciones ni texto adicional.\n\nMensaje a clasificar: {$mensaje}\n\nCategoría:";
 
         Log::info("🌐 Enviando petición a IA local para clasificación...");
-        
+
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
             'Content-Type' => 'application/json'
@@ -628,11 +610,11 @@ class WhatsappController extends Controller
         }
 
         $data = $response->json();
-        
+
         if (isset($data['respuesta'])) {
             $categoria = trim(strtolower($data['respuesta']));
             Log::info("✅ Clasificación exitosa: {$categoria}");
-            
+
             // Extraer solo la categoría relevante
             if (strpos($categoria, 'averia') !== false) {
                 return 'averia';
@@ -652,20 +634,20 @@ class WhatsappController extends Controller
     public function gestionarAveria($phone, $mensaje)
     {
         Log::info("🚨 GESTIONAR AVERÍA - Iniciando para teléfono: {$phone}");
-        
+
         // Registrar la avería en la base de datos como incidencia
         Log::info("📝 Registrando avería como incidencia...");
         $registrada = $this->registrarAveria($phone, $mensaje);
-        
+
         if (!$registrada) {
             Log::info("⚠️ La incidencia ya fue registrada anteriormente");
             return "La incidencia ya fue registrada anteriormente. Nuestro equipo técnico ya ha sido notificado y te contactará pronto.";
         }
-        
+
         // Enviar mensaje al técnico
         Log::info("👨‍🔧 Enviando mensaje al técnico...");
         $this->enviarMensajeTecnico($phone, $mensaje);
-        
+
         Log::info("✅ GESTIONAR AVERÍA - Completado");
         return "Hemos registrado tu avería. Nuestro equipo técnico ha sido notificado y te contactará pronto.";
     }
@@ -673,20 +655,20 @@ class WhatsappController extends Controller
     public function gestionarLimpieza($phone, $mensaje)
     {
         Log::info("🧹 GESTIONAR LIMPIEZA - Iniciando para teléfono: {$phone}");
-        
+
         // Registrar la solicitud de limpieza en la base de datos como incidencia
         Log::info("📝 Registrando solicitud de limpieza como incidencia...");
         $registrada = $this->registrarLimpieza($phone, $mensaje);
-        
+
         if (!$registrada) {
             Log::info("⚠️ La incidencia ya fue registrada anteriormente");
             return "La solicitud de limpieza ya fue registrada anteriormente. Nuestro equipo de limpieza ya ha sido notificado y te avisaremos cuando esté confirmado.";
         }
-        
+
         // Enviar mensaje a la limpiadora
         Log::info("👩‍🔧 Enviando mensaje a la limpiadora...");
         $this->enviarMensajeLimpiadora($phone, $mensaje);
-        
+
         Log::info("✅ GESTIONAR LIMPIEZA - Completado");
         return "Hemos programado el servicio de limpieza. Nuestro equipo de limpieza ha sido notificado y te avisaremos cuando esté confirmado.";
     }
@@ -710,17 +692,17 @@ class WhatsappController extends Controller
     private function obtenerReservaActivaCliente($phone)
     {
         Log::info("🔍 OBTENER RESERVA ACTIVA - Buscando para teléfono: {$phone}");
-        
+
         try {
             // 1. Buscar cliente principal por teléfono (telefono o telefono_movil)
             $cliente = Cliente::where(function($query) use ($phone) {
                 $query->where('telefono', $phone)
                       ->orWhere('telefono_movil', $phone);
             })->first();
-            
+
             if ($cliente) {
                 Log::info("✅ Cliente principal encontrado: {$cliente->nombre} {$cliente->apellido1}");
-                
+
                 // Buscar reserva activa del cliente principal
                 $reserva = Reserva::with(['cliente', 'apartamento'])
                     ->where('cliente_id', $cliente->id)
@@ -728,23 +710,23 @@ class WhatsappController extends Controller
                     ->where('fecha_entrada', '<=', now())
                     ->where('fecha_salida', '>=', now())
                     ->first();
-                
+
                 if ($reserva) {
                     Log::info("✅ Reserva activa encontrada por cliente principal: ID {$reserva->id}");
                     return $reserva;
                 }
             }
-            
+
             // 2. Si no se encontró, buscar en huéspedes (acompañantes)
             Log::info("🔍 Buscando en huéspedes (acompañantes)...");
             $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
                 $query->where('telefono_movil', $phone)
                       ->orWhere('telefono2', $phone);
             })->first();
-            
+
             if ($huesped && $huesped->reserva_id) {
                 Log::info("✅ Huésped encontrado: {$huesped->nombre} {$huesped->primer_apellido}");
-                
+
                 // Buscar reserva activa del huésped
                 $reserva = Reserva::with(['cliente', 'apartamento'])
                     ->where('id', $huesped->reserva_id)
@@ -752,13 +734,13 @@ class WhatsappController extends Controller
                     ->where('fecha_entrada', '<=', now())
                     ->where('fecha_salida', '>=', now())
                     ->first();
-                
+
                 if ($reserva) {
                     Log::info("✅ Reserva activa encontrada por huésped: ID {$reserva->id}");
                     return $reserva;
                 }
             }
-            
+
             Log::warning("⚠️ No se encontró reserva activa para el teléfono: {$phone}");
             return null;
         } catch (\Exception $e) {
@@ -773,17 +755,17 @@ class WhatsappController extends Controller
     private function verificarIncidenciaDuplicada($hash)
     {
         Log::info("🔍 VERIFICAR DUPLICADO - Hash: {$hash}");
-        
+
         try {
             $existe = Incidencia::where('hash_identificador', $hash)
                 ->where('created_at', '>=', now()->subHours(24))
                 ->exists();
-            
+
             if ($existe) {
                 Log::warning("⚠️ Incidencia duplicada encontrada con hash: {$hash}");
                 return true;
             }
-            
+
             Log::info("✅ No se encontró incidencia duplicada");
             return false;
         } catch (\Exception $e) {
@@ -798,15 +780,15 @@ class WhatsappController extends Controller
     private function obtenerUsuarioSistema()
     {
         Log::info("🔍 OBTENER USUARIO SISTEMA - Buscando usuario 'Sistema WhatsApp'");
-        
+
         try {
             $usuario = User::where('name', 'Sistema WhatsApp')->first();
-            
+
             if ($usuario) {
                 Log::info("✅ Usuario sistema encontrado: ID {$usuario->id}");
                 return $usuario;
             }
-            
+
             // Crear usuario sistema si no existe
             Log::info("📝 Creando usuario sistema...");
             $usuario = User::create([
@@ -816,7 +798,7 @@ class WhatsappController extends Controller
                 'role' => 'ADMIN',
                 'inactive' => false
             ]);
-            
+
             Log::info("✅ Usuario sistema creado: ID {$usuario->id}");
             return $usuario;
         } catch (\Exception $e) {
@@ -833,19 +815,19 @@ class WhatsappController extends Controller
     {
         $mensajeLower = strtolower($mensaje);
         $palabrasUrgentes = ['urgente', 'roto', 'no funciona', 'no hay', 'sin', 'emergencia', 'grave', 'importante'];
-        
+
         foreach ($palabrasUrgentes as $palabra) {
             if (strpos($mensajeLower, $palabra) !== false) {
                 Log::info("🚨 Palabra clave '{$palabra}' detectada - Prioridad: urgente");
                 return 'urgente';
             }
         }
-        
+
         // Para averías, prioridad alta por defecto
         if ($tipoIncidencia === 'averia') {
             return 'alta';
         }
-        
+
         // Para limpieza, prioridad media por defecto
         return 'media';
     }
@@ -856,16 +838,16 @@ class WhatsappController extends Controller
     private function registrarAveria($phone, $mensaje)
     {
         Log::info("🚨 REGISTRAR AVERÍA - Iniciando para teléfono: {$phone}");
-        
+
         try {
             // 1. Obtener cliente y reserva activa
             // Esta función busca tanto en cliente principal como en huéspedes
             $reserva = $this->obtenerReservaActivaCliente($phone);
-            
+
             // Variables para cliente y huésped
             $cliente = null;
             $huesped = null;
-            
+
             // Obtener cliente: si hay reserva, usar el cliente de la reserva
             // Si no hay reserva, buscar en clientes o huéspedes
             if ($reserva) {
@@ -875,19 +857,19 @@ class WhatsappController extends Controller
                     $query->where('telefono', $phone)
                           ->orWhere('telefono_movil', $phone);
                 })->first();
-                
+
                 // Si no se encuentra cliente, buscar en huéspedes
                 if (!$cliente) {
                     $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
                         $query->where('telefono_movil', $phone)
                               ->orWhere('telefono2', $phone);
                     })->first();
-                    
+
                     // Si encontramos huésped pero no hay reserva, no podemos crear incidencia con apartamento
                     // pero al menos tenemos información del huésped
                 }
             }
-            
+
             // 2. Generar hash único basado en reserva (no en teléfono)
             // Esto permite detectar duplicados aunque escriba el acompañante desde otro teléfono
             $mensajeCorto = substr($mensaje, 0, 50);
@@ -900,27 +882,27 @@ class WhatsappController extends Controller
                 $hash = md5($phone . 'averia' . $mensajeCorto . date('Y-m-d'));
                 Log::info("🔑 Hash generado basado en teléfono (sin reserva): {$hash}");
             }
-            
+
             // 3. Verificar duplicado
             if ($this->verificarIncidenciaDuplicada($hash)) {
                 Log::warning("⚠️ Incidencia duplicada detectada - No se creará");
                 return false;
             }
-            
+
             // 4. Obtener información del apartamento
             $apartamentoNombre = 'Apartamento no identificado';
-            
+
             if ($reserva && $reserva->apartamento) {
                 $apartamentoNombre = $reserva->apartamento->nombre;
                 // NO usamos apartamento_id para evitar problemas
             }
-            
+
             // 5. Obtener usuario sistema
             $usuarioSistema = $this->obtenerUsuarioSistema();
-            
+
             // 6. Detectar prioridad
             $prioridad = $this->detectarPrioridad($mensaje, 'averia');
-            
+
             // 7. Crear descripción completa
             $descripcionCompleta = $mensaje;
             if ($apartamentoNombre !== 'Apartamento no identificado') {
@@ -935,7 +917,7 @@ class WhatsappController extends Controller
             if ($reserva) {
                 $descripcionCompleta .= "\nReserva ID: {$reserva->id}";
             }
-            
+
             // 8. Crear la incidencia
             $incidencia = Incidencia::create([
                 'titulo' => 'Avería reportada vía WhatsApp',
@@ -954,9 +936,9 @@ class WhatsappController extends Controller
                 'apartamento_nombre' => $apartamentoNombre,
                 'reserva_id' => $reserva ? $reserva->id : null
             ]);
-            
+
             Log::info("✅ Incidencia creada: ID {$incidencia->id}");
-            
+
             // 9. Crear alerta para administradores
             AlertService::createIncidentAlert(
                 $incidencia->id,
@@ -966,13 +948,13 @@ class WhatsappController extends Controller
                 $prioridad,
                 $usuarioSistema ? $usuarioSistema->name : 'Sistema WhatsApp'
             );
-            
+
             // 10. Crear notificación
             NotificationService::notifyNewIncident($incidencia);
-            
+
             Log::info("✅ AVERÍA REGISTRADA EXITOSAMENTE - ID: {$incidencia->id}");
             return true;
-            
+
         } catch (\Exception $e) {
             Log::error("❌ Error registrando avería: " . $e->getMessage());
             Log::error("Stack trace: " . $e->getTraceAsString());
@@ -986,16 +968,16 @@ class WhatsappController extends Controller
     private function registrarLimpieza($phone, $mensaje)
     {
         Log::info("🧹 REGISTRAR LIMPIEZA - Iniciando para teléfono: {$phone}");
-        
+
         try {
             // 1. Obtener cliente y reserva activa
             // Esta función busca tanto en cliente principal como en huéspedes
             $reserva = $this->obtenerReservaActivaCliente($phone);
-            
+
             // Variables para cliente y huésped
             $cliente = null;
             $huesped = null;
-            
+
             // Obtener cliente: si hay reserva, usar el cliente de la reserva
             // Si no hay reserva, buscar en clientes o huéspedes
             if ($reserva) {
@@ -1005,19 +987,19 @@ class WhatsappController extends Controller
                     $query->where('telefono', $phone)
                           ->orWhere('telefono_movil', $phone);
                 })->first();
-                
+
                 // Si no se encuentra cliente, buscar en huéspedes
                 if (!$cliente) {
                     $huesped = \App\Models\Huesped::where(function($query) use ($phone) {
                         $query->where('telefono_movil', $phone)
                               ->orWhere('telefono2', $phone);
                     })->first();
-                    
+
                     // Si encontramos huésped pero no hay reserva, no podemos crear incidencia con apartamento
                     // pero al menos tenemos información del huésped
                 }
             }
-            
+
             // 2. Generar hash único basado en reserva (no en teléfono)
             // Esto permite detectar duplicados aunque escriba el acompañante desde otro teléfono
             $mensajeCorto = substr($mensaje, 0, 50);
@@ -1030,27 +1012,27 @@ class WhatsappController extends Controller
                 $hash = md5($phone . 'limpieza' . $mensajeCorto . date('Y-m-d'));
                 Log::info("🔑 Hash generado basado en teléfono (sin reserva): {$hash}");
             }
-            
+
             // 3. Verificar duplicado
             if ($this->verificarIncidenciaDuplicada($hash)) {
                 Log::warning("⚠️ Incidencia duplicada detectada - No se creará");
                 return false;
             }
-            
+
             // 4. Obtener información del apartamento
             $apartamentoNombre = 'Apartamento no identificado';
-            
+
             if ($reserva && $reserva->apartamento) {
                 $apartamentoNombre = $reserva->apartamento->nombre;
                 // NO usamos apartamento_id para evitar problemas
             }
-            
+
             // 5. Obtener usuario sistema
             $usuarioSistema = $this->obtenerUsuarioSistema();
-            
+
             // 6. Detectar prioridad (limpieza siempre media, a menos que tenga palabras urgentes)
             $prioridad = $this->detectarPrioridad($mensaje, 'limpieza');
-            
+
             // 7. Crear descripción completa
             $descripcionCompleta = $mensaje;
             if ($apartamentoNombre !== 'Apartamento no identificado') {
@@ -1065,7 +1047,7 @@ class WhatsappController extends Controller
             if ($reserva) {
                 $descripcionCompleta .= "\nReserva ID: {$reserva->id}";
             }
-            
+
             // 8. Crear la incidencia
             $incidencia = Incidencia::create([
                 'titulo' => 'Solicitud de limpieza vía WhatsApp',
@@ -1084,9 +1066,9 @@ class WhatsappController extends Controller
                 'apartamento_nombre' => $apartamentoNombre,
                 'reserva_id' => $reserva ? $reserva->id : null
             ]);
-            
+
             Log::info("✅ Incidencia creada: ID {$incidencia->id}");
-            
+
             // 9. Crear alerta para administradores
             AlertService::createIncidentAlert(
                 $incidencia->id,
@@ -1096,13 +1078,13 @@ class WhatsappController extends Controller
                 $prioridad,
                 $usuarioSistema ? $usuarioSistema->name : 'Sistema WhatsApp'
             );
-            
+
             // 10. Crear notificación
             NotificationService::notifyNewIncident($incidencia);
-            
+
             Log::info("✅ LIMPIEZA REGISTRADA EXITOSAMENTE - ID: {$incidencia->id}");
             return true;
-            
+
         } catch (\Exception $e) {
             Log::error("❌ Error registrando limpieza: " . $e->getMessage());
             Log::error("Stack trace: " . $e->getTraceAsString());
@@ -1116,17 +1098,17 @@ class WhatsappController extends Controller
     private function enviarMensajeTecnico($phone, $mensaje)
     {
         Log::info("👨‍🔧 ENVIAR MENSAJE TÉCNICO - Iniciando para cliente: {$phone}");
-        
+
         try {
             // Obtener todos los técnicos
             Log::info("🔍 Buscando todos los técnicos...");
             $tecnicos = $this->obtenerTecnicoDisponible();
-            
+
             if ($tecnicos->isEmpty()) {
                 Log::warning("⚠️ No hay técnicos disponibles para notificar");
                 return;
             }
-            
+
             Log::info("✅ Técnicos encontrados: " . $tecnicos->count() . " técnicos");
 
             // Buscar template para averías
@@ -1142,10 +1124,10 @@ class WhatsappController extends Controller
             // Enviar mensaje a cada técnico
             foreach ($tecnicos as $tecnico) {
                 Log::info("📱 Enviando mensaje al técnico: {$tecnico->nombre} - {$tecnico->telefono}");
-                
+
                 if ($template) {
                     Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
-                    
+
                     // Enviar mensaje usando template con los 5 parámetros que espera
                     $this->enviarMensajeTemplate($tecnico->telefono, $template->name, [
                         '1' => $tecnico->nombre ?? 'Técnico', // Nombre del técnico
@@ -1156,7 +1138,7 @@ class WhatsappController extends Controller
                     ]);
                 } else {
                     Log::warning("⚠️ No se encontró template para averías, enviando mensaje simple");
-                    
+
                     // Enviar mensaje simple si no hay template
                     $texto = "🚨 NUEVA AVERÍA REPORTADA\n\n👨‍🔧 Técnico: {$tecnico->nombre}\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
                     $this->contestarWhatsapp3($tecnico->telefono, $texto);
@@ -1164,11 +1146,11 @@ class WhatsappController extends Controller
 
                 Log::info("✅ Mensaje enviado al técnico: {$tecnico->telefono}");
             }
-            
+
             // Enviar notificación a todos los responsables configurados (solo una vez)
             $primerTecnico = $tecnicos->first();
             $this->enviarNotificacionResponsables($phone, $mensaje, 'averia', $primerTecnico->nombre, $apartamento, $edificio);
-            
+
         } catch (\Exception $e) {
             Log::error("Error enviando mensaje a los técnicos: " . $e->getMessage());
         }
@@ -1182,7 +1164,7 @@ class WhatsappController extends Controller
         try {
             // Obtener limpiadora disponible según horario actual
             $limpiadora = $this->obtenerLimpiadoraDisponible();
-            
+
             if (!$limpiadora) {
                 Log::warning("No hay limpiadoras disponibles para notificar");
                 return;
@@ -1197,11 +1179,11 @@ class WhatsappController extends Controller
             if ($template) {
                 Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
                 Log::info("📱 Enviando mensaje usando template...");
-                
+
                 // Obtener información del cliente
                 $apartamento = $this->obtenerApartamentoCliente($phone);
                 $edificio = $this->obtenerEdificioCliente($phone);
-                
+
                 // Enviar mensaje usando template con los 4 parámetros que espera
                 $this->enviarMensajeTemplate($limpiadora->telefono, $template->name, [
                     '1' => $apartamento, // Apartamento del cliente
@@ -1214,16 +1196,16 @@ class WhatsappController extends Controller
                 // Enviar mensaje simple si no hay template
                 $apartamento = $this->obtenerApartamentoCliente($phone);
                 $edificio = $this->obtenerEdificioCliente($phone);
-                
+
                 $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n👩‍🔧 Limpiadora: " . ($limpiadora->usuario->name ?? 'Limpiadora') . "\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
                 $this->contestarWhatsapp3($limpiadora->telefono, $texto);
             }
 
             Log::info("Mensaje enviado a la limpiadora: {$limpiadora->telefono}");
-            
+
             // Enviar notificación a todos los responsables configurados
             $this->enviarNotificacionResponsables($phone, $mensaje, 'limpieza', $limpiadora->usuario->name ?? 'Limpiadora', $apartamento, $edificio);
-            
+
         } catch (\Exception $e) {
             Log::error("Error enviando mensaje a la limpiadora: " . $e->getMessage());
         }
@@ -1237,9 +1219,9 @@ class WhatsappController extends Controller
         Log::info("📱 ENVIAR MENSAJE TEMPLATE - Iniciando para: {$phone}");
         Log::info("🔧 Template: {$templateName}");
         Log::info("📋 Parámetros: " . json_encode($parameters));
-        
+
         $token = env('TOKEN_WHATSAPP', 'valorPorDefecto');
-        
+
         $mensajeTemplate = [
             "messaging_product" => "whatsapp",
             "recipient_type" => "individual",
@@ -1296,36 +1278,36 @@ class WhatsappController extends Controller
         // NUEVO: Enviar a todos los técnicos
         $todosTecnicos = Reparaciones::all();
         return $todosTecnicos;
-        
+
         // CÓDIGO ORIGINAL COMENTADO - Selección por horario
         /*
         $horaActual = now()->format('H:i');
         $diaSemana = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
-        
+
         // Mapear día de la semana a columnas de la base de datos
         $diasColumnas = [
             1 => 'lunes',
-            2 => 'martes', 
+            2 => 'martes',
             3 => 'miercoles',
             4 => 'jueves',
             5 => 'viernes',
             6 => 'sabado',
             0 => 'domingo'
         ];
-        
+
         $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
-        
+
         // Buscar técnico disponible en el día y horario actual
         $tecnico = Reparaciones::where($columnaDia, true)
             ->where('hora_inicio', '<=', $horaActual)
             ->where('hora_fin', '>=', $horaActual)
             ->first();
-            
+
         // Si no hay técnico en horario, buscar cualquier técnico
         if (!$tecnico) {
             $tecnico = Reparaciones::first();
         }
-        
+
         return $tecnico;
         */
     }
@@ -1337,31 +1319,31 @@ class WhatsappController extends Controller
     {
         $horaActual = now()->format('H:i');
         $diaSemana = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
-        
+
         // Mapear día de la semana a columnas de la base de datos
         $diasColumnas = [
             1 => 'lunes',
-            2 => 'martes', 
+            2 => 'martes',
             3 => 'miercoles',
             4 => 'jueves',
             5 => 'viernes',
             6 => 'sabado',
             0 => 'domingo'
         ];
-        
+
         $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
-        
+
         // Buscar limpiadora disponible en el día y horario actual
         $limpiadora = LimpiadoraGuardia::where($columnaDia, true)
             ->where('hora_inicio', '<=', $horaActual)
             ->where('hora_fin', '>=', $horaActual)
             ->first();
-            
+
         // Si no hay limpiadora en horario, buscar cualquier limpiadora
         if (!$limpiadora) {
             $limpiadora = LimpiadoraGuardia::first();
         }
-        
+
         return $limpiadora;
     }
 
@@ -1371,27 +1353,27 @@ class WhatsappController extends Controller
     private function enviarNotificacionResponsables($phone, $mensaje, $tipo, $personalAsignado, $apartamento, $edificio)
     {
         Log::info("📢 ENVIAR NOTIFICACIÓN RESPONSABLES - Iniciando para tipo: {$tipo}");
-        
+
         try {
             // Obtener todos los responsables configurados
             $responsables = EmailNotificaciones::all();
-            
+
             if ($responsables->isEmpty()) {
                 Log::info("ℹ️ No hay responsables configurados para notificar");
                 return;
             }
-            
+
             Log::info("📋 Encontrados {$responsables->count()} responsables para notificar");
-            
+
             foreach ($responsables as $responsable) {
                 try {
                     if (!empty($responsable->telefono)) {
                         // Enviar mensaje de WhatsApp al responsable
                         $texto = $this->generarMensajeResponsable($phone, $mensaje, $tipo, $personalAsignado, $apartamento, $edificio);
-                        
+
                         Log::info("📱 Enviando notificación a responsable: {$responsable->nombre} - {$responsable->telefono}");
                         $this->contestarWhatsapp3($responsable->telefono, $texto);
-                        
+
                         Log::info("✅ Notificación enviada exitosamente a: {$responsable->nombre}");
                     } else {
                         Log::warning("⚠️ Responsable {$responsable->nombre} no tiene teléfono configurado");
@@ -1400,9 +1382,9 @@ class WhatsappController extends Controller
                     Log::error("❌ Error enviando notificación a {$responsable->nombre}: " . $e->getMessage());
                 }
             }
-            
+
             Log::info("✅ ENVIAR NOTIFICACIÓN RESPONSABLES - Completado");
-            
+
         } catch (\Exception $e) {
             Log::error("❌ Error general enviando notificaciones a responsables: " . $e->getMessage());
         }
@@ -1415,7 +1397,7 @@ class WhatsappController extends Controller
     {
         $emoji = ($tipo === 'averia') ? '🚨' : '🧹';
         $tipoTexto = ($tipo === 'averia') ? 'AVERÍA' : 'LIMPIEZA';
-        
+
         return "{$emoji} NOTIFICACIÓN DE {$tipoTexto}\n\n" .
                "📱 Cliente: {$phone}\n" .
                "🏠 Apartamento: {$apartamento}\n" .
@@ -1432,21 +1414,21 @@ class WhatsappController extends Controller
     private function obtenerApartamentoCliente($phone)
     {
         Log::info("🏠 OBTENER APARTAMENTO CLIENTE - Buscando para teléfono: {$phone}");
-        
+
         try {
             // Buscar cliente por teléfono
             $cliente = Cliente::where('telefono', $phone)->first();
-            
+
             if ($cliente) {
                 Log::info("✅ Cliente encontrado: {$cliente->nombre} {$cliente->apellido1}");
-                
+
                 // Buscar reserva activa del cliente
                 $reserva = Reserva::where('cliente_id', $cliente->id)
                     ->where('estado_id', '!=', 4) // No cancelada
                     ->where('fecha_entrada', '<=', now())
                     ->where('fecha_salida', '>=', now())
                     ->first();
-                
+
                 if ($reserva && $reserva->apartamento) {
                     Log::info("✅ Apartamento encontrado: {$reserva->apartamento->nombre}");
                     return $reserva->apartamento->nombre;
@@ -1456,7 +1438,7 @@ class WhatsappController extends Controller
             } else {
                 Log::warning("⚠️ Cliente no encontrado con teléfono: {$phone}");
             }
-            
+
             Log::info("🏠 Retornando: Apartamento no identificado");
             return 'Apartamento no identificado';
         } catch (\Exception $e) {
@@ -1471,21 +1453,21 @@ class WhatsappController extends Controller
     private function obtenerEdificioCliente($phone)
     {
         Log::info("🏢 OBTENER EDIFICIO CLIENTE - Buscando para teléfono: {$phone}");
-        
+
         try {
             // Buscar cliente por teléfono
             $cliente = Cliente::where('telefono', $phone)->first();
-            
+
             if ($cliente) {
                 Log::info("✅ Cliente encontrado: {$cliente->nombre} {$cliente->apellido1}");
-                
+
                 // Buscar reserva activa del cliente
                 $reserva = Reserva::where('cliente_id', $cliente->id)
                     ->where('estado_id', '!=', 4) // No cancelada
                     ->where('fecha_entrada', '<=', now())
                     ->where('fecha_salida', '>=', now())
                     ->first();
-                
+
                 if ($reserva && $reserva->apartamento && $reserva->apartamento->edificioName) {
                     Log::info("✅ Edificio encontrado: {$reserva->apartamento->edificioName->nombre}");
                     return $reserva->apartamento->edificioName->nombre;
@@ -1495,7 +1477,7 @@ class WhatsappController extends Controller
             } else {
                 Log::warning("⚠️ Cliente no encontrado con teléfono: {$phone}");
             }
-            
+
             Log::info("🏢 Retornando: Edificio no identificado");
             return 'Edificio no identificado';
         } catch (\Exception $e) {
@@ -1723,7 +1705,7 @@ class WhatsappController extends Controller
      * Verifica si un mensaje es repetido (contestador automático)
      * Busca mensajes idénticos del mismo remitente en los últimos 10 minutos
      * que ya hayan sido respondidos
-     * 
+     *
      * @param string $remitente Número de teléfono del remitente
      * @param string $contenido Contenido del mensaje
      * @return ChatGpt|null Mensaje repetido encontrado o null
@@ -1733,17 +1715,17 @@ class WhatsappController extends Controller
         try {
             // Normalizar el contenido para comparación (eliminar espacios extra, convertir a minúsculas)
             $contenidoNormalizado = trim(strtolower($contenido));
-            
+
             // Buscar mensajes idénticos del mismo remitente en los últimos 10 minutos
             $fechaLimite = Carbon::now()->subMinutes(10);
-            
+
             $mensajeAnterior = ChatGpt::where('remitente', $remitente)
                 ->where('mensaje', $contenido) // Comparación exacta primero (más rápida)
                 ->where('date', '>=', $fechaLimite)
                 ->where('status', '!=', 2) // Excluir otros mensajes repetidos
                 ->orderBy('date', 'desc')
                 ->first();
-            
+
             // Si no se encuentra con comparación exacta, intentar con normalización
             if (!$mensajeAnterior) {
                 $mensajesRecientes = ChatGpt::where('remitente', $remitente)
@@ -1752,16 +1734,16 @@ class WhatsappController extends Controller
                     ->orderBy('date', 'desc')
                     ->limit(5) // Solo revisar los últimos 5 mensajes para optimizar
                     ->get();
-                
+
                 foreach ($mensajesRecientes as $mensaje) {
                     $mensajeNormalizado = trim(strtolower($mensaje->mensaje ?? ''));
-                    
+
                     // Comparar mensajes normalizados (ignorar diferencias de mayúsculas/minúsculas y espacios)
                     if ($mensajeNormalizado === $contenidoNormalizado) {
                         $mensajeAnterior = $mensaje;
                         break;
                     }
-                    
+
                     // También verificar similitud alta (más del 95% de similitud)
                     // para capturar variaciones menores del contestador automático
                     if (strlen($contenidoNormalizado) > 10 && strlen($mensajeNormalizado) > 10) {
@@ -1773,7 +1755,7 @@ class WhatsappController extends Controller
                     }
                 }
             }
-            
+
             // Si encontramos un mensaje anterior, verificar que ya se haya respondido
             if ($mensajeAnterior && $mensajeAnterior->status == 1 && !empty($mensajeAnterior->respuesta)) {
                 Log::info("✅ Mensaje repetido encontrado y ya respondido", [
@@ -1784,7 +1766,7 @@ class WhatsappController extends Controller
                 ]);
                 return $mensajeAnterior;
             }
-            
+
             return null;
         } catch (\Exception $e) {
             Log::error("❌ Error verificando mensaje repetido: " . $e->getMessage());
@@ -1796,14 +1778,14 @@ class WhatsappController extends Controller
     /**
      * Método de prueba para la IA local Hawkins
      * Permite probar la integración sin necesidad de WhatsApp
-     * 
+     *
      * Uso: GET /chatgpt/{texto} o GET /test-ia-local?mensaje=Hola&remitente=34612345678
      */
     public function chatGptPruebas($texto = null)
     {
         $mensaje = request()->get('mensaje', $texto);
         $remitente = request()->get('remitente', '34600000000'); // Remitente de prueba por defecto
-        
+
         if (!$mensaje) {
             return response()->json([
                 'error' => 'Debes proporcionar un mensaje',
@@ -1835,7 +1817,7 @@ class WhatsappController extends Controller
 
         } catch (\Exception $e) {
             Log::error("❌ Error en prueba de IA local: " . $e->getMessage());
-            
+
             return response()->json([
                 'error' => 'Error al procesar la petición',
                 'mensaje' => $e->getMessage(),
@@ -1851,10 +1833,10 @@ class WhatsappController extends Controller
     public function testIALocalDirecta()
     {
         $mensaje = request()->get('mensaje', 'Hola, ¿cómo estás?');
-        
+
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
-        
+
         // Asegurar que la URL termine en /chat/chat
         if (!str_ends_with($endpoint, '/chat/chat')) {
             if (str_ends_with($endpoint, '/chat')) {
@@ -1863,7 +1845,7 @@ class WhatsappController extends Controller
                 $endpoint = rtrim($endpoint, '/') . '/chat/chat';
             }
         }
-        
+
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
 
@@ -1911,7 +1893,7 @@ class WhatsappController extends Controller
 
         } catch (\Exception $e) {
             Log::error("❌ Error en prueba directa: " . $e->getMessage());
-            
+
             return response()->json([
                 'error' => 'Excepción al procesar la petición',
                 'mensaje' => $e->getMessage(),
