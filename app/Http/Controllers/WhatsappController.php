@@ -154,14 +154,26 @@ class WhatsappController extends Controller
             $contenido = '[Documento] ' . ($mensaje['document']['filename'] ?? 'sin nombre');
         }
 
-        $whatsappMensaje = WhatsappMensaje::create([
-            'mensaje_id' => $id,
-            'tipo' => $tipo,
-            'contenido' => $contenido,
-            'remitente' => $waId,
-            'fecha_mensaje' => $timestamp ? Carbon::createFromTimestamp($timestamp) : now(),
-            'metadata' => $mensaje
-        ]);
+        // Verificar si el mensaje ya existe para evitar duplicados
+        $whatsappMensaje = WhatsappMensaje::firstOrCreate(
+            ['mensaje_id' => $id],
+            [
+                'tipo' => $tipo,
+                'contenido' => $contenido,
+                'remitente' => $waId,
+                'fecha_mensaje' => $timestamp ? Carbon::createFromTimestamp($timestamp) : now(),
+                'metadata' => $mensaje
+            ]
+        );
+
+        // Si el mensaje ya existía, no procesar de nuevo
+        if ($whatsappMensaje->wasRecentlyCreated === false) {
+            Log::info("🔄 Mensaje duplicado detectado - Ya procesado anteriormente", [
+                'mensaje_id' => $id,
+                'remitente' => $waId
+            ]);
+            return response()->json(['status' => 'duplicate', 'message' => 'Mensaje ya procesado']);
+        }
 
         // Solo si es texto, responde con ChatGPT
         if ($tipo === 'text') {
@@ -238,13 +250,10 @@ class WhatsappController extends Controller
                 ]);
 
                 $response = $this->contestarWhatsapp($waId, $respuestaTexto, $whatsappMensaje);
-                // dd($response);
                 return response()->json(['status' => 'ok', 'respuesta' => $respuestaTexto]);
             } else {
-                dd($respuestaTexto);
-
-                Log::warning("❌ Error de ChatGPT. No se contestó a {$waId}.");
-                return response()->json(['status' => 'faile']);
+                Log::warning("❌ Error de IA local. No se contestó a {$waId}.");
+                return response()->json(['status' => 'failed', 'message' => 'No se obtuvo respuesta de la IA']);
 
                 // Se mantiene la fila con status = 0 y respuesta = null
             }
@@ -257,6 +266,18 @@ class WhatsappController extends Controller
         // Configuración de la IA local Hawkins
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
+        
+        // Asegurar que la URL termine en /chat/chat
+        if (!str_ends_with($endpoint, '/chat/chat')) {
+            // Si termina en /chat, agregar /chat
+            if (str_ends_with($endpoint, '/chat')) {
+                $endpoint = rtrim($endpoint, '/chat') . '/chat/chat';
+            } else {
+                // Si termina en /, agregar chat/chat
+                $endpoint = rtrim($endpoint, '/') . '/chat/chat';
+            }
+        }
+        
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
         
@@ -466,6 +487,16 @@ class WhatsappController extends Controller
         // Configuración de la IA local Hawkins
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
+        
+        // Asegurar que la URL termine en /chat/chat
+        if (!str_ends_with($endpoint, '/chat/chat')) {
+            if (str_ends_with($endpoint, '/chat')) {
+                $endpoint = rtrim($endpoint, '/chat') . '/chat/chat';
+            } else {
+                $endpoint = rtrim($endpoint, '/') . '/chat/chat';
+            }
+        }
+        
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
 
@@ -1713,6 +1744,16 @@ class WhatsappController extends Controller
         
         $config = config('services.hawkins_ai');
         $endpoint = $config['base_url'];
+        
+        // Asegurar que la URL termine en /chat/chat
+        if (!str_ends_with($endpoint, '/chat/chat')) {
+            if (str_ends_with($endpoint, '/chat')) {
+                $endpoint = rtrim($endpoint, '/chat') . '/chat/chat';
+            } else {
+                $endpoint = rtrim($endpoint, '/') . '/chat/chat';
+            }
+        }
+        
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
 
