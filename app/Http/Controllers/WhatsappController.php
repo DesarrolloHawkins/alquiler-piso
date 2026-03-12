@@ -309,13 +309,13 @@ class WhatsappController extends Controller
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = implode("\n", $historialArray);
 
-        // Construir instrucciones sobre funciones disponibles (formato original simple)
+        // Construir instrucciones sobre funciones disponibles
         $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
-            "Cuando necesites ejecutar una función, responde SOLO con el formato exacto:\n" .
-            "- Para obtener claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
-            "- Para notificar técnico: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
-            "- Para notificar limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
-            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario.";
+            "Cuando el usuario te proporcione un código de reserva y necesite las claves, DEBES usar: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "Cuando haya un problema técnico o avería que requiera intervención, usa: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "Cuando soliciten limpieza, usa: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
+            "IMPORTANTE: Si el usuario menciona un código de reserva y necesita claves, usa obtener_claves INMEDIATAMENTE.\n" .
+            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
 
         $promptSystem = $promptBase . $instruccionesFunciones;
 
@@ -331,13 +331,18 @@ class WhatsappController extends Controller
         // 3. Nuevo mensaje del usuario
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\nAsistente:";
 
+        // Detectar código de reserva en el mensaje para logging
+        $codigoEnMensaje = $this->detectarCodigoReserva($nuevoMensaje);
+
         Log::info("🤖 Enviando mensaje a IA local Hawkins", [
             'endpoint' => $endpoint,
             'modelo' => $modelo,
             'remitente' => $remitente,
             'mensaje' => substr($nuevoMensaje, 0, 100),
+            'codigo_detectado' => $codigoEnMensaje,
             'historial_lineas' => count($historialArray),
-            'tiene_historial' => !empty($historialArray)
+            'tiene_historial' => !empty($historialArray),
+            'ultimas_lineas_historial' => array_slice($historialArray, -4) // Últimas 4 líneas para debug
         ]);
 
         // Llamar a la API local
@@ -368,11 +373,38 @@ class WhatsappController extends Controller
             return null;
         }
 
-        // Detectar si la respuesta contiene una llamada a función
-        if (preg_match('/\[FUNCION:([^:]+):(.+)\]/', $respuestaTexto, $matches)) {
+        Log::info("📝 Respuesta recibida de IA local", [
+            'respuesta_preview' => substr($respuestaTexto, 0, 200),
+            'tiene_funcion' => preg_match('/\[FUNCION:/', $respuestaTexto) ? 'sí' : 'no'
+        ]);
+
+        // Detectar si la respuesta contiene una llamada a función (más flexible)
+        // Buscar patrones como [FUNCION:nombre:parametros] o variaciones
+        $funcionDetectada = false;
+
+        // Patrón principal
+        if (preg_match('/\[FUNCION:([^:]+):(.+?)\]/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             $parametrosStr = $matches[2];
+            $funcionDetectada = true;
+        }
+        // Si no encuentra el patrón exacto, buscar si menciona obtener claves y hay código de reserva
+        elseif (stripos($respuestaTexto, 'obtener_claves') !== false ||
+                (stripos($respuestaTexto, 'clave') !== false && stripos($respuestaTexto, 'código') !== false)) {
+            // Intentar detectar código de reserva en el mensaje o historial
+            $codigoDetectado = $this->detectarCodigoReserva($nuevoMensaje);
+            if (!$codigoDetectado) {
+                $codigoDetectado = $this->detectarCodigoReserva($historialTexto);
+            }
+            if ($codigoDetectado) {
+                $nombreFuncion = 'obtener_claves';
+                $parametrosStr = 'codigo_reserva=' . $codigoDetectado;
+                $funcionDetectada = true;
+                Log::info("🔧 Función inferida: obtener_claves para código: {$codigoDetectado}");
+            }
+        }
 
+        if ($funcionDetectada) {
             // Parsear parámetros
             $parametros = [];
             foreach (explode(':', $parametrosStr) as $param) {
@@ -387,17 +419,24 @@ class WhatsappController extends Controller
             // Ejecutar función correspondiente
             if ($nombreFuncion === 'obtener_claves') {
                 $codigoReserva = $parametros['codigo_reserva'] ?? null;
+                // Si no hay código en parámetros, intentar detectarlo
+                if (!$codigoReserva) {
+                    $codigoReserva = $this->detectarCodigoReserva($nuevoMensaje);
+                    if (!$codigoReserva) {
+                        $codigoReserva = $this->detectarCodigoReserva($historialTexto);
+                    }
+                }
                 $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
 
             } elseif ($nombreFuncion === 'notificar_tecnico') {
-                $descripcion = $parametros['descripcion_problema'] ?? ($parametros['descripcion'] ?? '');
+                $descripcion = $parametros['descripcion_problema'] ?? ($parametros['descripcion'] ?? $nuevoMensaje);
                 $urgencia = $parametros['urgencia'] ?? 'media';
                 $resultadoFuncion = $this->ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
 
             } elseif ($nombreFuncion === 'notificar_limpieza') {
-                $tipoLimpieza = $parametros['tipo_limpieza'] ?? '';
+                $tipoLimpieza = $parametros['tipo_limpieza'] ?? $nuevoMensaje;
                 $observaciones = $parametros['observaciones'] ?? '';
                 $resultadoFuncion = $this->ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
@@ -518,18 +557,29 @@ class WhatsappController extends Controller
      */
     private function llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $resultadoFuncion, $endpoint, $apiKey, $modelo)
     {
-        $promptCompleto = $promptSystem;
-
+        // Construir historial igual que en el método principal
+        $historialArray = [];
         if (!empty($historial)) {
-            $promptCompleto .= "\n\n--- HISTORIAL DE CONVERSACIÓN ANTERIOR ---\n" . $historial;
+            $lineas = explode("\n", $historial);
+            foreach ($lineas as $linea) {
+                $linea = trim($linea);
+                if (!empty($linea) && (strpos($linea, 'Usuario:') === 0 || strpos($linea, 'Asistente:') === 0)) {
+                    $historialArray[] = $linea;
+                }
+            }
         }
 
-        $promptCompleto .= "\n\n--- MENSAJE ACTUAL DEL USUARIO ---\n" .
-            "Usuario: " . $nuevoMensaje . "\n" .
-            "\n--- INFORMACIÓN OBTENIDA ---\n" .
-            $resultadoFuncion . "\n" .
-            "\n--- INSTRUCCIONES ---\n" .
-            "Responde al usuario de forma natural integrando la información obtenida. No repitas lo que ya se dijo en el historial.";
+        $promptCompleto = $promptSystem;
+
+        // Agregar historial
+        if (!empty($historialArray)) {
+            $promptCompleto .= "\n\n" . implode("\n", $historialArray);
+        }
+
+        // Agregar mensaje actual y resultado de función
+        $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
+            "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
+            "Ahora responde al usuario de forma natural y útil con esta información:";
 
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
@@ -545,7 +595,13 @@ class WhatsappController extends Controller
         }
 
         $data = $response->json();
-        return $data['respuesta'] ?? $resultadoFuncion;
+        $respuestaFinal = $data['respuesta'] ?? $resultadoFuncion;
+
+        // Limpiar la respuesta si contiene marcadores de función
+        $respuestaFinal = preg_replace('/\[FUNCION:[^\]]+\]/', '', $respuestaFinal);
+        $respuestaFinal = trim($respuestaFinal);
+
+        return $respuestaFinal ?: $resultadoFuncion;
     }
 
     public function clasificarMensaje($mensaje)
