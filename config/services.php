@@ -41,7 +41,7 @@ return [
     ],
 
     'hawkins_ai' => [
-        'base_url' => env('HAWKINS_AI_URL', 'https://192.168.1.45/chat/chat'),
+        'base_url' => env('HAWKINS_AI_URL', 'https://aiapi.hawkins.es/chat/chat'),
         'api_key' => env('HAWKINS_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
         'model' => env('HAWKINS_AI_MODEL', 'qwen3:latest'),
     ],
@@ -58,7 +58,7 @@ return [
     ],
 
     'ai_translation' => [
-        'url' => env('AI_TRANSLATION_URL', 'https://192.168.1.45/chat/chat'),
+        'url' => env('AI_TRANSLATION_URL', 'https://aiapi.hawkins.es/chat/chat'),
         'api_key' => env('AI_TRANSLATION_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
         'model' => env('AI_TRANSLATION_MODEL', 'gpt-oss:120b-cloud'),
     ],
