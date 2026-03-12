@@ -41,9 +41,9 @@ return [
     ],
 
     'hawkins_ai' => [
-        'base_url' => env('HAWKINS_AI_URL', 'https://192.168.1.45/chat'),
+        'base_url' => env('HAWKINS_AI_URL', 'https://192.168.1.45/chat/chat'),
         'api_key' => env('HAWKINS_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
-        'model' => env('HAWKINS_AI_MODEL', 'qwen2.5vl:latest'),
+        'model' => env('HAWKINS_AI_MODEL', 'qwen3:latest'),
     ],
 
     'recaptcha' => [

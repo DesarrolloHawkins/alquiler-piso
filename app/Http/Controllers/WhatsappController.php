@@ -254,304 +254,242 @@ class WhatsappController extends Controller
 
     function enviarMensajeOpenAiChatCompletions($nuevoMensaje, $remitente)
     {
-        $apiKey = env('OPENAI_API_KEY');
-        $modelo = 'gpt-4o';
-        $endpoint = 'https://api.openai.com/v1/chat/completions';
+        // Configuración de la IA local Hawkins
+        $config = config('services.hawkins_ai');
+        $endpoint = $config['base_url'];
+        $apiKey = $config['api_key'];
+        $modelo = $config['model'];
+        
         $promptAsistente = PromptAsistente::first();
+        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
 
-        $tools = [
-            [
-                "type" => "function",
-                "function" => [
-                    "name" => "obtener_claves",
-                    "description" => "Devuelve la clave de acceso al apartamento según el código de reserva, solo si es la fecha de entrada, ha pasado la hora de entrada y el cliente ha entregado el DNI.",
-                    "parameters" => [
-                        "type" => "object",
-                        "properties" => [
-                            "codigo_reserva" => [
-                                "type" => "string",
-                                "description" => "Código de la reserva del cliente"
-                            ]
-                        ],
-                        "required" => ["codigo_reserva"]
-                    ]
-                ]
-            ],
-            [
-                "type" => "function",
-                "function" => [
-                    "name" => "notificar_tecnico",
-                    "description" => "Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general o cuando despues de intentar resolver el problema con la información general no se ha resuelto el problema.",
-                    "parameters" => [
-                        "type" => "object",
-                        "properties" => [
-                            "descripcion_problema" => [
-                                "type" => "string",
-                                "description" => "Descripción detallada del problema reportado por el cliente"
-                            ],
-                            "urgencia" => [
-                                "type" => "string",
-                                "enum" => ["baja", "media", "alta"],
-                                "description" => "Nivel de urgencia del problema"
-                            ]
-                        ],
-                        "required" => ["descripcion_problema", "urgencia"]
-                    ]
-                ]
-            ],
-            [
-                "type" => "function",
-                "function" => [
-                    "name" => "notificar_limpieza",
-                    "description" => "Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica o cuando despues de intentar resolver el problema con la información general no se ha resuelto el problema.",
-                    "parameters" => [
-                        "type" => "object",
-                        "properties" => [
-                            "tipo_limpieza" => [
-                                "type" => "string",
-                                "description" => "Tipo de limpieza solicitada (ej: limpieza general, cambio de ropa, etc.)"
-                            ],
-                            "observaciones" => [
-                                "type" => "string",
-                                "description" => "Observaciones adicionales del cliente"
-                            ]
-                        ],
-                        "required" => ["tipo_limpieza"]
-                    ]
-                ]
-            ]
-           
-        ];
+        // Construir instrucciones sobre funciones disponibles
+        $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
+            "Cuando necesites ejecutar una función, responde SOLO con el formato exacto:\n" .
+            "- Para obtener claves: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "- Para notificar técnico: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "- Para notificar limpieza: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
+            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario.";
 
-        $promptSystem = [
-            "role" => "system",
-            "content" => $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos."
-        ];
+        $promptSystem = $promptBase . $instruccionesFunciones;
 
+        // Obtener historial de conversación
         $historial = ChatGpt::where('remitente', $remitente)
             ->orderBy('date', 'desc')
             ->limit(20)
             ->get()
             ->reverse()
-            ->flatMap(function ($chat) {
-                $mensajes = [];
+            ->map(function ($chat) {
+                $texto = "";
                 if (!empty($chat->mensaje)) {
-                    $mensajes[] = ["role" => "user", "content" => $chat->mensaje];
+                    $texto .= "Usuario: " . $chat->mensaje . "\n";
                 }
                 if (!empty($chat->respuesta)) {
-                    $mensajes[] = ["role" => "assistant", "content" => $chat->respuesta];
+                    $texto .= "Asistente: " . $chat->respuesta . "\n";
                 }
-                return $mensajes;
+                return $texto;
             })
-            ->toArray();
+            ->implode("\n");
 
-        $historial[] = ["role" => "user", "content" => $nuevoMensaje];
+        // Construir prompt completo con historial y nuevo mensaje
+        $promptCompleto = $promptSystem . "\n\n--- HISTORIAL DE CONVERSACIÓN ---\n" . 
+            ($historial ? $historial . "\n" : "") .
+            "--- MENSAJE ACTUAL ---\n" .
+            "Usuario: " . $nuevoMensaje . "\n" .
+            "Asistente:";
 
-        $response = Http::withToken($apiKey)->post($endpoint, [
-            'model' => $modelo,
-            'messages' => array_merge([$promptSystem], $historial),
-            'tools' => $tools,
-            'tool_choice' => "auto",
+        Log::info("🤖 Enviando mensaje a IA local Hawkins", [
+            'endpoint' => $endpoint,
+            'modelo' => $modelo,
+            'remitente' => $remitente
+        ]);
+
+        // Llamar a la API local
+        $response = Http::withHeaders([
+            'x-api-key' => $apiKey,
+            'Content-Type' => 'application/json'
+        ])->post($endpoint, [
+            'prompt' => $promptCompleto,
+            'modelo' => $modelo
         ]);
 
         if ($response->failed()) {
-            Log::error("❌ Error llamando a ChatGPT: " . $response->body());
+            Log::error("❌ Error llamando a IA local Hawkins: " . $response->body());
             return null;
         }
 
         $data = $response->json();
 
-        if (isset($data['choices'][0]['message']['tool_calls'])) {
-            $toolCall = $data['choices'][0]['message']['tool_calls'][0];
-            if ($toolCall['function']['name'] === 'obtener_claves') {
-                $args = json_decode($toolCall['function']['arguments'], true);
-                $codigoReserva = $args['codigo_reserva'] ?? null;
+        if (!isset($data['success']) || !$data['success']) {
+            Log::error("❌ Error en respuesta de IA local: " . json_encode($data));
+            return null;
+        }
 
-                $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
+        $respuestaTexto = $data['respuesta'] ?? null;
 
-                if (!$reserva) {
-                    return "❌ No se encontró ninguna reserva con ese código.";
+        if (!$respuestaTexto) {
+            Log::warning("⚠️ Respuesta vacía de IA local");
+            return null;
+        }
+
+        // Detectar si la respuesta contiene una llamada a función
+        if (preg_match('/\[FUNCION:([^:]+):(.+)\]/', $respuestaTexto, $matches)) {
+            $nombreFuncion = trim($matches[1]);
+            $parametrosStr = $matches[2];
+            
+            // Parsear parámetros
+            $parametros = [];
+            foreach (explode(':', $parametrosStr) as $param) {
+                if (strpos($param, '=') !== false) {
+                    list($key, $value) = explode('=', $param, 2);
+                    $parametros[trim($key)] = trim($value);
                 }
+            }
 
-                // Verificaciones
-                $hoy = now();
-                $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
-                $horaActual = now()->format('H:i');
+            Log::info("🔧 Función detectada: {$nombreFuncion}", ['parametros' => $parametros]);
 
-                if (empty($reserva->dni_entregado)) {
-                    $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
-                    // Segunda llamada a OpenAI para integrar en la conversación
-                    $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                        'model' => $modelo,
-                        'messages' => [
-                            $promptSystem,
-                            ...$historial,
-                            ["role" => "assistant", "tool_calls" => [$toolCall]],
-                            [
-                                "role" => "tool",
-                                "tool_call_id" => $toolCall['id'],
-                                "content" => "Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: $url"
-                            ]
-                        ]
-                    ]);
-
-                    return $responseFinal->json('choices.0.message.content');
-                    //return ;
-                }
+            // Ejecutar función correspondiente
+            if ($nombreFuncion === 'obtener_claves') {
+                $codigoReserva = $parametros['codigo_reserva'] ?? null;
+                $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                return $resultadoFuncion;
                 
-
-                if ($fechaEntrada->isToday()) {
-                    if ($horaActual < '14:00') {
-                        // Segunda llamada a OpenAI para integrar en la conversación
-                        $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                            'model' => $modelo,
-                            'messages' => [
-                                $promptSystem,
-                                ...$historial,
-                                ["role" => "assistant", "tool_calls" => [$toolCall]],
-                                [
-                                    "role" => "tool",
-                                    "tool_call_id" => $toolCall['id'],
-                                    "content" => "Las claves estarán disponibles a partir de las 14:00 del día de entrada."
-                                ]
-                            ]
-                        ]);
-
-                        return $responseFinal->json('choices.0.message.content');
-                        //return "🔒 Las claves estarán disponibles a partir de las 13:00 del día de entrada.";
-                    }
-
-
-
-                    $clave = $reserva->apartamento->claves ?? 'No asignada aún';
-                    $clave2 = $reserva->apartamento->edificioName->clave ?? 'No asignada aún';
-                    $respuestaFinal = "🔐 Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\n🚪 Clave de la puerta del edificio: *{$clave2}*\n📅, Apartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
-
-                    // Segunda llamada a OpenAI para integrar en la conversación
-                    $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                        'model' => $modelo,
-                        'messages' => [
-                            $promptSystem,
-                            ...$historial,
-                            ["role" => "assistant", "tool_calls" => [$toolCall]],
-                            [
-                                "role" => "tool",
-                                "tool_call_id" => $toolCall['id'],
-                                "content" => $respuestaFinal
-                            ]
-                        ]
-                    ]);
-
-                    return $responseFinal->json('choices.0.message.content');
-                } else {
-                    $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                        'model' => $modelo,
-                        'messages' => [
-                            $promptSystem,
-                            ...$historial,
-                            ["role" => "assistant", "tool_calls" => [$toolCall]],
-                            [
-                                "role" => "tool",
-                                "tool_call_id" => $toolCall['id'],
-                                "content" => "Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*."
-                            ]
-                        ]
-                    ]);
-
-                    return $responseFinal->json('choices.0.message.content');
-                    //return "📅 Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
-                } 
-            } elseif ($toolCall['function']['name'] === 'notificar_tecnico') {
-                $args = json_decode($toolCall['function']['arguments'], true);
-                $descripcion = $args['descripcion_problema'] ?? '';
-                $urgencia = $args['urgencia'] ?? 'media';
+            } elseif ($nombreFuncion === 'notificar_tecnico') {
+                $descripcion = $parametros['descripcion_problema'] ?? ($parametros['descripcion'] ?? '');
+                $urgencia = $parametros['urgencia'] ?? 'media';
+                $resultadoFuncion = $this->ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                return $resultadoFuncion;
                 
-                // Ejecutar la notificación al técnico
-                $this->gestionarAveria($remitente, $descripcion);
-                
-                // Respuesta a ChatGPT confirmando la notificación
-                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                    'model' => $modelo,
-                    'messages' => [
-                        $promptSystem,
-                        ...$historial,
-                        ["role" => "assistant", "tool_calls" => [$toolCall]],
-                        [
-                            "role" => "tool",
-                            "tool_call_id" => $toolCall['id'],
-                            "content" => "He notificado al técnico sobre el problema reportado. Te contactarán pronto para resolver la situación."
-                        ]
-                    ]
-                ]);
-                
-                return $responseFinal->json('choices.0.message.content');
-                
-            } elseif ($toolCall['function']['name'] === 'notificar_limpieza') {
-                $args = json_decode($toolCall['function']['arguments'], true);
-                $tipoLimpieza = $args['tipo_limpieza'] ?? '';
-                $observaciones = $args['observaciones'] ?? '';
-                
-                // Ejecutar la notificación a limpieza
-                $this->gestionarLimpieza($remitente, $tipoLimpieza . ($observaciones ? " - " . $observaciones : ""));
-                
-                // Respuesta a ChatGPT confirmando la notificación
-                $responseFinal = Http::withToken($apiKey)->post($endpoint, [
-                    'model' => $modelo,
-                    'messages' => [
-                        $promptSystem,
-                        ...$historial,
-                        ["role" => "assistant", "tool_calls" => [$toolCall]],
-                        [
-                            "role" => "tool",
-                            "tool_call_id" => $toolCall['id'],
-                            "content" => "He notificado al equipo de limpieza sobre tu solicitud. Te avisaremos cuando esté confirmado."
-                        ]
-                    ]
-                ]);
-                
-                return $responseFinal->json('choices.0.message.content');
+            } elseif ($nombreFuncion === 'notificar_limpieza') {
+                $tipoLimpieza = $parametros['tipo_limpieza'] ?? '';
+                $observaciones = $parametros['observaciones'] ?? '';
+                $resultadoFuncion = $this->ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo);
+                return $resultadoFuncion;
             }
         }
 
-        return $data['choices'][0]['message']['content'] ?? null;
+        return $respuestaTexto;
+    }
+
+    /**
+     * Ejecutar función obtener_claves
+     */
+    private function ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo)
+    {
+        $reserva = Reserva::where('codigo_reserva', $codigoReserva)->first();
+
+        if (!$reserva) {
+            $mensajeError = "No se encontró ninguna reserva con el código: {$codigoReserva}";
+            return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
+        }
+
+        $fechaEntrada = Carbon::parse($reserva->fecha_entrada);
+        $horaActual = now()->format('H:i');
+
+        if (empty($reserva->dni_entregado)) {
+            $url = 'https://crm.apartamentosalgeciras.com/dni-user/' . $reserva->token;
+            $mensajeFuncion = "Para poder darte la clave de acceso, necesitamos que completes el formulario con tus datos de identificación aquí: {$url}";
+            return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+        }
+
+        if ($fechaEntrada->isToday()) {
+            if ($horaActual < '14:00') {
+                $mensajeFuncion = "Las claves estarán disponibles a partir de las 14:00 del día de entrada.";
+                return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+            }
+
+            $clave = $reserva->apartamento->claves ?? 'No asignada aún';
+            $clave2 = $reserva->apartamento->edificioName->clave ?? 'No asignada aún';
+            $mensajeFuncion = "Clave de acceso para tu apartamento reservado (#{$codigoReserva}): *{$clave}*\n\nClave de la puerta del edificio: *{$clave2}*\nApartamento: *{$reserva->apartamento->nombre}*, Entrada: *{$reserva->fecha_entrada}* - Salida: *{$reserva->fecha_salida}*, hora actual: *{$horaActual}*";
+            return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+        } else {
+            $mensajeFuncion = "Las claves solo se entregan el día de entrada. Tu reserva es para el *{$fechaEntrada->format('d/m/Y')}*.";
+            return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+        }
+    }
+
+    /**
+     * Ejecutar función notificar_tecnico
+     */
+    private function ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo)
+    {
+        $this->gestionarAveria($remitente, $descripcion);
+        $mensajeFuncion = "He notificado al técnico sobre el problema reportado. Te contactarán pronto para resolver la situación.";
+        return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+    }
+
+    /**
+     * Ejecutar función notificar_limpieza
+     */
+    private function ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historial, $nuevoMensaje, $endpoint, $apiKey, $modelo)
+    {
+        $mensajeCompleto = $tipoLimpieza . ($observaciones ? " - " . $observaciones : "");
+        $this->gestionarLimpieza($remitente, $mensajeCompleto);
+        $mensajeFuncion = "He notificado al equipo de limpieza sobre tu solicitud. Te avisaremos cuando esté confirmado.";
+        return $this->llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+    }
+
+    /**
+     * Llamar a la IA local con contexto actualizado después de ejecutar una función
+     */
+    private function llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $resultadoFuncion, $endpoint, $apiKey, $modelo)
+    {
+        $promptCompleto = $promptSystem . "\n\n--- HISTORIAL DE CONVERSACIÓN ---\n" . 
+            ($historial ? $historial . "\n" : "") .
+            "--- MENSAJE ACTUAL ---\n" .
+            "Usuario: " . $nuevoMensaje . "\n" .
+            "Asistente: [FUNCION ejecutada]\n" .
+            "Resultado de la función: " . $resultadoFuncion . "\n" .
+            "Ahora responde al usuario de forma natural integrando esta información:";
+
+        $response = Http::withHeaders([
+            'x-api-key' => $apiKey,
+            'Content-Type' => 'application/json'
+        ])->post($endpoint, [
+            'prompt' => $promptCompleto,
+            'modelo' => $modelo
+        ]);
+
+        if ($response->failed()) {
+            Log::error("❌ Error en segunda llamada a IA local: " . $response->body());
+            return $resultadoFuncion; // Devolver resultado directo si falla
+        }
+
+        $data = $response->json();
+        return $data['respuesta'] ?? $resultadoFuncion;
     }
 
     public function clasificarMensaje($mensaje)
     {
         Log::info("🤖 CLASIFICAR MENSAJE - Iniciando para: {$mensaje}");
         
-        $token = env('TOKEN_OPENAI', 'valorPorDefecto');
-        $url = 'https://api.openai.com/v1/chat/completions';
+        // Configuración de la IA local Hawkins
+        $config = config('services.hawkins_ai');
+        $endpoint = $config['base_url'];
+        $apiKey = $config['api_key'];
+        $modelo = $config['model'];
 
-        $headers = [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $token
-        ];
+        $prompt = "Eres un asistente que clasifica mensajes. Responde ÚNICAMENTE con una de estas palabras: \"averia\", \"limpieza\", \"reserva_apartamento\", o \"otro\". No agregues explicaciones ni texto adicional.\n\nMensaje a clasificar: {$mensaje}\n\nCategoría:";
 
-        $body = json_encode([
-            'model' => 'gpt-4',
-            'messages' => [
-                ['role' => 'system', 'content' => 'Eres un asistente que clasifica mensajes. Responde ÚNICAMENTE con una de estas palabras: "averia", "limpieza", "reserva_apartamento", o "otro". No agregues explicaciones ni texto adicional.'],
-                ['role' => 'user', 'content' => $mensaje]
-            ],
-            'max_tokens' => 5
+        Log::info("🌐 Enviando petición a IA local para clasificación...");
+        
+        $response = Http::withHeaders([
+            'x-api-key' => $apiKey,
+            'Content-Type' => 'application/json'
+        ])->post($endpoint, [
+            'prompt' => $prompt,
+            'modelo' => $modelo
         ]);
 
-        Log::info("🌐 Enviando petición a OpenAI para clasificación...");
-        
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
-        $response = curl_exec($curl);
-        curl_close($curl);
+        if ($response->failed()) {
+            Log::error("❌ Error llamando a IA local para clasificación: " . $response->body());
+            return 'otro';
+        }
 
-        $response_data = json_decode($response, true);
+        $data = $response->json();
         
-        if (isset($response_data['choices'][0]['message']['content'])) {
-            $categoria = trim(strtolower($response_data['choices'][0]['message']['content']));
+        if (isset($data['respuesta'])) {
+            $categoria = trim(strtolower($data['respuesta']));
             Log::info("✅ Clasificación exitosa: {$categoria}");
             
             // Extraer solo la categoría relevante
@@ -1711,6 +1649,128 @@ class WhatsappController extends Controller
             Log::error("❌ Error verificando mensaje repetido: " . $e->getMessage());
             // En caso de error, no bloquear el mensaje (mejor responder que no responder)
             return null;
+        }
+    }
+
+    /**
+     * Método de prueba para la IA local Hawkins
+     * Permite probar la integración sin necesidad de WhatsApp
+     * 
+     * Uso: GET /chatgpt/{texto} o GET /test-ia-local?mensaje=Hola&remitente=34612345678
+     */
+    public function chatGptPruebas($texto = null)
+    {
+        $mensaje = request()->get('mensaje', $texto);
+        $remitente = request()->get('remitente', '34600000000'); // Remitente de prueba por defecto
+        
+        if (!$mensaje) {
+            return response()->json([
+                'error' => 'Debes proporcionar un mensaje',
+                'uso' => 'GET /chatgpt/{texto} o GET /test-ia-local?mensaje=Hola&remitente=34612345678'
+            ], 400);
+        }
+
+        Log::info("🧪 PRUEBA IA LOCAL - Mensaje: {$mensaje}, Remitente: {$remitente}");
+
+        try {
+            // Llamar al método principal que usa la IA local
+            $respuesta = $this->enviarMensajeOpenAiChatCompletions($mensaje, $remitente);
+
+            if (!$respuesta) {
+                return response()->json([
+                    'error' => 'No se obtuvo respuesta de la IA local',
+                    'mensaje_enviado' => $mensaje,
+                    'remitente' => $remitente
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'mensaje_enviado' => $mensaje,
+                'remitente' => $remitente,
+                'respuesta_ia' => $respuesta,
+                'timestamp' => now()->toIso8601String()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error en prueba de IA local: " . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Error al procesar la petición',
+                'mensaje' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Método de prueba directa a la API de IA local (sin historial)
+     * Útil para verificar la conexión básica
+     */
+    public function testIALocalDirecta()
+    {
+        $mensaje = request()->get('mensaje', 'Hola, ¿cómo estás?');
+        
+        $config = config('services.hawkins_ai');
+        $endpoint = $config['base_url'];
+        $apiKey = $config['api_key'];
+        $modelo = $config['model'];
+
+        Log::info("🧪 PRUEBA DIRECTA IA LOCAL", [
+            'endpoint' => $endpoint,
+            'modelo' => $modelo,
+            'mensaje' => $mensaje
+        ]);
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $apiKey,
+                'Content-Type' => 'application/json'
+            ])->timeout(30)->post($endpoint, [
+                'prompt' => $mensaje,
+                'modelo' => $modelo
+            ]);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => 'Error en la petición HTTP',
+                    'status_code' => $response->status(),
+                    'body' => $response->body(),
+                    'config' => [
+                        'endpoint' => $endpoint,
+                        'modelo' => $modelo,
+                        'api_key_set' => !empty($apiKey)
+                    ]
+                ], 500);
+            }
+
+            $data = $response->json();
+
+            return response()->json([
+                'success' => true,
+                'mensaje_enviado' => $mensaje,
+                'respuesta_completa' => $data,
+                'respuesta_texto' => $data['respuesta'] ?? null,
+                'config' => [
+                    'endpoint' => $endpoint,
+                    'modelo' => $modelo
+                ],
+                'timestamp' => now()->toIso8601String()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error en prueba directa: " . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Excepción al procesar la petición',
+                'mensaje' => $e->getMessage(),
+                'config' => [
+                    'endpoint' => $endpoint,
+                    'modelo' => $modelo,
+                    'api_key_set' => !empty($apiKey)
+                ],
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
     }
 
