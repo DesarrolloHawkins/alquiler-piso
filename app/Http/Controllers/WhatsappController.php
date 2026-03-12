@@ -294,35 +294,45 @@ class WhatsappController extends Controller
 
         $promptSystem = $promptBase . $instruccionesFunciones;
 
-        // Obtener historial de conversación
+        // Obtener historial de conversación (solo mensajes completos con respuesta)
+        // Excluir el mensaje actual que aún no tiene respuesta
         $historial = ChatGpt::where('remitente', $remitente)
-            ->orderBy('date', 'desc')
-            ->limit(20)
+            ->where('status', 1) // Solo mensajes respondidos
+            ->whereNotNull('respuesta') // Que tengan respuesta
+            ->where('respuesta', '!=', '') // Respuesta no vacía
+            ->orderBy('date', 'asc') // Orden cronológico ascendente
+            ->limit(20) // Últimos 20 intercambios completos
             ->get()
-            ->reverse()
             ->map(function ($chat) {
-                $texto = "";
-                if (!empty($chat->mensaje)) {
-                    $texto .= "Usuario: " . $chat->mensaje . "\n";
-                }
-                if (!empty($chat->respuesta)) {
-                    $texto .= "Asistente: " . $chat->respuesta . "\n";
-                }
+                // Formato claro: Usuario dice X, Asistente responde Y
+                $texto = "Usuario: " . trim($chat->mensaje ?? '') . "\n";
+                $texto .= "Asistente: " . trim($chat->respuesta ?? '') . "\n";
                 return $texto;
             })
-            ->implode("\n");
+            ->filter(function ($texto) {
+                // Filtrar entradas vacías
+                return !empty(trim($texto));
+            })
+            ->implode("\n---\n");
 
         // Construir prompt completo con historial y nuevo mensaje
-        $promptCompleto = $promptSystem . "\n\n--- HISTORIAL DE CONVERSACIÓN ---\n" . 
-            ($historial ? $historial . "\n" : "") .
-            "--- MENSAJE ACTUAL ---\n" .
+        $promptCompleto = $promptSystem;
+        
+        if (!empty($historial)) {
+            $promptCompleto .= "\n\n--- HISTORIAL DE CONVERSACIÓN ANTERIOR ---\n" . $historial;
+        }
+        
+        $promptCompleto .= "\n\n--- MENSAJE ACTUAL DEL USUARIO ---\n" .
             "Usuario: " . $nuevoMensaje . "\n" .
             "Asistente:";
 
         Log::info("🤖 Enviando mensaje a IA local Hawkins", [
             'endpoint' => $endpoint,
             'modelo' => $modelo,
-            'remitente' => $remitente
+            'remitente' => $remitente,
+            'mensaje' => substr($nuevoMensaje, 0, 100),
+            'historial_lineas' => substr_count($historial, "\n") + 1,
+            'tiene_historial' => !empty($historial)
         ]);
 
         // Llamar a la API local
@@ -455,13 +465,18 @@ class WhatsappController extends Controller
      */
     private function llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $resultadoFuncion, $endpoint, $apiKey, $modelo)
     {
-        $promptCompleto = $promptSystem . "\n\n--- HISTORIAL DE CONVERSACIÓN ---\n" . 
-            ($historial ? $historial . "\n" : "") .
-            "--- MENSAJE ACTUAL ---\n" .
+        $promptCompleto = $promptSystem;
+        
+        if (!empty($historial)) {
+            $promptCompleto .= "\n\n--- HISTORIAL DE CONVERSACIÓN ANTERIOR ---\n" . $historial;
+        }
+        
+        $promptCompleto .= "\n\n--- MENSAJE ACTUAL DEL USUARIO ---\n" .
             "Usuario: " . $nuevoMensaje . "\n" .
-            "Asistente: [FUNCION ejecutada]\n" .
-            "Resultado de la función: " . $resultadoFuncion . "\n" .
-            "Ahora responde al usuario de forma natural integrando esta información:";
+            "\n--- INFORMACIÓN OBTENIDA ---\n" .
+            $resultadoFuncion . "\n" .
+            "\n--- INSTRUCCIONES ---\n" .
+            "Responde al usuario de forma natural integrando la información obtenida. No repitas lo que ya se dijo en el historial.";
 
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
