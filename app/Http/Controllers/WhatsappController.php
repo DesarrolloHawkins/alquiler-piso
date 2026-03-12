@@ -175,8 +175,31 @@ class WhatsappController extends Controller
             return response()->json(['status' => 'duplicate', 'message' => 'Mensaje ya procesado']);
         }
 
-        // Solo si es texto, responde con ChatGPT
+            // Solo si es texto, responde con ChatGPT
         if ($tipo === 'text') {
+            // COMANDO ESPECIAL: /clear - Limpiar historial de conversación
+            if (trim($contenido) === '/clear' || strtolower(trim($contenido)) === '/clear') {
+                $this->limpiarHistorialConversacion($waId);
+
+                // Crear registro del comando
+                $chat = ChatGpt::create([
+                    'id_mensaje' => $id,
+                    'remitente' => $waId,
+                    'mensaje' => $contenido,
+                    'respuesta' => '✅ Historial de conversación limpiado. Empezamos de nuevo.',
+                    'status' => 1,
+                    'type' => 'text',
+                    'date' => now(),
+                ]);
+
+                // Enviar respuesta confirmando limpieza
+                $this->contestarWhatsapp($waId, '✅ Historial de conversación limpiado. Empezamos de nuevo.', $whatsappMensaje);
+
+                Log::info("🧹 Historial limpiado para remitente", ['remitente' => $waId]);
+
+                return response()->json(['status' => 'cleared', 'message' => 'Historial limpiado']);
+            }
+
             // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
             // Buscar mensajes idénticos del mismo remitente en los últimos 10 minutos
             $mensajeRepetido = $this->verificarMensajeRepetido($waId, $contenido);
@@ -287,16 +310,31 @@ class WhatsappController extends Controller
         // Obtener historial de conversación (igual que OpenAI original)
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
         // Solo incluir mensajes que tienen respuesta para evitar bucles
-        $historialArray = ChatGpt::where('remitente', $remitente)
+        // Si hay un /clear previo, solo incluir mensajes después de ese /clear
+        $query = ChatGpt::where('remitente', $remitente)
             ->where('status', 1) // Solo mensajes respondidos
             ->whereNotNull('respuesta')
-            ->where('respuesta', '!=', '')
+            ->where('respuesta', '!=', '');
+
+        // Buscar el último mensaje /clear para este remitente
+        $ultimoClear = ChatGpt::where('remitente', $remitente)
+            ->where('mensaje', '/clear')
+            ->orderBy('date', 'desc')
+            ->first();
+
+        // Si hay un /clear previo, solo incluir mensajes después de ese /clear
+        if ($ultimoClear) {
+            $query->where('date', '>', $ultimoClear->date);
+        }
+
+        $historialArray = $query
             ->orderBy('date', 'asc') // Orden cronológico ascendente
             ->limit(20)
             ->get()
             ->flatMap(function ($chat) {
                 $mensajes = [];
-                if (!empty($chat->mensaje)) {
+                // No incluir el mensaje /clear en el historial
+                if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
                     $mensajes[] = "Usuario: " . trim($chat->mensaje);
                 }
                 if (!empty($chat->respuesta)) {
@@ -346,13 +384,7 @@ class WhatsappController extends Controller
         ]);
 
         // Llamar a la API local
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'Content-Type' => 'application/json'
-        ])->post($endpoint, [
-            'prompt' => $promptCompleto,
-            'modelo' => $modelo
-        ]);
+        $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
         if ($response->failed()) {
             Log::error("❌ Error llamando a IA local Hawkins: " . $response->body());
@@ -553,6 +585,29 @@ class WhatsappController extends Controller
     }
 
     /**
+     * Helper para hacer peticiones HTTP a la IA local con manejo de SSL
+     */
+    private function hacerPeticionIALocal($endpoint, $apiKey, $prompt, $modelo, $timeout = 60)
+    {
+        $httpClient = Http::withHeaders([
+            'x-api-key' => $apiKey,
+            'Content-Type' => 'application/json'
+        ]);
+
+        // Si es IP local o localhost, deshabilitar verificación SSL y seguir redirecciones
+        if (preg_match('/192\.168\./', $endpoint) || preg_match('/127\.0\.0\.1/', $endpoint) || preg_match('/localhost/', $endpoint)) {
+            $httpClient = $httpClient->withoutVerifying();
+        }
+
+        // Si la URL es HTTP pero el servidor redirige a HTTPS, seguir la redirección
+        // Laravel Http client sigue redirecciones automáticamente, pero podemos forzarlo
+        return $httpClient->timeout($timeout)->post($endpoint, [
+            'prompt' => $prompt,
+            'modelo' => $modelo
+        ]);
+    }
+
+    /**
      * Llamar a la IA local con contexto actualizado después de ejecutar una función
      */
     private function llamarIALocalConContexto($promptSystem, $historial, $nuevoMensaje, $resultadoFuncion, $endpoint, $apiKey, $modelo)
@@ -581,13 +636,7 @@ class WhatsappController extends Controller
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
             "Ahora responde al usuario de forma natural y útil con esta información:";
 
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'Content-Type' => 'application/json'
-        ])->post($endpoint, [
-            'prompt' => $promptCompleto,
-            'modelo' => $modelo
-        ]);
+        $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
         if ($response->failed()) {
             Log::error("❌ Error en segunda llamada a IA local: " . $response->body());
@@ -628,13 +677,7 @@ class WhatsappController extends Controller
 
         Log::info("🌐 Enviando petición a IA local para clasificación...");
 
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'Content-Type' => 'application/json'
-        ])->post($endpoint, [
-            'prompt' => $prompt,
-            'modelo' => $modelo
-        ]);
+        $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $prompt, $modelo, 30);
 
         if ($response->failed()) {
             Log::error("❌ Error llamando a IA local para clasificación: " . $response->body());
@@ -1734,6 +1777,23 @@ class WhatsappController extends Controller
     }
 
     /**
+     * Limpiar historial de conversación para un remitente
+     * Marca todos los mensajes anteriores como "limpiados" para que no se incluyan en el historial
+     *
+     * @param string $remitente Número de teléfono del remitente
+     * @return void
+     */
+    private function limpiarHistorialConversacion($remitente)
+    {
+        // No eliminamos físicamente los mensajes, solo los marcamos para que no se incluyan
+        // El filtro por fecha del último /clear se hace en enviarMensajeOpenAiChatCompletions
+        Log::info("🧹 Limpiando historial de conversación", [
+            'remitente' => $remitente,
+            'total_mensajes_anteriores' => ChatGpt::where('remitente', $remitente)->count()
+        ]);
+    }
+
+    /**
      * Verifica si un mensaje es repetido (contestador automático)
      * Busca mensajes idénticos del mismo remitente en los últimos 10 minutos
      * que ya hayan sido respondidos
@@ -1859,6 +1919,154 @@ class WhatsappController extends Controller
     }
 
     /**
+     * Método de prueba interactiva con la IA local
+     * Simula una conversación completa con historial
+     */
+    public function testIAChatInteractivo()
+    {
+        $remitente = request()->get('remitente', '34600000000');
+        $mensaje = request()->get('mensaje', 'Hola');
+        $codigoReserva = request()->get('codigo_reserva', 'HMR2Y2RSF4');
+
+        // Usar URL local para pruebas
+        $config = [
+            'base_url' => 'https://192.168.1.45/chat/chat',
+            'api_key' => env('HAWKINS_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
+            'model' => 'qwen3:latest'
+        ];
+
+        $endpoint = $config['base_url'];
+        $apiKey = $config['api_key'];
+        $modelo = $config['model'];
+
+        $promptAsistente = PromptAsistente::first();
+        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente de apartamentos turísticos.";
+
+        // Construir instrucciones sobre funciones disponibles
+        $instruccionesFunciones = "\n\nFUNCIONES DISPONIBLES:\n" .
+            "Cuando el usuario te proporcione un código de reserva y necesite las claves, DEBES usar: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
+            "Cuando haya un problema técnico o avería que requiera intervención, usa: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
+            "Cuando soliciten limpieza, usa: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n" .
+            "IMPORTANTE: Si el usuario menciona un código de reserva y necesita claves, usa obtener_claves INMEDIATAMENTE.\n" .
+            "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
+
+        $promptSystem = $promptBase . $instruccionesFunciones;
+
+        // Obtener historial de conversación (solo mensajes completos)
+        $historialArray = ChatGpt::where('remitente', $remitente)
+            ->where('status', 1)
+            ->whereNotNull('respuesta')
+            ->where('respuesta', '!=', '')
+            ->orderBy('date', 'asc')
+            ->limit(20)
+            ->get()
+            ->flatMap(function ($chat) {
+                $mensajes = [];
+                if (!empty($chat->mensaje)) {
+                    $mensajes[] = "Usuario: " . trim($chat->mensaje);
+                }
+                if (!empty($chat->respuesta)) {
+                    $mensajes[] = "Asistente: " . trim($chat->respuesta);
+                }
+                return $mensajes;
+            })
+            ->toArray();
+
+        $historialTexto = implode("\n", $historialArray);
+
+        // Construir prompt completo
+        $promptCompleto = $promptSystem;
+        if (!empty($historialArray)) {
+            $promptCompleto .= "\n\n" . implode("\n", $historialArray);
+        }
+        $promptCompleto .= "\n\nUsuario: " . $mensaje . "\nAsistente:";
+
+        Log::info("🧪 PRUEBA INTERACTIVA - Enviando a IA local", [
+            'endpoint' => $endpoint,
+            'modelo' => $modelo,
+            'mensaje' => $mensaje,
+            'historial_lineas' => count($historialArray),
+            'prompt_length' => strlen($promptCompleto)
+        ]);
+
+        try {
+            $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 30);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => 'Error en la petición HTTP',
+                    'status_code' => $response->status(),
+                    'body' => $response->body()
+                ], 500);
+            }
+
+            $data = $response->json();
+
+            if (!isset($data['success']) || !$data['success']) {
+                return response()->json([
+                    'error' => 'Error en respuesta de IA',
+                    'data' => $data
+                ], 500);
+            }
+
+            $respuestaTexto = $data['respuesta'] ?? null;
+
+            if (!$respuestaTexto) {
+                return response()->json([
+                    'error' => 'Respuesta vacía de IA',
+                    'data' => $data
+                ], 500);
+            }
+
+            // Detectar función
+            $funcionDetectada = false;
+            $nombreFuncion = null;
+            $parametros = [];
+
+            if (preg_match('/\[FUNCION:([^:]+):(.+?)\]/', $respuestaTexto, $matches)) {
+                $nombreFuncion = trim($matches[1]);
+                $parametrosStr = $matches[2];
+                $funcionDetectada = true;
+
+                foreach (explode(':', $parametrosStr) as $param) {
+                    if (strpos($param, '=') !== false) {
+                        list($key, $value) = explode('=', $param, 2);
+                        $parametros[trim($key)] = trim($value);
+                    }
+                }
+            }
+
+            // Si hay código de reserva en el mensaje y no se detectó función, sugerirla
+            $codigoDetectado = $this->detectarCodigoReserva($mensaje);
+            if (!$codigoDetectado) {
+                $codigoDetectado = $this->detectarCodigoReserva($historialTexto);
+            }
+
+            return response()->json([
+                'success' => true,
+                'mensaje_enviado' => $mensaje,
+                'respuesta_ia' => $respuestaTexto,
+                'funcion_detectada' => $funcionDetectada,
+                'nombre_funcion' => $nombreFuncion,
+                'parametros' => $parametros,
+                'codigo_detectado_en_mensaje' => $codigoDetectado,
+                'historial_lineas' => count($historialArray),
+                'prompt_enviado' => $promptCompleto, // Para debug
+                'timestamp' => now()->toIso8601String()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error en prueba interactiva: " . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Excepción al procesar',
+                'mensaje' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
+    }
+
+    /**
      * Método de prueba directa a la API de IA local (sin historial)
      * Útil para verificar la conexión básica
      */
@@ -1888,13 +2096,7 @@ class WhatsappController extends Controller
         ]);
 
         try {
-            $response = Http::withHeaders([
-                'x-api-key' => $apiKey,
-                'Content-Type' => 'application/json'
-            ])->timeout(30)->post($endpoint, [
-                'prompt' => $mensaje,
-                'modelo' => $modelo
-            ]);
+            $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $mensaje, $modelo, 30);
 
             if ($response->failed()) {
                 return response()->json([
