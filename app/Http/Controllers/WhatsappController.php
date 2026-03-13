@@ -475,12 +475,73 @@ class WhatsappController extends Controller
 
             // Si hay petición de claves, el historial está vacío, o no se está usando historial (más de 2 horas)
             if ($hayPeticionClaves || empty($historialArray) || !$usarHistorial) {
-                Log::info("🚀 Ejecutando obtener_claves automáticamente - Mensaje es solo código: {$codigoEnMensajeActual}");
+                Log::info("🚀 Ejecutando obtener_claves automáticamente - Mensaje es solo código: {$codigoEnMensajeActual}", [
+                    'historial_antes' => $historialArray,
+                    'historial_texto' => substr($historialTexto, 0, 500)
+                ]);
+
+                // Construir historial completo incluyendo el mensaje anterior del usuario que pidió las claves
+                $historialCompleto = $historialArray;
+
+                // Buscar el último mensaje del usuario antes del código (si existe)
+                // Esto ayuda a mantener el contexto de la conversación
+                $ultimoMensajeUsuario = ChatGpt::where('remitente', $remitente)
+                    ->where('status', 1)
+                    ->whereNotNull('respuesta')
+                    ->where('respuesta', '!=', '')
+                    ->where('mensaje', '!=', '/clear')
+                    ->orderBy('date', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                // Si hay un mensaje anterior reciente (últimos 5 minutos) que menciona claves, incluirlo en el contexto
+                if ($ultimoMensajeUsuario) {
+                    $fechaUltimoMensaje = $ultimoMensajeUsuario->date ?: $ultimoMensajeUsuario->created_at;
+                    $minutosTranscurridos = now()->diffInMinutes($fechaUltimoMensaje);
+
+                    if ($minutosTranscurridos <= 5 &&
+                        (stripos($ultimoMensajeUsuario->mensaje, 'clave') !== false ||
+                         stripos($ultimoMensajeUsuario->mensaje, 'acceso') !== false ||
+                         stripos($ultimoMensajeUsuario->mensaje, 'entrar') !== false)) {
+                        // Agregar el mensaje anterior y su respuesta al historial para contexto
+                        if (!empty($ultimoMensajeUsuario->mensaje)) {
+                            $historialCompleto[] = "Usuario: " . trim($ultimoMensajeUsuario->mensaje);
+                        }
+                        if (!empty($ultimoMensajeUsuario->respuesta)) {
+                            $historialCompleto[] = "Asistente: " . trim($ultimoMensajeUsuario->respuesta);
+                        }
+                        Log::info("✅ Agregado mensaje anterior al contexto", [
+                            'mensaje_anterior' => substr($ultimoMensajeUsuario->mensaje, 0, 100),
+                            'minutos_transcurridos' => $minutosTranscurridos
+                        ]);
+                    }
+                }
+
+                // Convertir historial array a texto para pasar a la función
+                $historialTextoCompleto = implode("\n", $historialCompleto);
+
+                // Construir promptSystem básico para la función (se construirá completo después)
+                // Necesitamos construir el promptSystem completo con las instrucciones
+                $instruccionesBasicas = "\n\nROL Y IDENTIDAD:\n" .
+                    "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
+                    "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
+                    "- NUNCA digas que eres el cliente o el usuario.\n" .
+                    "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n\n";
+
+                $promptSystemBasico = $promptBase . $instruccionesBasicas;
+
+                Log::info("📋 Ejecutando obtener_claves con contexto", [
+                    'codigo' => $codigoEnMensajeActual,
+                    'historial_lineas' => count($historialCompleto),
+                    'historial' => $historialCompleto,
+                    'mensaje' => $nuevoMensaje
+                ]);
+
                 $resultadoFuncion = $this->ejecutarObtenerClaves(
                     $codigoEnMensajeActual,
                     $remitente,
-                    $promptBase,
-                    $historialTexto,
+                    $promptSystemBasico,
+                    $historialTextoCompleto,
                     $nuevoMensaje,
                     $endpoint,
                     $apiKey,
@@ -615,7 +676,9 @@ class WhatsappController extends Controller
             'historial_lineas' => count($historialArray),
             'tiene_historial' => !empty($historialArray) && $usarHistorial,
             'ultimo_clear_encontrado' => $ultimoClear ? ($ultimoClear->date ?? $ultimoClear->created_at) : null,
-            'ultimas_lineas_historial' => $usarHistorial ? array_slice($historialArray, -4) : [] // Últimas 4 líneas para debug
+            'ultimas_lineas_historial' => $usarHistorial ? array_slice($historialArray, -4) : [], // Últimas 4 líneas para debug
+            'prompt_length' => strlen($promptCompleto),
+            'prompt_preview' => substr($promptCompleto, 0, 500) . '...' // Primeros 500 caracteres del prompt
         ]);
 
         // Llamar a la API local
@@ -943,7 +1006,17 @@ class WhatsappController extends Controller
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
             "IMPORTANTE: TÚ ERES EL ASISTENTE MARÍA, NO EL CLIENTE. Responde directamente al cliente en segunda persona (tú, tu, te). " .
-            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información. Mantén el contexto de la conversación.";
+            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información.";
+
+        // Log detallado del contexto enviado
+        Log::info("📤 Contexto enviado a IA (después de función)", [
+            'historial_lineas' => count($historialArray),
+            'historial_completo' => $historialArray,
+            'mensaje_usuario' => $nuevoMensaje,
+            'resultado_funcion' => substr($resultadoFuncion, 0, 200),
+            'prompt_length' => strlen($promptCompleto),
+            'prompt_completo' => $promptCompleto // Prompt completo para debug
+        ]);
 
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
