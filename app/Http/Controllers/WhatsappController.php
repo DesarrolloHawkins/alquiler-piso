@@ -503,133 +503,13 @@ class WhatsappController extends Controller
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = $usarHistorial ? implode("\n", $historialArray) : '';
 
-        // Detectar si el mensaje actual es SOLO un código de reserva (sin otras palabras)
+        // Detectar código de reserva en el mensaje actual y en el historial (solo para información en el prompt)
         $codigoEnMensajeActual = $this->detectarCodigoReserva($nuevoMensaje);
-        $mensajeEsSoloCodigo = false;
-        if ($codigoEnMensajeActual) {
-            // Verificar si el mensaje es básicamente solo el código (puede tener espacios o caracteres especiales al inicio/fin)
-            $mensajeLimpio = trim(preg_replace('/[^A-Z0-9]/i', '', $nuevoMensaje));
-            if (strlen($mensajeLimpio) >= 8 && strlen($mensajeLimpio) <= 15 &&
-                (strtoupper($mensajeLimpio) === strtoupper($codigoEnMensajeActual) ||
-                 str_replace(' ', '', strtoupper($mensajeLimpio)) === str_replace(' ', '', strtoupper($codigoEnMensajeActual)))) {
-                $mensajeEsSoloCodigo = true;
-                Log::info("🔍 Mensaje detectado como SOLO código de reserva: {$codigoEnMensajeActual}");
-            }
-        }
-
-        // Verificar si ya hay un código de reserva en el historial
         $codigoEnHistorial = null;
         if (!empty($historialTexto)) {
             $codigoEnHistorial = $this->detectarCodigoReserva($historialTexto);
         }
         $codigoDisponible = $codigoEnMensajeActual ?: $codigoEnHistorial;
-
-        // Si el mensaje es SOLO un código y hay contexto de pedir claves, ejecutar función directamente
-        if ($mensajeEsSoloCodigo && $codigoEnMensajeActual) {
-            // Verificar si en el historial hay una petición de claves (solo si se está usando el historial)
-            $hayPeticionClaves = false;
-            if ($usarHistorial && !empty($historialTexto) && !empty($historialArray)) {
-                // Buscar en las últimas respuestas del asistente si pidió el código
-                $ultimasRespuestas = array_slice($historialArray, -6); // Últimas 6 líneas
-                foreach ($ultimasRespuestas as $linea) {
-                    if (stripos($linea, 'Asistente:') === 0) {
-                        $textoRespuesta = strtolower($linea);
-                        if (stripos($textoRespuesta, 'código de reserva') !== false ||
-                            stripos($textoRespuesta, 'codigo de reserva') !== false ||
-                            stripos($textoRespuesta, 'necesito tu código') !== false ||
-                            stripos($textoRespuesta, 'proporcionarte las claves') !== false) {
-                            $hayPeticionClaves = true;
-                            Log::info("✅ Contexto detectado: El asistente pidió el código anteriormente");
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Si hay petición de claves, el historial está vacío, o no se está usando historial (más de 2 horas)
-            if ($hayPeticionClaves || empty($historialArray) || !$usarHistorial) {
-                Log::info("🚀 Ejecutando obtener_claves automáticamente - Mensaje es solo código: {$codigoEnMensajeActual}", [
-                    'historial_antes' => $historialArray,
-                    'historial_texto' => substr($historialTexto, 0, 500)
-                ]);
-
-                // Construir historial completo - usar el historial ya obtenido que ya tiene los filtros aplicados
-                // (últimas 2 horas, desde último /clear, etc.)
-                $historialCompleto = $historialArray;
-
-                // Asegurar que siempre incluimos el último mensaje del asistente si existe
-                // Esto es crítico para mantener el contexto de la conversación
-                $ultimoMensajeAsistente = ChatGpt::where('remitente', $remitente)
-                    ->where('mensaje', '!=', '/clear')
-                    ->whereNotNull('respuesta')
-                    ->where('respuesta', '!=', '')
-                    ->where(function($dateQ) use ($fechaLimite2Horas) {
-                        $dateQ->where('created_at', '>=', $fechaLimite2Horas)
-                              ->orWhere('date', '>=', $fechaLimite2Horas);
-                    })
-                    ->orderBy('date', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->first();
-
-                if ($ultimoMensajeAsistente) {
-                    $ultimaRespuestaAsistente = "Asistente: " . trim($ultimoMensajeAsistente->respuesta);
-                    $ultimoMensajeUsuario = !empty($ultimoMensajeAsistente->mensaje) && trim($ultimoMensajeAsistente->mensaje) !== '/clear'
-                        ? "Usuario: " . trim($ultimoMensajeAsistente->mensaje)
-                        : null;
-
-                    // Verificar si el último mensaje del asistente ya está en el historial
-                    $yaEstaEnHistorial = false;
-                    foreach ($historialCompleto as $linea) {
-                        if (trim($linea) === $ultimaRespuestaAsistente) {
-                            $yaEstaEnHistorial = true;
-                            break;
-                        }
-                    }
-
-                    // Si no está en el historial, agregarlo junto con el mensaje del usuario anterior si existe
-                    if (!$yaEstaEnHistorial) {
-                        if ($ultimoMensajeUsuario && !in_array($ultimoMensajeUsuario, $historialCompleto)) {
-                            $historialCompleto[] = $ultimoMensajeUsuario;
-                        }
-                        $historialCompleto[] = $ultimaRespuestaAsistente;
-                        Log::info("✅ Agregado último mensaje del asistente al historial para mantener contexto", [
-                            'mensaje_asistente' => substr($ultimaRespuestaAsistente, 0, 100)
-                        ]);
-                    }
-                }
-
-                Log::info("📋 Historial construido para ejecución automática", [
-                    'historial_lineas' => count($historialCompleto),
-                    'historial_completo' => $historialCompleto,
-                    'ultimo_mensaje_asistente_incluido' => $ultimoMensajeAsistente ? 'sí' : 'no'
-                ]);
-
-                // Convertir historial array a texto para pasar a la función
-                $historialTextoCompleto = implode("\n", $historialCompleto);
-
-                // Usar el prompt de la BD tal cual
-                $promptSystemBasico = $promptBase;
-
-                Log::info("📋 Ejecutando obtener_claves con contexto", [
-                    'codigo' => $codigoEnMensajeActual,
-                    'historial_lineas' => count($historialCompleto),
-                    'historial' => $historialCompleto,
-                    'mensaje' => $nuevoMensaje
-                ]);
-
-                $resultadoFuncion = $this->ejecutarObtenerClaves(
-                    $codigoEnMensajeActual,
-                    $remitente,
-                    $promptSystemBasico,
-                    $historialTextoCompleto,
-                    $nuevoMensaje,
-                    $endpoint,
-                    $apiKey,
-                    $modelo
-                );
-                return $resultadoFuncion;
-            }
-        }
 
         // Definir las tools (funciones) disponibles
         $tools = [
@@ -750,6 +630,11 @@ class WhatsappController extends Controller
             'prompt_preview' => substr($promptCompleto, 0, 500) . '...' // Primeros 500 caracteres del prompt
         ]);
 
+        // Log completo del prompt sin truncar
+        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA (SIN TRUNCAR)", [
+            'prompt_completo' => $promptCompleto
+        ]);
+
         // Llamar a la API local
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
@@ -778,55 +663,13 @@ class WhatsappController extends Controller
             'tiene_funcion' => preg_match('/\[FUNCION:/', $respuestaTexto) ? 'sí' : 'no'
         ]);
 
-        // Detectar si el usuario está pidiendo claves y tiene código disponible
-        $pideClaves = stripos($nuevoMensaje, 'clave') !== false ||
-                      stripos($nuevoMensaje, 'código') !== false ||
-                      stripos($nuevoMensaje, 'acceso') !== false ||
-                      stripos($nuevoMensaje, 'entrar') !== false;
-
-        $codigoDisponibleParaClaves = $codigoDisponible ?? null;
-        if (!$codigoDisponibleParaClaves) {
-            $codigoDisponibleParaClaves = $this->detectarCodigoReserva($nuevoMensaje);
-            if (!$codigoDisponibleParaClaves) {
-                $codigoDisponibleParaClaves = $this->detectarCodigoReserva($historialTexto);
-            }
-        }
-
-        // Detectar si la respuesta contiene una llamada a función (más flexible)
-        // Buscar patrones como [FUNCION:nombre:parametros] o variaciones
+        // Solo ejecutar función si la IA explícitamente indica que quiere usarla con el formato [FUNCION:nombre:parametros]
+        // La IA debe decidir cuándo usar las herramientas, no el código
         $funcionDetectada = false;
-
-        // Patrón principal
         if (preg_match('/\[FUNCION:([^:]+):(.+?)\]/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             $parametrosStr = $matches[2];
             $funcionDetectada = true;
-        }
-        // Si el usuario pide claves y tiene código disponible, ejecutar función automáticamente
-        // PERO solo si el código es válido (8+ caracteres y no es una palabra común)
-        elseif ($pideClaves && $codigoDisponibleParaClaves && strlen($codigoDisponibleParaClaves) >= 8) {
-            // Verificar que no sea una palabra común
-            $palabrasExcluidas = ['APARTAMENTO', 'APARTAMENTOS', 'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'RESERVA', 'CLAVE'];
-            if (!in_array(strtoupper($codigoDisponibleParaClaves), $palabrasExcluidas)) {
-                $nombreFuncion = 'obtener_claves';
-                $parametrosStr = 'codigo_reserva=' . $codigoDisponibleParaClaves;
-                $funcionDetectada = true;
-                Log::info("🔧 Función inferida automáticamente: obtener_claves para código: {$codigoDisponibleParaClaves}");
-            } else {
-                Log::info("⚠️ Código detectado pero es palabra común excluida: {$codigoDisponibleParaClaves}");
-            }
-        }
-        // Si no encuentra el patrón exacto, buscar si menciona obtener claves y hay código de reserva
-        elseif (stripos($respuestaTexto, 'obtener_claves') !== false ||
-                (stripos($respuestaTexto, 'clave') !== false && stripos($respuestaTexto, 'código') !== false)) {
-            // Intentar detectar código de reserva en el mensaje o historial
-            $codigoDetectado = $codigoDisponibleParaClaves;
-            if ($codigoDetectado) {
-                $nombreFuncion = 'obtener_claves';
-                $parametrosStr = 'codigo_reserva=' . $codigoDetectado;
-                $funcionDetectada = true;
-                Log::info("🔧 Función inferida: obtener_claves para código: {$codigoDetectado}");
-            }
         }
 
         if ($funcionDetectada) {
@@ -1059,7 +902,9 @@ class WhatsappController extends Controller
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
             "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
-            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), lo PRIMERO que debes hacer es pedirle su código de reserva.\n" .
+            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), verifica PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
+            "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código. NO vuelvas a pedir el código.\n" .
+            "- Si el cliente NO ha proporcionado su código de reserva aún, entonces pídeselo.\n" .
             "- NO hagas preguntas sobre fecha de llegada, hora actual, o situación específica. Usa la función obtener_claves con el código de reserva para verificar automáticamente:\n" .
             "  * Si la reserva existe y es válida\n" .
             " * La fecha de entrada de la reserva\n" .
@@ -1067,7 +912,8 @@ class WhatsappController extends Controller
             " * Si el cliente ha entregado el DNI\n" .
             " * Si las claves están disponibles según el horario\n" .
             "- La función obtener_claves te dará toda la información necesaria y te indicará qué hacer según la situación.\n" .
-            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n\n" .
+            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n" .
+            "- Si el cliente pregunta por claves y ya proporcionó su código anteriormente, usa ese código automáticamente sin pedirlo de nuevo.\n\n" .
             "HORARIO DE ENTREGA DE CLAVES:\n" .
             "- Las claves se entregan a las 14:00h del día de entrada.\n" .
             "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
@@ -1090,6 +936,11 @@ class WhatsappController extends Controller
         // Agregar mensaje actual y resultado de función
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n\n";
+
+        // Log completo del prompt sin truncar (después de ejecutar función)
+        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA DESPUÉS DE FUNCIÓN (SIN TRUNCAR)", [
+            'prompt_completo' => $promptCompleto
+        ]);
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
