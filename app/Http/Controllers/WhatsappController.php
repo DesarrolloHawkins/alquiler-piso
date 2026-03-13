@@ -653,7 +653,18 @@ class WhatsappController extends Controller
             $parametrosStr = $matches[2];
             $funcionDetectada = true;
         }
-        // Formato 2: JSON (fallback si la IA usa formato JSON)
+        // Formato 2: JSON con "action" y "code" (formato que está usando la IA)
+        elseif (preg_match('/\{[^}]*"action"\s*:\s*"([^"]+)"[^}]*"code"\s*:\s*"([^"]+)"/', $respuestaTexto, $matches)) {
+            $nombreFuncion = trim($matches[1]);
+            $codigo = trim($matches[2]);
+            // Mapear nombres de función
+            if ($nombreFuncion === 'obtener_claves') {
+                $parametrosStr = 'codigo_reserva=' . $codigo;
+                $funcionDetectada = true;
+                Log::info("🔧 Función detectada en formato JSON (action/code): {$nombreFuncion} con código {$codigo}");
+            }
+        }
+        // Formato 3: JSON con "function" y "arguments" (formato alternativo)
         elseif (preg_match('/\{[^}]*"function"\s*:\s*"([^"]+)"[^}]*"arguments"\s*:\s*\{([^}]+)\}/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             // Parsear argumentos JSON
@@ -667,7 +678,7 @@ class WhatsappController extends Controller
                 $parametrosStr = 'tipo_limpieza=' . $argMatches[1] . ':observaciones=' . $argMatches[2];
             }
             $funcionDetectada = true;
-            Log::info("🔧 Función detectada en formato JSON: {$nombreFuncion}");
+            Log::info("🔧 Función detectada en formato JSON (function/arguments): {$nombreFuncion}");
         }
 
         if ($funcionDetectada) {
