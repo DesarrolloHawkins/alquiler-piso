@@ -700,11 +700,19 @@ class WhatsappController extends Controller
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
-            "SEGURIDAD - CÓDIGO DE EMERGENCIA: El código de la caja de emergencia (1734) es información sensible y SOLO debe proporcionarse después de:\n" .
-            "1. Verificar que el cliente tiene una reserva válida (obtener su código de reserva)\n" .
-            "2. Confirmar que el cliente ya intentó usar su código de acceso y no funcionó\n" .
-            "3. Verificar que el cliente está en el edificio correcto de su reserva\n" .
-            "NUNCA proporciones el código de emergencia (1734) sin haber verificado primero la reserva del cliente. Si el cliente dice que no ha recibido los códigos, primero pide su código de reserva para verificar su identidad y su reserva.";
+            "HORARIO DE ENTREGA DE CLAVES:\n" .
+            "- Las claves se entregan a las 14:00h del día de entrada.\n" .
+            "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
+            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n" .
+            "- NO menciones el código de emergencia ni proporciones información adicional sobre acceso si aún no son las 14:00h.\n\n" .
+            "SEGURIDAD - CÓDIGO DE EMERGENCIA (1734):\n" .
+            "- El código de emergencia SOLO debe proporcionarse en casos de VERDADERA EMERGENCIA (por ejemplo: el cliente está bloqueado fuera del edificio después de las 15:00h, tiene una emergencia médica, o situación crítica similar).\n" .
+            "- NO proporciones el código de emergencia simplemente porque:\n" .
+            "  * El cliente dice que no ha recibido los códigos\n" .
+            "  * El código de acceso no funciona\n" .
+            "  * El cliente lo solicita\n" .
+            "- El código de emergencia es SOLO para emergencias reales y críticas.\n" .
+            "- Si el cliente necesita ayuda con acceso pero NO es una emergencia, debe esperar a las 14:00h para recibir las claves oficiales.";
 
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
@@ -1040,11 +1048,19 @@ class WhatsappController extends Controller
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
-            "SEGURIDAD - CÓDIGO DE EMERGENCIA: El código de la caja de emergencia (1734) es información sensible y SOLO debe proporcionarse después de:\n" .
-            "1. Verificar que el cliente tiene una reserva válida (obtener su código de reserva)\n" .
-            "2. Confirmar que el cliente ya intentó usar su código de acceso y no funcionó\n" .
-            "3. Verificar que el cliente está en el edificio correcto de su reserva\n" .
-            "NUNCA proporciones el código de emergencia (1734) sin haber verificado primero la reserva del cliente. Si el cliente dice que no ha recibido los códigos, primero pide su código de reserva para verificar su identidad y su reserva.";
+            "HORARIO DE ENTREGA DE CLAVES:\n" .
+            "- Las claves se entregan a las 14:00h del día de entrada.\n" .
+            "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
+            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n" .
+            "- NO menciones el código de emergencia ni proporciones información adicional sobre acceso si aún no son las 14:00h.\n\n" .
+            "SEGURIDAD - CÓDIGO DE EMERGENCIA (1734):\n" .
+            "- El código de emergencia SOLO debe proporcionarse en casos de VERDADERA EMERGENCIA (por ejemplo: el cliente está bloqueado fuera del edificio después de las 15:00h, tiene una emergencia médica, o situación crítica similar).\n" .
+            "- NO proporciones el código de emergencia simplemente porque:\n" .
+            "  * El cliente dice que no ha recibido los códigos\n" .
+            "  * El código de acceso no funciona\n" .
+            "  * El cliente lo solicita\n" .
+            "- El código de emergencia es SOLO para emergencias reales y críticas.\n" .
+            "- Si el cliente necesita ayuda con acceso pero NO es una emergencia, debe esperar a las 14:00h para recibir las claves oficiales.";
 
         // Agregar historial
         if (!empty($historialArray)) {
