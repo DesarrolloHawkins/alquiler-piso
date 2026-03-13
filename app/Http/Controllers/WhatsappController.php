@@ -646,7 +646,19 @@ class WhatsappController extends Controller
             "- DEBES regirte ÚNICAMENTE a los precios establecidos en la lista oficial de precios.\n" .
             "- NUNCA ofrezcas nada gratis, ningún descuento, ni ningún cupón bajo ninguna circunstancia.\n" .
             "- Si un cliente solicita compensación, descuento o algo gratis, debes explicarle educadamente que no tienes autorización para ofrecer ese tipo de beneficios y que los precios están establecidos según la lista oficial.\n" .
-            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.";
+            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.\n\n" .
+            "PREVENCIÓN DE INCIDENCIAS DUPLICADAS:\n" .
+            "- ANTES de usar las funciones notificar_tecnico o notificar_limpieza, DEBES verificar SIEMPRE el historial de conversación para ver si YA se registró una incidencia similar en esta misma conversación.\n" .
+            "- Busca en el historial mensajes del Asistente que contengan frases como:\n" .
+            "  * \"He notificado al técnico\"\n" .
+            "  * \"He notificado al equipo de limpieza\"\n" .
+            "  * \"ya ha sido notificado\"\n" .
+            "  * \"ya fue registrada\"\n" .
+            "  * \"He ejecutado una función\" relacionada con notificaciones\n" .
+            "- Si encuentras que YA se registró una incidencia similar en esta conversación (mismo tipo: avería o limpieza), NO uses la función de nuevo.\n" .
+            "- En su lugar, responde al cliente informándole que la incidencia ya fue registrada anteriormente en esta conversación y que el equipo correspondiente ya ha sido notificado.\n" .
+            "- SOLO usa las funciones notificar_tecnico o notificar_limpieza si NO encuentras ninguna mención previa de que ya se registró esa incidencia en el historial de esta conversación.\n" .
+            "- Esta verificación es CRÍTICA para evitar registrar la misma incidencia múltiples veces.";
 
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
@@ -819,12 +831,26 @@ class WhatsappController extends Controller
                 return $resultadoFuncion;
 
             } elseif ($nombreFuncion === 'notificar_tecnico') {
+                // Verificar si ya se registró una incidencia de avería en esta conversación
+                if ($this->verificarIncidenciaYaRegistradaEnHistorial($historialTexto, 'averia')) {
+                    Log::info("⚠️ Incidencia de avería ya registrada en esta conversación - No se ejecutará de nuevo");
+                    $mensajeFuncion = "La incidencia ya fue registrada anteriormente en esta conversación. Nuestro equipo técnico ya ha sido notificado y te contactará pronto.";
+                    return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+                }
+
                 $descripcion = $parametros['descripcion_problema'] ?? ($parametros['descripcion'] ?? $nuevoMensaje);
                 $urgencia = $parametros['urgencia'] ?? 'media';
                 $resultadoFuncion = $this->ejecutarNotificarTecnico($remitente, $descripcion, $urgencia, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
 
             } elseif ($nombreFuncion === 'notificar_limpieza') {
+                // Verificar si ya se registró una incidencia de limpieza en esta conversación
+                if ($this->verificarIncidenciaYaRegistradaEnHistorial($historialTexto, 'limpieza')) {
+                    Log::info("⚠️ Incidencia de limpieza ya registrada en esta conversación - No se ejecutará de nuevo");
+                    $mensajeFuncion = "La solicitud de limpieza ya fue registrada anteriormente en esta conversación. Nuestro equipo de limpieza ya ha sido notificado y te avisaremos cuando esté confirmado.";
+                    return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeFuncion, $endpoint, $apiKey, $modelo);
+                }
+
                 $tipoLimpieza = $parametros['tipo_limpieza'] ?? $nuevoMensaje;
                 $observaciones = $parametros['observaciones'] ?? '';
                 $resultadoFuncion = $this->ejecutarNotificarLimpieza($remitente, $tipoLimpieza, $observaciones, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
@@ -1036,7 +1062,19 @@ class WhatsappController extends Controller
             "- DEBES regirte ÚNICAMENTE a los precios establecidos en la lista oficial de precios.\n" .
             "- NUNCA ofrezcas nada gratis, ningún descuento, ni ningún cupón bajo ninguna circunstancia.\n" .
             "- Si un cliente solicita compensación, descuento o algo gratis, debes explicarle educadamente que no tienes autorización para ofrecer ese tipo de beneficios y que los precios están establecidos según la lista oficial.\n" .
-            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.";
+            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.\n\n" .
+            "PREVENCIÓN DE INCIDENCIAS DUPLICADAS:\n" .
+            "- ANTES de usar las funciones notificar_tecnico o notificar_limpieza, DEBES verificar SIEMPRE el historial de conversación para ver si YA se registró una incidencia similar en esta misma conversación.\n" .
+            "- Busca en el historial mensajes del Asistente que contengan frases como:\n" .
+            "  * \"He notificado al técnico\"\n" .
+            "  * \"He notificado al equipo de limpieza\"\n" .
+            "  * \"ya ha sido notificado\"\n" .
+            "  * \"ya fue registrada\"\n" .
+            "  * \"He ejecutado una función\" relacionada con notificaciones\n" .
+            "- Si encuentras que YA se registró una incidencia similar en esta conversación (mismo tipo: avería o limpieza), NO uses la función de nuevo.\n" .
+            "- En su lugar, responde al cliente informándole que la incidencia ya fue registrada anteriormente en esta conversación y que el equipo correspondiente ya ha sido notificado.\n" .
+            "- SOLO usa las funciones notificar_tecnico o notificar_limpieza si NO encuentras ninguna mención previa de que ya se registró esa incidencia en el historial de esta conversación.\n" .
+            "- Esta verificación es CRÍTICA para evitar registrar la misma incidencia múltiples veces.";
 
         // Agregar historial
         if (!empty($historialArray)) {
@@ -1301,6 +1339,63 @@ class WhatsappController extends Controller
             Log::error("❌ Error verificando duplicado: " . $e->getMessage());
             return false; // En caso de error, permitir crear la incidencia
         }
+    }
+
+    /**
+     * Verificar si ya se registró una incidencia en el historial de la conversación
+     * Busca en el historial mensajes que indiquen que ya se notificó al técnico o limpieza
+     */
+    private function verificarIncidenciaYaRegistradaEnHistorial($historial, $tipo)
+    {
+        if (empty($historial)) {
+            return false;
+        }
+
+        Log::info("🔍 Verificando si ya se registró incidencia de tipo '{$tipo}' en el historial");
+
+        // Frases clave que indican que ya se registró una incidencia
+        $frasesAveria = [
+            'he notificado al técnico',
+            'notificado al técnico',
+            'equipo técnico ya ha sido notificado',
+            'ya ha sido notificado',
+            'ya fue registrada',
+            'incidencia ya fue registrada',
+            'notificar_tecnico',
+            'te contactarán pronto'
+        ];
+
+        $frasesLimpieza = [
+            'he notificado al equipo de limpieza',
+            'notificado al equipo de limpieza',
+            'equipo de limpieza ya ha sido notificado',
+            'ya ha sido notificado',
+            'ya fue registrada',
+            'incidencia ya fue registrada',
+            'notificar_limpieza',
+            'te avisaremos cuando esté confirmado'
+        ];
+
+        $frasesBuscar = $tipo === 'averia' ? $frasesAveria : $frasesLimpieza;
+
+        // Buscar en el historial (convertir a minúsculas para búsqueda case-insensitive)
+        $historialLower = strtolower($historial);
+
+        foreach ($frasesBuscar as $frase) {
+            if (strpos($historialLower, strtolower($frase)) !== false) {
+                Log::info("✅ Encontrada frase indicativa de incidencia ya registrada: '{$frase}'");
+                return true;
+            }
+        }
+
+        // También buscar en el formato de respuesta de función ejecutada
+        if (preg_match('/Asistente:.*\[He ejecutado una función.*notificado.*' . ($tipo === 'averia' ? 'técnico' : 'limpieza') . '.*\]/i', $historial)) {
+            Log::info("✅ Encontrada función ejecutada de notificación en el historial");
+            return true;
+        }
+
+        Log::info("✅ No se encontró evidencia de incidencia ya registrada en el historial");
+        return false;
     }
 
     /**
