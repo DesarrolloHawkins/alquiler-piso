@@ -390,32 +390,23 @@ class WhatsappController extends Controller
             // Si hay un /clear previo, solo incluir mensajes después de ese /clear
             // Aplicar siempre, sin importar cuándo fue el /clear
             if ($ultimoClear) {
-                $fechaClearRaw = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
+                // Usar created_at del /clear porque es más preciso (incluye hora)
+                // Si no tiene created_at, usar date pero parsearlo correctamente
+                $fechaClearRaw = $ultimoClear->created_at ? $ultimoClear->created_at : ($ultimoClear->date ? $ultimoClear->date : now());
+
                 // Convertir a Carbon para asegurar comparación correcta
                 $fechaClear = is_string($fechaClearRaw) ? Carbon::parse($fechaClearRaw) : $fechaClearRaw;
 
-                Log::info("🧹 DEBUG /clear", [
-                    'fecha_clear_raw' => $fechaClearRaw,
-                    'fecha_clear_parsed' => $fechaClear->toDateTimeString(),
-                    'fecha_clear_timestamp' => $fechaClear->timestamp,
-                    'ahora' => now()->toDateTimeString(),
-                    'ahora_timestamp' => now()->timestamp
-                ]);
+                // Si date es solo fecha (sin hora), usar created_at del mensaje para comparar
+                // Comparar usando created_at de los mensajes porque es más preciso
+                $query->where('created_at', '>', $fechaClear);
 
-                try {
-                    // Usar whereRaw con COALESCE para manejar ambos campos de fecha
-                    // Usar el valor Carbon formateado para la consulta SQL
-                    $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear->toDateTimeString()]);
-                    Log::info("🧹 Filtro /clear aplicado - Solo mensajes después de: " . $fechaClear->toDateTimeString());
-                } catch (\Exception $e) {
-                    // Si falla el whereRaw, usar una alternativa más simple
-                    Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
-                    if ($ultimoClear->date) {
-                        $query->where('date', '>', $fechaClear->toDateTimeString());
-                    } else {
-                        $query->where('created_at', '>', $fechaClear->toDateTimeString());
-                    }
-                }
+                Log::info("🧹 Filtro /clear aplicado", [
+                    'fecha_clear_created_at' => $ultimoClear->created_at ? $ultimoClear->created_at->toDateTimeString() : null,
+                    'fecha_clear_date' => $ultimoClear->date,
+                    'fecha_clear_usada' => $fechaClear->toDateTimeString(),
+                    'comparacion' => 'created_at > ' . $fechaClear->toDateTimeString()
+                ]);
             }
 
             // Debug: contar mensajes antes de procesar
