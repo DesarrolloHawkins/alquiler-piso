@@ -700,6 +700,16 @@ class WhatsappController extends Controller
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+            "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
+            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), lo PRIMERO que debes hacer es pedirle su código de reserva.\n" .
+            "- NO hagas preguntas sobre fecha de llegada, hora actual, o situación específica. Usa la función obtener_claves con el código de reserva para verificar automáticamente:\n" .
+            "  * Si la reserva existe y es válida\n" .
+            " * La fecha de entrada de la reserva\n" .
+            " * Si es el día de entrada y la hora actual\n" .
+            " * Si el cliente ha entregado el DNI\n" .
+            " * Si las claves están disponibles según el horario\n" .
+            "- La función obtener_claves te dará toda la información necesaria y te indicará qué hacer según la situación.\n" .
+            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n\n" .
             "HORARIO DE ENTREGA DE CLAVES:\n" .
             "- Las claves se entregan a las 14:00h del día de entrada.\n" .
             "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
@@ -1048,6 +1058,16 @@ class WhatsappController extends Controller
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+            "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
+            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), lo PRIMERO que debes hacer es pedirle su código de reserva.\n" .
+            "- NO hagas preguntas sobre fecha de llegada, hora actual, o situación específica. Usa la función obtener_claves con el código de reserva para verificar automáticamente:\n" .
+            "  * Si la reserva existe y es válida\n" .
+            " * La fecha de entrada de la reserva\n" .
+            " * Si es el día de entrada y la hora actual\n" .
+            " * Si el cliente ha entregado el DNI\n" .
+            " * Si las claves están disponibles según el horario\n" .
+            "- La función obtener_claves te dará toda la información necesaria y te indicará qué hacer según la situación.\n" .
+            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n\n" .
             "HORARIO DE ENTREGA DE CLAVES:\n" .
             "- Las claves se entregan a las 14:00h del día de entrada.\n" .
             "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
