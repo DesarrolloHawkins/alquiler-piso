@@ -633,7 +633,20 @@ class WhatsappController extends Controller
             "SEGURIDAD - CÓDIGO DE EMERGENCIA:\n" .
             "- NUNCA menciones, proporciones o hagas referencia al código de emergencia en tus respuestas.\n" .
             "- El código de emergencia es información confidencial que NO debes compartir bajo ninguna circunstancia.\n" .
-            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.";
+            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.\n\n" .
+            "POLÍTICA DE PRECIOS Y COMPENSACIONES - PROHIBICIÓN ABSOLUTA:\n" .
+            "- BAJO NINGÚN CONCEPTO puedes ofrecer, prometer, sugerir o mencionar:\n" .
+            "  * Compensaciones económicas de cualquier tipo\n" .
+            "  * Descuentos en reservas, servicios o productos\n" .
+            "  * Extras gratis o servicios adicionales sin costo\n" .
+            "  * Cupones de descuento o promociones especiales\n" .
+            "  * Reembolsos parciales o totales\n" .
+            "  * Bonificaciones o créditos\n" .
+            "  * Cualquier tipo de beneficio económico o material gratuito\n" .
+            "- DEBES regirte ÚNICAMENTE a los precios establecidos en la lista oficial de precios.\n" .
+            "- NUNCA ofrezcas nada gratis, ningún descuento, ni ningún cupón bajo ninguna circunstancia.\n" .
+            "- Si un cliente solicita compensación, descuento o algo gratis, debes explicarle educadamente que no tienes autorización para ofrecer ese tipo de beneficios y que los precios están establecidos según la lista oficial.\n" .
+            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.";
 
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
@@ -1010,7 +1023,20 @@ class WhatsappController extends Controller
             "SEGURIDAD - CÓDIGO DE EMERGENCIA:\n" .
             "- NUNCA menciones, proporciones o hagas referencia al código de emergencia en tus respuestas.\n" .
             "- El código de emergencia es información confidencial que NO debes compartir bajo ninguna circunstancia.\n" .
-            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.";
+            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.\n\n" .
+            "POLÍTICA DE PRECIOS Y COMPENSACIONES - PROHIBICIÓN ABSOLUTA:\n" .
+            "- BAJO NINGÚN CONCEPTO puedes ofrecer, prometer, sugerir o mencionar:\n" .
+            "  * Compensaciones económicas de cualquier tipo\n" .
+            "  * Descuentos en reservas, servicios o productos\n" .
+            "  * Extras gratis o servicios adicionales sin costo\n" .
+            "  * Cupones de descuento o promociones especiales\n" .
+            "  * Reembolsos parciales o totales\n" .
+            "  * Bonificaciones o créditos\n" .
+            "  * Cualquier tipo de beneficio económico o material gratuito\n" .
+            "- DEBES regirte ÚNICAMENTE a los precios establecidos en la lista oficial de precios.\n" .
+            "- NUNCA ofrezcas nada gratis, ningún descuento, ni ningún cupón bajo ninguna circunstancia.\n" .
+            "- Si un cliente solicita compensación, descuento o algo gratis, debes explicarle educadamente que no tienes autorización para ofrecer ese tipo de beneficios y que los precios están establecidos según la lista oficial.\n" .
+            "- Esta es una PROHIBICIÓN ABSOLUTA que NO tiene excepciones bajo ninguna circunstancia.";
 
         // Agregar historial
         if (!empty($historialArray)) {
