@@ -59,13 +59,13 @@ class Kernel extends ConsoleKernel
         $schedule->command('reservas:generar-token-dni')->everyMinute();
 
         $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
-        
+
         // Enviar claves por Channex todos los días a las 14:00
         $schedule->command('ari:enviar-claves-channex')->dailyAt('14:00');
-        
+
         // Generar turnos de trabajo todos los días a las 7:00 AM
         $schedule->command('turnos:generar')->dailyAt('07:00');
-        
+
         // Ejecuta el comando cada hora
         $schedule->command('emails:categorize')->everyMinute();
 
@@ -459,15 +459,33 @@ class Kernel extends ConsoleKernel
                 if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                     $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeBienvenida >= 1) {
+                        Log::info('🔑 PROCESANDO ENVÍO DE CLAVES AUTOMÁTICO', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'telefono_cliente' => $phoneCliente,
+                            'tiempo_desde_bienvenida' => $tiempoDesdeBienvenida
+                        ]);
+
                         // Verificar que el DNI esté subido antes de enviar las claves
                         if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
-                            Log::info('No se pueden enviar claves: el DNI no ha sido subido', [
+                            Log::warning('⚠️ No se pueden enviar claves: el DNI no ha sido subido', [
                                 'reserva_id' => $reserva->id,
                                 'dni_entregado' => $reserva->dni_entregado,
                                 'dni_entregado_tipo' => gettype($reserva->dni_entregado)
                             ]);
                             continue; // Saltar esta reserva y continuar con la siguiente
                         }
+
+                        // Verificar que el teléfono no esté vacío
+                        if (empty($phoneCliente)) {
+                            Log::error('❌ No se pueden enviar claves: el teléfono del cliente está vacío', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono_original' => $reserva->cliente->telefono ?? 'null'
+                            ]);
+                            continue;
+                        }
+
                         // Obtenemos el codigo de entrada del apartamento
                         //$code = $this->codigoApartamento($reserva->apartamento_id);
                         // Obtenemos codigo de idioma
@@ -475,6 +493,14 @@ class Kernel extends ConsoleKernel
                         // Enviamos el mensaje
                         $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
                         $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+
+                        Log::info('📤 INICIANDO ENVÍO DE MENSAJE DE CLAVES', [
+                            'reserva_id' => $reserva->id,
+                            'apartamento_id' => $reserva->apartamento_id,
+                            'telefono_cliente' => $phoneCliente,
+                            'idioma' => $idiomaCliente,
+                            'es_atico' => $reserva->apartamento_id === 1
+                        ]);
 
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
@@ -498,6 +524,29 @@ class Kernel extends ConsoleKernel
                             );
                             //Storage::disk('local')->put('Mensaje_claves'.$reserva->cliente_id.'.txt', $data );
 
+                        }
+
+                        // Verificar respuesta del envío
+                        if ($data) {
+                            $responseData = json_decode($data, true);
+                            if (isset($responseData['messages'][0]['id'])) {
+                                Log::info('✅ Mensaje de claves enviado correctamente', [
+                                    'reserva_id' => $reserva->id,
+                                    'message_id' => $responseData['messages'][0]['id'],
+                                    'telefono' => $phoneCliente
+                                ]);
+                            } else {
+                                Log::error('❌ Error en respuesta de envío de claves', [
+                                    'reserva_id' => $reserva->id,
+                                    'telefono' => $phoneCliente,
+                                    'response' => substr($data, 0, 500)
+                                ]);
+                            }
+                        } else {
+                            Log::error('❌ No se recibió respuesta del envío de claves', [
+                                'reserva_id' => $reserva->id,
+                                'telefono' => $phoneCliente
+                            ]);
                         }
 
                         // Creamos la data para guardar el mensaje
@@ -1316,6 +1365,12 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de bienvenida automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'idioma' => $idioma
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1336,8 +1391,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de bienvenida", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de bienvenida enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de bienvenida", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1379,6 +1460,13 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de claves automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'apartamento' => $apartamento,
+            'idioma' => $idioma
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1399,8 +1487,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de claves", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de claves enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de claves", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1443,6 +1557,14 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de claves (ático) automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'apartamento' => $apartamento,
+            'idioma' => $idioma,
+            'template' => $template
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1463,8 +1585,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de claves (ático)", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de claves (ático) enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de claves (ático)", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1492,6 +1640,12 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de consulta automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'idioma' => $idioma
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1512,8 +1666,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de consulta", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de consulta enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de consulta", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -2210,7 +2390,7 @@ class Kernel extends ConsoleKernel
    /**
     * Envía las claves del apartamento por Channex cuando se crea una reserva nueva después de las 14:00
     * Método estático que puede ser llamado desde cualquier lugar
-    * 
+    *
     * @param Reserva $reserva
     * @return bool
     */
@@ -2219,7 +2399,7 @@ class Kernel extends ConsoleKernel
        try {
            // 🔄 Refrescar la reserva para obtener datos actualizados (especialmente dni_entregado)
            $reserva->refresh();
-           
+
            // Solo procesar si:
            // 1. NO es de la web
            // 2. Tiene id_channex
@@ -2296,8 +2476,8 @@ class Kernel extends ConsoleKernel
                'apartamento' => $reserva->apartamento->titulo,
                'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
                'clavePiso' => $reserva->apartamento->claves ?? '',
-               'url' => $reserva->apartamento->edificio == 1 
-                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' 
+               'url' => $reserva->apartamento->edificio == 1
+                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9'
                    : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
            ];
 
@@ -2360,7 +2540,7 @@ class Kernel extends ConsoleKernel
 
    /**
     * Envía las claves del apartamento por Channex usando la misma lógica que el comando
-    * 
+    *
     * @param Reserva $reserva
     * @param string $idiomaCliente
     * @param Apartamento $apartamentoReservado
@@ -2446,8 +2626,8 @@ class Kernel extends ConsoleKernel
                'apartamento' => $reserva->apartamento->titulo,
                'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
                'clavePiso' => $reserva->apartamento->claves ?? '',
-               'url' => $apartamentoReservado->edificio == 1 
-                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' 
+               'url' => $apartamentoReservado->edificio == 1
+                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9'
                    : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
            ];
 

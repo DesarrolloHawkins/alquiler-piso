@@ -1665,13 +1665,31 @@ class WhatsappController extends Controller
     private function enviarMensajeLimpiadora($phone, $mensaje)
     {
         try {
-            // Obtener limpiadora disponible según horario actual
-            $limpiadora = $this->obtenerLimpiadoraDisponible();
+            // Obtener todos los números configurados en el panel de Notificaciones
+            $destinatarios = EmailNotificaciones::whereNotNull('telefono')
+                ->where('telefono', '!=', '')
+                ->get();
 
-            if (!$limpiadora) {
-                Log::warning("No hay limpiadoras disponibles para notificar");
+            if ($destinatarios->isEmpty()) {
+                Log::error("❌ No hay números configurados en el panel de Notificaciones - La incidencia se ha registrado pero no se pudo notificar", [
+                    'telefono_cliente' => $phone,
+                    'mensaje' => substr($mensaje, 0, 100),
+                    'total_destinatarios' => 0
+                ]);
+
+                // Intentar enviar notificación a administradores como fallback
+                $this->enviarNotificacionResponsables($phone, $mensaje, 'limpieza', 'Sistema', 'Desconocido', 'Desconocido');
                 return;
             }
+
+            Log::info("📋 Enviando mensaje de limpieza a todos los destinatarios configurados", [
+                'total_destinatarios' => $destinatarios->count(),
+                'destinatarios' => $destinatarios->pluck('telefono')->toArray()
+            ]);
+
+            // Obtener información del cliente una sola vez
+            $apartamento = $this->obtenerApartamentoCliente($phone);
+            $edificio = $this->obtenerEdificioCliente($phone);
 
             // Buscar template para limpieza
             Log::info("🔍 Buscando template para limpieza...");
@@ -1679,38 +1697,64 @@ class WhatsappController extends Controller
                 ->where('name', 'not like', '%_null%')
                 ->first();
 
-            if ($template) {
-                Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
-                Log::info("📱 Enviando mensaje usando template...");
+            $mensajesEnviados = 0;
+            $mensajesFallidos = 0;
 
-                // Obtener información del cliente
-                $apartamento = $this->obtenerApartamentoCliente($phone);
-                $edificio = $this->obtenerEdificioCliente($phone);
+            // Enviar mensaje a todos los destinatarios configurados
+            foreach ($destinatarios as $destinatario) {
+                try {
+                    if ($template) {
+                        Log::info("✅ Template encontrado: {$template->name} (ID: {$template->id})");
+                        Log::info("📱 Enviando mensaje usando template a: {$destinatario->telefono} ({$destinatario->nombre})");
 
-                // Enviar mensaje usando template con los 4 parámetros que espera
-                $this->enviarMensajeTemplate($limpiadora->telefono, $template->name, [
-                    '1' => $apartamento, // Apartamento del cliente
-                    '2' => $edificio, // Edificio del cliente
-                    '3' => $mensaje, // Información del cliente
-                    '4' => $phone // Número del cliente
-                ]);
-            } else {
-                Log::warning("⚠️ No se encontró template para limpieza, enviando mensaje simple");
-                // Enviar mensaje simple si no hay template
-                $apartamento = $this->obtenerApartamentoCliente($phone);
-                $edificio = $this->obtenerEdificioCliente($phone);
+                        // Enviar mensaje usando template con los 4 parámetros que espera
+                        $resultado = $this->enviarMensajeTemplate($destinatario->telefono, $template->name, [
+                            '1' => $apartamento, // Apartamento del cliente
+                            '2' => $edificio, // Edificio del cliente
+                            '3' => $mensaje, // Información del cliente
+                            '4' => $phone // Número del cliente
+                        ]);
 
-                $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n👩‍🔧 Limpiadora: " . ($limpiadora->usuario->name ?? 'Limpiadora') . "\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
-                $this->contestarWhatsapp3($limpiadora->telefono, $texto);
+                        if (isset($resultado['error'])) {
+                            $mensajesFallidos++;
+                            Log::error("❌ Error enviando template a {$destinatario->telefono}: " . json_encode($resultado));
+                        } else {
+                            $mensajesEnviados++;
+                            Log::info("✅ Mensaje enviado exitosamente a: {$destinatario->telefono} ({$destinatario->nombre})");
+                        }
+                    } else {
+                        Log::warning("⚠️ No se encontró template para limpieza, enviando mensaje simple a: {$destinatario->telefono}");
+
+                        $texto = "🧹 NUEVA SOLICITUD DE LIMPIEZA\n\n📱 Cliente: {$phone}\n🏠 Apartamento: {$apartamento}\n🏢 Edificio: {$edificio}\n💬 Mensaje: {$mensaje}\n📅 Fecha: " . now()->format('d/m/Y H:i');
+                        $resultado = $this->contestarWhatsapp3($destinatario->telefono, $texto);
+
+                        if ($resultado) {
+                            $mensajesEnviados++;
+                            Log::info("✅ Mensaje simple enviado exitosamente a: {$destinatario->telefono} ({$destinatario->nombre})");
+                        } else {
+                            $mensajesFallidos++;
+                            Log::error("❌ Error enviando mensaje simple a: {$destinatario->telefono}");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $mensajesFallidos++;
+                    Log::error("❌ Excepción enviando mensaje a {$destinatario->telefono}: " . $e->getMessage());
+                }
             }
 
-            Log::info("Mensaje enviado a la limpiadora: {$limpiadora->telefono}");
+            Log::info("📊 Resumen de envío de mensajes de limpieza", [
+                'total_destinatarios' => $destinatarios->count(),
+                'mensajes_enviados' => $mensajesEnviados,
+                'mensajes_fallidos' => $mensajesFallidos
+            ]);
 
-            // Enviar notificación a todos los responsables configurados
-            $this->enviarNotificacionResponsables($phone, $mensaje, 'limpieza', $limpiadora->usuario->name ?? 'Limpiadora', $apartamento, $edificio);
+            // Enviar notificación a todos los responsables configurados (email)
+            $this->enviarNotificacionResponsables($phone, $mensaje, 'limpieza', 'Sistema', $apartamento, $edificio);
 
         } catch (\Exception $e) {
-            Log::error("Error enviando mensaje a la limpiadora: " . $e->getMessage());
+            Log::error("❌ Error general enviando mensaje a limpiadoras: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
@@ -1836,6 +1880,12 @@ class WhatsappController extends Controller
 
         $columnaDia = $diasColumnas[$diaSemana] ?? 'lunes';
 
+        Log::info("🔍 Buscando limpiadora disponible", [
+            'dia_semana' => $diaSemana,
+            'columna_dia' => $columnaDia,
+            'hora_actual' => $horaActual
+        ]);
+
         // Buscar limpiadora disponible en el día y horario actual
         $limpiadora = LimpiadoraGuardia::where($columnaDia, true)
             ->where('hora_inicio', '<=', $horaActual)
@@ -1844,7 +1894,23 @@ class WhatsappController extends Controller
 
         // Si no hay limpiadora en horario, buscar cualquier limpiadora
         if (!$limpiadora) {
+            Log::info("⚠️ No se encontró limpiadora en horario, buscando cualquier limpiadora disponible");
             $limpiadora = LimpiadoraGuardia::first();
+        }
+
+        if (!$limpiadora) {
+            Log::warning("❌ No hay limpiadoras configuradas en la tabla limpiadoras_guardia", [
+                'total_limpiadoras' => LimpiadoraGuardia::count(),
+                'dia_semana' => $diaSemana,
+                'columna_dia' => $columnaDia,
+                'hora_actual' => $horaActual
+            ]);
+        } else {
+            Log::info("✅ Limpiadora disponible encontrada", [
+                'limpiadora_id' => $limpiadora->id,
+                'usuario_id' => $limpiadora->usuario_id ?? null,
+                'telefono' => $limpiadora->telefono ?? null
+            ]);
         }
 
         return $limpiadora;
