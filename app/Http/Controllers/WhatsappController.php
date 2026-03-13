@@ -318,14 +318,28 @@ class WhatsappController extends Controller
 
         // Obtener historial de conversación PRIMERO para poder verificar contexto
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
-        // Solo incluir mensajes que tienen respuesta para evitar bucles
+        // Incluir mensajes con status=1 Y mensajes recientes (últimos 5 minutos) aunque no tengan status=1
         // Si hay un /clear previo, solo incluir mensajes después de ese /clear
         try {
             $query = ChatGpt::where('remitente', $remitente)
-                ->where('status', 1) // Solo mensajes respondidos normalmente (excluye status 2 y 3)
-                ->whereNotNull('respuesta')
-                ->where('respuesta', '!=', '')
-                ->where('mensaje', '!=', '/clear'); // También excluir mensajes /clear explícitamente
+                ->where('mensaje', '!=', '/clear') // También excluir mensajes /clear explícitamente
+                ->where(function($q) {
+                    // Incluir mensajes con status=1 que tienen respuesta
+                    $q->where(function($subQ) {
+                        $subQ->where('status', 1)
+                             ->whereNotNull('respuesta')
+                             ->where('respuesta', '!=', '');
+                    })
+                    // O incluir mensajes recientes (últimos 5 minutos) aunque no tengan status=1
+                    ->orWhere(function($subQ) {
+                        $subQ->where(function($dateQ) {
+                            $dateQ->where('created_at', '>=', now()->subMinutes(5))
+                                  ->orWhere('date', '>=', now()->subMinutes(5));
+                        })
+                        ->whereNotNull('mensaje')
+                        ->where('mensaje', '!=', '');
+                    });
+                });
 
             // Buscar el último mensaje /clear para este remitente
             $ultimoClear = ChatGpt::where('remitente', $remitente)
@@ -356,7 +370,7 @@ class WhatsappController extends Controller
             $historialArray = $query
                 ->orderBy('date', 'asc') // Orden cronológico ascendente
                 ->orderBy('created_at', 'asc')
-                ->limit(20)
+                ->limit(40) // Aumentar límite para incluir más mensajes recientes
                 ->get()
                 ->flatMap(function ($chat) {
                     $mensajes = [];
@@ -364,6 +378,7 @@ class WhatsappController extends Controller
                     if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
                         $mensajes[] = "Usuario: " . trim($chat->mensaje);
                     }
+                    // Incluir respuesta si existe, pero también incluir mensajes sin respuesta si son recientes
                     if (!empty($chat->respuesta)) {
                         $mensajes[] = "Asistente: " . trim($chat->respuesta);
                     }
@@ -374,6 +389,9 @@ class WhatsappController extends Controller
                     return !empty(trim($mensaje));
                 })
                 ->toArray();
+
+            // Limitar a los últimos 40 elementos (20 pares de usuario/asistente) después de procesar
+            $historialArray = array_slice($historialArray, -40);
         } catch (\Exception $e) {
             Log::error("❌ Error obteniendo historial: " . $e->getMessage());
             // En caso de error, intentar obtener historial básico sin filtros complejos
@@ -480,42 +498,49 @@ class WhatsappController extends Controller
                     'historial_texto' => substr($historialTexto, 0, 500)
                 ]);
 
-                // Construir historial completo incluyendo el mensaje anterior del usuario que pidió las claves
+                // Construir historial completo incluyendo mensajes recientes aunque no tengan status=1
                 $historialCompleto = $historialArray;
 
-                // Buscar el último mensaje del usuario antes del código (si existe)
-                // Esto ayuda a mantener el contexto de la conversación
-                $ultimoMensajeUsuario = ChatGpt::where('remitente', $remitente)
-                    ->where('status', 1)
-                    ->whereNotNull('respuesta')
-                    ->where('respuesta', '!=', '')
+                // Buscar mensajes recientes del usuario (últimos 5 minutos) aunque no tengan status=1
+                // Esto incluye mensajes que aún no han sido respondidos pero son parte de la conversación actual
+                $mensajesRecientes = ChatGpt::where('remitente', $remitente)
                     ->where('mensaje', '!=', '/clear')
-                    ->orderBy('date', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->first();
+                    ->where('mensaje', '!=', $nuevoMensaje) // Excluir el mensaje actual (código)
+                    ->where(function($q) {
+                        $q->where('status', 1)
+                          ->orWhere(function($subQ) {
+                              // Incluir mensajes recientes aunque no tengan status=1 (últimos 5 minutos)
+                              $subQ->where('created_at', '>=', now()->subMinutes(5))
+                                   ->orWhere('date', '>=', now()->subMinutes(5));
+                          });
+                    })
+                    ->orderBy('date', 'asc')
+                    ->orderBy('created_at', 'asc')
+                    ->limit(20) // Últimos 20 mensajes
+                    ->get();
 
-                // Si hay un mensaje anterior reciente (últimos 5 minutos) que menciona claves, incluirlo en el contexto
-                if ($ultimoMensajeUsuario) {
-                    $fechaUltimoMensaje = $ultimoMensajeUsuario->date ?: $ultimoMensajeUsuario->created_at;
-                    $minutosTranscurridos = now()->diffInMinutes($fechaUltimoMensaje);
-
-                    if ($minutosTranscurridos <= 5 &&
-                        (stripos($ultimoMensajeUsuario->mensaje, 'clave') !== false ||
-                         stripos($ultimoMensajeUsuario->mensaje, 'acceso') !== false ||
-                         stripos($ultimoMensajeUsuario->mensaje, 'entrar') !== false)) {
-                        // Agregar el mensaje anterior y su respuesta al historial para contexto
-                        if (!empty($ultimoMensajeUsuario->mensaje)) {
-                            $historialCompleto[] = "Usuario: " . trim($ultimoMensajeUsuario->mensaje);
-                        }
-                        if (!empty($ultimoMensajeUsuario->respuesta)) {
-                            $historialCompleto[] = "Asistente: " . trim($ultimoMensajeUsuario->respuesta);
-                        }
-                        Log::info("✅ Agregado mensaje anterior al contexto", [
-                            'mensaje_anterior' => substr($ultimoMensajeUsuario->mensaje, 0, 100),
-                            'minutos_transcurridos' => $minutosTranscurridos
-                        ]);
+                // Construir historial completo con mensajes recientes
+                $historialReciente = [];
+                foreach ($mensajesRecientes as $mensajeReciente) {
+                    if (!empty($mensajeReciente->mensaje) && trim($mensajeReciente->mensaje) !== '/clear') {
+                        $historialReciente[] = "Usuario: " . trim($mensajeReciente->mensaje);
+                    }
+                    if (!empty($mensajeReciente->respuesta)) {
+                        $historialReciente[] = "Asistente: " . trim($mensajeReciente->respuesta);
                     }
                 }
+
+                // Combinar historial existente con mensajes recientes (sin duplicados)
+                $historialCombinado = array_merge($historialArray, $historialReciente);
+                // Eliminar duplicados manteniendo el orden
+                $historialCompleto = array_values(array_unique($historialCombinado));
+
+                Log::info("📋 Historial construido para ejecución automática", [
+                    'historial_original_lineas' => count($historialArray),
+                    'mensajes_recientes_encontrados' => $mensajesRecientes->count(),
+                    'historial_completo_lineas' => count($historialCompleto),
+                    'historial_completo' => $historialCompleto
+                ]);
 
                 // Convertir historial array a texto para pasar a la función
                 $historialTextoCompleto = implode("\n", $historialCompleto);
