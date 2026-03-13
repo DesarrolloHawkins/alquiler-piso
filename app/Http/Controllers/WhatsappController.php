@@ -318,6 +318,7 @@ class WhatsappController extends Controller
         // Fecha límite: máximo 2 horas hacia atrás (definida fuera del try para que esté disponible en todo el método)
         $fechaLimite2Horas = now()->subHours(2);
         // Ventana ampliada para mensajes recientes: 30 minutos (para capturar conversaciones activas)
+        // Definida fuera del try para que esté disponible en todo el método
         $ventanaRecientes = now()->subMinutes(30);
 
         try {
@@ -469,36 +470,10 @@ class WhatsappController extends Controller
                 ->toArray();
         }
 
-        // Verificar si el último mensaje es de hace más de 2 horas
-        // Si es así, no incluir historial para empezar conversación fresca
-        $usarHistorial = true;
-        if (!empty($historialArray)) {
-            // Obtener el último mensaje del remitente antes del actual
-            $ultimoMensajeAnterior = ChatGpt::where('remitente', $remitente)
-                ->where('status', 1)
-                ->whereNotNull('respuesta')
-                ->where('respuesta', '!=', '')
-                ->where('mensaje', '!=', '/clear')
-                ->orderBy('date', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            if ($ultimoMensajeAnterior) {
-                $fechaUltimoMensajeRaw = $ultimoMensajeAnterior->date ?: $ultimoMensajeAnterior->created_at;
-                // Convertir a Carbon si es una cadena para poder calcular diferencias
-                $fechaUltimoMensaje = is_string($fechaUltimoMensajeRaw)
-                    ? Carbon::parse($fechaUltimoMensajeRaw)
-                    : $fechaUltimoMensajeRaw;
-
-                $horasTranscurridas = now()->diffInHours($fechaUltimoMensaje);
-
-                if ($horasTranscurridas > 2) {
-                    $usarHistorial = false;
-                    $historialArray = [];
-                    Log::info("⏰ Último mensaje hace {$horasTranscurridas} horas - Historial limpiado para nueva conversación");
-                }
-            }
-        }
+        // Siempre usar historial si existe (ya está filtrado por las últimas 2 horas y mensajes recientes)
+        // El historial ya incluye mensajes de las últimas 2 horas y mensajes recientes (últimos 30 minutos)
+        // Solo limpiar si realmente no hay historial
+        $usarHistorial = !empty($historialArray);
 
         // Convertir a string para pasar a funciones si es necesario
         $historialTexto = $usarHistorial ? implode("\n", $historialArray) : '';
@@ -711,13 +686,6 @@ class WhatsappController extends Controller
                     return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
                 }
 
-                // Verificar que no sea una palabra común
-                $palabrasExcluidas = ['APARTAMENTO', 'APARTAMENTOS', 'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'RESERVA', 'CLAVE', 'CODIGO'];
-                if (in_array(strtoupper($codigoReserva), $palabrasExcluidas)) {
-                    Log::warning("⚠️ Código detectado es palabra común excluida: {$codigoReserva}");
-                    $mensajeError = "Para poder proporcionarte las claves, necesito tu código de reserva, por favor.";
-                    return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
-                }
 
                 $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
@@ -742,34 +710,16 @@ class WhatsappController extends Controller
     /**
      * Detectar código de reserva en el mensaje
      * Busca patrones alfanuméricos o numéricos que parezcan códigos de reserva
-     * Excluye palabras comunes que no son códigos
      */
     private function detectarCodigoReserva($mensaje)
     {
         // Limpiar el mensaje
         $mensajeLimpio = trim($mensaje);
 
-        // Lista de palabras comunes que NO son códigos de reserva
-        $palabrasExcluidas = [
-            'APARTAMENTO', 'APARTAMENTOS', 'APARTAMENT', 'APARTAMENTOS',
-            'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'EDIFICIOS',
-            'RESERVA', 'RESERVAS', 'CLAVE', 'CLAVES', 'CODIGO', 'CODIGOS',
-            'ENTRADA', 'SALIDA', 'CHECK', 'CHECKIN', 'CHECKOUT',
-            'WIFI', 'INTERNET', 'CONTRASEÑA', 'PASSWORD', 'PASS',
-            'DIRECCION', 'DIRECCIÓN', 'UBICACION', 'UBICACIÓN',
-            'TELEFONO', 'TELÉFONO', 'CONTACTO', 'EMAIL', 'CORREO'
-        ];
-
-        // Primero buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
+        // Buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
         // Patrón: letras y números, sin espacios, entre 8 y 15 caracteres
         if (preg_match('/\b([A-Z0-9]{8,15})\b/i', $mensajeLimpio, $matches)) {
             $codigo = strtoupper($matches[1]);
-
-            // Excluir si es una palabra común
-            if (in_array($codigo, $palabrasExcluidas)) {
-                Log::info("🔍 Palabra común excluida: {$codigo}");
-                return null;
-            }
 
             // Aceptar códigos con letras o solo numéricos (pero con al menos 8 dígitos)
             if (preg_match('/[A-Z]/i', $codigo) || (preg_match('/^[0-9]{8,15}$/', $codigo))) {
