@@ -607,6 +607,16 @@ class WhatsappController extends Controller
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
             $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
+            Log::info("✅ Historial incluido en el prompt", [
+                'lineas_historial' => count($historialArray),
+                'historial_preview' => array_slice($historialArray, -3)
+            ]);
+        } else {
+            Log::info("⚠️ Historial NO incluido en el prompt", [
+                'usar_historial' => $usarHistorial,
+                'historial_vacio' => empty($historialArray),
+                'total_lineas_historial' => count($historialArray)
+            ]);
         }
 
         // 3. Nuevo mensaje del usuario
