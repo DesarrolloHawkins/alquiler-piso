@@ -308,13 +308,8 @@ class WhatsappController extends Controller
         $promptAsistente = PromptAsistente::first();
         $promptBase = $promptAsistente ? trim($promptAsistente->prompt) : "Eres María, el asistente virtual de Apartamentos Hawkins. Tu rol es ayudar a los clientes de forma educada, formal pero cercana.";
 
-        // Asegurar que el prompt incluya las instrucciones sobre el rol si no las tiene
-        // El prompt de la BD ya debería tenerlas, pero las agregamos por seguridad
-        if (stripos($promptBase, 'TÚ ERES EL ASISTENTE') === false && stripos($promptBase, 'eres el asistente') === false) {
-            $promptBase = "IMPORTANTE: TÚ ERES MARÍA, EL ASISTENTE VIRTUAL DE APARTAMENTOS HAWKINS, NO EL CLIENTE.\n" .
-                "Responde SIEMPRE en segunda persona al cliente (tú, tu, te), NUNCA hables como si fueras el cliente.\n" .
-                "NUNCA digas 'soy el usuario' o 'tengo una reserva' - eso lo dice el cliente, no tú.\n\n" . $promptBase;
-        }
+        // Usar el prompt de la BD tal cual (sin modificaciones)
+        $promptSystem = $promptBase;
 
         // Obtener historial de conversación PRIMERO para poder verificar contexto
         // Historial: solo mensajes de las últimas 2 horas y desde el último /clear
@@ -612,15 +607,8 @@ class WhatsappController extends Controller
                 // Convertir historial array a texto para pasar a la función
                 $historialTextoCompleto = implode("\n", $historialCompleto);
 
-                // Construir promptSystem básico para la función (se construirá completo después)
-                // Necesitamos construir el promptSystem completo con las instrucciones
-                $instruccionesBasicas = "\n\nROL Y IDENTIDAD:\n" .
-                    "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
-                    "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
-                    "- NUNCA digas que eres el cliente o el usuario.\n" .
-                    "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n\n";
-
-                $promptSystemBasico = $promptBase . $instruccionesBasicas;
+                // Usar el prompt de la BD tal cual
+                $promptSystemBasico = $promptBase;
 
                 Log::info("📋 Ejecutando obtener_claves con contexto", [
                     'codigo' => $codigoEnMensajeActual,
@@ -707,50 +695,8 @@ class WhatsappController extends Controller
             ]
         ];
 
-        // Construir instrucciones sobre funciones disponibles y comportamiento
-        $instruccionesComportamiento = "\n\nROL Y IDENTIDAD:\n" .
-            "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
-            "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
-            "- NUNCA digas que eres el cliente o el usuario.\n" .
-            "- NUNCA hables en primera persona como si fueras el cliente (ej: 'soy el usuario', 'tengo una reserva', 'me gustaría saber').\n" .
-            "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n" .
-            "- Responde DIRECTAMENTE al cliente como asistente, no como si fueras el cliente.\n\n" .
-            "INSTRUCCIONES DE COMPORTAMIENTO:\n" .
-            "1. Mantén conversaciones naturales, educadas, formales pero cercanas.\n" .
-            "2. Cuando un cliente pregunte por las claves de acceso:\n" .
-            "   - SIEMPRE pide primero el código de reserva de forma amable: 'Para poder proporcionarte las claves, necesito tu código de reserva, por favor.'\n" .
-            "   - NUNCA intentes usar la función obtener_claves sin tener un código de reserva válido proporcionado por el cliente.\n" .
-            "   - Solo usa obtener_claves cuando el cliente te haya dado explícitamente su código de reserva (número de 8-15 dígitos o código alfanumérico).\n" .
-            "   - Si el cliente ya proporcionó su código de reserva en mensajes anteriores del historial, entonces sí puedes usar obtener_claves.\n" .
-            "3. Solo proporciona información adicional (direcciones, contraseñas, etc.) si el cliente lo solicita explícitamente.\n" .
-            "4. MANTÉN EL CONTEXTO DE LA CONVERSACIÓN:\n" .
-            "   - LEE SIEMPRE el historial completo antes de responder para entender qué se ha hablado antes.\n" .
-            "   - Si el cliente estaba preguntando sobre algo específico (como claves, averías, limpieza), continúa en ese contexto.\n" .
-            "   - NO empieces una nueva conversación como si fuera la primera vez que hablas con el cliente.\n" .
-            "   - Si el cliente acaba de proporcionar información que pediste (como un código de reserva), responde en ese contexto específico.\n" .
-            "   - NO repitas preguntas que ya hiciste o información que ya proporcionaste.\n" .
-            "5. Responde de forma concisa pero completa. No des información innecesaria.\n" .
-            "6. NUNCA asumas o inventes códigos de reserva. Solo usa códigos que el cliente haya proporcionado explícitamente.\n\n" .
-            "FUNCIONES DISPONIBLES (Tools):\n" .
-            "Tienes acceso a las siguientes funciones. Úsalas SOLO cuando sea apropiado y tengas TODOS los datos necesarios:\n" .
-            "- obtener_claves(codigo_reserva): Devuelve la clave de acceso al apartamento según el código de reserva. REQUISITOS: solo funciona si es la fecha de entrada, ha pasado las 15:00h y el cliente ha entregado el DNI. NUNCA uses esta función sin un código de reserva válido proporcionado por el cliente.\n" .
-            "- notificar_tecnico(descripcion_problema, urgencia): Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general.\n" .
-            "- notificar_limpieza(tipo_limpieza, observaciones): Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica.\n\n" .
-            "Para usar una función, responde con el formato: [FUNCION:nombre_funcion:parametro1=valor1:parametro2=valor2]\n\n";
-
-        if ($codigoDisponible && strlen($codigoDisponible) >= 8) {
-            $instruccionesComportamiento .= "IMPORTANTE: El cliente ya ha proporcionado el código de reserva: {$codigoDisponible}. Si necesita las claves, puedes usar obtener_claves ahora.\n";
-        } else {
-            $instruccionesComportamiento .= "IMPORTANTE: Si el usuario necesita claves pero aún NO has recibido su código de reserva válido, DEBES pedirlo primero de forma amable. NUNCA intentes usar obtener_claves sin un código válido.\n";
-        }
-
-        $instruccionesComportamiento .= "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
-
-        $promptSystem = $promptBase . $instruccionesComportamiento;
-
-        // Construir prompt completo con mejor estructura para mantener contexto
-        // 1. Prompt del sistema (con instrucciones de funciones)
-        $promptCompleto = $promptSystem;
+        // Usar el prompt de la BD tal cual, sin modificaciones
+        $promptCompleto = $promptBase;
 
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
@@ -758,7 +704,7 @@ class WhatsappController extends Controller
         }
 
         // 3. Nuevo mensaje del usuario
-        $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\nAsistente:";
+        $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n\nAsistente:";
 
         // Detectar código de reserva en el mensaje para logging
         $codigoEnMensaje = $this->detectarCodigoReserva($nuevoMensaje);
@@ -799,6 +745,7 @@ class WhatsappController extends Controller
             Log::warning("⚠️ Respuesta vacía de IA local");
             return null;
         }
+
 
         Log::info("📝 Respuesta recibida de IA local", [
             'respuesta_preview' => substr($respuestaTexto, 0, 200),
@@ -1080,19 +1027,8 @@ class WhatsappController extends Controller
             }
         }
 
-        // Asegurar que el prompt system incluya las instrucciones sobre el rol
+        // Usar el prompt system tal cual viene de la BD
         $promptCompleto = $promptSystem;
-
-        // Si el prompt no incluye las instrucciones de rol explícitamente, agregarlas
-        if (stripos($promptCompleto, 'TÚ ERES EL ASISTENTE') === false) {
-            $promptCompleto .= "\n\nROL Y IDENTIDAD:\n" .
-                "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
-                "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
-                "- NUNCA digas que eres el cliente o el usuario.\n" .
-                "- NUNCA hables en primera persona como si fueras el cliente.\n" .
-                "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n" .
-                "- Responde DIRECTAMENTE al cliente como asistente, no como si fueras el cliente.\n";
-        }
 
         // Agregar historial
         if (!empty($historialArray)) {
@@ -1102,11 +1038,7 @@ class WhatsappController extends Controller
         // Agregar mensaje actual y resultado de función
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
-            "IMPORTANTE: TÚ ERES EL ASISTENTE MARÍA, NO EL CLIENTE. Responde directamente al cliente en segunda persona (tú, tu, te). " .
-            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información.\n" .
-            "MANTÉN EL CONTEXTO: Lee el historial de conversación completo para entender qué se ha hablado antes. " .
-            "Si el cliente estaba preguntando sobre algo específico (como claves de acceso), responde en ese contexto. " .
-            "NO empieces una nueva conversación como si fuera la primera vez que hablas con el cliente.";
+            "Ahora responde directamente al cliente como María usando esta información. Mantén el contexto de la conversación y responde de forma natural:\n\n";
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
@@ -1134,6 +1066,7 @@ class WhatsappController extends Controller
 
         return $respuestaFinal ?: $resultadoFuncion;
     }
+
 
     public function clasificarMensaje($mensaje)
     {
