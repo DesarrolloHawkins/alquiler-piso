@@ -610,7 +610,7 @@ class WhatsappController extends Controller
 
         // Log completo del prompt sin truncar
         Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA (SIN TRUNCAR)\n" . $promptCompleto);
-        
+
         // Guardar prompt completo en archivo para evitar truncamiento
         try {
             $logDir = storage_path('logs/prompts_ia');
@@ -934,7 +934,7 @@ class WhatsappController extends Controller
 
         // Log completo del prompt sin truncar (después de ejecutar función)
         Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA DESPUÉS DE FUNCIÓN (SIN TRUNCAR)\n" . $promptCompleto);
-        
+
         // Guardar prompt completo en archivo para evitar truncamiento
         try {
             // Extraer remitente del historial si es posible
@@ -947,7 +947,7 @@ class WhatsappController extends Controller
                 }
             }
             $remitenteId = $remitenteDelHistorial ?: 'unknown';
-            
+
             $logDir = storage_path('logs/prompts_ia');
             if (!is_dir($logDir)) {
                 mkdir($logDir, 0755, true);
