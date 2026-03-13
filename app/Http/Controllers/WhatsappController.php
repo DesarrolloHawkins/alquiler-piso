@@ -549,7 +549,23 @@ class WhatsappController extends Controller
         $promptCompleto = $promptBase;
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
-        $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+        $promptCompleto .= "\n\nIDIOMA: SIEMPRE responde en ESPAÑOL. Todas tus respuestas deben estar en español, sin excepciones. NO respondas en inglés ni en ningún otro idioma.\n\n" .
+            "CONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+            "FORMATO OBLIGATORIO PARA USAR HERRAMIENTAS (FUNCIONES):\n" .
+            "- Cuando necesites usar una herramienta, DEBES usar EXACTAMENTE este formato y SOLO este formato: [FUNCION:nombre_funcion:parametro1=valor1:parametro2=valor2]\n" .
+            "- Ejemplos CORRECTOS:\n" .
+            "  * [FUNCION:obtener_claves:codigo_reserva=5570112385]\n" .
+            "  * [FUNCION:notificar_tecnico:descripcion_problema=No funciona el aire acondicionado:urgencia=alta]\n" .
+            "  * [FUNCION:notificar_limpieza:tipo_limpieza=Limpieza general:observaciones=Necesito cambio de toallas]\n" .
+            "- Formatos INCORRECTOS que NO debes usar:\n" .
+            "  * JSON: {\"action\": \"obtener_claves\", \"code\": \"5570112385\"}\n" .
+            "  * Texto en inglés: \"We will call obtener_claves with reservation_code\"\n" .
+            "  * Explicaciones antes/después del formato\n" .
+            "- REGLAS IMPORTANTES:\n" .
+            "  * NO escribas explicaciones antes o después del formato [FUNCION:...]\n" .
+            "  * NO uses otros formatos como JSON, texto plano, o frases en inglés\n" .
+            "  * Si necesitas usar una herramienta, escribe SOLO el formato [FUNCION:...] sin texto adicional\n" .
+            "  * Si NO necesitas usar ninguna herramienta, responde normalmente en español sin usar ningún formato especial\n\n" .
             "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
             "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), VERIFICA PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
             "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código. NO vuelvas a pedir el código.\n" .
@@ -669,7 +685,17 @@ class WhatsappController extends Controller
             $parametrosStr = $matches[2];
             $funcionDetectada = true;
         }
-        // Formato 2: JSON con "action" y "code" (formato que está usando la IA)
+        // Formato 2: Texto plano "We will call obtener_claves with reservation_code "5570112385"."
+        elseif (preg_match('/will call\s+(\w+)\s+with\s+reservation_code\s+["\']?([0-9]+)["\']?/i', $respuestaTexto, $matches)) {
+            $nombreFuncion = trim($matches[1]);
+            $codigo = trim($matches[2]);
+            if ($nombreFuncion === 'obtener_claves') {
+                $parametrosStr = 'codigo_reserva=' . $codigo;
+                $funcionDetectada = true;
+                Log::info("🔧 Función detectada en formato texto (will call): {$nombreFuncion} con código {$codigo}");
+            }
+        }
+        // Formato 3: JSON con "action" y "code" (formato que está usando la IA)
         elseif (preg_match('/\{[^}]*"action"\s*:\s*"([^"]+)"[^}]*"code"\s*:\s*"([^"]+)"/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             $codigo = trim($matches[2]);
@@ -900,10 +926,26 @@ class WhatsappController extends Controller
         $promptCompleto = $promptSystem;
 
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
-        $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+        $promptCompleto .= "\n\nIDIOMA: SIEMPRE responde en ESPAÑOL. Todas tus respuestas deben estar en español, sin excepciones. NO respondas en inglés ni en ningún otro idioma.\n\n" .
+            "CONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
+            "FORMATO OBLIGATORIO PARA USAR HERRAMIENTAS (FUNCIONES):\n" .
+            "- Cuando necesites usar una herramienta, DEBES usar EXACTAMENTE este formato y SOLO este formato: [FUNCION:nombre_funcion:parametro1=valor1:parametro2=valor2]\n" .
+            "- Ejemplos CORRECTOS:\n" .
+            "  * [FUNCION:obtener_claves:codigo_reserva=5570112385]\n" .
+            "  * [FUNCION:notificar_tecnico:descripcion_problema=No funciona el aire acondicionado:urgencia=alta]\n" .
+            "  * [FUNCION:notificar_limpieza:tipo_limpieza=Limpieza general:observaciones=Necesito cambio de toallas]\n" .
+            "- Formatos INCORRECTOS que NO debes usar:\n" .
+            "  * JSON: {\"action\": \"obtener_claves\", \"code\": \"5570112385\"}\n" .
+            "  * Texto en inglés: \"We will call obtener_claves with reservation_code\"\n" .
+            "  * Explicaciones antes/después del formato\n" .
+            "- REGLAS IMPORTANTES:\n" .
+            "  * NO escribas explicaciones antes o después del formato [FUNCION:...]\n" .
+            "  * NO uses otros formatos como JSON, texto plano, o frases en inglés\n" .
+            "  * Si necesitas usar una herramienta, escribe SOLO el formato [FUNCION:...] sin texto adicional\n" .
+            "  * Si NO necesitas usar ninguna herramienta, responde normalmente en español sin usar ningún formato especial\n\n" .
             "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
             "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), VERIFICA PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
-            "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código. NO vuelvas a pedir el código.\n" .
+            "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código usando el formato: [FUNCION:obtener_claves:codigo_reserva=CODIGO]. NO vuelvas a pedir el código.\n" .
             "- Si el cliente NO ha proporcionado su código de reserva aún, entonces pídeselo UNA SOLA VEZ.\n" .
             "- Cuando el cliente dice que no tiene las claves o no le han llegado, SI YA TIENES SU CÓDIGO DE RESERVA (del historial o del mensaje actual), usa INMEDIATAMENTE la función obtener_claves para verificar:\n" .
             "  * Si la reserva existe y es válida\n" .
