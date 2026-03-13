@@ -698,6 +698,9 @@ class WhatsappController extends Controller
         // Usar el prompt de la BD tal cual, sin modificaciones
         $promptCompleto = $promptBase;
 
+        // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
+        $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.";
+
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
             $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
@@ -1030,6 +1033,9 @@ class WhatsappController extends Controller
         // Usar el prompt system tal cual viene de la BD
         $promptCompleto = $promptSystem;
 
+        // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
+        $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.";
+
         // Agregar historial
         if (!empty($historialArray)) {
             $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
@@ -1037,8 +1043,7 @@ class WhatsappController extends Controller
 
         // Agregar mensaje actual y resultado de función
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
-            "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
-            "Ahora responde directamente al cliente como María usando esta información. Mantén el contexto de la conversación y responde de forma natural:\n\n";
+            "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n\n";
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
