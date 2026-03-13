@@ -304,8 +304,17 @@ class WhatsappController extends Controller
         $apiKey = $config['api_key'];
         $modelo = $config['model'];
 
+        // Obtener el prompt completo de la base de datos
         $promptAsistente = PromptAsistente::first();
-        $promptBase = $promptAsistente ? $promptAsistente->prompt : "Eres un asistente virtual de apartamentos turísticos Hawkins. Tu objetivo es ayudar a los clientes de forma educada, formal pero cercana.";
+        $promptBase = $promptAsistente ? trim($promptAsistente->prompt) : "Eres María, el asistente virtual de Apartamentos Hawkins. Tu rol es ayudar a los clientes de forma educada, formal pero cercana.";
+
+        // Asegurar que el prompt incluya las instrucciones sobre el rol si no las tiene
+        // El prompt de la BD ya debería tenerlas, pero las agregamos por seguridad
+        if (stripos($promptBase, 'TÚ ERES EL ASISTENTE') === false && stripos($promptBase, 'eres el asistente') === false) {
+            $promptBase = "IMPORTANTE: TÚ ERES MARÍA, EL ASISTENTE VIRTUAL DE APARTAMENTOS HAWKINS, NO EL CLIENTE.\n" .
+                "Responde SIEMPRE en segunda persona al cliente (tú, tu, te), NUNCA hables como si fueras el cliente.\n" .
+                "NUNCA digas 'soy el usuario' o 'tengo una reserva' - eso lo dice el cliente, no tú.\n\n" . $promptBase;
+        }
 
         // Obtener historial de conversación PRIMERO para poder verificar contexto
         // Historial: últimos 20 mensajes válidos (mensaje + respuesta)
@@ -481,8 +490,79 @@ class WhatsappController extends Controller
             }
         }
 
+        // Definir las tools (funciones) disponibles
+        $tools = [
+            [
+                "type" => "function",
+                "function" => [
+                    "name" => "obtener_claves",
+                    "description" => "Devuelve la clave de acceso al apartamento según el código de reserva, solo si es la fecha de entrada, ha pasado la hora de entrada y el cliente ha entregado el DNI.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "codigo_reserva" => [
+                                "type" => "string",
+                                "description" => "Código de la reserva del cliente"
+                            ]
+                        ],
+                        "required" => ["codigo_reserva"]
+                    ]
+                ]
+            ],
+            [
+                "type" => "function",
+                "function" => [
+                    "name" => "notificar_tecnico",
+                    "description" => "Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general o cuando después de intentar resolver el problema con la información general no se ha resuelto el problema.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "descripcion_problema" => [
+                                "type" => "string",
+                                "description" => "Descripción detallada del problema reportado por el cliente"
+                            ],
+                            "urgencia" => [
+                                "type" => "string",
+                                "enum" => ["baja", "media", "alta"],
+                                "description" => "Nivel de urgencia del problema"
+                            ]
+                        ],
+                        "required" => ["descripcion_problema", "urgencia"]
+                    ]
+                ]
+            ],
+            [
+                "type" => "function",
+                "function" => [
+                    "name" => "notificar_limpieza",
+                    "description" => "Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica o cuando después de intentar resolver el problema con la información general no se ha resuelto el problema.",
+                    "parameters" => [
+                        "type" => "object",
+                        "properties" => [
+                            "tipo_limpieza" => [
+                                "type" => "string",
+                                "description" => "Tipo de limpieza solicitada (ej: limpieza general, cambio de ropa, etc.)"
+                            ],
+                            "observaciones" => [
+                                "type" => "string",
+                                "description" => "Observaciones adicionales del cliente"
+                            ]
+                        ],
+                        "required" => ["tipo_limpieza"]
+                    ]
+                ]
+            ]
+        ];
+
         // Construir instrucciones sobre funciones disponibles y comportamiento
-        $instruccionesComportamiento = "\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n" .
+        $instruccionesComportamiento = "\n\nROL Y IDENTIDAD:\n" .
+            "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
+            "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
+            "- NUNCA digas que eres el cliente o el usuario.\n" .
+            "- NUNCA hables en primera persona como si fueras el cliente (ej: 'soy el usuario', 'tengo una reserva', 'me gustaría saber').\n" .
+            "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n" .
+            "- Responde DIRECTAMENTE al cliente como asistente, no como si fueras el cliente.\n\n" .
+            "INSTRUCCIONES DE COMPORTAMIENTO:\n" .
             "1. Mantén conversaciones naturales, educadas, formales pero cercanas.\n" .
             "2. Cuando un cliente pregunte por las claves de acceso:\n" .
             "   - Si NO has recibido su código de reserva aún, pídelo de forma amable: 'Para poder proporcionarte las claves, necesito tu código de reserva, por favor.'\n" .
@@ -491,10 +571,12 @@ class WhatsappController extends Controller
             "4. Mantén el contexto de la conversación. Lee el historial completo para entender qué se ha hablado antes.\n" .
             "5. Responde de forma concisa pero completa. No des información innecesaria.\n" .
             "6. Si el cliente ya proporcionó su código de reserva en mensajes anteriores, NO vuelvas a pedirlo.\n\n" .
-            "FUNCIONES DISPONIBLES:\n" .
-            "- Cuando tengas un código de reserva y el cliente necesite las claves, usa: [FUNCION:obtener_claves:codigo_reserva=CODIGO]\n" .
-            "- Cuando haya un problema técnico o avería que requiera intervención, usa: [FUNCION:notificar_tecnico:descripcion=DESCRIPCION:urgencia=alta|media|baja]\n" .
-            "- Cuando soliciten limpieza, usa: [FUNCION:notificar_limpieza:tipo_limpieza=TIPO:observaciones=OBS]\n\n";
+            "FUNCIONES DISPONIBLES (Tools):\n" .
+            "Tienes acceso a las siguientes funciones. Úsalas cuando sea apropiado:\n" .
+            "- obtener_claves(codigo_reserva): Devuelve la clave de acceso al apartamento según el código de reserva, solo si es la fecha de entrada, ha pasado la hora de entrada y el cliente ha entregado el DNI.\n" .
+            "- notificar_tecnico(descripcion_problema, urgencia): Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general.\n" .
+            "- notificar_limpieza(tipo_limpieza, observaciones): Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica.\n\n" .
+            "Para usar una función, responde con el formato: [FUNCION:nombre_funcion:parametro1=valor1:parametro2=valor2]\n\n";
 
         if ($codigoDisponible) {
             $instruccionesComportamiento .= "IMPORTANTE: El cliente ya ha proporcionado el código de reserva: {$codigoDisponible}. Si necesita las claves, usa obtener_claves ahora.\n";
@@ -791,7 +873,19 @@ class WhatsappController extends Controller
             }
         }
 
+        // Asegurar que el prompt system incluya las instrucciones sobre el rol
         $promptCompleto = $promptSystem;
+
+        // Si el prompt no incluye las instrucciones de rol explícitamente, agregarlas
+        if (stripos($promptCompleto, 'TÚ ERES EL ASISTENTE') === false) {
+            $promptCompleto .= "\n\nROL Y IDENTIDAD:\n" .
+                "- TÚ ERES MARÍA, el asistente virtual de Apartamentos Hawkins.\n" .
+                "- TÚ ERES EL ASISTENTE que ayuda a los clientes.\n" .
+                "- NUNCA digas que eres el cliente o el usuario.\n" .
+                "- NUNCA hables en primera persona como si fueras el cliente.\n" .
+                "- SIEMPRE habla en segunda persona al cliente (tú, tu, te, tus).\n" .
+                "- Responde DIRECTAMENTE al cliente como asistente, no como si fueras el cliente.\n";
+        }
 
         // Agregar historial
         if (!empty($historialArray)) {
@@ -801,7 +895,8 @@ class WhatsappController extends Controller
         // Agregar mensaje actual y resultado de función
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
-            "Ahora responde al usuario de forma natural, educada y cercana con esta información. Mantén el contexto de la conversación.";
+            "IMPORTANTE: TÚ ERES EL ASISTENTE MARÍA, NO EL CLIENTE. Responde directamente al cliente en segunda persona (tú, tu, te). " .
+            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información. Mantén el contexto de la conversación.";
 
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
 
