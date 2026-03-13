@@ -631,9 +631,7 @@ class WhatsappController extends Controller
         ]);
 
         // Log completo del prompt sin truncar
-        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA (SIN TRUNCAR)", [
-            'prompt_completo' => $promptCompleto
-        ]);
+        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA (SIN TRUNCAR)\n" . $promptCompleto);
 
         // Llamar a la API local
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
@@ -938,9 +936,7 @@ class WhatsappController extends Controller
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n\n";
 
         // Log completo del prompt sin truncar (después de ejecutar función)
-        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA DESPUÉS DE FUNCIÓN (SIN TRUNCAR)", [
-            'prompt_completo' => $promptCompleto
-        ]);
+        Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA DESPUÉS DE FUNCIÓN (SIN TRUNCAR)\n" . $promptCompleto);
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
