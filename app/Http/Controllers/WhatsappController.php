@@ -367,32 +367,88 @@ class WhatsappController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->first();
 
+            // Debug: ver todos los mensajes del remitente sin filtros
+            $todosMensajes = ChatGpt::where('remitente', $remitente)
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get(['id', 'mensaje', 'respuesta', 'date', 'created_at', 'status']);
+
+            Log::info("🔍 DEBUG todos los mensajes del remitente (últimos 10)", [
+                'total' => ChatGpt::where('remitente', $remitente)->count(),
+                'mensajes' => $todosMensajes->map(function($m) {
+                    return [
+                        'id' => $m->id,
+                        'mensaje_preview' => substr($m->mensaje ?? '', 0, 30),
+                        'respuesta_preview' => substr($m->respuesta ?? '', 0, 30),
+                        'date' => $m->date,
+                        'created_at' => $m->created_at ? $m->created_at->toDateTimeString() : null,
+                        'status' => $m->status
+                    ];
+                })->toArray()
+            ]);
+
             // Si hay un /clear previo, solo incluir mensajes después de ese /clear
             // Aplicar siempre, sin importar cuándo fue el /clear
             if ($ultimoClear) {
                 $fechaClearRaw = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
+                // Convertir a Carbon para asegurar comparación correcta
+                $fechaClear = is_string($fechaClearRaw) ? Carbon::parse($fechaClearRaw) : $fechaClearRaw;
+
+                Log::info("🧹 DEBUG /clear", [
+                    'fecha_clear_raw' => $fechaClearRaw,
+                    'fecha_clear_parsed' => $fechaClear->toDateTimeString(),
+                    'fecha_clear_timestamp' => $fechaClear->timestamp,
+                    'ahora' => now()->toDateTimeString(),
+                    'ahora_timestamp' => now()->timestamp
+                ]);
+
                 try {
                     // Usar whereRaw con COALESCE para manejar ambos campos de fecha
-                    // Usar el valor original (puede ser string o Carbon) para la consulta SQL
-                    $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClearRaw]);
-                    Log::info("🧹 Filtro /clear aplicado - Solo mensajes después de: " . ($ultimoClear->date ?? $ultimoClear->created_at));
+                    // Usar el valor Carbon formateado para la consulta SQL
+                    $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear->toDateTimeString()]);
+                    Log::info("🧹 Filtro /clear aplicado - Solo mensajes después de: " . $fechaClear->toDateTimeString());
                 } catch (\Exception $e) {
                     // Si falla el whereRaw, usar una alternativa más simple
                     Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
                     if ($ultimoClear->date) {
-                        $query->where('date', '>', $fechaClearRaw);
+                        $query->where('date', '>', $fechaClear->toDateTimeString());
                     } else {
-                        $query->where('created_at', '>', $fechaClearRaw);
+                        $query->where('created_at', '>', $fechaClear->toDateTimeString());
                     }
                 }
             }
+
+            // Debug: contar mensajes antes de procesar
+            $totalMensajesQuery = $query->count();
+            Log::info("🔍 DEBUG historial antes de procesar", [
+                'total_mensajes_query' => $totalMensajesQuery,
+                'fecha_limite_2_horas' => $fechaLimite2Horas->toDateTimeString(),
+                'ventana_recientes' => $ventanaRecientes->toDateTimeString(),
+                'tiene_ultimo_clear' => $ultimoClear ? true : false
+            ]);
 
             $historialArray = $query
                 ->orderBy('date', 'asc') // Orden cronológico ascendente
                 ->orderBy('created_at', 'asc')
                 ->limit(40) // Límite razonable de mensajes
-                ->get()
-                ->flatMap(function ($chat) {
+                ->get();
+
+            // Debug: ver algunos mensajes encontrados
+            Log::info("🔍 DEBUG mensajes encontrados", [
+                'total_registros' => $historialArray->count(),
+                'primeros_3' => $historialArray->take(3)->map(function($chat) {
+                    return [
+                        'id' => $chat->id,
+                        'mensaje' => substr($chat->mensaje ?? '', 0, 50),
+                        'respuesta' => substr($chat->respuesta ?? '', 0, 50),
+                        'date' => $chat->date,
+                        'created_at' => $chat->created_at,
+                        'status' => $chat->status
+                    ];
+                })->toArray()
+            ]);
+
+            $historialArray = $historialArray->flatMap(function ($chat) {
                     $mensajes = [];
                     // No incluir el mensaje /clear en el historial
                     if (!empty($chat->mensaje) && trim($chat->mensaje) !== '/clear') {
