@@ -565,23 +565,25 @@ class WhatsappController extends Controller
             "INSTRUCCIONES DE COMPORTAMIENTO:\n" .
             "1. Mantén conversaciones naturales, educadas, formales pero cercanas.\n" .
             "2. Cuando un cliente pregunte por las claves de acceso:\n" .
-            "   - Si NO has recibido su código de reserva aún, pídelo de forma amable: 'Para poder proporcionarte las claves, necesito tu código de reserva, por favor.'\n" .
-            "   - Si YA tienes el código de reserva (en este mensaje o en mensajes anteriores), usa la función obtener_claves inmediatamente.\n" .
+            "   - SIEMPRE pide primero el código de reserva de forma amable: 'Para poder proporcionarte las claves, necesito tu código de reserva, por favor.'\n" .
+            "   - NUNCA intentes usar la función obtener_claves sin tener un código de reserva válido proporcionado por el cliente.\n" .
+            "   - Solo usa obtener_claves cuando el cliente te haya dado explícitamente su código de reserva (número de 8-15 dígitos o código alfanumérico).\n" .
+            "   - Si el cliente ya proporcionó su código de reserva en mensajes anteriores del historial, entonces sí puedes usar obtener_claves.\n" .
             "3. Solo proporciona información adicional (direcciones, contraseñas, etc.) si el cliente lo solicita explícitamente.\n" .
             "4. Mantén el contexto de la conversación. Lee el historial completo para entender qué se ha hablado antes.\n" .
             "5. Responde de forma concisa pero completa. No des información innecesaria.\n" .
-            "6. Si el cliente ya proporcionó su código de reserva en mensajes anteriores, NO vuelvas a pedirlo.\n\n" .
+            "6. NUNCA asumas o inventes códigos de reserva. Solo usa códigos que el cliente haya proporcionado explícitamente.\n\n" .
             "FUNCIONES DISPONIBLES (Tools):\n" .
-            "Tienes acceso a las siguientes funciones. Úsalas cuando sea apropiado:\n" .
-            "- obtener_claves(codigo_reserva): Devuelve la clave de acceso al apartamento según el código de reserva, solo si es la fecha de entrada, ha pasado la hora de entrada y el cliente ha entregado el DNI.\n" .
+            "Tienes acceso a las siguientes funciones. Úsalas SOLO cuando sea apropiado y tengas TODOS los datos necesarios:\n" .
+            "- obtener_claves(codigo_reserva): Devuelve la clave de acceso al apartamento según el código de reserva. REQUISITOS: solo funciona si es la fecha de entrada, ha pasado las 15:00h y el cliente ha entregado el DNI. NUNCA uses esta función sin un código de reserva válido proporcionado por el cliente.\n" .
             "- notificar_tecnico(descripcion_problema, urgencia): Notifica al técnico cuando hay una avería real que requiere intervención inmediata. Solo usar cuando el problema no se puede resolver con información general.\n" .
             "- notificar_limpieza(tipo_limpieza, observaciones): Notifica al equipo de limpieza cuando hay una solicitud de limpieza que requiere intervención. Solo usar cuando el cliente solicita limpieza específica.\n\n" .
             "Para usar una función, responde con el formato: [FUNCION:nombre_funcion:parametro1=valor1:parametro2=valor2]\n\n";
 
-        if ($codigoDisponible) {
-            $instruccionesComportamiento .= "IMPORTANTE: El cliente ya ha proporcionado el código de reserva: {$codigoDisponible}. Si necesita las claves, usa obtener_claves ahora.\n";
+        if ($codigoDisponible && strlen($codigoDisponible) >= 8) {
+            $instruccionesComportamiento .= "IMPORTANTE: El cliente ya ha proporcionado el código de reserva: {$codigoDisponible}. Si necesita las claves, puedes usar obtener_claves ahora.\n";
         } else {
-            $instruccionesComportamiento .= "IMPORTANTE: Si el usuario necesita claves pero aún no has recibido su código de reserva, pídelo primero de forma amable.\n";
+            $instruccionesComportamiento .= "IMPORTANTE: Si el usuario necesita claves pero aún NO has recibido su código de reserva válido, DEBES pedirlo primero de forma amable. NUNCA intentes usar obtener_claves sin un código válido.\n";
         }
 
         $instruccionesComportamiento .= "Si NO necesitas ejecutar ninguna función, responde normalmente al usuario de forma natural y útil.";
@@ -668,11 +670,18 @@ class WhatsappController extends Controller
             $funcionDetectada = true;
         }
         // Si el usuario pide claves y tiene código disponible, ejecutar función automáticamente
-        elseif ($pideClaves && $codigoDisponibleParaClaves) {
-            $nombreFuncion = 'obtener_claves';
-            $parametrosStr = 'codigo_reserva=' . $codigoDisponibleParaClaves;
-            $funcionDetectada = true;
-            Log::info("🔧 Función inferida automáticamente: obtener_claves para código: {$codigoDisponibleParaClaves}");
+        // PERO solo si el código es válido (8+ caracteres y no es una palabra común)
+        elseif ($pideClaves && $codigoDisponibleParaClaves && strlen($codigoDisponibleParaClaves) >= 8) {
+            // Verificar que no sea una palabra común
+            $palabrasExcluidas = ['APARTAMENTO', 'APARTAMENTOS', 'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'RESERVA', 'CLAVE'];
+            if (!in_array(strtoupper($codigoDisponibleParaClaves), $palabrasExcluidas)) {
+                $nombreFuncion = 'obtener_claves';
+                $parametrosStr = 'codigo_reserva=' . $codigoDisponibleParaClaves;
+                $funcionDetectada = true;
+                Log::info("🔧 Función inferida automáticamente: obtener_claves para código: {$codigoDisponibleParaClaves}");
+            } else {
+                Log::info("⚠️ Código detectado pero es palabra común excluida: {$codigoDisponibleParaClaves}");
+            }
         }
         // Si no encuentra el patrón exacto, buscar si menciona obtener claves y hay código de reserva
         elseif (stripos($respuestaTexto, 'obtener_claves') !== false ||
@@ -709,6 +718,23 @@ class WhatsappController extends Controller
                         $codigoReserva = $this->detectarCodigoReserva($historialTexto);
                     }
                 }
+
+                // Validar que el código sea válido antes de ejecutar
+                if (!$codigoReserva || strlen($codigoReserva) < 8) {
+                    Log::warning("⚠️ Código de reserva inválido o no proporcionado: " . ($codigoReserva ?? 'null'));
+                    // Devolver mensaje pidiendo el código en lugar de ejecutar la función
+                    $mensajeError = "Para poder proporcionarte las claves, necesito tu código de reserva, por favor.";
+                    return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
+                }
+
+                // Verificar que no sea una palabra común
+                $palabrasExcluidas = ['APARTAMENTO', 'APARTAMENTOS', 'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'RESERVA', 'CLAVE', 'CODIGO'];
+                if (in_array(strtoupper($codigoReserva), $palabrasExcluidas)) {
+                    Log::warning("⚠️ Código detectado es palabra común excluida: {$codigoReserva}");
+                    $mensajeError = "Para poder proporcionarte las claves, necesito tu código de reserva, por favor.";
+                    return $this->llamarIALocalConContexto($promptSystem, $historialTexto, $nuevoMensaje, $mensajeError, $endpoint, $apiKey, $modelo);
+                }
+
                 $resultadoFuncion = $this->ejecutarObtenerClaves($codigoReserva, $remitente, $promptSystem, $historialTexto, $nuevoMensaje, $endpoint, $apiKey, $modelo);
                 return $resultadoFuncion;
 
@@ -732,21 +758,42 @@ class WhatsappController extends Controller
     /**
      * Detectar código de reserva en el mensaje
      * Busca patrones alfanuméricos o numéricos que parezcan códigos de reserva
+     * Excluye palabras comunes que no son códigos
      */
     private function detectarCodigoReserva($mensaje)
     {
         // Limpiar el mensaje
         $mensajeLimpio = trim($mensaje);
 
+        // Lista de palabras comunes que NO son códigos de reserva
+        $palabrasExcluidas = [
+            'APARTAMENTO', 'APARTAMENTOS', 'APARTAMENT', 'APARTAMENTOS',
+            'HAWKINS', 'SUITES', 'COSTA', 'EDIFICIO', 'EDIFICIOS',
+            'RESERVA', 'RESERVAS', 'CLAVE', 'CLAVES', 'CODIGO', 'CODIGOS',
+            'ENTRADA', 'SALIDA', 'CHECK', 'CHECKIN', 'CHECKOUT',
+            'WIFI', 'INTERNET', 'CONTRASEÑA', 'PASSWORD', 'PASS',
+            'DIRECCION', 'DIRECCIÓN', 'UBICACION', 'UBICACIÓN',
+            'TELEFONO', 'TELÉFONO', 'CONTACTO', 'EMAIL', 'CORREO'
+        ];
+
         // Primero buscar códigos alfanuméricos de 8-15 caracteres (formato típico de códigos de reserva)
         // Patrón: letras y números, sin espacios, entre 8 y 15 caracteres
         if (preg_match('/\b([A-Z0-9]{8,15})\b/i', $mensajeLimpio, $matches)) {
             $codigo = strtoupper($matches[1]);
 
+            // Excluir si es una palabra común
+            if (in_array($codigo, $palabrasExcluidas)) {
+                Log::info("🔍 Palabra común excluida: {$codigo}");
+                return null;
+            }
+
             // Aceptar códigos con letras o solo numéricos (pero con al menos 8 dígitos)
             if (preg_match('/[A-Z]/i', $codigo) || (preg_match('/^[0-9]{8,15}$/', $codigo))) {
-                Log::info("🔍 Código de reserva detectado: {$codigo}");
-                return $codigo;
+                // Verificar que no sea solo letras (debe tener números)
+                if (preg_match('/[0-9]/', $codigo)) {
+                    Log::info("🔍 Código de reserva detectado: {$codigo}");
+                    return $codigo;
+                }
             }
         }
 
