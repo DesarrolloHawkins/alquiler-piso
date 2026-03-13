@@ -551,28 +551,26 @@ class WhatsappController extends Controller
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
             "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
-            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), lo PRIMERO que debes hacer es pedirle su código de reserva.\n" .
-            "- NO hagas preguntas sobre fecha de llegada, hora actual, o situación específica. Usa la función obtener_claves con el código de reserva para verificar automáticamente:\n" .
+            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), VERIFICA PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
+            "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código. NO vuelvas a pedir el código.\n" .
+            "- Si el cliente NO ha proporcionado su código de reserva aún, entonces pídeselo UNA SOLA VEZ.\n" .
+            "- Cuando el cliente dice que no tiene las claves o no le han llegado, SI YA TIENES SU CÓDIGO DE RESERVA (del historial o del mensaje actual), usa INMEDIATAMENTE la función obtener_claves para verificar:\n" .
             "  * Si la reserva existe y es válida\n" .
             " * La fecha de entrada de la reserva\n" .
             " * Si es el día de entrada y la hora actual\n" .
             " * Si el cliente ha entregado el DNI\n" .
             " * Si las claves están disponibles según el horario\n" .
             "- La función obtener_claves te dará toda la información necesaria y te indicará qué hacer según la situación.\n" .
-            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n\n" .
+            "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n" .
+            "- NO pidas el código de reserva múltiples veces si ya lo tienes en el historial.\n\n" .
             "HORARIO DE ENTREGA DE CLAVES:\n" .
             "- Las claves se entregan a las 14:00h del día de entrada.\n" .
             "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
-            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n" .
-            "- NO menciones el código de emergencia ni proporciones información adicional sobre acceso si aún no son las 14:00h.\n\n" .
-            "SEGURIDAD - CÓDIGO DE EMERGENCIA (1734):\n" .
-            "- El código de emergencia SOLO debe proporcionarse en casos de VERDADERA EMERGENCIA (por ejemplo: el cliente está bloqueado fuera del edificio después de las 15:00h, tiene una emergencia médica, o situación crítica similar).\n" .
-            "- NO proporciones el código de emergencia simplemente porque:\n" .
-            "  * El cliente dice que no ha recibido los códigos\n" .
-            "  * El código de acceso no funciona\n" .
-            "  * El cliente lo solicita\n" .
-            "- El código de emergencia es SOLO para emergencias reales y críticas.\n" .
-            "- Si el cliente necesita ayuda con acceso pero NO es una emergencia, debe esperar a las 14:00h para recibir las claves oficiales.";
+            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n\n" .
+            "SEGURIDAD - CÓDIGO DE EMERGENCIA:\n" .
+            "- NUNCA menciones, proporciones o hagas referencia al código de emergencia en tus respuestas.\n" .
+            "- El código de emergencia es información confidencial que NO debes compartir bajo ninguna circunstancia.\n" .
+            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.";
 
         // 2. Historial de conversación (solo si se debe usar y no está vacío)
         if ($usarHistorial && !empty($historialArray)) {
@@ -886,10 +884,10 @@ class WhatsappController extends Controller
         // Agregar contexto sobre el canal de comunicación (sin modificar el prompt base)
         $promptCompleto .= "\n\nCONTEXTO: Esta conversación está teniendo lugar por WhatsApp. El cliente ya está hablando contigo por WhatsApp, por lo tanto NO debes sugerirle que contacte por WhatsApp, ya que ya está aquí. Si necesita ayuda adicional, puedes proporcionarla directamente en esta conversación.\n\n" .
             "PROCEDIMIENTO PARA PROBLEMAS CON CLAVES:\n" .
-            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), verifica PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
+            "- Cuando un cliente tenga problemas con las claves (no las ha recibido, no funcionan, etc.), VERIFICA PRIMERO si ya proporcionó su código de reserva en mensajes anteriores del historial.\n" .
             "- Si el cliente YA proporcionó su código de reserva en el historial, usa INMEDIATAMENTE la función obtener_claves con ese código. NO vuelvas a pedir el código.\n" .
-            "- Si el cliente NO ha proporcionado su código de reserva aún, entonces pídeselo.\n" .
-            "- NO hagas preguntas sobre fecha de llegada, hora actual, o situación específica. Usa la función obtener_claves con el código de reserva para verificar automáticamente:\n" .
+            "- Si el cliente NO ha proporcionado su código de reserva aún, entonces pídeselo UNA SOLA VEZ.\n" .
+            "- Cuando el cliente dice que no tiene las claves o no le han llegado, SI YA TIENES SU CÓDIGO DE RESERVA (del historial o del mensaje actual), usa INMEDIATAMENTE la función obtener_claves para verificar:\n" .
             "  * Si la reserva existe y es válida\n" .
             " * La fecha de entrada de la reserva\n" .
             " * Si es el día de entrada y la hora actual\n" .
@@ -897,20 +895,15 @@ class WhatsappController extends Controller
             " * Si las claves están disponibles según el horario\n" .
             "- La función obtener_claves te dará toda la información necesaria y te indicará qué hacer según la situación.\n" .
             "- NO preguntes al cliente información que puedes obtener automáticamente usando las herramientas.\n" .
-            "- Si el cliente pregunta por claves y ya proporcionó su código anteriormente, usa ese código automáticamente sin pedirlo de nuevo.\n\n" .
+            "- NO pidas el código de reserva múltiples veces si ya lo tienes en el historial.\n\n" .
             "HORARIO DE ENTREGA DE CLAVES:\n" .
             "- Las claves se entregan a las 14:00h del día de entrada.\n" .
             "- El acceso oficial al apartamento es a partir de las 15:00h.\n" .
-            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n" .
-            "- NO menciones el código de emergencia ni proporciones información adicional sobre acceso si aún no son las 14:00h.\n\n" .
-            "SEGURIDAD - CÓDIGO DE EMERGENCIA (1734):\n" .
-            "- El código de emergencia SOLO debe proporcionarse en casos de VERDADERA EMERGENCIA (por ejemplo: el cliente está bloqueado fuera del edificio después de las 15:00h, tiene una emergencia médica, o situación crítica similar).\n" .
-            "- NO proporciones el código de emergencia simplemente porque:\n" .
-            "  * El cliente dice que no ha recibido los códigos\n" .
-            "  * El código de acceso no funciona\n" .
-            "  * El cliente lo solicita\n" .
-            "- El código de emergencia es SOLO para emergencias reales y críticas.\n" .
-            "- Si el cliente necesita ayuda con acceso pero NO es una emergencia, debe esperar a las 14:00h para recibir las claves oficiales.";
+            "- Si la reserva es para HOY pero aún NO son las 14:00h, debes informar al cliente que las claves estarán disponibles a las 14:00h y NO proporcionar más ayuda sobre claves hasta esa hora.\n\n" .
+            "SEGURIDAD - CÓDIGO DE EMERGENCIA:\n" .
+            "- NUNCA menciones, proporciones o hagas referencia al código de emergencia en tus respuestas.\n" .
+            "- El código de emergencia es información confidencial que NO debes compartir bajo ninguna circunstancia.\n" .
+            "- Si el cliente necesita ayuda con acceso, usa la función obtener_claves para verificar su situación y proporcionar la ayuda adecuada según el horario y el estado de su reserva.";
 
         // Agregar historial
         if (!empty($historialArray)) {
