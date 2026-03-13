@@ -610,6 +610,24 @@ class WhatsappController extends Controller
 
         // Log completo del prompt sin truncar
         Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA (SIN TRUNCAR)\n" . $promptCompleto);
+        
+        // Guardar prompt completo en archivo para evitar truncamiento
+        try {
+            $logDir = storage_path('logs/prompts_ia');
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0755, true);
+            }
+            $logFile = $logDir . '/prompt_' . date('Y-m-d_H-i-s') . '_' . substr(md5($remitente . time()), 0, 8) . '.txt';
+            file_put_contents($logFile, "=== PROMPT COMPLETO ENVIADO A LA IA ===\n");
+            file_put_contents($logFile, "Fecha: " . now()->toDateTimeString() . "\n", FILE_APPEND);
+            file_put_contents($logFile, "Remitente: {$remitente}\n", FILE_APPEND);
+            file_put_contents($logFile, "Mensaje: {$nuevoMensaje}\n", FILE_APPEND);
+            file_put_contents($logFile, "========================================\n\n", FILE_APPEND);
+            file_put_contents($logFile, $promptCompleto, FILE_APPEND);
+            Log::info("💾 Prompt completo guardado en archivo", ['archivo' => $logFile]);
+        } catch (\Exception $e) {
+            Log::warning("⚠️ No se pudo guardar prompt en archivo", ['error' => $e->getMessage()]);
+        }
 
         // Llamar a la API local
         $response = $this->hacerPeticionIALocal($endpoint, $apiKey, $promptCompleto, $modelo, 60);
@@ -916,6 +934,35 @@ class WhatsappController extends Controller
 
         // Log completo del prompt sin truncar (después de ejecutar función)
         Log::info("📤 PROMPT COMPLETO ENVIADO A LA IA DESPUÉS DE FUNCIÓN (SIN TRUNCAR)\n" . $promptCompleto);
+        
+        // Guardar prompt completo en archivo para evitar truncamiento
+        try {
+            // Extraer remitente del historial si es posible
+            $remitenteDelHistorial = null;
+            if (!empty($historial)) {
+                // Intentar extraer remitente del historial (si está disponible)
+                preg_match('/Usuario:.*?(\d{9,})/', $historial, $matches);
+                if (!empty($matches[1])) {
+                    $remitenteDelHistorial = $matches[1];
+                }
+            }
+            $remitenteId = $remitenteDelHistorial ?: 'unknown';
+            
+            $logDir = storage_path('logs/prompts_ia');
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0755, true);
+            }
+            $logFile = $logDir . '/prompt_funcion_' . date('Y-m-d_H-i-s') . '_' . substr(md5($remitenteId . time()), 0, 8) . '.txt';
+            file_put_contents($logFile, "=== PROMPT COMPLETO DESPUÉS DE FUNCIÓN ===\n");
+            file_put_contents($logFile, "Fecha: " . now()->toDateTimeString() . "\n", FILE_APPEND);
+            file_put_contents($logFile, "Mensaje: {$nuevoMensaje}\n", FILE_APPEND);
+            file_put_contents($logFile, "Resultado función: {$resultadoFuncion}\n", FILE_APPEND);
+            file_put_contents($logFile, "========================================\n\n", FILE_APPEND);
+            file_put_contents($logFile, $promptCompleto, FILE_APPEND);
+            Log::info("💾 Prompt completo (después de función) guardado en archivo", ['archivo' => $logFile]);
+        } catch (\Exception $e) {
+            Log::warning("⚠️ No se pudo guardar prompt en archivo", ['error' => $e->getMessage()]);
+        }
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
