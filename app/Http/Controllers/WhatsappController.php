@@ -368,26 +368,21 @@ class WhatsappController extends Controller
                 ->first();
 
             // Si hay un /clear previo, solo incluir mensajes después de ese /clear
-            // PERO solo si el /clear es más reciente que el límite de 2 horas
+            // Aplicar siempre, sin importar cuándo fue el /clear
             if ($ultimoClear) {
                 $fechaClearRaw = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
-                // Convertir a Carbon si es una cadena para poder comparar
-                $fechaClear = is_string($fechaClearRaw) ? Carbon::parse($fechaClearRaw) : $fechaClearRaw;
-
-                if ($fechaClear && $fechaClear > $fechaLimite2Horas) {
-                    // Solo aplicar filtro de /clear si es más reciente que el límite de 2 horas
-                    try {
-                        // Usar whereRaw con COALESCE para manejar ambos campos de fecha
-                        // Usar el valor original (puede ser string o Carbon) para la consulta SQL
-                        $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClearRaw]);
-                    } catch (\Exception $e) {
-                        // Si falla el whereRaw, usar una alternativa más simple
-                        Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
-                        if ($ultimoClear->date) {
-                            $query->where('date', '>', $fechaClearRaw);
-                        } else {
-                            $query->where('created_at', '>', $fechaClearRaw);
-                        }
+                try {
+                    // Usar whereRaw con COALESCE para manejar ambos campos de fecha
+                    // Usar el valor original (puede ser string o Carbon) para la consulta SQL
+                    $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClearRaw]);
+                    Log::info("🧹 Filtro /clear aplicado - Solo mensajes después de: " . ($ultimoClear->date ?? $ultimoClear->created_at));
+                } catch (\Exception $e) {
+                    // Si falla el whereRaw, usar una alternativa más simple
+                    Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
+                    if ($ultimoClear->date) {
+                        $query->where('date', '>', $fechaClearRaw);
+                    } else {
+                        $query->where('created_at', '>', $fechaClearRaw);
                     }
                 }
             }
@@ -646,13 +641,33 @@ class WhatsappController extends Controller
             'tiene_funcion' => preg_match('/\[FUNCION:/', $respuestaTexto) ? 'sí' : 'no'
         ]);
 
-        // Solo ejecutar función si la IA explícitamente indica que quiere usarla con el formato [FUNCION:nombre:parametros]
+        // Solo ejecutar función si la IA explícitamente indica que quiere usarla
         // La IA debe decidir cuándo usar las herramientas, no el código
         $funcionDetectada = false;
+        $nombreFuncion = null;
+        $parametrosStr = null;
+
+        // Formato 1: [FUNCION:nombre:parametros]
         if (preg_match('/\[FUNCION:([^:]+):(.+?)\]/', $respuestaTexto, $matches)) {
             $nombreFuncion = trim($matches[1]);
             $parametrosStr = $matches[2];
             $funcionDetectada = true;
+        }
+        // Formato 2: JSON (fallback si la IA usa formato JSON)
+        elseif (preg_match('/\{[^}]*"function"\s*:\s*"([^"]+)"[^}]*"arguments"\s*:\s*\{([^}]+)\}/', $respuestaTexto, $matches)) {
+            $nombreFuncion = trim($matches[1]);
+            // Parsear argumentos JSON
+            if (preg_match('/"reservation_code"\s*:\s*"([^"]+)"/', $matches[2], $argMatches)) {
+                $parametrosStr = 'codigo_reserva=' . $argMatches[1];
+            } elseif (preg_match('/"codigo_reserva"\s*:\s*"([^"]+)"/', $matches[2], $argMatches)) {
+                $parametrosStr = 'codigo_reserva=' . $argMatches[1];
+            } elseif (preg_match('/"descripcion_problema"\s*:\s*"([^"]+)"[^}]*"urgencia"\s*:\s*"([^"]+)"/', $matches[2], $argMatches)) {
+                $parametrosStr = 'descripcion_problema=' . $argMatches[1] . ':urgencia=' . $argMatches[2];
+            } elseif (preg_match('/"tipo_limpieza"\s*:\s*"([^"]+)"[^}]*"observaciones"\s*:\s*"([^"]+)"/', $matches[2], $argMatches)) {
+                $parametrosStr = 'tipo_limpieza=' . $argMatches[1] . ':observaciones=' . $argMatches[2];
+            }
+            $funcionDetectada = true;
+            Log::info("🔧 Función detectada en formato JSON: {$nombreFuncion}");
         }
 
         if ($funcionDetectada) {
