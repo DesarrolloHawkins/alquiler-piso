@@ -392,8 +392,34 @@ class WhatsappController extends Controller
                 ->toArray();
         }
 
+        // Verificar si el último mensaje es de hace más de 2 horas
+        // Si es así, no incluir historial para empezar conversación fresca
+        $usarHistorial = true;
+        if (!empty($historialArray)) {
+            // Obtener el último mensaje del remitente antes del actual
+            $ultimoMensajeAnterior = ChatGpt::where('remitente', $remitente)
+                ->where('status', 1)
+                ->whereNotNull('respuesta')
+                ->where('respuesta', '!=', '')
+                ->where('mensaje', '!=', '/clear')
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($ultimoMensajeAnterior) {
+                $fechaUltimoMensaje = $ultimoMensajeAnterior->date ?: $ultimoMensajeAnterior->created_at;
+                $horasTranscurridas = now()->diffInHours($fechaUltimoMensaje);
+
+                if ($horasTranscurridas > 2) {
+                    $usarHistorial = false;
+                    $historialArray = [];
+                    Log::info("⏰ Último mensaje hace {$horasTranscurridas} horas - Historial limpiado para nueva conversación");
+                }
+            }
+        }
+
         // Convertir a string para pasar a funciones si es necesario
-        $historialTexto = implode("\n", $historialArray);
+        $historialTexto = $usarHistorial ? implode("\n", $historialArray) : '';
 
         // Detectar si el mensaje actual es SOLO un código de reserva (sin otras palabras)
         $codigoEnMensajeActual = $this->detectarCodigoReserva($nuevoMensaje);
@@ -418,9 +444,9 @@ class WhatsappController extends Controller
 
         // Si el mensaje es SOLO un código y hay contexto de pedir claves, ejecutar función directamente
         if ($mensajeEsSoloCodigo && $codigoEnMensajeActual) {
-            // Verificar si en el historial hay una petición de claves
+            // Verificar si en el historial hay una petición de claves (solo si se está usando el historial)
             $hayPeticionClaves = false;
-            if (!empty($historialTexto)) {
+            if ($usarHistorial && !empty($historialTexto) && !empty($historialArray)) {
                 // Buscar en las últimas respuestas del asistente si pidió el código
                 $ultimasRespuestas = array_slice($historialArray, -6); // Últimas 6 líneas
                 foreach ($ultimasRespuestas as $linea) {
@@ -438,8 +464,8 @@ class WhatsappController extends Controller
                 }
             }
 
-            // Si hay petición de claves o el historial está vacío (primera interacción con código)
-            if ($hayPeticionClaves || empty($historialArray)) {
+            // Si hay petición de claves, el historial está vacío, o no se está usando historial (más de 2 horas)
+            if ($hayPeticionClaves || empty($historialArray) || !$usarHistorial) {
                 Log::info("🚀 Ejecutando obtener_claves automáticamente - Mensaje es solo código: {$codigoEnMensajeActual}");
                 $resultadoFuncion = $this->ejecutarObtenerClaves(
                     $codigoEnMensajeActual,
@@ -484,8 +510,8 @@ class WhatsappController extends Controller
         // 1. Prompt del sistema (con instrucciones de funciones)
         $promptCompleto = $promptSystem;
 
-        // 2. Historial de conversación (ya obtenido arriba)
-        if (!empty($historialArray)) {
+        // 2. Historial de conversación (solo si se debe usar y no está vacío)
+        if ($usarHistorial && !empty($historialArray)) {
             $promptCompleto .= "\n\nHISTORIAL DE CONVERSACIÓN:\n" . implode("\n", $historialArray);
         }
 
@@ -501,10 +527,11 @@ class WhatsappController extends Controller
             'remitente' => $remitente,
             'mensaje' => substr($nuevoMensaje, 0, 100),
             'codigo_detectado' => $codigoEnMensaje,
+            'usar_historial' => $usarHistorial,
             'historial_lineas' => count($historialArray),
-            'tiene_historial' => !empty($historialArray),
+            'tiene_historial' => !empty($historialArray) && $usarHistorial,
             'ultimo_clear_encontrado' => $ultimoClear ? ($ultimoClear->date ?? $ultimoClear->created_at) : null,
-            'ultimas_lineas_historial' => array_slice($historialArray, -4) // Últimas 4 líneas para debug
+            'ultimas_lineas_historial' => $usarHistorial ? array_slice($historialArray, -4) : [] // Últimas 4 líneas para debug
         ]);
 
         // Llamar a la API local
