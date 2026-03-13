@@ -318,10 +318,14 @@ class WhatsappController extends Controller
 
         // Obtener historial de conversación PRIMERO para poder verificar contexto
         // Historial: solo mensajes de las últimas 2 horas y desde el último /clear
-        // Incluir mensajes con status=1 que tienen respuesta Y mensajes recientes (últimos 5 minutos) aunque no tengan status=1
+        // Incluir mensajes con status=1 que tienen respuesta Y mensajes recientes (últimos 30 minutos) aunque no tengan status=1
+
+        // Fecha límite: máximo 2 horas hacia atrás (definida fuera del try para que esté disponible en todo el método)
+        $fechaLimite2Horas = now()->subHours(2);
+        // Ventana ampliada para mensajes recientes: 30 minutos (para capturar conversaciones activas)
+        $ventanaRecientes = now()->subMinutes(30);
+
         try {
-            // Fecha límite: máximo 2 horas hacia atrás
-            $fechaLimite2Horas = now()->subHours(2);
 
             $query = ChatGpt::where('remitente', $remitente)
                 ->where('mensaje', '!=', '/clear') // También excluir mensajes /clear explícitamente
@@ -332,21 +336,31 @@ class WhatsappController extends Controller
                           ->orWhere('date', '>=', $fechaLimite2Horas);
                     });
                 })
-                ->where(function($q) {
+                ->where(function($q) use ($ventanaRecientes) {
                     // Incluir mensajes con status=1 que tienen respuesta
                     $q->where(function($subQ) {
                         $subQ->where('status', 1)
                              ->whereNotNull('respuesta')
                              ->where('respuesta', '!=', '');
                     })
-                    // O incluir mensajes recientes (últimos 5 minutos) aunque no tengan status=1
-                    ->orWhere(function($subQ) {
-                        $subQ->where(function($dateQ) {
-                            $dateQ->where('created_at', '>=', now()->subMinutes(5))
-                                  ->orWhere('date', '>=', now()->subMinutes(5));
+                    // O incluir mensajes recientes (últimos 30 minutos) aunque no tengan status=1
+                    // Esto asegura que se capturen mensajes del asistente recientes incluso si aún no tienen status=1
+                    ->orWhere(function($subQ) use ($ventanaRecientes) {
+                        $subQ->where(function($dateQ) use ($ventanaRecientes) {
+                            $dateQ->where('created_at', '>=', $ventanaRecientes)
+                                  ->orWhere('date', '>=', $ventanaRecientes);
                         })
-                        ->whereNotNull('mensaje')
-                        ->where('mensaje', '!=', '');
+                        ->where(function($msgQ) {
+                            // Incluir tanto mensajes del usuario como respuestas del asistente
+                            $msgQ->where(function($m) {
+                                $m->whereNotNull('mensaje')
+                                  ->where('mensaje', '!=', '');
+                            })
+                            ->orWhere(function($r) {
+                                $r->whereNotNull('respuesta')
+                                  ->where('respuesta', '!=', '');
+                            });
+                        });
                     });
                 });
 
@@ -522,17 +536,51 @@ class WhatsappController extends Controller
                 // (últimas 2 horas, desde último /clear, etc.)
                 $historialCompleto = $historialArray;
 
-                // No buscar mensajes adicionales - el historial ya obtenido arriba ya tiene todos los filtros correctos
-                // El historial ya incluye mensajes recientes (últimos 5 minutos) aunque no tengan status=1
-                // y ya está limitado a las últimas 2 horas y desde el último /clear
-                $mensajesRecientes = collect([]); // No buscar mensajes adicionales
+                // Asegurar que siempre incluimos el último mensaje del asistente si existe
+                // Esto es crítico para mantener el contexto de la conversación
+                $ultimoMensajeAsistente = ChatGpt::where('remitente', $remitente)
+                    ->where('mensaje', '!=', '/clear')
+                    ->whereNotNull('respuesta')
+                    ->where('respuesta', '!=', '')
+                    ->where(function($dateQ) use ($fechaLimite2Horas) {
+                        $dateQ->where('created_at', '>=', $fechaLimite2Horas)
+                              ->orWhere('date', '>=', $fechaLimite2Horas);
+                    })
+                    ->orderBy('date', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
 
-                // El historial completo ya está construido con todos los filtros aplicados
-                // No necesitamos agregar mensajes adicionales
+                if ($ultimoMensajeAsistente) {
+                    $ultimaRespuestaAsistente = "Asistente: " . trim($ultimoMensajeAsistente->respuesta);
+                    $ultimoMensajeUsuario = !empty($ultimoMensajeAsistente->mensaje) && trim($ultimoMensajeAsistente->mensaje) !== '/clear'
+                        ? "Usuario: " . trim($ultimoMensajeAsistente->mensaje)
+                        : null;
+
+                    // Verificar si el último mensaje del asistente ya está en el historial
+                    $yaEstaEnHistorial = false;
+                    foreach ($historialCompleto as $linea) {
+                        if (trim($linea) === $ultimaRespuestaAsistente) {
+                            $yaEstaEnHistorial = true;
+                            break;
+                        }
+                    }
+
+                    // Si no está en el historial, agregarlo junto con el mensaje del usuario anterior si existe
+                    if (!$yaEstaEnHistorial) {
+                        if ($ultimoMensajeUsuario && !in_array($ultimoMensajeUsuario, $historialCompleto)) {
+                            $historialCompleto[] = $ultimoMensajeUsuario;
+                        }
+                        $historialCompleto[] = $ultimaRespuestaAsistente;
+                        Log::info("✅ Agregado último mensaje del asistente al historial para mantener contexto", [
+                            'mensaje_asistente' => substr($ultimaRespuestaAsistente, 0, 100)
+                        ]);
+                    }
+                }
 
                 Log::info("📋 Historial construido para ejecución automática", [
                     'historial_lineas' => count($historialCompleto),
-                    'historial_completo' => $historialCompleto
+                    'historial_completo' => $historialCompleto,
+                    'ultimo_mensaje_asistente_incluido' => $ultimoMensajeAsistente ? 'sí' : 'no'
                 ]);
 
                 // Convertir historial array a texto para pasar a la función
@@ -649,7 +697,12 @@ class WhatsappController extends Controller
             "   - Solo usa obtener_claves cuando el cliente te haya dado explícitamente su código de reserva (número de 8-15 dígitos o código alfanumérico).\n" .
             "   - Si el cliente ya proporcionó su código de reserva en mensajes anteriores del historial, entonces sí puedes usar obtener_claves.\n" .
             "3. Solo proporciona información adicional (direcciones, contraseñas, etc.) si el cliente lo solicita explícitamente.\n" .
-            "4. Mantén el contexto de la conversación. Lee el historial completo para entender qué se ha hablado antes.\n" .
+            "4. MANTÉN EL CONTEXTO DE LA CONVERSACIÓN:\n" .
+            "   - LEE SIEMPRE el historial completo antes de responder para entender qué se ha hablado antes.\n" .
+            "   - Si el cliente estaba preguntando sobre algo específico (como claves, averías, limpieza), continúa en ese contexto.\n" .
+            "   - NO empieces una nueva conversación como si fuera la primera vez que hablas con el cliente.\n" .
+            "   - Si el cliente acaba de proporcionar información que pediste (como un código de reserva), responde en ese contexto específico.\n" .
+            "   - NO repitas preguntas que ya hiciste o información que ya proporcionaste.\n" .
             "5. Responde de forma concisa pero completa. No des información innecesaria.\n" .
             "6. NUNCA asumas o inventes códigos de reserva. Solo usa códigos que el cliente haya proporcionado explícitamente.\n\n" .
             "FUNCIONES DISPONIBLES (Tools):\n" .
@@ -1024,7 +1077,10 @@ class WhatsappController extends Controller
         $promptCompleto .= "\n\nUsuario: " . $nuevoMensaje . "\n" .
             "Asistente: [He ejecutado una función y obtuve esta información: " . $resultadoFuncion . "]\n" .
             "IMPORTANTE: TÚ ERES EL ASISTENTE MARÍA, NO EL CLIENTE. Responde directamente al cliente en segunda persona (tú, tu, te). " .
-            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información.";
+            "NUNCA digas que eres el usuario o el cliente. Responde de forma natural, educada y cercana con esta información.\n" .
+            "MANTÉN EL CONTEXTO: Lee el historial de conversación completo para entender qué se ha hablado antes. " .
+            "Si el cliente estaba preguntando sobre algo específico (como claves de acceso), responde en ese contexto. " .
+            "NO empieces una nueva conversación como si fuera la primera vez que hablas con el cliente.";
 
         // Log detallado del contexto enviado
         Log::info("📤 Contexto enviado a IA (después de función)", [
