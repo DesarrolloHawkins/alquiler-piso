@@ -410,10 +410,21 @@ class Kernel extends ConsoleKernel
                 // MENSAJE DE BIEVENIDA
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
+                    // Asegurar que la reserva tenga token para el enlace del botón
+                    if (empty($reserva->token)) {
+                        $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
+                        $reserva->token = $token;
+                        $reserva->save();
+                        Log::info('🔑 Token generado para reserva en mensaje de bienvenida', [
+                            'reserva_id' => $reserva->id,
+                            'token' => $token
+                        ]);
+                    }
+
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
+                    // Enviamos el mensaje con el token de la reserva para el botón
+                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente, $reserva->token);
                     Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
 
                                             // Creamos la data para guardar el mensaje
@@ -1341,8 +1352,14 @@ class Kernel extends ConsoleKernel
         return $response;
     }
 
-    public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
+    public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en', $tokenReserva = null){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        // Generar URL del botón con el token de la reserva
+        $urlDNI = null;
+        if ($tokenReserva) {
+            $urlDNI = 'https://crm.apartamentosalgeciras.com/dni-user/' . $tokenReserva;
+        }
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
@@ -1363,12 +1380,29 @@ class Kernel extends ConsoleKernel
             ],
         ];
 
+        // Agregar botón con URL dinámica si hay token de reserva
+        if ($urlDNI) {
+            $mensajePersonalizado["template"]["components"][] = [
+                "type" => "button",
+                "sub_type" => "url",
+                "index" => 0,
+                "parameters" => [
+                    [
+                        "type" => "text",
+                        "text" => $urlDNI
+                    ]
+                ]
+            ];
+        }
+
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
         Log::info("📤 Enviando mensaje de bienvenida automático", [
             'telefono' => $telefono,
             'nombre' => $nombre,
-            'idioma' => $idioma
+            'idioma' => $idioma,
+            'token_reserva' => $tokenReserva,
+            'url_dni' => $urlDNI
         ]);
 
         $curl = curl_init();
