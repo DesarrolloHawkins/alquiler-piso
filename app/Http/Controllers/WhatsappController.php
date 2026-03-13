@@ -286,8 +286,8 @@ class WhatsappController extends Controller
 
     function enviarMensajeOpenAiChatCompletions($nuevoMensaje, $remitente)
     {
-        // Configuración de la IA local Hawkins
-        $config = config('services.hawkins_ai');
+        // Configuración de la IA local Hawkins para WhatsApp
+        $config = config('services.hawkins_whatsapp_ai');
         $endpoint = $config['base_url'];
 
         // Asegurar que la URL termine en /chat/chat
@@ -1077,8 +1077,8 @@ class WhatsappController extends Controller
     {
         Log::info("🤖 CLASIFICAR MENSAJE - Iniciando para: {$mensaje}");
 
-        // Configuración de la IA local Hawkins
-        $config = config('services.hawkins_ai');
+        // Configuración de la IA local Hawkins para WhatsApp
+        $config = config('services.hawkins_whatsapp_ai');
         $endpoint = $config['base_url'];
 
         // Asegurar que la URL termine en /chat/chat
@@ -2494,7 +2494,8 @@ class WhatsappController extends Controller
     {
         $mensaje = request()->get('mensaje', 'Hola, ¿cómo estás?');
 
-        $config = config('services.hawkins_ai');
+        // Configuración de la IA local Hawkins para WhatsApp
+        $config = config('services.hawkins_whatsapp_ai');
         $endpoint = $config['base_url'];
 
         // Asegurar que la URL termine en /chat/chat

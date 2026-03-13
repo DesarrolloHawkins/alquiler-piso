@@ -46,6 +46,12 @@ return [
         'model' => env('HAWKINS_AI_MODEL', 'gpt-oss:120b-cloud'),
     ],
 
+    'hawkins_whatsapp_ai' => [
+        'base_url' => env('HAWKINS_WHATSAPP_AI_URL', 'https://aiapi.hawkins.es/chat/chat'),
+        'api_key' => env('HAWKINS_WHATSAPP_AI_API_KEY', 'OllamaAPI_2024_K8mN9pQ2rS5tU7vW3xY6zA1bC4eF8hJ0lM'),
+        'model' => env('HAWKINS_WHATSAPP_AI', 'gpt-oss:120b-cloud'),
+    ],
+
     'recaptcha' => [
         'site_key' => env('RECAPTCHA_SITE_KEY'),
         'secret_key' => env('RECAPTCHA_SECRET_KEY'),
