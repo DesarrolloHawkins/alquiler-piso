@@ -374,19 +374,23 @@ class WhatsappController extends Controller
             // Si hay un /clear previo, solo incluir mensajes después de ese /clear
             // PERO solo si el /clear es más reciente que el límite de 2 horas
             if ($ultimoClear) {
-                $fechaClear = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
+                $fechaClearRaw = $ultimoClear->date ? $ultimoClear->date : $ultimoClear->created_at;
+                // Convertir a Carbon si es una cadena para poder comparar
+                $fechaClear = is_string($fechaClearRaw) ? Carbon::parse($fechaClearRaw) : $fechaClearRaw;
+
                 if ($fechaClear && $fechaClear > $fechaLimite2Horas) {
                     // Solo aplicar filtro de /clear si es más reciente que el límite de 2 horas
                     try {
                         // Usar whereRaw con COALESCE para manejar ambos campos de fecha
-                        $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClear]);
+                        // Usar el valor original (puede ser string o Carbon) para la consulta SQL
+                        $query->whereRaw('COALESCE(date, created_at) > ?', [$fechaClearRaw]);
                     } catch (\Exception $e) {
                         // Si falla el whereRaw, usar una alternativa más simple
                         Log::warning("Error en filtro de /clear, usando alternativa: " . $e->getMessage());
                         if ($ultimoClear->date) {
-                            $query->where('date', '>', $fechaClear);
+                            $query->where('date', '>', $fechaClearRaw);
                         } else {
-                            $query->where('created_at', '>', $fechaClear);
+                            $query->where('created_at', '>', $fechaClearRaw);
                         }
                     }
                 }
@@ -418,11 +422,28 @@ class WhatsappController extends Controller
             // Limitar a los últimos 40 elementos (20 pares de usuario/asistente) después de procesar
             $historialArray = array_slice($historialArray, -40);
 
+            // Formatear fecha del último clear de forma segura
+            $ultimoClearFecha = null;
+            if ($ultimoClear) {
+                $fechaClear = $ultimoClear->date ?: $ultimoClear->created_at;
+                // Convertir a Carbon si es una cadena
+                if (is_string($fechaClear)) {
+                    try {
+                        $ultimoClearFecha = Carbon::parse($fechaClear)->format('Y-m-d H:i:s');
+                    } catch (\Exception $e) {
+                        Log::warning("Error parseando fecha del último clear: " . $e->getMessage());
+                        $ultimoClearFecha = $fechaClear; // Usar el valor original si falla el parseo
+                    }
+                } else {
+                    $ultimoClearFecha = $fechaClear->format('Y-m-d H:i:s');
+                }
+            }
+
             Log::info("📋 Historial obtenido", [
                 'remitente' => $remitente,
                 'total_lineas' => count($historialArray),
                 'fecha_limite' => $fechaLimite2Horas->format('Y-m-d H:i:s'),
-                'ultimo_clear' => $ultimoClear ? ($ultimoClear->date ?: $ultimoClear->created_at)->format('Y-m-d H:i:s') : null,
+                'ultimo_clear' => $ultimoClearFecha,
                 'primeras_lineas' => array_slice($historialArray, 0, 4),
                 'ultimas_lineas' => array_slice($historialArray, -4)
             ]);
@@ -468,7 +489,12 @@ class WhatsappController extends Controller
                 ->first();
 
             if ($ultimoMensajeAnterior) {
-                $fechaUltimoMensaje = $ultimoMensajeAnterior->date ?: $ultimoMensajeAnterior->created_at;
+                $fechaUltimoMensajeRaw = $ultimoMensajeAnterior->date ?: $ultimoMensajeAnterior->created_at;
+                // Convertir a Carbon si es una cadena para poder calcular diferencias
+                $fechaUltimoMensaje = is_string($fechaUltimoMensajeRaw)
+                    ? Carbon::parse($fechaUltimoMensajeRaw)
+                    : $fechaUltimoMensajeRaw;
+
                 $horasTranscurridas = now()->diffInHours($fechaUltimoMensaje);
 
                 if ($horasTranscurridas > 2) {
