@@ -114,6 +114,33 @@
                             </div>
                         </div>
 
+                        <!-- Método de entrada -->
+                        <div class="mb-4">
+                            <label for="metodo_entrada" class="form-label fw-semibold text-dark">
+                                <i class="fas fa-door-open me-2 text-primary"></i>
+                                Método de Entrada (por edificio)
+                            </label>
+                            <select
+                                class="form-select @error('metodo_entrada') is-invalid @enderror"
+                                id="metodo_entrada"
+                                name="metodo_entrada"
+                            >
+                                @php
+                                    $valorMetodo = old('metodo_entrada', $edificio->metodo_entrada);
+                                @endphp
+                                <option value="" {{ empty($valorMetodo) ? 'selected' : '' }}>Cerradura física (por defecto)</option>
+                                <option value="fisica" {{ $valorMetodo === 'fisica' ? 'selected' : '' }}>Cerradura física</option>
+                                <option value="digital" {{ $valorMetodo === 'digital' ? 'selected' : '' }}>Cerradura digital</option>
+                            </select>
+                            <div class="invalid-feedback" id="metodo_entrada-error">
+                                @error('metodo_entrada') {{ $message }} @enderror
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1 text-muted"></i>
+                                Si eliges digital, la entrega del código vendrá de una plataforma externa (pendiente de integración).
+                            </div>
+                        </div>
+
                         <!-- Información del edificio -->
                         <div class="alert alert-info border-0">
                             <div class="d-flex align-items-center">

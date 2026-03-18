@@ -6,6 +6,7 @@ use App\Models\Edificio;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\Html\Editor\Editor;
+use App\Services\MetodoEntradaService;
 
 class EdificiosController extends Controller
 {
@@ -34,6 +35,7 @@ class EdificiosController extends Controller
             'nombre' => 'required|string|max:255|unique:edificios,nombre',
             'clave' => 'required|string|max:255|unique:edificios,clave',
             'codigo_establecimiento' => 'nullable|string|max:50',
+            'metodo_entrada' => 'nullable|string|in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
         ];
 
         $messages = [
@@ -49,6 +51,7 @@ class EdificiosController extends Controller
                 'nombre' => $validatedData['nombre'],
                 'clave' => $validatedData['clave'],
                 'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
+                'metodo_entrada' => $validatedData['metodo_entrada'] ?? null,
             ]);
 
             return redirect()->route('admin.edificios.index')
@@ -86,6 +89,11 @@ class EdificiosController extends Controller
                 'string',
                 'max:50',
             ],
+            'metodo_entrada' => [
+                'nullable',
+                'string',
+                'in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
+            ],
         ];
 
         $messages = [
@@ -102,6 +110,7 @@ class EdificiosController extends Controller
                 'nombre' => $validatedData['nombre'],
                 'clave' => $validatedData['clave'],
                 'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
+                'metodo_entrada' => $validatedData['metodo_entrada'] ?? null,
             ]);
 
             return redirect()->route('admin.edificios.index')

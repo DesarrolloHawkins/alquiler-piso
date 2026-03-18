@@ -9,6 +9,7 @@ use App\Models\Apartamento;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Services\ClienteService;
+use App\Services\MetodoEntradaService;
 
 class EnviarClavesChannexCommand extends Command
 {
@@ -56,6 +57,7 @@ class EnviarClavesChannexCommand extends Command
         $this->newLine();
 
         $clienteService = app(ClienteService::class);
+        $metodoEntradaService = app(MetodoEntradaService::class);
         $enviadas = 0;
         $errores = 0;
         $omitidas = 0;
@@ -90,15 +92,22 @@ class EnviarClavesChannexCommand extends Command
                 // Obtener código de idioma
                 $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad ?? 'ES');
 
+                $metodoEntrada = $metodoEntradaService->resolverParaReserva($reserva);
+
                 // Preparar datos para el mensaje de claves
+                $edificioLegacy = $apartamentoReservado->edificio ?? null; // legacy (puede no existir)
+                $edificioId = $apartamentoReservado->edificio_id ?? null;
+                $esEdificio1 = ($edificioId === 1) || ($edificioLegacy === 1);
+
                 $datosClaves = [
                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
                     'apartamento' => $reserva->apartamento->titulo,
+                    'metodo_entrada' => $metodoEntrada,
                     'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
                     'clavePiso' => $reserva->apartamento->claves ?? '',
-                    'url' => $apartamentoReservado->edificio == 1 
-                        ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' 
-                        : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
+                    'url' => $esEdificio1
+                        ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9'
+                        : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A',
                 ];
 
                 $this->info("🔄 Procesando reserva #{$reserva->id} ({$reserva->origen})");
@@ -108,7 +117,16 @@ class EnviarClavesChannexCommand extends Command
                 $this->line("   Código Reserva: {$reserva->codigo_reserva}");
 
                 // Crear mensaje de chat
-                $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+                if ($metodoEntrada === MetodoEntradaService::METODO_DIGITAL) {
+                    $mensajeChat = match (substr((string) $idiomaCliente, 0, 2)) {
+                        'es' => "Tu acceso será mediante cerradura digital.\n\nLa entrega del código está pendiente de integración con nuestra plataforma de accesos. Si necesitas ayuda, contáctanos.",
+                        'fr' => "Votre accès se fera via une serrure digitale.\n\nLa livraison du code est en attente d’intégration avec notre plateforme d’accès. Si besoin, contactez-nous.",
+                        'de' => "Ihr Zugang erfolgt über ein digitales Schloss.\n\nDie Code-Zustellung wartet noch auf die Integration. Bei Bedarf kontaktieren Sie uns.",
+                        default => "Your access will be via a digital lock.\n\nCode delivery is pending integration. If you need help, contact us.",
+                    };
+                } else {
+                    $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+                }
 
                 Log::info('Enviando mensaje de claves por Channex', [
                     'reserva_id' => $reserva->id,

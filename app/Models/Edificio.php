@@ -21,7 +21,8 @@ class Edificio extends Model
     protected $fillable = [
         'nombre',
         'clave',
-        'codigo_establecimiento',         
+        'codigo_establecimiento',
+        'metodo_entrada',
     ];
 
      /**

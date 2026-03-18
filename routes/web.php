@@ -220,6 +220,13 @@ Route::get('/get-reservas-json', [App\Http\Controllers\HomeController::class, 'g
 
 Auth::routes();
 
+// HawCert: autenticación por certificado
+Route::prefix('auth/hawcert')->name('hawcert.')->group(function () {
+    Route::post('/validate-certificate', [App\Http\Controllers\Auth\HawCertAuthController::class, 'validateCertificate'])->name('validate-certificate');
+    Route::post('/validate-key', [App\Http\Controllers\Auth\HawCertAuthController::class, 'validateKey'])->name('validate-key');
+    Route::get('/callback', [App\Http\Controllers\Auth\HawCertAuthController::class, 'callback'])->name('callback');
+});
+
 Route::get('/test-chat-gpt', [App\Http\Controllers\TestController::class, 'chatGpt'])->name('test.chatGpt');
 
 // Rutas de admin
@@ -598,6 +605,7 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/configuracion/delete-limpiadora/{id}', [App\Http\Controllers\ConfiguracionesController::class, 'deleteLimpiadora'])->name('configuracion.deleteLimpiadora');
     Route::post('/configuracion/update-saldo', [App\Http\Controllers\ConfiguracionesController::class, 'saldoInicial'])->name('configuracion.saldoInicial');
     Route::post('/configuracion/update-estado', [App\Http\Controllers\ConfiguracionesController::class, 'updateEstado'])->name('configuracion.updateEstado');
+    Route::post('/configuracion/update-metodo-entrada', [App\Http\Controllers\ConfiguracionesController::class, 'updateMetodoEntrada'])->name('configuracion.updateMetodoEntrada');
 
     // Formas de Pago
     Route::post('/forma-pago/store', [App\Http\Controllers\FormasDePagoController::class, 'store'])->name('formaPago.store');

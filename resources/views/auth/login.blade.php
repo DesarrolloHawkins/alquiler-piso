@@ -430,6 +430,12 @@
                 </div>
 
                 <div class="card-body">
+                    @if (session('error'))
+                        <div class="alert alert-error mb-3" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error); color: var(--error); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem;">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('login') }}" id="loginForm">
                         @csrf
 
@@ -509,6 +515,40 @@
                         </button>
                     </form>
 
+                    @if (config('hawcert.base_url'))
+                    <div class="hawcert-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);">
+                        <button type="button" class="hawcert-toggle" id="hawcertToggle" style="background: none; border: none; color: var(--primary); font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4-8-11V5l8-3 8 3v6c0 7-8 11-8 11z"/></svg>
+                            Acceso con certificado HawCert
+                        </button>
+                        <div id="hawcertPanel" style="display: none; margin-top: 1rem;">
+                            <p class="subtitle" style="margin-bottom: 1rem; font-size: 0.8rem;">Valide con su identificador de certificado o con una clave de acceso de un solo uso.</p>
+                            <form method="POST" action="{{ route('hawcert.validate-certificate') }}" id="hawcertCertForm" style="margin-bottom: 1rem;">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="certificate_key" class="form-label">Identificador de certificado</label>
+                                    <input type="text" id="certificate_key" name="certificate_key" class="form-input @error('certificate_key') error @enderror" placeholder="Clave del certificado" value="{{ old('certificate_key') }}" style="padding-left: 1rem;">
+                                    @error('certificate_key')
+                                        <div class="error-message">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Validar certificado</button>
+                            </form>
+                            <form method="POST" action="{{ route('hawcert.validate-key') }}" id="hawcertKeyForm">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="hawcert_key" class="form-label">Clave de acceso (un solo uso)</label>
+                                    <input type="text" id="hawcert_key" name="key" class="form-input @error('key') error @enderror" placeholder="ak_..." value="{{ old('key') }}" maxlength="51" style="padding-left: 1rem;">
+                                    @error('key')
+                                        <div class="error-message">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Validar clave</button>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="footer">
                         @if (Route::has('password.request'))
                             <a href="{{ route('password.request') }}">
@@ -554,6 +594,18 @@
                         }
                     });
                 });
+
+                // HawCert panel toggle
+                const hawcertToggle = document.getElementById('hawcertToggle');
+                const hawcertPanel = document.getElementById('hawcertPanel');
+                if (hawcertToggle && hawcertPanel) {
+                    if (document.querySelector('#hawcertCertForm .error-message, #hawcertKeyForm .error-message')) {
+                        hawcertPanel.style.display = 'block';
+                    }
+                    hawcertToggle.addEventListener('click', function() {
+                        hawcertPanel.style.display = hawcertPanel.style.display === 'none' ? 'block' : 'none';
+                    });
+                }
             });
         </script>
     </body>

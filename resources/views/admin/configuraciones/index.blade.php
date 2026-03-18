@@ -345,6 +345,11 @@
                 <i class="fas fa-globe me-2"></i>Portal Público
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-acceso-tab" data-bs-toggle="pill" data-bs-target="#pills-acceso" type="button" role="tab">
+                <i class="fas fa-door-open me-2"></i>Acceso
+            </button>
+        </li>
     </ul>
 
     <!-- Tab Content -->
@@ -1466,6 +1471,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab: Acceso a Apartamentos -->
+        <div class="tab-pane fade" id="pills-acceso" role="tabpanel">
+            <div class="config-card">
+                <div class="config-card-header">
+                    <h5>
+                        <i class="fas fa-door-open"></i>
+                        Método de Entrada por Bloque (Edificio)
+                    </h5>
+                </div>
+                <div class="config-card-body">
+                    <p class="text-muted mb-4">
+                        Define si cada edificio entrega acceso con cerradura <strong>física</strong> o <strong>digital</strong>.
+                        El modo digital queda preparado pero <strong>pendiente de integración</strong> con la plataforma que generará códigos únicos por cliente y ventanas horarias.
+                    </p>
+
+                    <form action="{{ route('configuracion.updateMetodoEntrada') }}" method="POST">
+                        @csrf
+
+                        <div class="row g-3">
+                            @foreach(($edificios ?? []) as $edificio)
+                                <div class="col-12">
+                                    <div class="list-item-card">
+                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                            <div>
+                                                <div class="fw-semibold text-dark">
+                                                    {{ $edificio->nombre ?? ('Edificio #' . $edificio->id) }}
+                                                </div>
+                                                <div class="small text-muted">
+                                                    Clave: {{ $edificio->clave ?? '—' }}
+                                                </div>
+                                            </div>
+
+                                            <div style="min-width: 260px;">
+                                                <select class="form-select" name="metodos[{{ $edificio->id }}]">
+                                                    @php
+                                                        $valor = old('metodos.' . $edificio->id, $edificio->metodo_entrada);
+                                                    @endphp
+                                                    <option value="" {{ empty($valor) ? 'selected' : '' }}>Cerradura física (por defecto)</option>
+                                                    <option value="fisica" {{ $valor === 'fisica' ? 'selected' : '' }}>Cerradura física</option>
+                                                    <option value="digital" {{ $valor === 'digital' ? 'selected' : '' }}>Cerradura digital</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Métodos de Entrada
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1499,6 +1562,18 @@
                 setTimeout(() => {
                     mirTab.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 100);
+            }
+        }
+
+        if (window.location.hash === '#pills-acceso') {
+            const tab = document.getElementById('pills-acceso-tab');
+            const pane = document.getElementById('pills-acceso');
+            if (tab && pane) {
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(paneEl => paneEl.classList.remove('show', 'active'));
+                tab.classList.add('active');
+                pane.classList.add('show', 'active');
+                setTimeout(() => tab.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
             }
         }
         

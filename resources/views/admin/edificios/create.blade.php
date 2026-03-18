@@ -109,6 +109,30 @@
                             </div>
                         </div>
 
+                        <!-- Método de entrada -->
+                        <div class="mb-4">
+                            <label for="metodo_entrada" class="form-label fw-semibold text-dark">
+                                <i class="fas fa-door-open me-2 text-primary"></i>
+                                Método de Entrada (por edificio)
+                            </label>
+                            <select
+                                class="form-select @error('metodo_entrada') is-invalid @enderror"
+                                id="metodo_entrada"
+                                name="metodo_entrada"
+                            >
+                                <option value="">Cerradura física (por defecto)</option>
+                                <option value="fisica" {{ old('metodo_entrada') === 'fisica' ? 'selected' : '' }}>Cerradura física</option>
+                                <option value="digital" {{ old('metodo_entrada') === 'digital' ? 'selected' : '' }}>Cerradura digital</option>
+                            </select>
+                            <div class="invalid-feedback" id="metodo_entrada-error">
+                                @error('metodo_entrada') {{ $message }} @enderror
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1 text-muted"></i>
+                                Selecciona cómo se entregará el acceso a los clientes para este edificio.
+                            </div>
+                        </div>
+
                         <!-- Botones de acción -->
                         <div class="d-flex gap-3 pt-3">
                             <button type="submit" class="btn btn-primary btn-lg px-4" id="submit-btn">

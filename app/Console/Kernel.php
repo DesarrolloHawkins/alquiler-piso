@@ -12,6 +12,7 @@ use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use App\Services\ClienteService;
+use App\Services\MetodoEntradaService;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -502,8 +503,40 @@ class Kernel extends ConsoleKernel
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
-                        $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
-                        $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+                        $edificioLegacy = $apartamentoReservado->edificio ?? null; // legacy (puede no existir)
+                        $edificioId = $apartamentoReservado->edificio_id ?? null;
+                        $esEdificio1 = ($edificioId === 1) || ($edificioLegacy === 1);
+                        $enlace = $esEdificio1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+                        $enlaceLimpio = $esEdificio1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+
+                        $metodoEntrada = app(MetodoEntradaService::class)->resolverParaReserva($reserva);
+                        if ($metodoEntrada === MetodoEntradaService::METODO_DIGITAL) {
+                            $mensajeDigital = match (substr((string) $idiomaCliente, 0, 2)) {
+                                'es' => "Tu acceso será mediante cerradura digital.\n\nLa entrega del código está pendiente de integración con nuestra plataforma de accesos (código único por cliente y ventana horaria). Si lo necesitas, contáctanos y te ayudamos.",
+                                'fr' => "Votre accès se fera via une serrure digitale.\n\nLa livraison du code est en attente d’intégration avec notre plateforme d’accès (code unique par client et fenêtre horaire). Si besoin, contactez-nous.",
+                                'de' => "Ihr Zugang erfolgt über ein digitales Schloss.\n\nDie Code-Zustellung wartet noch auf die Integration mit unserer Zugang-Plattform (ein Code pro Gast, zeitlich begrenzt). Bei Bedarf kontaktieren Sie uns.",
+                                default => "Your access will be via a digital lock.\n\nCode delivery is pending integration with our access platform (unique code per guest and time window). If you need it, please contact us.",
+                            };
+
+                            $this->enviarMensajeTextoWhatsapp($phoneCliente, $mensajeDigital);
+
+                            // Marcar como enviado (para evitar reintentos infinitos) aunque la integración real llegue después
+                            MensajeAuto::create([
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'categoria_id' => 3,
+                                'fecha_envio' => Carbon::now(),
+                            ]);
+
+                            Log::info('🔐 ACCESO DIGITAL - mensaje placeholder enviado', [
+                                'reserva_id' => $reserva->id,
+                                'apartamento_id' => $reserva->apartamento_id,
+                                'telefono_cliente' => $phoneCliente,
+                                'idioma' => $idiomaCliente,
+                            ]);
+
+                            continue;
+                        }
 
                         Log::info('📤 INICIANDO ENVÍO DE MENSAJE DE CLAVES', [
                             'reserva_id' => $reserva->id,
@@ -877,6 +910,64 @@ class Kernel extends ConsoleKernel
 
         // })->everyMinute();
 
+    }
+
+    private function enviarMensajeTextoWhatsapp(string $telefono, string $texto): ?string
+    {
+        $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $telefono,
+            'type' => 'text',
+            'text' => [
+                'preview_url' => true,
+                'body' => $texto,
+            ],
+        ];
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $tokenEnv,
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de texto", [
+                'telefono' => $telefono,
+                'error' => $curlError,
+            ]);
+            return null;
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            Log::error("❌ Error al enviar mensaje de texto", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response,
+            ]);
+            return null;
+        }
+
+        return $response;
     }
 
     /**

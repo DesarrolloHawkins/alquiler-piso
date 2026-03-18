@@ -12,8 +12,11 @@ use App\Models\Reparaciones;
 use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Edificio;
+use App\Services\MetodoEntradaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ConfiguracionesController extends Controller
@@ -25,6 +28,7 @@ class ConfiguracionesController extends Controller
     public function index(){
         // Cargar todas las variables necesarias para las diferentes pestañas
         $configuraciones = Configuraciones::all();
+        $edificios = Edificio::orderBy('nombre')->get();
         
         // Variables para Contabilidad
         $anio = app('anio');
@@ -43,12 +47,36 @@ class ConfiguracionesController extends Controller
         
         return view('admin.configuraciones.index', compact(
             'configuraciones',
+            'edificios',
             'anio',
             'anios',
             'limpiadorasUsers',
             'limpiadorasGuardia',
             'prompt'
         ));
+    }
+
+    /**
+     * Actualizar método de entrada por edificio (física/digital).
+     */
+    public function updateMetodoEntrada(Request $request)
+    {
+        $request->validate([
+            'metodos' => 'required|array',
+            'metodos.*' => 'nullable|string|in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
+        ]);
+
+        $metodos = $request->input('metodos', []);
+        $ids = array_keys($metodos);
+
+        $edificios = Edificio::whereIn('id', $ids)->get();
+        foreach ($edificios as $edificio) {
+            $edificio->metodo_entrada = $metodos[$edificio->id] ?: null;
+            $edificio->save();
+        }
+
+        Alert::success('Éxito', 'Método de entrada actualizado correctamente.');
+        return redirect()->to(route('configuracion.index') . '#pills-acceso', 303);
     }
 
     /**
@@ -426,7 +454,7 @@ class ConfiguracionesController extends Controller
      */
     public function updatePortalPublico(Request $request)
     {
-        \Log::info('updatePortalPublico called', ['request' => $request->all(), 'method' => $request->method()]);
+        Log::info('updatePortalPublico called', ['request' => $request->all(), 'method' => $request->method()]);
         
         try {
             // Validar antes de procesar
@@ -455,17 +483,17 @@ class ConfiguracionesController extends Controller
             $hostNombre = trim($request->input('host_nombre', ''));
             $hostNombre = $hostNombre === '' ? 'Apartamentos Algeciras' : $hostNombre;
             $result1 = Setting::set('host_nombre', $hostNombre, 'Nombre de la empresa/host');
-            \Log::info('host_nombre guardado', ['valor' => $hostNombre, 'id' => $result1->id]);
+            Log::info('host_nombre guardado', ['valor' => $hostNombre, 'id' => $result1->id]);
             
             $hostIniciales = trim($request->input('host_iniciales', ''));
             $hostIniciales = $hostIniciales === '' ? 'HA' : $hostIniciales;
             $result2 = Setting::set('host_iniciales', $hostIniciales, 'Iniciales del logo');
-            \Log::info('host_iniciales guardado', ['valor' => $hostIniciales, 'id' => $result2->id]);
+            Log::info('host_iniciales guardado', ['valor' => $hostIniciales, 'id' => $result2->id]);
             
             $hostDescripcion = trim($request->input('host_descripcion', ''));
             $hostDescripcion = $hostDescripcion === '' ? 'Alojamientos de calidad en el corazón de Algeciras' : $hostDescripcion;
             $result3 = Setting::set('host_descripcion', $hostDescripcion, 'Descripción del host');
-            \Log::info('host_descripcion guardado', ['valor' => $hostDescripcion, 'id' => $result3->id, 'input_raw' => $request->input('host_descripcion')]);
+            Log::info('host_descripcion guardado', ['valor' => $hostDescripcion, 'id' => $result3->id, 'input_raw' => $request->input('host_descripcion')]);
             
             $hostIdiomas = $request->input('host_idiomas', []);
             Setting::set('host_idiomas', json_encode(!empty($hostIdiomas) ? $hostIdiomas : ['Español', 'Inglés']), 'Idiomas hablados (JSON array)');
@@ -480,16 +508,16 @@ class ConfiguracionesController extends Controller
                 Setting::set('host_alojamientos_count', $request->input('host_alojamientos_count'), 'Número de alojamientos gestionados');
             }
 
-            \Log::info('Todos los settings guardados correctamente');
+            Log::info('Todos los settings guardados correctamente');
             
             // Verificar que se guardaron
             $verificacion = Setting::whereIn('key', ['host_nombre', 'host_descripcion'])->get();
-            \Log::info('Verificación después de guardar', ['settings' => $verificacion->pluck('value', 'key')->toArray()]);
+            Log::info('Verificación después de guardar', ['settings' => $verificacion->pluck('value', 'key')->toArray()]);
             
             Alert::success('Éxito', 'Configuración del portal público actualizada correctamente.');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Error de validación al actualizar portal público', [
+            Log::error('Error de validación al actualizar portal público', [
                 'errors' => $e->errors(),
                 'request' => $request->all()
             ]);
@@ -498,7 +526,7 @@ class ConfiguracionesController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            \Log::error('Error al actualizar portal público', [
+            Log::error('Error al actualizar portal público', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
@@ -703,7 +731,7 @@ class ConfiguracionesController extends Controller
             Alert::success('Éxito', 'Meta tags SEO actualizados correctamente.');
             
         } catch (\Exception $e) {
-            \Log::error('Error al actualizar SEO', [
+            Log::error('Error al actualizar SEO', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()

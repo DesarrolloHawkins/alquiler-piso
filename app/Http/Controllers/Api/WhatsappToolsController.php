@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reserva;
 use App\Models\ChatGpt;
+use App\Services\MetodoEntradaService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -81,6 +82,31 @@ class WhatsappToolsController extends Controller
             $claveEdificio = $reserva->apartamento->edificioName->clave ?? null;
         }
 
+        $metodoEntradaService = app(MetodoEntradaService::class);
+        $metodoEntrada = $metodoEntradaService->resolverParaReserva($reserva);
+
+        if ($metodoEntrada === MetodoEntradaService::METODO_DIGITAL) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Acceso digital configurado. Entrega de códigos pendiente de integración con la plataforma externa.',
+                'data' => [
+                    'codigo_reserva' => $reserva->codigo_reserva,
+                    'apartamento' => $reserva->apartamento->titulo ?? 'N/A',
+                    'metodo_entrada' => $metodoEntrada,
+                    'digital' => [
+                        'estado' => 'pendiente_integracion',
+                        'codigo' => null,
+                        'validez_desde' => null,
+                        'validez_hasta' => null,
+                    ],
+                    'clave_edificio' => $claveEdificio,
+                    'fecha_entrada' => $reserva->fecha_entrada,
+                    'fecha_salida' => $reserva->fecha_salida,
+                    'dni_entregado' => true,
+                ],
+            ]);
+        }
+
         // Si todo está correcto, devolver las claves
         return response()->json([
             'success' => true,
@@ -88,6 +114,7 @@ class WhatsappToolsController extends Controller
             'data' => [
                 'codigo_reserva' => $reserva->codigo_reserva,
                 'apartamento' => $reserva->apartamento->titulo ?? 'N/A',
+                'metodo_entrada' => $metodoEntrada,
                 'claves' => $reserva->apartamento->claves ?? 'Contacta con nosotros para obtener las claves',
                 'clave_edificio' => $claveEdificio,
                 'fecha_entrada' => $reserva->fecha_entrada,
