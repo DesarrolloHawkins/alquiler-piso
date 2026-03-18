@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\HawCertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -37,9 +38,21 @@ class HawCertAuthController extends Controller
         }
 
         $url = $request->root();
+        Log::info('HawCert loginWithCertificate: inicio', [
+            'url_enviada' => $url,
+            'request_url' => $request->fullUrl(),
+            'request_scheme_and_host' => $request->getScheme() . '://' . $request->getHttpHost(),
+            'certificate_file_size' => strlen($pem),
+        ]);
+
         $resultAccess = $this->hawCert->validateAccess($pem, $url);
 
         if (!$resultAccess['success']) {
+            Log::warning('HawCert loginWithCertificate: falló validateAccess', [
+                'url_enviada' => $url,
+                'message' => $resultAccess['message'] ?? null,
+                'http_status' => $resultAccess['http_status'] ?? null,
+            ]);
             throw ValidationException::withMessages([
                 'certificate' => [$resultAccess['message'] ?? 'Certificado inválido o sin acceso al servicio.'],
             ]);
@@ -47,13 +60,23 @@ class HawCertAuthController extends Controller
 
         $accessKey = $resultAccess['access_key'] ?? null;
         if (!$accessKey) {
+            Log::warning('HawCert loginWithCertificate: validateAccess OK pero sin access_key', [
+                'resultAccess_keys' => array_keys($resultAccess),
+            ]);
             throw ValidationException::withMessages([
                 'certificate' => ['No se recibió clave de acceso desde HawCert.'],
             ]);
         }
 
+        Log::info('HawCert loginWithCertificate: validateAccess OK, llamando validateKey', ['url' => $url]);
+
         $resultKey = $this->hawCert->validateKey($accessKey, $url);
         if (!$resultKey['success']) {
+            Log::warning('HawCert loginWithCertificate: falló validateKey', [
+                'url_enviada' => $url,
+                'message' => $resultKey['message'] ?? null,
+                'http_status' => $resultKey['http_status'] ?? null,
+            ]);
             throw ValidationException::withMessages([
                 'certificate' => [$resultKey['message'] ?? 'Error al validar el acceso.'],
             ]);

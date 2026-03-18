@@ -25,6 +25,12 @@ class HawCertService
         $slug = $serviceSlug ?? $this->serviceSlug;
         $url = $this->baseUrl . '/api/validate-certificate';
 
+        Log::info('HawCert validate-certificate request', [
+            'endpoint' => $url,
+            'service_slug' => $slug,
+            'certificate_key_length' => strlen($certificateKey),
+        ]);
+
         $response = Http::timeout(15)
             ->acceptJson()
             ->post($url, [
@@ -35,10 +41,16 @@ class HawCertService
         $body = $response->json();
         $status = $response->status();
 
+        Log::info('HawCert validate-certificate response', [
+            'http_status' => $status,
+            'body' => $body,
+        ]);
+
         if ($status !== 200) {
-            Log::warning('HawCert validate-certificate error', [
+            Log::warning('HawCert validate-certificate HTTP error', [
                 'status' => $status,
                 'body' => $body,
+                'message' => $body['message'] ?? null,
             ]);
             return [
                 'success' => false,
@@ -48,6 +60,11 @@ class HawCertService
         }
 
         if (empty($body['success']) || $body['success'] !== true) {
+            Log::warning('HawCert validate-certificate success=false', [
+                'body_success' => $body['success'] ?? null,
+                'body_message' => $body['message'] ?? null,
+                'full_body' => $body,
+            ]);
             return [
                 'success' => false,
                 'message' => $body['message'] ?? 'Certificado no válido',
@@ -82,17 +99,33 @@ class HawCertService
             $payload['service_slug'] = $slug;
         }
 
+        Log::info('HawCert validate-access request', [
+            'endpoint' => $endpoint,
+            'url' => $url,
+            'service_slug' => $slug,
+            'certificate_length' => strlen($certificatePem),
+            'certificate_preview' => substr(trim($certificatePem), 0, 50) . '...',
+        ]);
+
         $response = Http::timeout(15)
             ->acceptJson()
             ->post($endpoint, $payload);
 
         $body = $response->json();
         $status = $response->status();
+        $responseBodyRaw = $response->body();
+
+        Log::info('HawCert validate-access response', [
+            'http_status' => $status,
+            'body' => $body,
+            'raw_body_preview' => strlen($responseBodyRaw) > 500 ? substr($responseBodyRaw, 0, 500) . '...' : $responseBodyRaw,
+        ]);
 
         if ($status !== 200) {
-            Log::warning('HawCert validate-access error', [
+            Log::warning('HawCert validate-access HTTP error', [
                 'status' => $status,
                 'body' => $body,
+                'message' => $body['message'] ?? null,
             ]);
             return [
                 'success' => false,
@@ -102,6 +135,11 @@ class HawCertService
         }
 
         if (empty($body['success']) || $body['success'] !== true) {
+            Log::warning('HawCert validate-access success=false en body', [
+                'body_success' => $body['success'] ?? null,
+                'body_message' => $body['message'] ?? null,
+                'full_body' => $body,
+            ]);
             return [
                 'success' => false,
                 'message' => $body['message'] ?? 'Acceso denegado',
@@ -128,6 +166,13 @@ class HawCertService
     {
         $endpoint = $this->baseUrl . '/api/validate-key';
 
+        Log::info('HawCert validate-key request', [
+            'endpoint' => $endpoint,
+            'url' => $url,
+            'key_length' => strlen($key),
+            'key_prefix' => substr($key, 0, 8) . '...',
+        ]);
+
         $response = Http::timeout(15)
             ->acceptJson()
             ->post($endpoint, [
@@ -138,10 +183,16 @@ class HawCertService
         $body = $response->json();
         $status = $response->status();
 
+        Log::info('HawCert validate-key response', [
+            'http_status' => $status,
+            'body' => $body,
+        ]);
+
         if ($status !== 200) {
-            Log::warning('HawCert validate-key error', [
+            Log::warning('HawCert validate-key HTTP error', [
                 'status' => $status,
                 'body' => $body,
+                'message' => $body['message'] ?? null,
             ]);
             return [
                 'success' => false,
@@ -151,6 +202,12 @@ class HawCertService
         }
 
         if (empty($body['success']) || empty($body['valid'])) {
+            Log::warning('HawCert validate-key success/valid false', [
+                'body_success' => $body['success'] ?? null,
+                'body_valid' => $body['valid'] ?? null,
+                'body_message' => $body['message'] ?? null,
+                'full_body' => $body,
+            ]);
             return [
                 'success' => false,
                 'message' => $body['message'] ?? 'Clave inválida o ya utilizada',
