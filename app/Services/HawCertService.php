@@ -9,7 +9,7 @@ class HawCertService
 {
     protected string $baseUrl = 'https://hawcert.hawkins.es';
 
-    protected string $serviceSlug = 'alquiler-piso';
+    protected string $serviceSlug = 'crm-apartamentos';
 
     public function getBaseUrl(): string
     {

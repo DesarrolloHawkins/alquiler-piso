@@ -48,13 +48,17 @@ class HawCertAuthController extends Controller
         $resultAccess = $this->hawCert->validateAccess($pem, $url);
 
         if (!$resultAccess['success']) {
+            $message = $resultAccess['message'] ?? 'Certificado inválido o sin acceso al servicio.';
+            if (($resultAccess['http_status'] ?? 0) === 403 && str_contains($message, 'no tiene acceso a este servicio')) {
+                $message = 'El certificado no tiene acceso a este servicio. En HawCert compruebe: 1) que el certificado está asignado al servicio con slug «crm-apartamentos», 2) que la URL del servicio es exactamente: ' . $url;
+            }
             Log::warning('HawCert loginWithCertificate: falló validateAccess', [
                 'url_enviada' => $url,
                 'message' => $resultAccess['message'] ?? null,
                 'http_status' => $resultAccess['http_status'] ?? null,
             ]);
             throw ValidationException::withMessages([
-                'certificate' => [$resultAccess['message'] ?? 'Certificado inválido o sin acceso al servicio.'],
+                'certificate' => [$message],
             ]);
         }
 
