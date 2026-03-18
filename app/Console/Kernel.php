@@ -4,8 +4,6 @@ namespace App\Console;
 
 use App\Mail\EnvioClavesEmail;
 use App\Models\Apartamento;
-use App\Models\Cliente;
-use App\Models\Huesped;
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\MensajeAuto;
@@ -18,7 +16,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use DateTime;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;

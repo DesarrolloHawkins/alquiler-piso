@@ -61,12 +61,21 @@ class ConfiguracionesController extends Controller
      */
     public function updateMetodoEntrada(Request $request)
     {
+        // Normalizar: si viene el option "por defecto" como string vacío (""),
+        // lo convertimos a null para que la validación lo acepte y se guarde como "sin seleccionar".
+        $metodos = $request->input('metodos', []);
+        foreach ($metodos as $id => $metodo) {
+            if ($metodo === '') {
+                $metodos[$id] = null;
+            }
+        }
+        $request->merge(['metodos' => $metodos]);
+
         $request->validate([
             'metodos' => 'required|array',
             'metodos.*' => 'nullable|string|in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
         ]);
 
-        $metodos = $request->input('metodos', []);
         $ids = array_keys($metodos);
 
         $edificios = Edificio::whereIn('id', $ids)->get();

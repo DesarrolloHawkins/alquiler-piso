@@ -17,7 +17,23 @@ class MetodoEntradaService
      */
     public function resolverParaReserva(?Reserva $reserva): string
     {
-        $edificio = $reserva?->apartamento?->edificio ?? $reserva?->apartamento?->edificioName;
+        $apartamento = $reserva?->apartamento;
+        if (!$apartamento) {
+            return self::METODO_FISICA;
+        }
+
+        // Preferir relación Edificio (objeto), no el campo legacy legacy "edificio" (posiblemente int).
+        $edificio = null;
+        if (($apartamento->edificioName ?? null) instanceof Edificio) {
+            $edificio = $apartamento->edificioName;
+        } elseif (($apartamento->edificioRel ?? null) instanceof Edificio) {
+            $edificio = $apartamento->edificioRel;
+        } elseif (isset($apartamento->edificio_id) && !empty($apartamento->edificio_id)) {
+            $edificio = Edificio::find($apartamento->edificio_id);
+        } elseif (is_numeric($apartamento->edificio ?? null)) {
+            // Compatibilidad con columna legacy "edificio" si todavía existe en la BD.
+            $edificio = Edificio::find($apartamento->edificio);
+        }
 
         return $this->resolverParaEdificio($edificio);
     }

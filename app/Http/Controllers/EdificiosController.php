@@ -31,6 +31,11 @@ class EdificiosController extends Controller
     }
 
     public function store(Request $request){
+        // El option "por defecto" llega como string vacío (""), normalizamos a null.
+        $request->merge([
+            'metodo_entrada' => $request->filled('metodo_entrada') ? $request->input('metodo_entrada') : null,
+        ]);
+
         $rules = [
             'nombre' => 'required|string|max:255|unique:edificios,nombre',
             'clave' => 'required|string|max:255|unique:edificios,clave',
@@ -70,6 +75,11 @@ class EdificiosController extends Controller
 
     public function update(Request $request, $id){
         $edificio = Edificio::findOrFail($id);
+
+        // El option "por defecto" llega como string vacío (""), normalizamos a null.
+        $request->merge([
+            'metodo_entrada' => $request->filled('metodo_entrada') ? $request->input('metodo_entrada') : null,
+        ]);
         
         $rules = [
             'nombre' => [
