@@ -222,6 +222,7 @@ Auth::routes();
 
 // HawCert: autenticación por certificado
 Route::prefix('auth/hawcert')->name('hawcert.')->group(function () {
+    Route::post('/login-with-certificate', [App\Http\Controllers\Auth\HawCertAuthController::class, 'loginWithCertificate'])->name('login-with-certificate');
     Route::post('/validate-certificate', [App\Http\Controllers\Auth\HawCertAuthController::class, 'validateCertificate'])->name('validate-certificate');
     Route::post('/validate-key', [App\Http\Controllers\Auth\HawCertAuthController::class, 'validateKey'])->name('validate-key');
     Route::get('/callback', [App\Http\Controllers\Auth\HawCertAuthController::class, 'callback'])->name('callback');

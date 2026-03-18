@@ -7,14 +7,13 @@ use Illuminate\Support\Facades\Log;
 
 class HawCertService
 {
-    protected string $baseUrl;
+    protected string $baseUrl = 'https://hawcert.hawkins.es';
 
-    protected string $serviceSlug;
+    protected string $serviceSlug = 'alquiler-piso';
 
-    public function __construct()
+    public function getBaseUrl(): string
     {
-        $this->baseUrl = config('hawcert.base_url');
-        $this->serviceSlug = config('hawcert.service_slug');
+        return $this->baseUrl;
     }
 
     /**

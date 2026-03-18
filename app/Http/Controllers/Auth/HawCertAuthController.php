@@ -17,6 +17,69 @@ class HawCertAuthController extends Controller
     ) {}
 
     /**
+     * Login con certificado PEM (archivo subido).
+     * Valida con HawCert validate-access, obtiene access_key, llama validate-key y hace login.
+     * POST /auth/hawcert/login-with-certificate
+     */
+    public function loginWithCertificate(Request $request)
+    {
+        $request->validate([
+            'certificate' => 'required|file|max:10240',
+        ], [
+            'certificate.required' => 'Seleccione un archivo de certificado.',
+        ]);
+
+        $pem = $request->file('certificate')->get();
+        if (empty(trim($pem))) {
+            throw ValidationException::withMessages([
+                'certificate' => ['El archivo del certificado está vacío.'],
+            ]);
+        }
+
+        $url = $request->root();
+        $resultAccess = $this->hawCert->validateAccess($pem, $url);
+
+        if (!$resultAccess['success']) {
+            throw ValidationException::withMessages([
+                'certificate' => [$resultAccess['message'] ?? 'Certificado inválido o sin acceso al servicio.'],
+            ]);
+        }
+
+        $accessKey = $resultAccess['access_key'] ?? null;
+        if (!$accessKey) {
+            throw ValidationException::withMessages([
+                'certificate' => ['No se recibió clave de acceso desde HawCert.'],
+            ]);
+        }
+
+        $resultKey = $this->hawCert->validateKey($accessKey, $url);
+        if (!$resultKey['success']) {
+            throw ValidationException::withMessages([
+                'certificate' => [$resultKey['message'] ?? 'Error al validar el acceso.'],
+            ]);
+        }
+
+        $user = $this->resolveOrCreateUser($resultKey);
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'certificate' => ['No se pudo asociar el certificado a un usuario del sistema.'],
+            ]);
+        }
+
+        Auth::guard('web')->login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => $this->redirectPath($user),
+            ]);
+        }
+
+        return redirect()->intended($this->redirectPath($user));
+    }
+
+    /**
      * Validar certificado por certificate_key y hacer login.
      * POST /auth/hawcert/validate-certificate
      */

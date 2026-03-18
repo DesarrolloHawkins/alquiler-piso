@@ -436,124 +436,74 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('login') }}" id="loginForm">
+                    {{-- Acceso estándar: certificado HawCert --}}
+                    <p class="subtitle" style="margin-bottom: 1.25rem;">Suba su certificado o use una clave de acceso.</p>
+
+                    <form method="POST" action="{{ route('hawcert.login-with-certificate') }}" enctype="multipart/form-data" id="hawcertCertForm">
                         @csrf
-
                         <div class="form-group">
-                            <label for="email" class="form-label">Correo Electrónico</label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                    <polyline points="22,6 12,13 2,6"/>
-                                </svg>
-                                <input 
-                                    type="email" 
-                                    id="email" 
-                                    name="email" 
-                                    class="form-input @error('email') error @enderror" 
-                                    value="{{ old('email') }}" 
-                                    placeholder="tu@email.com"
-                                    required 
-                                    autocomplete="email" 
-                                    autofocus
-                                >
-                            </div>
-                            
-                            @error('email')
-                                <div class="error-message">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="8" x2="12" y2="12"/>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                                    </svg>
-                                    {{ $message }}
-                                </div>
+                            <label for="certificate" class="form-label">Certificado (archivo .pem, .crt o .cer)</label>
+                            <input type="file" id="certificate" name="certificate" class="form-input @error('certificate') error @enderror" accept=".pem,.crt,.cer,application/x-pem-file,application/x-x509-ca-cert" style="padding: 0.75rem 1rem;">
+                            @error('certificate')
+                                <div class="error-message">{{ $message }}</div>
                             @enderror
                         </div>
-
-                        <div class="form-group">
-                            <label for="password" class="form-label">Contraseña</label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                    <circle cx="12" cy="16" r="1"/>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                </svg>
-                                <input 
-                                    type="password" 
-                                    id="password" 
-                                    name="password" 
-                                    class="form-input @error('password') error @enderror" 
-                                    placeholder="••••••••"
-                                    required 
-                                    autocomplete="current-password"
-                                >
-                            </div>
-                            
-                            @error('password')
-                                <div class="error-message">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="8" x2="12" y2="12"/>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                                    </svg>
-                                    {{ $message }}
-                                </div>
-                            @enderror
-                        </div>
-
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                            <label class="form-check-label" for="remember">
-                                Mantener sesión activa
-                            </label>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            <span class="btn-text">Iniciar Sesión</span>
+                        <button type="submit" class="btn btn-primary" id="hawcertSubmitBtn">
+                            <span class="btn-text">Acceder con certificado</span>
                             <span class="btn-spinner" style="display: none;"></span>
                         </button>
                     </form>
 
-                    @if (config('hawcert.base_url'))
-                    <div class="hawcert-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);">
-                        <button type="button" class="hawcert-toggle" id="hawcertToggle" style="background: none; border: none; color: var(--primary); font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4-8-11V5l8-3 8 3v6c0 7-8 11-8 11z"/></svg>
-                            Acceso con certificado HawCert
-                        </button>
-                        <div id="hawcertPanel" style="display: none; margin-top: 1rem;">
-                            <p class="subtitle" style="margin-bottom: 1rem; font-size: 0.8rem;">Valide con su identificador de certificado o con una clave de acceso de un solo uso.</p>
-                            <form method="POST" action="{{ route('hawcert.validate-certificate') }}" id="hawcertCertForm" style="margin-bottom: 1rem;">
-                                @csrf
-                                <div class="form-group">
-                                    <label for="certificate_key" class="form-label">Identificador de certificado</label>
-                                    <input type="text" id="certificate_key" name="certificate_key" class="form-input @error('certificate_key') error @enderror" placeholder="Clave del certificado" value="{{ old('certificate_key') }}" style="padding-left: 1rem;">
-                                    @error('certificate_key')
-                                        <div class="error-message">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Validar certificado</button>
-                            </form>
-                            <form method="POST" action="{{ route('hawcert.validate-key') }}" id="hawcertKeyForm">
-                                @csrf
-                                <div class="form-group">
-                                    <label for="hawcert_key" class="form-label">Clave de acceso (un solo uso)</label>
-                                    <input type="text" id="hawcert_key" name="key" class="form-input @error('key') error @enderror" placeholder="ak_..." value="{{ old('key') }}" maxlength="51" style="padding-left: 1rem;">
-                                    @error('key')
-                                        <div class="error-message">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Validar clave</button>
-                            </form>
+                    <p class="subtitle" style="margin: 1rem 0 0.5rem; font-size: 0.8rem;">O si tiene una clave de acceso de un solo uso:</p>
+                    <form method="POST" action="{{ route('hawcert.validate-key') }}" id="hawcertKeyForm">
+                        @csrf
+                        <div class="form-group">
+                            <input type="text" id="hawcert_key" name="key" class="form-input @error('key') error @enderror" placeholder="ak_..." value="{{ old('key') }}" maxlength="51" style="padding-left: 1rem;">
+                            @error('key')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
                         </div>
-                    </div>
-                    @endif
+                        <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">Validar clave</button>
+                    </form>
 
-                    <div class="footer">
+                    <div class="footer" style="margin-top: 1.5rem; padding-top: 1rem;">
+                        <button type="button" class="login-fallback-toggle" id="loginFallbackToggle" style="background: none; border: none; color: var(--gray-500); font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
+                            Si falla el certificado: iniciar sesión con usuario y contraseña
+                        </button>
+                    </div>
+
+                    <div id="loginFallbackPanel" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                        <form method="POST" action="{{ route('login') }}" id="loginForm">
+                            @csrf
+                            <div class="form-group">
+                                <label for="email" class="form-label">Correo Electrónico</label>
+                                <div class="input-wrapper">
+                                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    <input type="email" id="email" name="email" class="form-input @error('email') error @enderror" value="{{ old('email') }}" placeholder="tu@email.com" required autocomplete="email">
+                                </div>
+                                @error('email')<div class="error-message">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="form-group">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <div class="input-wrapper">
+                                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <input type="password" id="password" name="password" class="form-input @error('password') error @enderror" placeholder="••••••••" required autocomplete="current-password">
+                                </div>
+                                @error('password')<div class="error-message">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="remember">Mantener sesión activa</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <span class="btn-text">Iniciar Sesión</span>
+                                <span class="btn-spinner" style="display: none;"></span>
+                            </button>
+                        </form>
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}">
-                                ¿Olvidó su contraseña?
-                            </a>
+                            <div style="margin-top: 0.75rem;">
+                                <a href="{{ route('password.request') }}" style="font-size: 0.8rem; color: var(--primary);">¿Olvidó su contraseña?</a>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -562,50 +512,54 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const form = document.getElementById('loginForm');
-                const submitBtn = document.getElementById('submitBtn');
-                const btnText = submitBtn.querySelector('.btn-text');
-                const btnSpinner = submitBtn.querySelector('.btn-spinner');
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (submitBtn) {
+                        const btnText = submitBtn.querySelector('.btn-text');
+                        const btnSpinner = submitBtn.querySelector('.btn-spinner');
+                        loginForm.addEventListener('submit', function() {
+                            submitBtn.disabled = true;
+                            if (btnText) btnText.style.display = 'none';
+                            if (btnSpinner) btnSpinner.style.display = 'inline-block';
+                        });
+                    }
+                }
 
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    // Show loading state
-                    submitBtn.disabled = true;
-                    btnText.style.display = 'none';
-                    btnSpinner.style.display = 'inline-block';
-                    
-                    // Submit form
-                    setTimeout(() => {
-                        form.submit();
-                    }, 500);
-                });
+                const hawcertCertForm = document.getElementById('hawcertCertForm');
+                if (hawcertCertForm) {
+                    const hawcertSubmitBtn = document.getElementById('hawcertSubmitBtn');
+                    if (hawcertSubmitBtn) {
+                        hawcertCertForm.addEventListener('submit', function() {
+                            hawcertSubmitBtn.disabled = true;
+                            const t = hawcertSubmitBtn.querySelector('.btn-text');
+                            const s = hawcertSubmitBtn.querySelector('.btn-spinner');
+                            if (t) t.style.display = 'none';
+                            if (s) s.style.display = 'inline-block';
+                        });
+                    }
+                }
 
-                // Real-time validation
-                const inputs = document.querySelectorAll('.form-input');
-                inputs.forEach(input => {
+                const loginFallbackToggle = document.getElementById('loginFallbackToggle');
+                const loginFallbackPanel = document.getElementById('loginFallbackPanel');
+                if (loginFallbackToggle && loginFallbackPanel) {
+                    if (document.querySelector('#loginForm .error-message')) {
+                        loginFallbackPanel.style.display = 'block';
+                    }
+                    loginFallbackToggle.addEventListener('click', function() {
+                        loginFallbackPanel.style.display = loginFallbackPanel.style.display === 'none' ? 'block' : 'none';
+                    });
+                }
+
+                document.querySelectorAll('.form-input').forEach(function(input) {
                     input.addEventListener('input', function() {
                         if (this.classList.contains('error')) {
                             this.classList.remove('error');
-                            const errorMsg = this.parentNode.querySelector('.error-message');
-                            if (errorMsg) {
-                                errorMsg.remove();
-                            }
+                            const err = this.closest('.form-group')?.querySelector('.error-message');
+                            if (err) err.remove();
                         }
                     });
                 });
-
-                // HawCert panel toggle
-                const hawcertToggle = document.getElementById('hawcertToggle');
-                const hawcertPanel = document.getElementById('hawcertPanel');
-                if (hawcertToggle && hawcertPanel) {
-                    if (document.querySelector('#hawcertCertForm .error-message, #hawcertKeyForm .error-message')) {
-                        hawcertPanel.style.display = 'block';
-                    }
-                    hawcertToggle.addEventListener('click', function() {
-                        hawcertPanel.style.display = hawcertPanel.style.display === 'none' ? 'block' : 'none';
-                    });
-                }
             });
         </script>
     </body>
