@@ -67,3 +67,7 @@ Route::prefix('/webhooks')->group(function () {
 });
 
 Route::post('/fotos-cocina-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina-store');
+
+// Integración Registro de Visitantes
+Route::post('/generar-link-checkin/{reservaId}', [App\Http\Controllers\Api\CheckinLinkController::class, 'generarLink'])->name('api.checkin.generar-link');
+Route::post('/checkin-completado', [App\Http\Controllers\Api\CheckinLinkController::class, 'recibirDatos'])->name('api.checkin.completado');

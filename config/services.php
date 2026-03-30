@@ -33,5 +33,8 @@ return [
     'channex' => [
         'webhook_url' => env('CHANNEX_WEBHOOK_URL', 'https://tu-dominio.com/webhook-handler'),
     ],
+    'checkin' => [
+        'url' => env('REGISTRO_VISITANTES_URL', 'https://registro.tudominio.com'),
+    ],
 
 ];
