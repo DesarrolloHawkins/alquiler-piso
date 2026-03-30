@@ -221,7 +221,7 @@
                         <div class="photos-grid">
                             @foreach($incidencia->fotos as $index => $foto)
                             <div class="photo-item existing-photo">
-                                <img src="{{ Storage::url($foto) }}" alt="Foto existente">
+                                <img src="{{ route('secure.incidencias.show', ['path' => $foto]) }}" alt="Foto existente">
                                 <div class="photo-overlay">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="removeExistingPhoto({{ $index }})">
                                         <i class="fas fa-trash"></i>

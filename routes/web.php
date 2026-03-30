@@ -1051,6 +1051,9 @@ Route::get('/dni-user-subir/{id}', [App\Http\Controllers\DNIController::class, '
 Route::get('/pasaporte-user-subir/{id}', [App\Http\Controllers\DNIController::class, 'pasaporteUpload'])->name('dni.dniUpload');
 Route::get('/dni/{token}', [App\Http\Controllers\DNIController::class, 'dni'])->name('dni.dni');
 Route::get('/pasaporte/{token}', [App\Http\Controllers\DNIController::class, 'pasaporte'])->name('dni.pasaporte');
+Route::get('/secure/photos/{photo}', [App\Http\Controllers\SecureFileController::class, 'photo'])->name('secure.photos.show');
+Route::get('/secure/incidencias/file', [App\Http\Controllers\SecureFileController::class, 'incidencia'])->name('secure.incidencias.show');
+Route::get('/secure/avatar/file', [App\Http\Controllers\SecureFileController::class, 'avatar'])->name('secure.avatar.show');
 
 // Nuevo sistema de escaneo de DNI con cámara
 Route::get('/dni-scanner/{token}', [App\Http\Controllers\DNIScannerController::class, 'index'])->name('dni.scanner.index');

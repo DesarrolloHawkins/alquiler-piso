@@ -120,7 +120,7 @@ class GestionApartamentoController extends Controller
 
         // Intentar almacenar la imagen en el disco y guardar la entrada en la base de datos
         try {
-            $path = $request->file('photo')->store('photos', 'public');
+            $path = $request->file('photo')->store('photos', 'private');
             // Crear un nuevo registro en la base de datos para la foto
             $photo = new Photo([
                 'limpieza_id' => $id,

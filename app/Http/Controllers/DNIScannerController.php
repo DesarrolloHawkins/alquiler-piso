@@ -2271,7 +2271,7 @@ INSTRUCCIONES ESPECÍFICAS:
                 
                 $filename = 'dni_' . $side . '_' . time() . '.jpg';
                 $path = 'photos/' . $filename;
-                $fullPath = public_path($path);
+                $fullPath = storage_path('app/private/' . $path);
                 
                 // Crear directorio si no existe
                 if (!file_exists(dirname($fullPath))) {
@@ -2424,7 +2424,7 @@ INSTRUCCIONES ESPECÍFICAS:
     }
     
     /**
-     * Guardar fotos permanentemente en public/imagesCliente/ y crear registros en photos
+     * Guardar fotos permanentemente en almacenamiento privado y crear registros en photos
      * @return array Array con información de las fotos guardadas ['front' => bool, 'rear' => bool]
      */
     private function guardarFotosPermanentes($reserva, $persona, $personaTipo, $index, $token)
@@ -2522,7 +2522,7 @@ INSTRUCCIONES ESPECÍFICAS:
                     }
                 }
                 
-                // Si encontramos la foto, moverla a public/imagesCliente/
+                // Si encontramos la foto, moverla a almacenamiento privado
                 if ($imagePath && file_exists($imagePath) && is_readable($imagePath)) {
                     try {
                         // Verificar que es un archivo válido
@@ -2532,7 +2532,7 @@ INSTRUCCIONES ESPECÍFICAS:
                         }
                         
                         // Crear directorio si no existe
-                        $uploadPath = public_path('imagesCliente');
+                        $uploadPath = storage_path('app/private/imagesCliente');
                         if (!file_exists($uploadPath)) {
                             if (!mkdir($uploadPath, 0755, true)) {
                                 Log::error('No se pudo crear directorio', ['upload_path' => $uploadPath]);
@@ -2600,9 +2600,13 @@ INSTRUCCIONES ESPECÍFICAS:
                             
                             if ($imagenExistente) {
                                 // Actualizar imagen existente
-                                $rutaImagenAntigua = public_path($imagenExistente->url);
-                                if (file_exists($rutaImagenAntigua)) {
-                                    @unlink($rutaImagenAntigua);
+                                if (Storage::disk('private')->exists($imagenExistente->url)) {
+                                    Storage::disk('private')->delete($imagenExistente->url);
+                                } else {
+                                    $rutaImagenAntigua = public_path($imagenExistente->url);
+                                    if (file_exists($rutaImagenAntigua)) {
+                                        @unlink($rutaImagenAntigua);
+                                    }
                                 }
                                 $imagenExistente->url = $imageUrl;
                                 $imagenExistente->save();

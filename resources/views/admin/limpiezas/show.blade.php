@@ -499,11 +499,11 @@
                             @foreach($fotos as $foto)
                                 <div class="col-md-3 mb-3">
                                     <div class="card">
-                                        <img src="{{ asset($foto->photo_url) }}" 
+                                        <img src="{{ route('secure.incidencias.show', ['path' => $foto->photo_url]) }}" 
                                              alt="Foto de limpieza" 
                                              class="card-img-top foto-limpieza" 
                                              style="height: 150px; object-fit: cover; cursor: pointer;"
-                                             onclick="ampliarFoto('{{ asset($foto->photo_url) }}', '{{ $foto->photo_url }}')">
+                                             onclick="ampliarFoto('{{ route('secure.incidencias.show', ['path' => $foto->photo_url]) }}', '{{ $foto->photo_url }}')">
                                         <div class="card-body text-center">
                                             <small class="text-muted">
                                                 @if($analisisFotos->where('image_url', $foto->photo_url)->first())

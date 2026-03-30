@@ -330,8 +330,8 @@
                                         {{ $photo->categoria->nombre ?? 'Documento' }}
                                     @endif
                                 </h6>
-                                <a href="{{ asset($photo->url) }}" data-fancybox="gallery" data-caption="{{ $photo->categoria->nombre ?? 'Documento' }}">
-                                    <img src="{{ asset($photo->url) }}" 
+                                <a href="{{ route('secure.photos.show', ['photo' => $photo->id]) }}" data-fancybox="gallery" data-caption="{{ $photo->categoria->nombre ?? 'Documento' }}">
+                                    <img src="{{ route('secure.photos.show', ['photo' => $photo->id]) }}" 
                                          alt="{{ $photo->categoria->nombre ?? 'Documento' }}" 
                                          class="img-fluid rounded shadow-sm"
                                          style="object-fit: cover; object-position: center; max-height: 300px; width: 100%; cursor: pointer;">

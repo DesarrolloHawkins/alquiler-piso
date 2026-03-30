@@ -512,8 +512,8 @@
                             <i class="fas fa-id-card text-info me-2"></i>
                             DNI - Frente
                         </h6>
-                        <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="DNI Frente">
-                            <img src="{{ asset($photos[0]->url) }}" 
+                        <a href="{{ route('secure.photos.show', ['photo' => $photos[0]->id]) }}" data-fancybox="gallery" data-caption="DNI Frente">
+                            <img src="{{ route('secure.photos.show', ['photo' => $photos[0]->id]) }}" 
                                  alt="DNI Frente" 
                                  class="img-fluid rounded shadow-sm"
                                  style="object-fit: cover; object-position: center; max-height: 300px; width: 100%; cursor: pointer;">
@@ -526,8 +526,8 @@
                             <i class="fas fa-id-card text-info me-2"></i>
                             DNI - Reverso
                         </h6>
-                        <a href="{{ asset($photos[1]->url) }}" data-fancybox="gallery" data-caption="DNI Reverso">
-                            <img src="{{ asset($photos[1]->url) }}" 
+                        <a href="{{ route('secure.photos.show', ['photo' => $photos[1]->id]) }}" data-fancybox="gallery" data-caption="DNI Reverso">
+                            <img src="{{ route('secure.photos.show', ['photo' => $photos[1]->id]) }}" 
                                  alt="DNI Reverso" 
                                  class="img-fluid rounded shadow-sm"
                                  style="object-fit: cover; object-position: center; max-height: 300px; width: 100%; cursor: pointer;">
@@ -541,8 +541,8 @@
                     <i class="fas fa-passport text-warning me-2"></i>
                     Pasaporte
                 </h6>
-                <a href="{{ asset($photos[0]->url) }}" data-fancybox="gallery" data-caption="Pasaporte">
-                    <img src="{{ asset($photos[0]->url) }}" 
+                <a href="{{ route('secure.photos.show', ['photo' => $photos[0]->id]) }}" data-fancybox="gallery" data-caption="Pasaporte">
+                    <img src="{{ route('secure.photos.show', ['photo' => $photos[0]->id]) }}" 
                          alt="Pasaporte" 
                          class="img-fluid rounded shadow-sm"
                          style="object-fit: cover; object-position: center; max-height: 300px; width: 100%; cursor: pointer;">

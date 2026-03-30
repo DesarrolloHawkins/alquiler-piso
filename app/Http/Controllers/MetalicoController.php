@@ -63,7 +63,9 @@ class MetalicoController extends Controller
     {
         // Log de depuración
         \Log::info('MetalicoController::store - MÉTODO LLAMADO');
-        \Log::info('MetalicoController::store - Datos recibidos:', $request->all());
+        \Log::info('MetalicoController::store - Campos recibidos:', [
+            'keys' => array_keys($request->all())
+        ]);
         
         $request->validate([
             'titulo' => 'required|string|max:255',

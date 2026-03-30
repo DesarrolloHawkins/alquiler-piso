@@ -463,7 +463,10 @@ class ConfiguracionesController extends Controller
      */
     public function updatePortalPublico(Request $request)
     {
-        Log::info('updatePortalPublico called', ['request' => $request->all(), 'method' => $request->method()]);
+        Log::info('updatePortalPublico called', [
+            'method' => $request->method(),
+            'keys' => array_keys($request->all())
+        ]);
         
         try {
             // Validar antes de procesar

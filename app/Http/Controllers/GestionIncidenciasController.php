@@ -108,7 +108,7 @@ class GestionIncidenciasController extends Controller
             $fotos = [];
             if ($request->hasFile('fotos')) {
                 foreach ($request->file('fotos') as $foto) {
-                    $path = $foto->store('incidencias', 'public');
+                    $path = $foto->store('incidencias', 'private');
                     $fotos[] = $path;
                 }
             }
@@ -242,7 +242,7 @@ class GestionIncidenciasController extends Controller
             $fotos = $incidencia->fotos ?? [];
             if ($request->hasFile('fotos')) {
                 foreach ($request->file('fotos') as $foto) {
-                    $path = $foto->store('incidencias', 'public');
+                    $path = $foto->store('incidencias', 'private');
                     $fotos[] = $path;
                 }
             }
@@ -296,7 +296,7 @@ class GestionIncidenciasController extends Controller
             $fotos = $incidencia->fotos ?? [];
             if ($request->hasFile('fotos')) {
                 foreach ($request->file('fotos') as $foto) {
-                    $path = $foto->store('incidencias', 'public');
+                    $path = $foto->store('incidencias', 'private');
                     $fotos[] = $path;
                 }
             }
@@ -345,7 +345,11 @@ class GestionIncidenciasController extends Controller
             // Eliminar fotos del storage
             if ($incidencia->fotos) {
                 foreach ($incidencia->fotos as $foto) {
-                    Storage::disk('public')->delete($foto);
+                    if (Storage::disk('private')->exists($foto)) {
+                        Storage::disk('private')->delete($foto);
+                    } else {
+                        Storage::disk('public')->delete($foto);
+                    }
                 }
             }
 

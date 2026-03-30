@@ -836,8 +836,8 @@
                                 <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                                     <div class="photo-item text-center">
                                         <div class="photo-thumbnail mb-2">
-                                            <a href="{{ asset($photo->url) }}" data-fancybox="gallery" data-caption="Foto del cliente - {{ $photo->created_at->format('d/m/Y H:i') }}">
-                                                <img src="{{ asset($photo->url) }}" 
+                                            <a href="{{ route('secure.photos.show', ['photo' => $photo->id]) }}" data-fancybox="gallery" data-caption="Foto del cliente - {{ $photo->created_at->format('d/m/Y H:i') }}">
+                                                <img src="{{ route('secure.photos.show', ['photo' => $photo->id]) }}" 
                                                      alt="Foto del cliente" 
                                                      class="img-fluid rounded"
                                                      style="max-width: 100px; height: 100px; object-fit: cover; cursor: pointer;">

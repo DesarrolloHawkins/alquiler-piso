@@ -273,7 +273,7 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-sm me-2">
                                                     @if($incidencia->empleada->avatar)
-                                                        <img src="{{ asset('storage/' . $incidencia->empleada->avatar) }}" 
+                                                        <img src="{{ route('secure.avatar.show', ['path' => $incidencia->empleada->avatar]) }}" 
                                                              alt="Avatar" class="rounded-circle" width="32" height="32">
                                                     @else
                                                         <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 

@@ -8,7 +8,7 @@
     <div class="profile-header">
         <div class="profile-avatar">
             @if($user->avatar)
-                <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar de {{ $user->name }}" class="user-avatar">
+                <img src="{{ route('secure.avatar.show', ['path' => $user->avatar]) }}" alt="Avatar de {{ $user->name }}" class="user-avatar">
             @else
                 <i class="fas fa-user-circle"></i>
             @endif
@@ -184,7 +184,7 @@
             <div class="profile-form">
                 <div class="avatar-preview">
                     @if($user->avatar)
-                        <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar actual" class="current-avatar">
+                        <img src="{{ route('secure.avatar.show', ['path' => $user->avatar]) }}" alt="Avatar actual" class="current-avatar">
                     @else
                         <div class="default-avatar">
                             <i class="fas fa-user-circle"></i>

@@ -113,9 +113,6 @@ class ChannexWebController extends Controller
         $photos = [];
         if ($request->has('photos') && isset($request->photos[0]->file)) {
             foreach ($request->file('photos') as $index => $photo) {
-                // Subir el archivo al almacenamiento
-                $path = $photo['file']->store('photos', 'public');
-
                 // Crear la entrada para las fotos
                 $photos[] = [
                     //'url' => url(Storage::url($path)), // Asegura el esquema completo

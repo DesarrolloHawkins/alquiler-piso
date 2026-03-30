@@ -224,7 +224,9 @@ public function pruebas()
 
         // Aquí podrías extraer las predicciones específicas de los datos de DNI
         // Dependiendo de cómo hayas entrenado el modelo, podrías extraer campos específicos
-        dd($resultData);
+        \Log::info('Resultado de analisis DNI recibido', [
+            'prediction_count' => count($resultData['predictions'] ?? [])
+        ]);
 
         return $this->parseDniData($resultData);
 

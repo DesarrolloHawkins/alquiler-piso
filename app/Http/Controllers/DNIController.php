@@ -1344,14 +1344,14 @@ class DNIController extends Controller
         Log::info('=== INICIO PROCESO SUBIDA DNI ===');
         Log::info('Request method:', ['method' => $request->method()]);
         Log::info('Request URL:', ['url' => $request->fullUrl()]);
-        Log::info('Request data:', ['data' => $request->all()]);
+        Log::info('Request fields recibidos:', ['keys' => array_keys($request->except(['_token']))]);
         Log::info('Files count:', ['count' => count($request->allFiles())]);
         Log::info('Content-Type:', ['content_type' => $request->header('Content-Type')]);
         Log::info('Content-Length:', ['content_length' => $request->header('Content-Length')]);
         
         // Debugging detallado de archivos
         $allFiles = $request->allFiles();
-        Log::info('Archivos recibidos:', $allFiles);
+        Log::info('Archivos recibidos (claves):', ['keys' => array_keys($allFiles)]);
         
         foreach ($allFiles as $key => $file) {
             if (is_array($file)) {
@@ -1758,10 +1758,10 @@ class DNIController extends Controller
 
         // Cargar la URL de la imagen si existe
         $imagen = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
-        $frontal = $imagen ? asset($imagen->url) : null;
+        $frontal = $imagen ? route('secure.photos.show', ['photo' => $imagen->id, 'token' => $token]) : null;
 
         $imagen2 = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
-        $trasera = $imagen2 ? asset($imagen2->url) : null;
+        $trasera = $imagen2 ? route('secure.photos.show', ['photo' => $imagen2->id, 'token' => $token]) : null;
 
         return view('dni.dni', compact('id','frontal','trasera'));
 
@@ -1823,7 +1823,7 @@ class DNIController extends Controller
         
         try {
             // Crear directorio si no existe
-            $uploadPath = public_path('imagesCliente');
+            $uploadPath = storage_path('app/private/imagesCliente');
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
@@ -1865,11 +1865,15 @@ class DNIController extends Controller
         if ($imagenExistente) {
             Log::info("Actualizando imagen existente");
             // Si existe, borrar la imagen antigua del servidor
-            $rutaImagenAntigua = public_path($imagenExistente->url);
-
-            if (file_exists($rutaImagenAntigua)) {
-                unlink($rutaImagenAntigua);
-                Log::info("Imagen antigua eliminada");
+            if (Storage::disk('private')->exists($imagenExistente->url)) {
+                Storage::disk('private')->delete($imagenExistente->url);
+                Log::info("Imagen antigua eliminada de almacenamiento privado");
+            } else {
+                $rutaImagenAntigua = public_path($imagenExistente->url);
+                if (file_exists($rutaImagenAntigua)) {
+                    unlink($rutaImagenAntigua);
+                    Log::info("Imagen antigua eliminada de ruta pública legacy");
+                }
             }
 
             // Actualizar la URL en la base de datos

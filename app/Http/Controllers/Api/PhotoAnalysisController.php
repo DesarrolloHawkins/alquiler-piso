@@ -13,7 +13,9 @@ class PhotoAnalysisController extends Controller
     public function analyzePhoto(Request $request)
     {
         try {
-            Log::info('Iniciando análisis de foto', $request->all());
+            Log::info('Iniciando análisis de foto', [
+                'keys' => array_keys($request->all())
+            ]);
             
             $request->validate([
                 'image_url' => 'required|string',
@@ -132,6 +134,23 @@ class PhotoAnalysisController extends Controller
     {
         try {
             Log::info('Obteniendo imagen desde URL', ['imageUrl' => $imageUrl]);
+
+            // Soporte para URLs seguras internas: /secure/incidencias/file?path=...
+            if (strpos($imageUrl, '/secure/incidencias/file') !== false) {
+                $parsedSecure = parse_url($imageUrl);
+                $queryParams = [];
+                parse_str($parsedSecure['query'] ?? '', $queryParams);
+                $securePath = ltrim((string)($queryParams['path'] ?? ''), '/');
+
+                if (!empty($securePath) && Storage::disk('private')->exists($securePath)) {
+                    $content = Storage::disk('private')->get($securePath);
+                    Log::info('Imagen obtenida desde storage privado (ruta segura)', [
+                        'path' => $securePath,
+                        'file_size' => strlen($content)
+                    ]);
+                    return $content;
+                }
+            }
             
             // Si es una URL local, convertir a path
             if (strpos($imageUrl, 'http') === 0) {
@@ -139,9 +158,20 @@ class PhotoAnalysisController extends Controller
                 $parsedUrl = parse_url($imageUrl);
                 $path = $parsedUrl['path'] ?? '';
                 
-                // Si el path empieza con /images/, usarlo directamente
-                if (strpos($path, '/images/') === 0) {
-                    $fullPath = public_path($path);
+                // Si el path apunta a imágenes internas, intentar primero en privado
+                if (strpos($path, '/images/') === 0 || strpos($path, 'images/') === 0) {
+                    $relativePath = ltrim($path, '/');
+
+                    if (Storage::disk('private')->exists($relativePath)) {
+                        $content = Storage::disk('private')->get($relativePath);
+                        Log::info('Imagen obtenida desde storage privado', [
+                            'path' => $relativePath,
+                            'file_size' => strlen($content)
+                        ]);
+                        return $content;
+                    }
+
+                    $fullPath = public_path('/' . $relativePath);
                     
                     Log::info('URL local detectada', [
                         'original_url' => $imageUrl,
@@ -164,6 +194,16 @@ class PhotoAnalysisController extends Controller
             }
             
             // Si es un path relativo
+            $relativePath = ltrim((string)$imageUrl, '/');
+            if (Storage::disk('private')->exists($relativePath)) {
+                $content = Storage::disk('private')->get($relativePath);
+                Log::info('Imagen obtenida exitosamente (path relativo privado)', [
+                    'file_size' => strlen($content),
+                    'path' => $relativePath
+                ]);
+                return $content;
+            }
+
             $fullPath = public_path($imageUrl);
             Log::info('Probando path relativo', [
                 'imageUrl' => $imageUrl,

@@ -106,7 +106,7 @@
                         <div class="card-header text-center fw-bold">
                             {{ $foto->categoria->nombre ?? 'Sin categoría' }}
                         </div>
-                        <img src="{{ asset($foto->url) }}" class="card-img-top" alt="foto">
+                        <img src="{{ route('secure.incidencias.show', ['path' => $foto->url]) }}" class="card-img-top" alt="foto">
                     </div>
                 </div>
             @endforeach
