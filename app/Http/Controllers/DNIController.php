@@ -400,13 +400,23 @@ class DNIController extends Controller
         } else {
             // Si no existe el archivo, hacer la petición a chatGpt
             $traduccion = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaCliente.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($textos));
-            $textosTraducidos = json_decode($traduccion['messages']['choices'][0]['message']['content'], true);
+            $contenidoTraducido = data_get($traduccion, 'messages.choices.0.message.content');
+            $textosTraducidos = is_string($contenidoTraducido) ? json_decode($contenidoTraducido, true) : null;
 
-            // Guardar la traducción en un nuevo archivo
-            file_put_contents($path, json_encode($textosTraducidos));
+            if (!is_array($textosTraducidos)) {
+                \Log::warning('DNIController: respuesta de traduccion invalida desde OpenAI', [
+                    'idioma' => $idiomaCliente,
+                    'has_choices' => isset($traduccion['messages']['choices']),
+                    'response_keys' => is_array($traduccion['messages'] ?? null) ? array_keys($traduccion['messages']) : [],
+                ]);
+                $textosTraducidos = $textos;
+            } else {
+                // Guardar la traducción en un nuevo archivo si es válida
+                file_put_contents($path, json_encode($textosTraducidos));
+            }
         }
 
-        $textos = $textosTraducidos;
+        $textos = is_array($textosTraducidos) ? $textosTraducidos : $textos;
 
 
         $paisesEuropeos = [
