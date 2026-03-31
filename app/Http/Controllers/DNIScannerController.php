@@ -38,13 +38,14 @@ class DNIScannerController extends Controller
             // Recargar el cliente para obtener el idioma actualizado
             $cliente->refresh();
             
-            // Verificar si ya tiene datos del DNI completos (solo si data_dni es true)
-            // No usar verificarDatosCompletos() porque los datos pueden venir de otras fuentes
-            // y no significa que el DNI haya sido entregado/verificado
-            if ($cliente->data_dni) {
-                Log::info('Cliente ya tiene datos del DNI entregados', [
+            // Verificar si esta reserva ya tiene DNI entregado.
+            // Usamos reserva->dni_entregado (estado por reserva) y no cliente->data_dni (estado global del cliente)
+            // para evitar saltar a "gracias" en nuevas reservas del mismo cliente.
+            if (!empty($reserva->dni_entregado)) {
+                Log::info('Reserva ya tiene DNI entregado', [
+                    'reserva_id' => $reserva->id,
                     'cliente_id' => $cliente->id,
-                    'data_dni' => $cliente->data_dni
+                    'dni_entregado' => $reserva->dni_entregado
                 ]);
                 return redirect()->route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es');
             }
@@ -173,9 +174,13 @@ class DNIScannerController extends Controller
                 abort(404, 'Cliente no encontrado');
             }
             
-            // Verificar si ya tiene datos del DNI
-            if ($cliente->data_dni) {
-                Log::info('Cliente ya tiene datos del DNI', ['cliente_id' => $cliente->id]);
+            // Verificar si esta reserva ya tiene DNI entregado
+            if (!empty($reserva->dni_entregado)) {
+                Log::info('Reserva ya tiene DNI entregado', [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $cliente->id,
+                    'dni_entregado' => $reserva->dni_entregado
+                ]);
                 return redirect()->route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es');
             }
             
@@ -234,9 +239,13 @@ class DNIScannerController extends Controller
             $locale = session('locale', $cliente->idioma ?? 'es');
             \App::setLocale($locale);
             
-            // Verificar si ya tiene datos del DNI
-            if ($cliente->data_dni) {
-                Log::info('Cliente ya tiene datos del DNI', ['cliente_id' => $cliente->id]);
+            // Verificar si esta reserva ya tiene DNI entregado
+            if (!empty($reserva->dni_entregado)) {
+                Log::info('Reserva ya tiene DNI entregado', [
+                    'reserva_id' => $reserva->id,
+                    'cliente_id' => $cliente->id,
+                    'dni_entregado' => $reserva->dni_entregado
+                ]);
                 return redirect()->route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es');
             }
             
