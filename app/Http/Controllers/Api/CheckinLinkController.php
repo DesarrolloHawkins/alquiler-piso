@@ -32,7 +32,7 @@ class CheckinLinkController extends Controller
             'exp'        => now()->addDays(7)->timestamp,
         ];
 
-        $encoded   = base64_encode(json_encode($payload));
+        $encoded   = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
         $signature = hash_hmac('sha256', $encoded, config('app.key'));
         $token     = $encoded . '.' . $signature;
 
@@ -70,7 +70,7 @@ class CheckinLinkController extends Controller
                 return response()->json(['error' => 'Firma inválida'], 401);
             }
 
-            $payload = json_decode(base64_decode($encoded), true);
+            $payload = json_decode(base64_decode(str_pad(strtr($encoded, '-_', '+/'), strlen($encoded) + (4 - strlen($encoded) % 4) % 4, '=')), true);
 
             if (!$payload || !isset($payload['exp']) || $payload['exp'] < now()->timestamp) {
                 return response()->json(['error' => 'Token expirado'], 401);
@@ -84,6 +84,10 @@ class CheckinLinkController extends Controller
 
             // Los campos vienen con los nombres del app de registro de visitantes
             // y se mapean a los nombres del modelo Cliente del CRM
+            if (empty($guests) || !isset($guests[0])) {
+                return response()->json(['error' => 'No se recibieron datos de huéspedes'], 400);
+            }
+
             $guest = $guests[0];
 
             $map = [

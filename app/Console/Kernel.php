@@ -43,11 +43,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
+        $schedule->command('reservas:sincronizar')->everyMinute()->withoutOverlapping(); // o daily(), hourly(), etc.
 
 
         // Ejecuta el comando cada hora
-        $schedule->command('emails:categorize')->everyMinute();
+        $schedule->command('emails:categorize')->everyMinute()->withoutOverlapping();
 
         // Programa el comando para que se ejecute cada 5 minutos
         $schedule->command('emails:fetch')->everyFiveMinutes();
@@ -70,7 +70,7 @@ class Kernel extends ConsoleKernel
             }
 
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
-        })->everyMinute();
+        })->name('job-no-entregado-dni')->everyMinute()->withoutOverlapping();
 
         // Miramos si el cliente ha entregado el DNI el dia de entrada
         $schedule->call(function (ClienteService $clienteService) {
@@ -86,6 +86,9 @@ class Kernel extends ConsoleKernel
                                     ->get();
 
                 foreach ($reservasEntrada as $reserva) {
+                    if (!$reserva->cliente) {
+                        continue;
+                    }
                     // Comprobamos si ya existe un mensaje automático para esta reserva
                     $mensaje = MensajeAuto::where('reserva_id', $reserva->id)
                                         ->where('categoria_id', 8)
@@ -97,7 +100,7 @@ class Kernel extends ConsoleKernel
 
                         $cliente = $reserva->cliente;
                         // URL de DNI
-                        $url = 'https://crm.apartamentosalgeciras.com/dni-user/'.$reserva->token;
+                        $url = config('services.checkin.url').'/checkin?token='.urlencode($reserva->token);
                         // Telefonos para avisos
                         $telefonosEnvios = [
                             // 'Ivan' => '34605621704',
@@ -125,7 +128,7 @@ class Kernel extends ConsoleKernel
 
                 Log::info("Tarea programada de NO Entrega del DNI el día de entrada ejecutada con éxito.");
             }
-        })->everyMinute();
+        })->name('job-envio-dni')->everyMinute()->withoutOverlapping();
 
         // Tarea comprobacion del estado del PC
         $schedule->command('check:comprobacion')->everyFifteenMinutes();
@@ -185,7 +188,7 @@ class Kernel extends ConsoleKernel
 
             }
 
-        })->everyMinute();
+        })->name('job-mensajes-entrada')->everyMinute()->withoutOverlapping();
 
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -222,21 +225,38 @@ class Kernel extends ConsoleKernel
             if(count($reservasEntrada) != 0){
                 // Recorremos las reservas
                 foreach($reservasEntrada as $reserva){
+                    if (!$reserva->cliente) {
+                        continue;
+                    }
 
                     // Obtenemos el mensaje del DNI si existe
                     $mensajeDNI = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 1)->first();
                     // Validamos si existe mensaje de DNI enviado
                     if ($mensajeDNI == null) {
 
-                        $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
+                        // Generar token HMAC firmado con los datos de la reserva
+                        $tokenPayload = [
+                            'reserva_id' => $reserva->id,
+                            'nombre'     => $reserva->cliente->nombre ?? '',
+                            'apellido'   => $reserva->cliente->apellido1 ?? '',
+                            'email'      => $reserva->cliente->email ?? '',
+                            'telefono'   => $reserva->cliente->telefono_movil ?? $reserva->cliente->telefono ?? '',
+                            'checkin'    => $reserva->fecha_entrada,
+                            'checkout'   => $reserva->fecha_salida,
+                            'apartamento' => $reserva->apartamento->nombre ?? '',
+                            'exp'        => now()->addDays(7)->timestamp,
+                        ];
+                        $tokenEncoded  = rtrim(strtr(base64_encode(json_encode($tokenPayload)), '+/', '-_'), '=');
+                        $tokenSig      = hash_hmac('sha256', $tokenEncoded, config('app.key'));
+                        $token         = $tokenEncoded . '.' . $tokenSig;
                         $reserva->token = $token;
                         $reserva->save();
-                        Storage::disk('local')->put('reserva.txt', $reserva );
+                        Storage::disk('local')->put('reserva.txt', $reserva);
 
-                        $mensaje = 'https://crm.apartamentosalgeciras.com/dni-user/'.$token;
+                        $mensaje = config('services.checkin.url').'/checkin?token='.urlencode($token);
                         $phoneCliente =  $this->limpiarNumeroTelefono($reserva->cliente->telefono);
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                        $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token , $phoneCliente, $idiomaCliente );
+                        $enviarMensaje = $this->mensajesAutomaticosBoton('dni', $token, $phoneCliente, $idiomaCliente);
 
                         // $enviarMensaje = $this->contestarWhatsapp($phoneCliente, $mensaje);
                         // return $enviarMensaje;
@@ -278,10 +298,10 @@ class Kernel extends ConsoleKernel
 
             }
             Log::info("Tarea programada de Primer envio de DNI ejecutada con éxito.");
-        })->everyMinute();
+        })->name('job-mensajes-salida')->everyMinute()->withoutOverlapping();
 
         // Ejecutar el comando cada minuto
-        $schedule->command('ari:fullsync')->everyMinute();
+        $schedule->command('ari:fullsync')->everyMinute()->withoutOverlapping();
         $schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
@@ -296,6 +316,9 @@ class Kernel extends ConsoleKernel
             ->get();
 
             foreach($reservas as $reserva){
+                if (!$reserva->cliente) {
+                    continue;
+                }
 
                 // Apartamento
                 $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
@@ -609,7 +632,7 @@ class Kernel extends ConsoleKernel
             }
 
             Log::info("Tarea programada de Envio de mensajes Automatizados ejecutada con éxito.");
-        })->everyMinute();
+        })->name('job-despedida')->everyMinute()->withoutOverlapping();
 
 
         // Tarea par enviar los mensajes despedida cuando se ha entregado el DNI
@@ -622,6 +645,9 @@ class Kernel extends ConsoleKernel
             ->get();
 
             foreach($reservas as $reserva){
+                if (!$reserva->cliente) {
+                    continue;
+                }
                 // Fecha de Hoy
                 $FechaHoy = new \DateTime();
                 // Formatea la fecha actual a una cadena 'Y-m-d'
@@ -673,7 +699,7 @@ class Kernel extends ConsoleKernel
             }
 
             Log::info("Tarea programada Mensaje de despedida ejecutada con éxito.");
-        })->everyMinute();
+        })->name('job-mensajes-extra')->everyMinute()->withoutOverlapping();
 
         // // Tarea para revisar los mensajes de whatsapp
         // $schedule->call(function () {
@@ -1501,6 +1527,7 @@ class Kernel extends ConsoleKernel
     }
 
     public function dniEmail($idioma, $token){
+        $urlCheckin = config('services.checkin.url').'/checkin?token='.urlencode($token);
 
         switch ($idioma) {
             case 'es':
@@ -1516,7 +1543,7 @@ class Kernel extends ConsoleKernel
                     Le dejamos un enlace para que rellene sus datos y nos lo facilite la copia del DNI o Pasaporte:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
 
                 <p style="margin: 0 !important">
@@ -1541,7 +1568,7 @@ class Kernel extends ConsoleKernel
                     Nous vous laissons un lien pour nous le fournir via le bouton ci-dessous:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Les codes d'."'".'accès à l'."'".'appartement vous seront envoyés le jour de votre arrivée par WhatsApp et par e-mail, assurez-vous d'."'".'avoir les informations de contact correctes.
@@ -1565,7 +1592,7 @@ class Kernel extends ConsoleKernel
                     :نترك لكم رابطاً لتقديمه لنا عبر الزر أدناه.
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                 سنرسل لك رموز الوصول إلى الشقة في يوم وصولك عبر تطبيق WhatsApp والبريد الإلكتروني، وتأكد من حصولك على معلومات الاتصال بشكل صحيح.
@@ -1589,7 +1616,7 @@ class Kernel extends ConsoleKernel
                 Wir hinterlassen Ihnen einen Link, um uns dies über den unteren Button zu übermitteln.:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Wir senden Ihnen die Zugangscodes zum Apartment am Tag Ihrer Ankunft per WhatsApp und E-Mail zu. Stellen Sie sicher, dass Sie die Kontaktinformationen korrekt haben.                </p>
@@ -1614,7 +1641,7 @@ class Kernel extends ConsoleKernel
                     Deixamos um link para nos fornecer isso através do botão abaixo:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Enviaremos os códigos de acesso ao apartamento no dia da sua chegada por WhatsApp e email, certifique-se de ter os dados de contato corretos.
@@ -1640,7 +1667,7 @@ class Kernel extends ConsoleKernel
                     Vi lasciamo un link per fornircelo tramite il pulsante in basso:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                 Ti invieremo i codici di accesso all'."'".'appartamento il giorno del tuo arrivo tramite WhatsApp ed e-mail, assicurati di avere le informazioni di contatto corrette.
@@ -1667,7 +1694,7 @@ class Kernel extends ConsoleKernel
                     We leave you a link to fill out your information and provide us with a copy of your DNI or Passport:
                 </p>
                 <p>
-                    <a class="btn btn-primary" href="https://crm.apartamentosalgeciras.com/dni-user/'.$token.'" target="_blank">https://crm.apartamentosalgeciras.com/dni-user/'.$token.'</a>
+                    <a class="btn btn-primary" href="'.$urlCheckin.'" target="_blank">'.$urlCheckin.'</a>
                 </p>
                 <p style="margin: 0 !important">
                     Thank you for using our application!We will send you the access codes to the apartment on the day of your arrival by WhatsApp and email, make sure you have the contact information correctly.

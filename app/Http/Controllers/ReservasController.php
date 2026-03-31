@@ -25,11 +25,12 @@ class ReservasController extends Controller
 {
     protected $chatGptService;
     private $apiUrl = 'https://staging.channex.io/api/v1';
-    private $apiToken = 'uMxPHon+J28pd17nie3qeU+kF7gUulWjb2UF5SRFr4rSIhmLHLwuL6TjY92JGxsx'; // Reemplaza con tu token de acceso
+    private $apiToken;
 
     public function __construct(ChatGptService $ChatGptService)
     {
         $this->chatGptService = $ChatGptService;
+        $this->apiToken = config('services.channex.api_token');
     }
     /**
      * Display a listing of the resource.

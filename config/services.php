@@ -32,6 +32,12 @@ return [
     ],
     'channex' => [
         'webhook_url' => env('CHANNEX_WEBHOOK_URL', 'https://tu-dominio.com/webhook-handler'),
+        'api_token'   => env('CHANNEX_API_TOKEN'),
+    ],
+
+    'webpol' => [
+        'usuario'  => env('WEBPOL_USUARIO'),
+        'password' => env('WEBPOL_PASSWORD'),
     ],
     'checkin' => [
         'url' => env('REGISTRO_VISITANTES_URL', 'https://registro.tudominio.com'),
