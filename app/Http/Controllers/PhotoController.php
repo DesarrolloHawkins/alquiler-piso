@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ApartamentoLimpiezaItem;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\Checklist;
 use App\Models\PhotoCategoria;
@@ -51,7 +50,9 @@ class PhotoController extends Controller
             $idReserva = $limpieza->reserva_id;
             $file = $request['image'];
             $fileName = Str::random(10) . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $imageUrl = $file->storeAs('images', $fileName, 'private');
+            $file->move(public_path('images'), $fileName);
+
+            $imageUrl = 'images/' . $fileName;
 
             // PRIMERO: Borrar fotos anteriores para este item específico
             $fotosAnteriores = ApartamentoLimpiezaItem::where([
@@ -62,9 +63,7 @@ class PhotoController extends Controller
 
             foreach ($fotosAnteriores as $fotoAnterior) {
                 // Borrar archivo físico si existe
-                if ($fotoAnterior->photo_url && Storage::disk('private')->exists($fotoAnterior->photo_url)) {
-                    Storage::disk('private')->delete($fotoAnterior->photo_url);
-                } elseif ($fotoAnterior->photo_url && File::exists(public_path($fotoAnterior->photo_url))) {
+                if ($fotoAnterior->photo_url && File::exists(public_path($fotoAnterior->photo_url))) {
                     File::delete(public_path($fotoAnterior->photo_url));
                 }
                 // Borrar registro de la base de datos
@@ -101,7 +100,7 @@ class PhotoController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'url' => route('secure.incidencias.show', ['path' => $imageUrl]),
+                'url' => asset($imageUrl),
                 'message' => 'Imagen subida con éxito'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -121,16 +120,15 @@ class PhotoController extends Controller
 
         if ($request->hasFile('imagen')) {
             // Borrar archivo anterior si existe
-            if ($item->photo_url && Storage::disk('private')->exists($item->photo_url)) {
-                Storage::disk('private')->delete($item->photo_url);
-            } elseif ($item->photo_url && File::exists(public_path($item->photo_url))) {
+            if ($item->photo_url && File::exists(public_path($item->photo_url))) {
                 File::delete(public_path($item->photo_url));
             }
 
             // Subir nueva imagen
             $randomPrefix = Str::random(10);
             $imageName = $randomPrefix . '_' . time() . '.' . $request->imagen->getClientOriginalExtension();
-            $item->photo_url = $request->imagen->storeAs('images', $imageName, 'private');
+            $request->imagen->move(public_path('images'), $imageName);
+            $item->photo_url = 'images/' . $imageName;
         }
 
         // Actualizar otros campos

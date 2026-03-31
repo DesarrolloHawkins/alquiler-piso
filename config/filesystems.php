@@ -43,14 +43,11 @@ return [
             'visibility' => 'public',
             'throw' => false,
         ],
-        'private' => [
-            'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'throw' => false,
-        ],
         'publico' => [
             'driver' => 'local',
-            'root' => storage_path('app/publico'),
+            'root' => public_path(),
+            'url' => env('APP_URL').'/public',
+            'visibility' => 'public',
             'throw' => false,
         ],
 

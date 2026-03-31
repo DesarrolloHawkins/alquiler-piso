@@ -427,10 +427,7 @@ class WhatsappController2 extends Controller
             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
             if(isset($respuestaWhatsapp['error'])){
-                \Log::error('Error enviando respuesta de WhatsApp', [
-                    'phone' => $phone,
-                    'error' => $respuestaWhatsapp['error'] ?? 'desconocido'
-                ]);
+                dd($respuestaWhatsapp);
             };
 
             // $mensajeCreado->update([

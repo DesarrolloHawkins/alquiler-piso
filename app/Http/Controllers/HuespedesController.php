@@ -49,7 +49,7 @@ class HuespedesController extends Controller
         // Subir fotos
         if ($request->hasFile('foto_dni_frente')) {
             $fotoFrente = $request->file('foto_dni_frente');
-            $fotoFrentePath = $fotoFrente->store('imagesCliente', 'private');
+            $fotoFrentePath = $fotoFrente->store('imagesCliente', 'public');
             
             // Determinar categoría según tipo de documento
             $categoriaId = $request->tipo_documento == 1 ? 13 : 15; // 13=DNI Frontal, 15=Pasaporte
@@ -64,7 +64,7 @@ class HuespedesController extends Controller
 
         if ($request->hasFile('foto_dni_reverso') && $request->tipo_documento == 1) {
             $fotoReverso = $request->file('foto_dni_reverso');
-            $fotoReversoPath = $fotoReverso->store('imagesCliente', 'private');
+            $fotoReversoPath = $fotoReverso->store('imagesCliente', 'public');
             
             Photo::create([
                 'huespedes_id' => $huesped->id,
@@ -117,16 +117,12 @@ class HuespedesController extends Controller
                 ->where('photo_categoria_id', $categoriaId)
                 ->first();
             if ($fotoAnterior) {
-                if (Storage::disk('private')->exists($fotoAnterior->url)) {
-                    Storage::disk('private')->delete($fotoAnterior->url);
-                } else {
-                    Storage::disk('public')->delete($fotoAnterior->url);
-                }
+                Storage::disk('public')->delete($fotoAnterior->url);
                 $fotoAnterior->delete();
             }
 
             $fotoFrente = $request->file('foto_dni_frente');
-            $fotoFrentePath = $fotoFrente->store('imagesCliente', 'private');
+            $fotoFrentePath = $fotoFrente->store('imagesCliente', 'public');
             
             Photo::create([
                 'huespedes_id' => $huesped->id,
@@ -142,16 +138,12 @@ class HuespedesController extends Controller
                 ->where('photo_categoria_id', 14) // 14=DNI Trasera
                 ->first();
             if ($fotoAnterior) {
-                if (Storage::disk('private')->exists($fotoAnterior->url)) {
-                    Storage::disk('private')->delete($fotoAnterior->url);
-                } else {
-                    Storage::disk('public')->delete($fotoAnterior->url);
-                }
+                Storage::disk('public')->delete($fotoAnterior->url);
                 $fotoAnterior->delete();
             }
 
             $fotoReverso = $request->file('foto_dni_reverso');
-            $fotoReversoPath = $fotoReverso->store('imagesCliente', 'private');
+            $fotoReversoPath = $fotoReverso->store('imagesCliente', 'public');
             
             Photo::create([
                 'huespedes_id' => $huesped->id,
@@ -171,11 +163,7 @@ class HuespedesController extends Controller
         // Eliminar fotos asociadas
         $photos = Photo::where('huespedes_id', $id)->get();
         foreach ($photos as $photo) {
-            if (Storage::disk('private')->exists($photo->url)) {
-                Storage::disk('private')->delete($photo->url);
-            } else {
-                Storage::disk('public')->delete($photo->url);
-            }
+            Storage::disk('public')->delete($photo->url);
             $photo->delete();
         }
         

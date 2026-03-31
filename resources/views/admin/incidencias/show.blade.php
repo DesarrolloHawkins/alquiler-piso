@@ -244,7 +244,7 @@
                     @if($incidencia->empleada)
                         <div class="avatar-large mb-3">
                             @if($incidencia->empleada->avatar)
-                                <img src="{{ route('secure.avatar.show', ['path' => $incidencia->empleada->avatar]) }}" 
+                                <img src="{{ asset('storage/' . $incidencia->empleada->avatar) }}" 
                                      alt="Avatar" class="rounded-circle shadow-sm" width="80" height="80">
                             @else
                                 <div class="avatar-placeholder">

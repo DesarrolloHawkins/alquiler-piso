@@ -101,7 +101,7 @@ class MantenimientoIncidenciasController extends Controller
             $fotos = [];
             if ($request->hasFile('fotos')) {
                 foreach ($request->file('fotos') as $foto) {
-                    $path = $foto->store('incidencias', 'private');
+                    $path = $foto->store('incidencias', 'public');
                     $fotos[] = $path;
                 }
             }
@@ -200,7 +200,7 @@ class MantenimientoIncidenciasController extends Controller
             $fotos = $incidencia->fotos ?? [];
             if ($request->hasFile('fotos')) {
                 foreach ($request->file('fotos') as $foto) {
-                    $path = $foto->store('incidencias', 'private');
+                    $path = $foto->store('incidencias', 'public');
                     $fotos[] = $path;
                 }
             }

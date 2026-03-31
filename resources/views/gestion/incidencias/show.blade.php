@@ -178,10 +178,10 @@
             <div class="photos-grid">
                 @foreach($incidencia->fotos as $foto)
                 <div class="photo-item">
-                    <img src="{{ route('secure.incidencias.show', ['path' => $foto]) }}" 
+                    <img src="{{ Storage::url($foto) }}" 
                          alt="Foto de la incidencia" 
                          class="incident-photo"
-                         onclick="openPhotoModal('{{ route('secure.incidencias.show', ['path' => $foto]) }}')">
+                         onclick="openPhotoModal('{{ Storage::url($foto) }}')">
                 </div>
                 @endforeach
             </div>

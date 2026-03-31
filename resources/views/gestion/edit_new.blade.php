@@ -67,7 +67,7 @@
                                 <!-- Mostrar las fotos ya subidas -->
                                 @if(isset($uploadedPhotos[$requirement->photo_categoria_id]))
                                     @foreach($uploadedPhotos[$requirement->photo_categoria_id] as $photo)
-                                        <img src="{{ route('secure.incidencias.show', ['path' => $photo->url]) }}" alt="{{ $photo->descripcion }}" class="img-thumbnail" style="max-width: 200px; margin: 5px;">
+                                        <img src="{{ asset($photo->url) }}" alt="{{ $photo->descripcion }}" class="img-thumbnail" style="max-width: 200px; margin: 5px;">
                                     @endforeach
                                 @endif
                             </div> <!-- Contenedor para la vista previa -->

@@ -107,9 +107,7 @@ class GestionReservasController extends Controller
         
         try {
             Log::info('Iniciando búsqueda de reservas');
-            Log::info('Parámetros recibidos (claves):', [
-                'keys' => array_keys($request->all())
-            ]);
+            Log::info('Parámetros recibidos:', $request->all());
             
             $fecha = $request->get('fecha');
             $apartamentoId = $request->get('apartamento_id');

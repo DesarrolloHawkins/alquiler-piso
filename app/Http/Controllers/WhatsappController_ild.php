@@ -579,10 +579,7 @@ class WhatsappController extends Controller
             $respuestaWhatsapp = $this->contestarWhatsapp($phone, $reponseChatGPT);
 
             if(isset($respuestaWhatsapp['error'])){
-                \Log::error('Error enviando respuesta de WhatsApp', [
-                    'phone' => $phone,
-                    'error' => $respuestaWhatsapp['error'] ?? 'desconocido'
-                ]);
+                dd($respuestaWhatsapp);
             };
 
             $mensajeCreado->update([
@@ -1689,9 +1686,7 @@ class WhatsappController extends Controller
             // $reserva['return'] = $reponseNacionalidad;
             // $reserva['cliente'] = $cliente;
         }
-        \Log::info('Reservas de entrada obtenidas para verificacion DNI', [
-            'total' => $reservasEntrada->count()
-        ]);
+        dd($reservasEntrada);
 
 
 

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Holidays;
@@ -151,14 +150,12 @@ class UserProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             // Eliminar avatar anterior si existe
-            if ($user->avatar && Storage::disk('private')->exists($user->avatar)) {
-                Storage::disk('private')->delete($user->avatar);
-            } elseif ($user->avatar && file_exists(public_path('storage/' . $user->avatar))) {
+            if ($user->avatar && file_exists(public_path('storage/' . $user->avatar))) {
                 unlink(public_path('storage/' . $user->avatar));
             }
 
             // Guardar nuevo avatar
-            $avatarPath = $request->file('avatar')->store('avatars', 'private');
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->update(['avatar' => $avatarPath]);
         }
 

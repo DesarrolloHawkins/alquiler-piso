@@ -183,9 +183,9 @@
                             <div class="row g-4">
                                 @foreach($fotos as $foto)
                                     <div class="col-md-4 col-sm-6">
-                                        <div class="photo-card" onclick="abrirModalFoto('{{ route('secure.incidencias.show', ['path' => $foto->url]) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
+                                        <div class="photo-card" onclick="abrirModalFoto('{{ asset($foto->url) }}', '{{ $foto->descripcion ?? 'Sin descripción' }}')">
                                             <div class="photo-image">
-                                                <img src="{{ route('secure.incidencias.show', ['path' => $foto->url]) }}" 
+                                                <img src="{{ asset($foto->url) }}" 
                                                      alt="Foto de limpieza - {{ $categoria }}"
                                                      class="img-fluid">
                                                 <div class="photo-overlay">

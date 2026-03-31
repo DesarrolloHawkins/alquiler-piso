@@ -106,9 +106,7 @@ class TestController extends Controller
     public function chatGptAsistente($mensaje, $phone = null, $idMensaje, $status = false)
     {
         $existeHilo = ChatGpt::find($idMensaje);
-        if (!$existeHilo) {
-            return 'No se encontro el hilo para el mensaje indicado.';
-        }
+        dd($existeHilo);
 
         // Obtén o crea el hilo
         $three_id = $this->obtenerOcrearHilo($existeHilo, $phone);
