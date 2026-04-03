@@ -42,5 +42,8 @@ return [
     'checkin' => [
         'url' => env('REGISTRO_VISITANTES_URL', 'https://registro.tudominio.com'),
     ],
+    'tuya_app' => [
+        'url' => env('TUYA_APP_URL', 'http://localhost:8002'),
+    ],
 
 ];

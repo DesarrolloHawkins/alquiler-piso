@@ -73,11 +73,21 @@
         </div>
         <!-- Claves -->
         <div class="col-sm-12 col-md-3 mb-3">
-            <label for="claves" class="form-label">Claves de Acceso</label>
+            <label for="claves" class="form-label">Claves de Acceso (estáticas)</label>
             <input type="text" class="form-control @error('claves') is-invalid @enderror" id="claves" name="claves" placeholder="Claves para acceder al apartamento" value="{{ old('claves', $apartamento->claves) }}">
             @error('claves')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
+        </div>
+
+        <!-- TTLock Lock ID -->
+        <div class="col-sm-12 col-md-3 mb-3">
+            <label for="ttlock_lock_id" class="form-label">ID Cerradura TTLock <small class="text-muted">(en app de cerraduras)</small></label>
+            <input type="number" class="form-control @error('ttlock_lock_id') is-invalid @enderror" id="ttlock_lock_id" name="ttlock_lock_id" placeholder="Ej: 5" value="{{ old('ttlock_lock_id', $apartamento->ttlock_lock_id) }}">
+            @error('ttlock_lock_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <div class="form-text">ID del lock en la app gestora de cerraduras TTLock (Tuyalaravel). Déjalo vacío si no tiene cerradura inteligente.</div>
         </div>
         {{-- Moneda --}}
         <div class="col-sm-12 col-md-3 mb-3">

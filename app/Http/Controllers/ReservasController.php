@@ -190,6 +190,13 @@ class ReservasController extends Controller
         $reserva = new Reserva($input);
         $reserva->save();
 
+        // Generate and program access code
+        try {
+            $reserva->load('apartamento');
+            app(\App\Services\AccessCodeService::class)->generarYProgramar($reserva);
+        } catch (\Exception $e) {
+            \Log::error('AccessCodeService error en ReservasController: ' . $e->getMessage());
+        }
 
         // Llamar a la función para actualizar la disponibilidad en Channex
         $response = $this->updateChannexAvailability($reserva);

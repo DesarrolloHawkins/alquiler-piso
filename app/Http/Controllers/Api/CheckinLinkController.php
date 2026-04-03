@@ -122,7 +122,15 @@ class CheckinLinkController extends Controller
                 'verificado'    => 1,
             ]);
 
-            return response()->json(['success' => true]);
+            $reserva->load(['apartamento.edificioRelacion']);
+            return response()->json([
+                'success'            => true,
+                'codigo_acceso'      => $reserva->codigo_acceso,
+                'clave_edificio'     => $reserva->apartamento->edificioRelacion->clave ?? null,
+                'clave_apartamento'  => $reserva->apartamento->claves ?? null,
+                'apartamento_nombre' => $reserva->apartamento->nombre ?? null,
+                'apartamento_titulo' => $reserva->apartamento->titulo ?? null,
+            ]);
 
         } catch (\Exception $e) {
             Log::error('CheckinLinkController@recibirDatos error: ' . $e->getMessage());

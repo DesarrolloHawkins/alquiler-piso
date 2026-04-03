@@ -144,6 +144,10 @@ Route::get('/test-datos-momento/{id}', function($id) {
     Route::post('/cliente/update/{id}', [App\Http\Controllers\ClientesController::class, 'update'])->name('clientes.update');
     Route::post('/cliente/destroy/{id}', [App\Http\Controllers\ClientesController::class, 'destroy'])->name('clientes.destroy');
 
+    // Panel de accesos TTLock
+    Route::get('/accesos', [\App\Http\Controllers\AccesosController::class, 'index'])->name('accesos.index');
+    Route::post('/accesos/{reservaId}/regenerar', [\App\Http\Controllers\AccesosController::class, 'regenerarCodigo'])->name('accesos.regenerar');
+
     // Reservas
     Route::get('/reservas', [App\Http\Controllers\ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/{reserva}/show', [App\Http\Controllers\ReservasController::class, 'show'])->name('reservas.show');

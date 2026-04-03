@@ -38,7 +38,11 @@ class Reserva extends Model
         'neto',
         'comision',
         'cargo_por_pago',
-        'iva'
+        'iva',
+        'codigo_acceso',
+        'ttlock_pin_id',
+        'codigo_enviado_cerradura',
+        'codigo_acceso_enviado',
     ];
 
     /**

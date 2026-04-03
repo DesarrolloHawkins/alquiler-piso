@@ -317,6 +317,8 @@
                                     @endif
                                 </a>
                             </th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Acceso</th>
                             <th scope="col">
                                 Precio
                             </th>
@@ -336,6 +338,22 @@
                                 <td>{{$reserva->fecha_salida}}</td>
                                 <td>{{$reserva->origen}}</td>
                                 <td>{{$reserva->codigo_reserva}}</td>
+                                <td>
+                                    @if($reserva->codigo_acceso)
+                                        <code>{{ $reserva->codigo_acceso }}</code>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!$reserva->codigo_acceso)
+                                        <span class="badge bg-secondary" title="Sin código">—</span>
+                                    @elseif($reserva->codigo_enviado_cerradura)
+                                        <span class="badge bg-success" title="Programada en cerradura">OK</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark" title="Sin programar en cerradura">!</span>
+                                    @endif
+                                </td>
                                 <td>{{ number_format($reserva->precio, 2) }} €</td>
                                 <td>
                                     <a href="{{route('reservas.show', $reserva->id)}}" class="btn bg-color-quinto">Ver Reserva</a>

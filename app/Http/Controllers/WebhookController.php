@@ -12,6 +12,7 @@ use App\Models\Reserva;
 use App\Models\RoomType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -345,46 +346,67 @@ class WebhookController extends Controller
 
         // Solo crear nueva reserva si NO es una modificación
         if (!$reservaExistente) {
-            foreach ($bookingData['rooms'] as $room) {
-                $ratePlanId = $room['rate_plan_id'] ?? null;
-                if (!$ratePlanId) {
-                    Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
-                    continue;
+            DB::transaction(function () use ($bookingData, $bookingId, $codigoReserva, $cliente, $apartamento) {
+                // Double-check inside transaction to prevent duplicate inserts
+                if (Reserva::where('id_channex', $bookingId)->exists()) {
+                    Log::info('Double-check: reserva ya existe, abortando creación', ['booking_id' => $bookingId]);
+                    return;
                 }
 
-                $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
-                if (!$ratePlan) {
-                    Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
-                    continue;
+                foreach ($bookingData['rooms'] as $room) {
+                    $ratePlanId = $room['rate_plan_id'] ?? null;
+                    if (!$ratePlanId) {
+                        Log::error('Rate Plan ID no encontrado en la reserva', ['room' => $room]);
+                        continue;
+                    }
+
+                    $ratePlan = RatePlan::where('id_channex', $ratePlanId)->first();
+                    if (!$ratePlan) {
+                        Log::error('RatePlan no encontrado en la base de datos', ['rate_plan_id' => $ratePlanId]);
+                        continue;
+                    }
+
+                    $roomTypeId = $ratePlan->room_type_id;
+
+                    Reserva::create([
+                        'cliente_id' => $cliente->id,
+                        'apartamento_id' => $apartamento->id,
+                        'room_type_id' => $roomTypeId,
+                        'origen' => $bookingData['ota_name'],
+                        'fecha_entrada' => $room['checkin_date'],
+                        'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                        'codigo_reserva' => $codigoReserva,
+                        'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                        'numero_personas' => $room['occupancy']['adults'],
+                        'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
+                        'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
+                        'estado_id' => 1, // Nueva reserva
+                        'id_channex' => $bookingId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    Log::info('Nueva reserva creada', [
+                        'codigo_reserva' => $codigoReserva,
+                        'booking_id' => $bookingId,
+                        'fecha_entrada' => $room['checkin_date'],
+                        'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
+                        'precio' => floatval(str_replace(',', '.', $room['amount']))
+                    ]);
                 }
+            });
 
-                $roomTypeId = $ratePlan->room_type_id;
-
-                Reserva::create([
-                    'cliente_id' => $cliente->id,
-                    'apartamento_id' => $apartamento->id,
-                    'room_type_id' => $roomTypeId,
-                    'origen' => $bookingData['ota_name'],
-                    'fecha_entrada' => $room['checkin_date'],
-                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
-                    'codigo_reserva' => $codigoReserva,
-                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
-                    'numero_personas' => $room['occupancy']['adults'],
-                    'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
-                    'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
-                    'estado_id' => 1, // Nueva reserva
-                    'id_channex' => $bookingId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                
-                Log::info('Nueva reserva creada', [
-                    'codigo_reserva' => $codigoReserva,
-                    'booking_id' => $bookingId,
-                    'fecha_entrada' => $room['checkin_date'],
-                    'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
-                    'precio' => floatval(str_replace(',', '.', $room['amount']))
-                ]);
+            // Generate and program access code for TTLock
+            try {
+                $nuevaReserva = Reserva::where('id_channex', $bookingId)
+                    ->where('apartamento_id', $apartamento->id)
+                    ->latest()
+                    ->first();
+                if ($nuevaReserva) {
+                    app(\App\Services\AccessCodeService::class)->generarYProgramar($nuevaReserva);
+                }
+            } catch (\Exception $e) {
+                \Log::error('AccessCodeService error en webhook: ' . $e->getMessage());
             }
         }
 

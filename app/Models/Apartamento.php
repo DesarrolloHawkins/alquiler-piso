@@ -39,6 +39,7 @@ class Apartamento extends Model
         'email',
         'phone',
         'website',
+        'ttlock_lock_id',
     ];
 
     /**
