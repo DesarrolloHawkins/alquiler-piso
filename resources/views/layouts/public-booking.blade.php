@@ -601,7 +601,10 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- BLOQUE EXTRA (inyectado solo por algunas vistas, ej. /web) -->
+    @yield('pyme-extra')
+
     <!-- FOOTER ESTILO BOOKING.COM -->
     <div class="booking-footer">
         <div class="booking-footer-main">
