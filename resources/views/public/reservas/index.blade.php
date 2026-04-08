@@ -616,9 +616,6 @@
     <div class="nextgen-section" style="background: #ffffff; padding: 48px 0; border-top: 1px solid #e0e0e0;">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
             <div style="text-align: center; margin-bottom: 32px;">
-                <h2 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 24px;">
-                    Plan de Recuperación, Transformación y Resiliencia &ndash; NextGenerationEU
-                </h2>
                 <p style="font-size: 16px; line-height: 1.6; color: #555; max-width: 900px; margin: 0 auto 24px;">
                     Ipoint Comunicación Masiva SL ha recibido una ayuda de la Unión Europea con cargo al Fondo NextGenerationEU, en el marco del Plan de Recuperación, Transformación y Resiliencia, para (denominación de la actuación/proyecto) dentro del programa de incentivos ligados al autoconsumo y almacenamiento, con fuentes de energía renovable, así como la implantación de sistemas térmicos renovables en el sector residencial del Ministerio para la Transición Ecológica y el Reto Demográfico, gestionado por la Junta de Andalucía, a través de la Agencia Andaluza de la Energía.
                 </p>
