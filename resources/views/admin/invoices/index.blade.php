@@ -619,6 +619,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: { fecha: result.value.fecha },
                     btn,
                     modo: 'fecha',
+                    // El endpoint legacy /update-fecha/{id} sólo devuelve success/message,
+                    // así que rellenamos nosotros el resumen con lo que sabemos.
+                    fallback: {
+                        fecha_anterior: fechaActual,
+                        nueva_fecha: result.value.fecha,
+                    },
                 });
             });
         }
@@ -656,12 +662,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: { fecha: result.value.fecha, reference: result.value.reference },
                     btn,
                     modo: 'fecha-referencia',
+                    fallback: {
+                        fecha_anterior: fechaActual,
+                        nueva_fecha: result.value.fecha,
+                        referencia_anterior: referenciaActual,
+                        nueva_referencia: result.value.reference,
+                    },
                 });
             });
         }
 
         // POST al backend y manejo de respuesta
-        function enviarCambio({ url, body, btn, modo }) {
+        function enviarCambio({ url, body, btn, modo, fallback = {} }) {
             btn.disabled = true;
             const iconoOriginal = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -691,7 +703,8 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then((data) => {
                 if (data && data.success) {
-                    const d = data.data || {};
+                    // Preferimos lo que devuelva el backend; si falta algo, usamos el fallback del frontend.
+                    const d = Object.assign({}, fallback, data.data || {});
                     let htmlResumen = `<div style="text-align:left; font-size:14px;">` +
                         `<div><strong>Fecha anterior:</strong> ${d.fecha_anterior ?? '-'}</div>` +
                         `<div><strong>Nueva fecha:</strong> ${d.nueva_fecha ?? '-'}</div>`;
