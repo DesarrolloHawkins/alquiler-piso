@@ -335,12 +335,12 @@
                                             <i class="fas fa-calculator"></i>
                                         </button>
                                     @endif
-                                    <button type="button" 
-                                            class="btn btn-sm btn-secondary actualizar-fecha-referencia" 
+                                    <button type="button"
+                                            class="btn btn-sm btn-secondary actualizar-fecha-referencia"
                                             data-invoice-id="{{ $factura->id }}"
                                             data-fecha-actual="{{ \Carbon\Carbon::parse($factura->fecha)->format('Y-m-d') }}"
                                             data-referencia-actual="{{ $factura->reference }}"
-                                            title="Cambiar fecha y recalcular referencia">
+                                            title="Cambiar fecha de facturación">
                                         <i class="fas fa-calendar-alt"></i>
                                     </button>
                                     @if(!$factura->es_rectificativa && !$factura->tieneRectificativas())
@@ -558,120 +558,177 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Manejar la actualización de fecha y recálculo de referencia
+        // Manejar el cambio de fecha (y opcionalmente referencia) de una factura
         document.querySelectorAll('.actualizar-fecha-referencia').forEach(button => {
             button.addEventListener('click', function() {
                 const invoiceId = this.dataset.invoiceId;
                 const fechaActual = this.dataset.fechaActual;
                 const referenciaActual = this.dataset.referenciaActual;
-                const button = this;
+                const btn = this;
 
-                // Pedir nueva fecha al usuario
-                const nuevaFecha = prompt(
-                    `Cambiar fecha de factura y recalcular referencia\n\n` +
-                    `Fecha actual: ${fechaActual}\n` +
-                    `Referencia actual: ${referenciaActual}\n\n` +
-                    `Ingresa la nueva fecha (YYYY-MM-DD):`,
-                    fechaActual
-                );
-
-                if (!nuevaFecha) {
-                    return; // Usuario canceló
-                }
-
-                // Validar formato de fecha
-                const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
-                if (!fechaRegex.test(nuevaFecha)) {
-                    alert('Formato de fecha inválido. Usa el formato YYYY-MM-DD (ej: 2025-12-31)');
-                    return;
-                }
-
-                // Validar que sea una fecha válida
-                const fechaObj = new Date(nuevaFecha);
-                if (isNaN(fechaObj.getTime())) {
-                    alert('La fecha ingresada no es válida.');
-                    return;
-                }
-
-                // Confirmar acción
-                if (!confirm(
-                    `¿Estás seguro de cambiar la fecha a ${nuevaFecha}?\n\n` +
-                    `Esto recalculará la referencia basándose en el año y mes de la nueva fecha.\n\n` +
-                    `Fecha actual: ${fechaActual}\n` +
-                    `Nueva fecha: ${nuevaFecha}\n` +
-                    `Referencia actual: ${referenciaActual}`
-                )) {
-                    return;
-                }
-
-                // Deshabilitar botón mientras se procesa
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-                // Crear un AbortController para poder cancelar la petición si tarda mucho
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
-
-                fetch(`/facturas/${invoiceId}/update-fecha-referencia`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({ fecha: nuevaFecha }),
-                    signal: controller.signal
-                })
-                .then(response => {
-                    clearTimeout(timeoutId);
-                    // Verificar el status HTTP antes de parsear JSON
-                    if (!response.ok) {
-                        // Intentar parsear el JSON de error si existe
-                        return response.json().then(errorData => {
-                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                        }).catch(() => {
-                            // Si no se puede parsear, lanzar error genérico
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        });
+                // Paso 1: elegir qué cambiar
+                Swal.fire({
+                    title: 'Cambiar fecha de facturación',
+                    html:
+                        `<div style="text-align:left; font-size:14px; margin-bottom:12px;">` +
+                            `<div><strong>Fecha actual:</strong> ${fechaActual}</div>` +
+                            `<div><strong>Referencia actual:</strong> ${referenciaActual}</div>` +
+                        `</div>` +
+                        `<div style="margin-top:8px;">¿Qué quieres cambiar?</div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'Solo fecha',
+                    denyButtonText: 'Fecha + referencia',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#6C757D',
+                    denyButtonColor: '#0d6efd',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        pedirSoloFecha(invoiceId, fechaActual, btn);
+                    } else if (result.isDenied) {
+                        pedirFechaYReferencia(invoiceId, fechaActual, referenciaActual, btn);
                     }
-                    // Si todo está bien, parsear el JSON
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        let mensaje = 'Fecha y referencia actualizadas correctamente.\n\n' +
-                            `Fecha anterior: ${data.data.fecha_anterior}\n` +
-                            `Nueva fecha: ${data.data.nueva_fecha}\n\n` +
-                            `Referencia anterior: ${data.data.referencia_anterior}\n` +
-                            `Nueva referencia: ${data.data.nueva_referencia}`;
-                        
-                        alert(mensaje);
-                        // Recargar la página para ver los cambios
-                        location.reload();
-                    } else {
-                        alert('Error al actualizar fecha y referencia: ' + (data.message || 'Error desconocido'));
-                        button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-calendar-alt"></i>';
-                    }
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    console.error('Error:', error);
-                    
-                    let errorMessage = 'Error en la conexión al actualizar fecha y referencia.';
-                    if (error.name === 'AbortError') {
-                        errorMessage = 'La operación tardó demasiado tiempo. Por favor, intenta de nuevo.';
-                    } else if (error.message.includes('504')) {
-                        errorMessage = 'El servidor tardó demasiado en responder. Por favor, intenta de nuevo o contacta con el administrador.';
-                    } else {
-                        errorMessage = error.message || errorMessage;
-                    }
-                    
-                    alert(errorMessage);
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-calendar-alt"></i>';
                 });
             });
         });
+
+        // Paso 2a: solo fecha
+        function pedirSoloFecha(invoiceId, fechaActual, btn) {
+            Swal.fire({
+                title: 'Nueva fecha de facturación',
+                html:
+                    `<input type="date" id="swal-fecha" class="swal2-input" value="${fechaActual}" style="width:80%;">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const fecha = document.getElementById('swal-fecha').value;
+                    if (!fecha) {
+                        Swal.showValidationMessage('Selecciona una fecha');
+                        return false;
+                    }
+                    return { fecha };
+                },
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+                enviarCambio({
+                    url: `/facturas/update-fecha/${invoiceId}`,
+                    body: { fecha: result.value.fecha },
+                    btn,
+                    modo: 'fecha',
+                });
+            });
+        }
+
+        // Paso 2b: fecha + referencia manual
+        function pedirFechaYReferencia(invoiceId, fechaActual, referenciaActual, btn) {
+            Swal.fire({
+                title: 'Nueva fecha y referencia',
+                html:
+                    `<div style="text-align:left; margin-bottom:6px;"><label for="swal-fecha" style="font-size:13px; font-weight:600;">Fecha de facturación</label></div>` +
+                    `<input type="date" id="swal-fecha" class="swal2-input" value="${fechaActual}" style="width:80%; margin:0 0 14px;">` +
+                    `<div style="text-align:left; margin-bottom:6px;"><label for="swal-referencia" style="font-size:13px; font-weight:600;">Referencia</label></div>` +
+                    `<input type="text" id="swal-referencia" class="swal2-input" value="${referenciaActual ?? ''}" placeholder="Ej: 2025/01/000406" style="width:80%; margin:0;">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const fecha = document.getElementById('swal-fecha').value;
+                    const reference = document.getElementById('swal-referencia').value.trim();
+                    if (!fecha) {
+                        Swal.showValidationMessage('Selecciona una fecha');
+                        return false;
+                    }
+                    if (!reference) {
+                        Swal.showValidationMessage('Introduce la referencia');
+                        return false;
+                    }
+                    return { fecha, reference };
+                },
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+                enviarCambio({
+                    url: `/facturas/${invoiceId}/update-fecha-referencia-manual`,
+                    body: { fecha: result.value.fecha, reference: result.value.reference },
+                    btn,
+                    modo: 'fecha-referencia',
+                });
+            });
+        }
+
+        // POST al backend y manejo de respuesta
+        function enviarCambio({ url, body, btn, modo }) {
+            btn.disabled = true;
+            const iconoOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(body),
+                signal: controller.signal,
+            })
+            .then(async (response) => {
+                clearTimeout(timeoutId);
+                let data = null;
+                try { data = await response.json(); } catch (e) { /* noop */ }
+                if (!response.ok) {
+                    const msg = (data && data.message) ? data.message : `HTTP error ${response.status}`;
+                    throw new Error(msg);
+                }
+                return data;
+            })
+            .then((data) => {
+                if (data && data.success) {
+                    const d = data.data || {};
+                    let htmlResumen = `<div style="text-align:left; font-size:14px;">` +
+                        `<div><strong>Fecha anterior:</strong> ${d.fecha_anterior ?? '-'}</div>` +
+                        `<div><strong>Nueva fecha:</strong> ${d.nueva_fecha ?? '-'}</div>`;
+                    if (modo === 'fecha-referencia') {
+                        htmlResumen +=
+                            `<div style="margin-top:8px;"><strong>Referencia anterior:</strong> ${d.referencia_anterior ?? '-'}</div>` +
+                            `<div><strong>Nueva referencia:</strong> ${d.nueva_referencia ?? '-'}</div>`;
+                    }
+                    htmlResumen += `</div>`;
+
+                    Swal.fire({
+                        title: '¡Actualizado!',
+                        html: htmlResumen,
+                        icon: 'success',
+                        timer: 2200,
+                        showConfirmButton: false,
+                    }).then(() => location.reload());
+                } else {
+                    throw new Error((data && data.message) || 'Error desconocido');
+                }
+            })
+            .catch((error) => {
+                clearTimeout(timeoutId);
+                console.error('Error:', error);
+                let msg = error.message || 'Error en la conexión.';
+                if (error.name === 'AbortError') {
+                    msg = 'La operación tardó demasiado. Inténtalo de nuevo.';
+                }
+                Swal.fire({
+                    title: 'Error',
+                    text: msg,
+                    icon: 'error',
+                });
+                btn.disabled = false;
+                btn.innerHTML = iconoOriginal || '<i class="fas fa-calendar-alt"></i>';
+            });
+        }
     });
 </script>
 @endsection

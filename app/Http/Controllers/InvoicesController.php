@@ -663,6 +663,79 @@ class InvoicesController extends Controller
     }
 
 
+    /**
+     * Actualizar fecha y referencia de factura manualmente (ambas introducidas por el usuario).
+     * No recalcula nada automáticamente.
+     */
+    public function updateFechaYReferenciaManual(Request $request, $id)
+    {
+        try {
+            $factura = Invoices::findOrFail($id);
+
+            $request->validate([
+                'fecha' => 'required|date',
+                'reference' => 'required|string|max:255',
+            ]);
+
+            $fechaAnterior = $factura->fecha;
+            $referenciaAnterior = $factura->reference;
+
+            $factura->fecha = $request->input('fecha');
+            $factura->reference = $request->input('reference');
+            $factura->save();
+
+            Log::info('Fecha y referencia de factura actualizadas manualmente', [
+                'invoice_id' => $id,
+                'fecha_anterior' => $fechaAnterior,
+                'nueva_fecha' => $factura->fecha,
+                'referencia_anterior' => $referenciaAnterior,
+                'nueva_referencia' => $factura->reference,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fecha y referencia actualizadas correctamente.',
+                'data' => [
+                    'fecha_anterior' => $fechaAnterior,
+                    'nueva_fecha' => $factura->fecha,
+                    'referencia_anterior' => $referenciaAnterior,
+                    'nueva_referencia' => $factura->reference,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Por si la referencia manual choca con la constraint UNIQUE de la BBDD
+            Log::warning('Error de base de datos al actualizar fecha y referencia manual', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $mensaje = 'No se pudo guardar. Puede que la referencia ya esté en uso por otra factura.';
+            return response()->json([
+                'success' => false,
+                'message' => $mensaje,
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar fecha y referencia manual', [
+                'invoice_id' => $id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la fecha y la referencia: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
    public function exportInvoices(Request $request)
    {
        $orderBy = $request->get('order_by', 'fecha');
