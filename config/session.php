@@ -31,7 +31,7 @@ return [
     |
     */
 
-    'lifetime' => env('SESSION_LIFETIME', 120),
+    'lifetime' => env('SESSION_LIFETIME', 480), // Aumentado a 8 horas
 
     'expire_on_close' => false,
 
@@ -133,19 +133,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Cookie Path
-    |--------------------------------------------------------------------------
-    |
-    | The session cookie path determines the path for which the cookie will
-    | be regarded as available. Typically, this will be the root path of
-    | your application but you are free to change this when necessary.
-    |
-    */
-
-    'path' => '/',
-
-    /*
-    |--------------------------------------------------------------------------
     | Session Cookie Domain
     |--------------------------------------------------------------------------
     |
@@ -154,7 +141,9 @@ return [
     | available to in your application. A sensible default has been set.
     |
     */
-
+    // 👇 ESTA CLAVE ES IMPRESCINDIBLE
+    'path' => '/',
+    
     'domain' => env('SESSION_DOMAIN'),
 
     /*
@@ -162,13 +151,13 @@ return [
     | HTTPS Only Cookies
     |--------------------------------------------------------------------------
     |
-    | By setting this option to true, session cookies will only be sent back
+    | When setting this option to true, session cookies will only be sent back
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you when it can't be done securely.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------

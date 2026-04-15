@@ -41,8 +41,33 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
-
+   
     'debug' => (bool) env('APP_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Web Reservations Toggle
+    |--------------------------------------------------------------------------
+    |
+    | This flag controls whether reservations can be created from the public
+    | website (portal "web.reservas.*"). When set to false, the web stays
+    | visible but new online reservations are disabled.
+    |
+    */
+
+    'web_reservas_enabled' => filter_var(env('WEB_RESERVAS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Web Reservations Hold Time (minutes)
+    |--------------------------------------------------------------------------
+    |
+    | Tiempo (en minutos) durante el cual se mantiene bloqueado un apartamento
+    | en Channex cuando un cliente inicia el formulario de reserva web.
+    |
+    */
+
+    'web_reservas_hold_minutes' => (int) env('WEB_RESERVAS_HOLD_MINUTES', 10),
 
     /*
     |--------------------------------------------------------------------------
@@ -70,7 +95,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Europe/Madrid',
 
     /*
     |--------------------------------------------------------------------------
@@ -168,6 +193,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\CookieServiceProvider::class,
         //leifermendez\police\PoliceProvider::class,
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
         App\Providers\ClienteServiceProvider::class,

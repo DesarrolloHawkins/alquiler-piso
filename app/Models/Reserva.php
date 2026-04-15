@@ -6,10 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasLocalTimezone;
 
 class Reserva extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasLocalTimezone;
 
       /**
      * The attributes that are mass assignable.
@@ -38,7 +39,25 @@ class Reserva extends Model
         'neto',
         'comision',
         'cargo_por_pago',
-        'iva'
+        'iva',
+        'numero_ninos',
+        'edades_ninos',
+        'notas_ninos',
+        'no_facturar',
+        // Campos para plataforma del estado
+        'referencia_contrato',
+        'fecha_contrato',
+        'fecha_hora_entrada',
+        'fecha_hora_salida',
+        'numero_habitaciones',
+        'conexion_internet',
+        // Campos MIR
+        'mir_enviado',
+        'mir_estado',
+        'mir_respuesta',
+        'mir_fecha_envio',
+        'mir_codigo_referencia',
+        'conversacion_plataforma',
     ];
 
     /**
@@ -48,6 +67,23 @@ class Reserva extends Model
      */
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at',
+    ];
+
+    /**
+     * Los atributos que deben ser convertidos a tipos nativos.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'edades_ninos' => 'array',
+        'no_facturar' => 'boolean',
+        'fecha_contrato' => 'date',
+        'fecha_hora_entrada' => 'datetime',
+        'fecha_hora_salida' => 'datetime',
+        'conexion_internet' => 'boolean',
+        'mir_enviado' => 'boolean',
+        'mir_fecha_envio' => 'datetime',
+        'conversacion_plataforma' => 'boolean',
     ];
 
     /**
@@ -68,6 +104,22 @@ class Reserva extends Model
     public function apartamento()
     {
         return $this->belongsTo(\App\Models\Apartamento::class,'apartamento_id');
+    }
+
+      /**
+     * Relación con pagos
+     */
+    public function pagos()
+    {
+        return $this->hasMany(\App\Models\Pago::class, 'reserva_id');
+    }
+
+    /**
+     * Relación con servicios extras
+     */
+    public function serviciosExtras()
+    {
+        return $this->hasMany(\App\Models\ReservaServicio::class, 'reserva_id');
     }
 
       /**
@@ -134,7 +186,10 @@ class Reserva extends Model
     {
         $hoy = Carbon::now();
         return self::whereDate('fecha_entrada','<=', $hoy)
-                ->where('estado_id', '!=', 4)
+                ->where(function($query) {
+                    $query->where('estado_id', '!=', 4)
+                          ->orWhereNull('estado_id');
+                })
                 ->get();
     }
 
@@ -148,7 +203,10 @@ class Reserva extends Model
     {
         $manana = Carbon::now()->addDay();
         return self::whereDate('fecha_salida', $manana)
-                   ->where('estado_id', '!=', 4)
+                   ->where(function($query) {
+                       $query->where('estado_id', '!=', 4)
+                             ->orWhereNull('estado_id');
+                   })
                    ->get();
     }
 
@@ -161,22 +219,57 @@ class Reserva extends Model
     {
         $hoy = Carbon::now();
         return self::whereDate('fecha_limpieza', $hoy)
-                ->where('estado_id', '!=', 4)
+                ->where(function($query) {
+                    $query->where('estado_id', '!=', 4)
+                          ->orWhereNull('estado_id');
+                })
                 ->get();
     }
 
      // Aquí agregamos la función para obtener la siguiente reserva
      public function siguienteReserva()
      {
+         // Verificar que fecha_salida no sea NULL antes de hacer la consulta
+         if (is_null($this->fecha_salida)) {
+             // Devolver una consulta vacía en lugar de null
+             return $this->hasOne(Reserva::class, 'apartamento_id', 'apartamento_id')
+                        ->whereRaw('1 = 0'); // Condición imposible para que no devuelva resultados
+         }
+         
          return $this->hasOne(Reserva::class, 'apartamento_id', 'apartamento_id')
                     ->where('fecha_entrada', '>', $this->fecha_salida)
-                    ->where('estado_id', '!=', 4)
+                    ->where(function($query) {
+                        $query->where('estado_id', '!=', 4)
+                              ->orWhereNull('estado_id');
+                    })
                     ->orderBy('fecha_entrada', 'asc');
+     }
+
+     // Nueva relación para obtener la reserva que entra hoy (misma fecha que la salida)
+     public function reservaEntraHoy()
+     {
+         // Verificar que fecha_salida no sea NULL antes de hacer la consulta
+         if (is_null($this->fecha_salida)) {
+             // Devolver una consulta vacía en lugar de null
+             return $this->belongsTo(Reserva::class, 'apartamento_id', 'apartamento_id')
+                        ->whereRaw('1 = 0'); // Condición imposible para que no devuelva resultados
+         }
+         
+         return $this->belongsTo(Reserva::class, 'apartamento_id', 'apartamento_id')
+                    ->where('fecha_entrada', '=', $this->fecha_salida)
+                    ->where(function($query) {
+                        $query->where('estado_id', '!=', 4)
+                              ->orWhereNull('estado_id');
+                    })
+                    ->where('id', '!=', $this->id);
      }
 
     public function scopeActivas($query)
     {
-        return $query->where('estado_id', '!=', 4);
+        return $query->where(function($query) {
+            $query->where('estado_id', '!=', 4)
+                  ->orWhereNull('estado_id');
+        });
     }
 
 }

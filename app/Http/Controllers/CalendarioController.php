@@ -11,8 +11,11 @@ class CalendarioController extends Controller
     public function ics($id)
 {
     // Excluimos las reservas canceladas (estado_id = 4) y temporales (estado_id = 7)
+    // Solo enviamos reservas de OTAs, NO reservas web ni presenciales
     $reservas = Reserva::where('apartamento_id', $id)
         ->whereNotIn('estado_id', [4, 7])
+        ->where('origen', '!=', 'Web')
+        ->whereNotNull('origen')
         ->get();
 
     $calendario = "BEGIN:VCALENDAR\r\n";
@@ -45,7 +48,11 @@ class CalendarioController extends Controller
 
     public function ics2($id)
     {
-        $reservas = Reserva::where('apartamento_id', $id)->get();
+        // Solo enviamos reservas de OTAs, NO reservas web ni presenciales
+        $reservas = Reserva::where('apartamento_id', $id)
+            ->whereNotIn('origen', ['Web', 'Prese0
+            0ncial'])
+            ->get();
         // dd($reservas);
         $calendario = "BEGIN:VCALENDAR\r\n";
         $calendario .= "VERSION:2.0\r\n";

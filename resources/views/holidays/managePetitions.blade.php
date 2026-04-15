@@ -1,102 +1,137 @@
 @extends('layouts.appAdmin')
 
-@section('titulo', 'Mis Vacaciones')
-
-@section('css')
-<link rel="stylesheet" href="assets/vendors/simple-datatables/style.css">
-
-@endsection
+@section('title', 'Gestión de Petición de Vacaciones')
 
 @section('content')
+<div class="container-fluid">
+    <!-- Header de la Página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-calendar-check me-2 text-primary"></i>
+                Gestión de Petición de Vacaciones
+            </h1>
+            <p class="text-muted mb-0">Revisa y gestiona la solicitud de vacaciones</p>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('holiday.admin.petitions') }}">Gestión de Vacaciones</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Petición</li>
+            </ol>
+        </nav>
+    </div>
 
-    <div class="page-heading" style="box-shadow: none !important" >
+    <form action="{{ route('holiday.admin.acceptHolidays', $holidayPetition->id) }}" method="POST">
+        @csrf
+        <div class="row">
+            <!-- Información de la Petición -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold text-dark">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>
+                            Detalles de la Petición
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if($holidayPetition)
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                        <div class="avatar-sm bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-calendar-alt text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">Período de Vacaciones</h6>
+                                            <p class="mb-0 text-muted">
+                                                {{ Carbon\Carbon::parse($holidayPetition->from)->format('d/m/Y') }} - 
+                                                {{ Carbon\Carbon::parse($holidayPetition->to)->format('d/m/Y') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                        <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-calendar-plus text-info"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">Fecha de Solicitud</h6>
+                                            <p class="mb-0 text-muted">
+                                                {{ Carbon\Carbon::parse($holidayPetition->created_at)->format('d/m/Y H:i:s') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                        <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-clock text-success"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">Duración</h6>
+                                            <p class="mb-0 text-muted">
+                                                @if($holidayPetition->half_day)
+                                                    <strong>Medio día</strong>
+                                                @elseif($holidayPetition->total_days == 1)
+                                                    <strong>1 día</strong>
+                                                @else
+                                                    <strong>{{ $holidayPetition->total_days }} días</strong>
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-        {{-- Titulos --}}
-        <div class="page-title">
-            <div class="row justify-content-center">
-                <div class="col-sm-12 col-md-12">
-                    <div class="col-auto">
-                        <h3 class="fs-3 text-center"><i class="fa-solid fa-umbrella-beach me-3"></i>Vacaciones</h3>
-                        <p class="text-subtitle text-muted text-center">Gestión de petición</p>
+                            <!-- Campos ocultos -->
+                            <input type="hidden" name="id" value="{{ $holidayPetition->id }}" />
+                            <input type="hidden" name="admin_user_id" value="{{ $holidayPetition->admin_user_id }}" />
+                            <input type="hidden" name="holidays_status_id" value="{{ $holidayPetition->holidays_status_id }}" />
+                            <input type="hidden" name="from" value="{{ $holidayPetition->from }}" />
+                            <input type="hidden" name="to" value="{{ $holidayPetition->to }}" />
+                            <input type="hidden" name="total_days" value="{{ $holidayPetition->total_days }}" />
+                            <input type="hidden" name="half_day" value="{{ $holidayPetition->half_day }}" />
+                        @endif
                     </div>
                 </div>
-                <div class="col-sm-12 col-md-12">
-                    <nav aria-label="breadcrumb" class="breadcrumb-header text-center">
-                        <ol class="breadcrumb mb-0" style="width: 100%; justify-content: center;">
-                            <li class="breadcrumb-item"><a href="{{route('home')}}">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{route('holiday.admin.petitions')}}">Gestión de vacaciones</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Petición</li>
-                        </ol>
-                    </nav>
+            </div>
+
+            <!-- Panel de Acciones -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-semibold text-dark">
+                            <i class="fas fa-cogs me-2 text-primary"></i>
+                            Acciones
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+                            @if($holidayPetition->holidays_status_id != 1)
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check me-2"></i>
+                                    Aceptar Petición
+                                </button>
+                            @endif
+                            @if($holidayPetition->holidays_status_id != 2)
+                                <button type="button" id="denyHolidays" data-id="{{ $holidayPetition->id }}" class="btn btn-outline-danger btn-lg">
+                                    <i class="fas fa-times me-2"></i>
+                                    Rechazar Petición
+                                </button>
+                            @endif
+                            <a href="{{ route('holiday.admin.petitions') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Volver al Listado
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <section class="section pt-4">
-            <form action="{{route('holiday.admin.acceptHolidays', $holidayPetition->id)}}" method="POST" class="form-primary">
-                @csrf
-            <div class="row">
-                <div class="col-9">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="row">
-                                    @if($holidayPetition)
-                                        <div class="col-12 col-sm-12 col-md-6 col-lg-12 col-xl-12 form-group">
-                                            <label>Fecha de vacaciones pedidas:</label>
-                                            <p><strong>{{ Carbon\Carbon::parse($holidayPetition->from)->format('d/m/Y') . ' - ' . Carbon\Carbon::parse($holidayPetition->to)->format('d/m/Y')}}</strong> </p>
-                                        </div>
-                                        <div class="col-12 col-sm-12 col-md-6 col-lg-12 col-xl-12 form-group">
-                                            <label>Fecha de creación la petición:</label>
-                                            <p><strong>{{ Carbon\Carbon::parse($holidayPetition->created_at)->format('d/m/Y H:i:s') }}</strong></p>
-                                        </div>
-                                        <div class="col-12 col-sm-12 col-md-6 col-lg-12 col-xl-12 form-group">
-                                            @if($holidayPetition->half_day)
-                                                <label>Días en total:</label>
-                                                <p><strong>Medio día</strong></p>
-                                            @elseif($holidayPetition->total_days == 1)
-                                                <label>Días en total:</label>
-                                                <p><strong>1 día</strong></p>
-                                            @else
-                                                <label>Días en total:&nbsp;&nbsp;</label>
-                                                <p>{{ $holidayPetition->total_days .' '}}días</strong></p>
-                                            @endif
-                                        </div>
-                                        <input type="hidden" name="id" value="{{$holidayPetition->id}}" />
-                                        <input type="hidden" name="admin_user_id" value="{{$holidayPetition->admin_user_id}}" />
-                                        <input type="hidden" name="holidays_status_id" value="{{$holidayPetition->holidays_status_id}}" />
-                                        <input type="hidden" name="from" value="{{$holidayPetition->from}}" />
-                                        <input type="hidden" name="to" value="{{$holidayPetition->to}}" />
-                                        <input type="hidden" name="total_days" value="{{$holidayPetition->total_days}}" />
-                                        <input type="hidden" name="half_day" value="{{$holidayPetition->half_day}}" />
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="card-body p-3">
-                            <div class="card-title">
-                                Acciones
-                                <hr>
-                            </div>
-                            <div class="card-body">
-                                @if($holidayPetition->holidays_status_id != 1)
-                                    <button class="btn btn-success btn-block">
-                                        Aceptar
-                                    </button>
-                                @endif
-                                @if($holidayPetition->holidays_status_id != 2)
-                                    <button type="button" id="denyHolidays" data-id="{{$holidayPetition->id}}" class="btn btn-outline-danger btn-block">
-                                        Denegar
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <form>
-        </section>
-    </div>
+    </form>
+</div>
 @endsection
 
 @section('scripts')

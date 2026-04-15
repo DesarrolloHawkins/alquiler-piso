@@ -42,11 +42,11 @@ class EstablecerPreciosBaseTemporada extends Command
         $this->info('Modo: ' . ($dryRun ? 'SIMULACIÓN' : 'APLICACIÓN REAL'));
         $this->line('');
 
-        // Verificar si es viernes
-        if (!$fechaAnalisis->isFriday()) {
-            $this->warn('❌ No es viernes. Este comando solo funciona los viernes.');
-            return;
-        }
+        // COMENTADO PARA PRUEBAS - Verificación de viernes
+        // if (!$fechaAnalisis->isFriday()) {
+        //     $this->warn('❌ No es viernes. Este comando solo funciona los viernes.');
+        //     return;
+        // }
 
         // Calcular semana siguiente
         $lunesSiguiente = $fechaAnalisis->copy()->addDays(3);

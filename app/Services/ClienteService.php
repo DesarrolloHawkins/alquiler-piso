@@ -427,8 +427,46 @@ class ClienteService
         //         - it
         //         - ar
         //         - pt_PT
+        // Permite aceptar tanto el nombre del país como su abreviatura en mayúsculas
+        $idioma = trim($idioma);
+        switch (strtoupper($idioma)) {
+            case 'ESPAÑA':
+            case 'ES':
+                return 'es';
+                break;
 
-        switch ($idioma) {
+            case 'FRANCIA':
+            case 'FR':
+                return 'fr';
+                break;
+
+            case 'MARRUECOS':
+            case 'MA':
+                return 'ar';
+                break;
+
+            case 'ALEMANIA':
+            case 'DE':
+                return 'de';
+                break;
+
+            case 'PORTUGAL':
+            case 'PT':
+            case 'PT_PT':
+                return 'pt_PT';
+                break;
+
+            case 'ITALIA':
+            case 'IT':
+                return 'it';
+                break;
+
+            default:
+                return 'en';
+                break;
+        }
+
+        /* switch ($idioma) {
             case 'España':
                 return 'es';
                 break;
@@ -456,6 +494,6 @@ class ClienteService
             default:
                 return 'en';
                 break;
-        }
+        } */
     }
 }

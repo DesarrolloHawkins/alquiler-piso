@@ -34,7 +34,7 @@ class ChannexWebController extends Controller
     }
     public function createTestProperty()
     {
-        $response = Http::withHeaders([
+        $response = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("{$this->apiUrl}/properties", [
             'property' => [
@@ -127,7 +127,7 @@ class ChannexWebController extends Controller
             }
         }
         //dd($photos);
-        $response = Http::withHeaders([
+        $response = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("{$this->apiUrl}/properties", [
             'property' => [
@@ -214,7 +214,7 @@ class ChannexWebController extends Controller
         ];
 
         foreach ($webhookEvents as $event) {
-            $response = Http::withHeaders($headers)->post("{$this->apiUrl}/webhooks", [
+            $response = Http::withoutVerifying()->withHeaders($headers)->post("{$this->apiUrl}/webhooks", [
                 'webhook' => [
                     'event' => $event,
                     'url' => $webhookUrl,
@@ -408,7 +408,7 @@ class ChannexWebController extends Controller
 
         try {
             // Realizar la solicitud POST
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'user-api-key' => $this->apiToken,
             ])->post($url, [
                 'provider_code' => $providerCode,
@@ -442,7 +442,7 @@ class ChannexWebController extends Controller
 
         try {
             // Realizar la solicitud GET
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'user-api-key' => $this->apiToken,
             ])->get("{$this->apiUrl}/rate_plans");
 
@@ -513,7 +513,7 @@ class ChannexWebController extends Controller
 
         try {
             // Realizar la solicitud GET
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'user-api-key' => $this->apiToken,
             ])->get("{$this->apiUrl}/rate_plans");
 

@@ -30,6 +30,7 @@
         <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         @yield('scriptHead')
 
@@ -41,6 +42,11 @@
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="{{ asset('js/alerts.js') }}"></script>
+        <!-- Fancybox para lightbox de imágenes -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+        <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+        @yield('styles')
+        @stack('styles')
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 @if(session('swal_success'))
@@ -88,6 +94,32 @@
             }
 
             /* ...fin de los estilos scroll */
+
+            /* Estilos para dropdown items activos en navbar */
+            .navbar-dark .dropdown-menu .dropdown-item.active {
+                background-color: #3B3F64;
+                color: #fff;
+                font-weight: 600;
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-item:hover {
+                background-color: rgba(59, 63, 100, 0.2);
+                color: #fff;
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-item {
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            .navbar-dark .dropdown-menu {
+                background-color: #0F1739;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+
+            .navbar-dark .dropdown-menu .dropdown-divider {
+                border-top-color: rgba(255, 255, 255, 0.1);
+            }
         </style>
 
     </head>
@@ -106,70 +138,223 @@
 
                         <div class="collapse navbar-collapse" id="mainNavbar">
                             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                                <li class="nav-item"><a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard.index') }}">Dashboard</a></li>
-                                <li class="nav-item"><a class="nav-link {{ request()->is('clientes*') ? 'active' : '' }}" href="{{ route('clientes.index') }}">Clientes</a></li>
+                                <!-- Dashboard -->
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard.index') }}">
+                                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                                    </a>
+                                </li>
 
-                                <!-- Channex -->
+                                <!-- Gestión de Clientes -->
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->is('clientes*') ? 'active' : '' }}" href="{{ route('clientes.index') }}">
+                                        <i class="fas fa-users me-1"></i>Clientes
+                                    </a>
+                                </li>
+
+                                <!-- Gestión de Propiedades -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('channex*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Channex
+                                    <a class="nav-link dropdown-toggle {{ request()->is('apartamentos*', 'admin/edificios*', 'admin/checklists*', 'admin/normas-casa*', 'admin/servicios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-building me-1"></i>Propiedades
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('channex.ratePlans.index') }}">Rate Plans</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('channex.roomTypes.index') }}">Room Types</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('channex.propiedad.index') }}">Property</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('ari.index') }}">Update Rate & Availability</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('channex.channel.index') }}">Channel</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="document.getElementById('fullSyncBtn')?.click()">Full Sync</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('apartamentos.admin.index') }}">
+                                            <i class="fas fa-home me-2"></i>Apartamentos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.edificios.index') }}">
+                                            <i class="fas fa-building me-2"></i>Edificios
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.checklists.index') }}">
+                                            <i class="fas fa-clipboard-list me-2"></i>Categorías de Limpieza
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.normas-casa.index') }}">
+                                            <i class="fas fa-gavel me-2"></i>Normas de la Casa
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.servicios.index') }}">
+                                            <i class="fas fa-concierge-bell me-2"></i>Servicios
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.politica-cancelacion.edit') }}">
+                                            <i class="fas fa-file-contract me-2"></i>Política de Cancelaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.paginas-legales.index') }}">
+                                            <i class="fas fa-file-alt me-2"></i>Páginas Legales
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.preguntas-frecuentes.index') }}">
+                                            <i class="fas fa-question-circle me-2"></i>Preguntas Frecuentes
+                                        </a></li>
+                                    </ul>
+                                </li>
+
+                                <!-- Gestión de Personal -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('empleados*') || request()->is('jornada*') || request()->is('holidays*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-user-tie me-1"></i>Personal
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.empleados.index') }}">
+                                            <i class="fas fa-users-cog me-2"></i>Empleados
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.jornada.index') }}">
+                                            <i class="fas fa-clock me-2"></i>Jornada
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.index') }}" target="_blank">
+                                            <i class="fas fa-calendar-alt me-2"></i>Vacaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.petitions') }}" target="_blank">
+                                            <i class="fas fa-calendar-check me-2"></i>Gestión Vacaciones
+                                        </a></li>
+                                    </ul>
+                                </li>
+
+                                <!-- Limpieza y Mantenimiento -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('limpiezas*') || request()->is('limpieza*') || request()->is('zonas-comunes*') || request()->is('checklists-zonas-comunes*') || request()->is('amenities*') || request()->is('admin/incidencias*') || request()->is('admin/proveedores*') || request()->is('admin/articulos*') || request()->is('admin/movimientos-stock*') || request()->is('admin/tipos-tareas*') || request()->is('admin/empleada-horarios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-broom me-1"></i>Limpieza
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <!-- Operaciones de Limpieza -->
+                                        <li><h6 class="dropdown-header"><i class="fas fa-tasks me-1"></i>Operaciones</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">
+                                            <i class="fas fa-clipboard-list me-2"></i>Panel de Limpieza
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('limpiadora.turnos.index') }}">
+                                            <i class="fas fa-calendar-alt me-2"></i>Mis Turnos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.limpiezas.index') }}">
+                                            <i class="fas fa-microscope me-2"></i>Gestión de Limpiezas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.incidencias.index') }}">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Incidencias
+                                        </a></li>
+                                        
+                                        <!-- Gestión de Turnos -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-calendar-alt me-1"></i>Turnos y Tareas</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('gestion.turnos.index') }}">
+                                            <i class="fas fa-calendar-check me-2"></i>Turnos de Trabajo
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.tipos-tareas.index') }}">
+                                            <i class="fas fa-list-ul me-2"></i>Tipos de Tareas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.empleada-horarios.index') }}">
+                                            <i class="fas fa-clock me-2"></i>Horarios de Empleadas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.horas-extras.index') }}">
+                                            <i class="fas fa-clock-plus me-2"></i>Horas Extras
+                                        </a></li>
+                                        
+                                        <!-- Configuración de Limpieza -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-cog me-1"></i>Configuración</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.zonas-comunes.index') }}">
+                                            <i class="fas fa-building me-2"></i>Zonas Comunes
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.checklists-zonas-comunes.index') }}">
+                                            <i class="fas fa-list-check me-2"></i>Checklists Zonas Comunes
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.amenities.index') }}">
+                                            <i class="fas fa-gift me-2"></i>Amenities
+                                        </a></li>
+                                        
+                                        <!-- Inventario y Stock -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-warehouse me-1"></i>Inventario</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.proveedores.index') }}">
+                                            <i class="fas fa-truck me-2"></i>Proveedores
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.articulos.index') }}">
+                                            <i class="fas fa-boxes me-2"></i>Artículos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.movimientos-stock.index') }}">
+                                            <i class="fas fa-exchange-alt me-2"></i>Movimientos de Stock
+                                        </a></li>
+                                        
+                                        <!-- Mantenimiento Especial -->
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-tools me-1"></i>Mantenimiento</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.limpiezaFondo.index') }}">
+                                            <i class="fas fa-water me-2"></i>Limpieza de Fondo
+                                        </a></li>
                                     </ul>
                                 </li>
 
                                 <!-- Reservas -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('reservas*') || request()->is('tabla-reservas*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Reservas
+                                    <a class="nav-link dropdown-toggle {{ request()->is('reservas*') || request()->is('tabla-reservas*') || request()->is('cerrar-apartamento*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-calendar-plus me-1"></i>Reservas
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('reservas.index') }}">Ver Reservas</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.tablaReservas.index') }}">Tabla de Reservas</a></li>
-                                    </ul>
-                                </li>
-
-                                <!-- Gestión -->
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('gestion*') || request()->is('jornada*') || request()->is('apartamentos*') || request()->is('checklists*') || request()->is('holidays*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Gestión
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('apartamentos.admin.index') }}">Apartamentos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.empleados.index') }}">Empleados</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.jornada.index') }}">Jornada</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.edificios.index') }}">Edificios</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('gestion.index') }}" target="_blank">Limpieza</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.index') }}" target="_blank">Vacaciones</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('holiday.admin.petitions') }}" target="_blank">Gestion Vacaciones</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.limpiezaFondo.index') }}">Limpieza Fondo</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.checklists.index') }}">Categorias de Limpieza</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('reservas.index') }}">
+                                            <i class="fas fa-list me-2"></i>Ver Reservas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.tablaReservas.index') }}">
+                                            <i class="fas fa-table me-2"></i>Tabla de Reservas
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cerrar-apartamento.index') }}">
+                                            <i class="fas fa-door-closed me-2"></i>Cerrar Apartamento
+                                        </a></li>
                                     </ul>
                                 </li>
 
                                 <!-- Tarifas -->
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle {{ request()->is('tarifas*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Tarifas
+                                        <i class="fas fa-tags me-1"></i>Tarifas
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('tarifas.index') }}">Ver Tarifas</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('tarifas.create') }}">Crear Tarifa</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('tarifas.index') }}">
+                                            <i class="fas fa-list-alt me-2"></i>Ver Tarifas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('tarifas.create') }}">
+                                            <i class="fas fa-plus me-2"></i>Crear Tarifa
+                                        </a></li>
                                     </ul>
                                 </li>
 
-                                <!-- Configuración de Descuentos -->
+                                <!-- Channex - Integración -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('channex*') || request()->is('ari*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-plug me-1"></i>Channex
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('channex.ratePlans.index') }}">
+                                            <i class="fas fa-chart-line me-2"></i>Rate Plans
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.roomTypes.index') }}">
+                                            <i class="fas fa-bed me-2"></i>Room Types
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.propiedad.index') }}">
+                                            <i class="fas fa-building me-2"></i>Property
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('ari.index') }}">
+                                            <i class="fas fa-sync-alt me-2"></i>Update Rate & Availability
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('channex.channel.index') }}">
+                                            <i class="fas fa-share-alt me-2"></i>Channel
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="document.getElementById('fullSyncBtn')?.click()">
+                                            <i class="fas fa-sync me-2"></i>Full Sync
+                                        </a></li>
+                                    </ul>
+                                </li>
+
+                                <!-- Descuentos -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion-descuentos*') || request()->is('historial-descuentos*') || request()->is('cupones*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                         <i class="fas fa-percentage me-1"></i>Descuentos
                                     </a>
                                     <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header"><i class="fas fa-ticket-alt me-1"></i>Cupones</h6></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cupones.index') }}">
+                                            <i class="fas fa-list me-2"></i>Ver Cupones
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.cupones.create') }}">
+                                            <i class="fas fa-plus me-2"></i>Crear Cupón
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header"><i class="fas fa-cog me-1"></i>Descuentos Automáticos</h6></li>
                                         <li><a class="dropdown-item" href="{{ route('configuracion-descuentos.index') }}">
                                             <i class="fas fa-cog me-2"></i>Configuración
                                         </a></li>
@@ -189,63 +374,133 @@
                                     </ul>
                                 </li>
 
+                                <!-- Tesorería -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Tesorería
+                                    <a class="nav-link dropdown-toggle {{ request()->is('diario-caja*', 'ingresos*', 'gastos*', 'facturas*', 'bancos*', 'upload-files*', 'presupuestos*', 'informes-ai*', 'informe-ai*', 'pagos*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-cash-register me-1"></i>Tesorería
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('admin.diarioCaja.index') }}">Diario de Caja</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.estadosDiario.index') }}">Estados del Diario</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('presupuestos.index') }}">Presupuestos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.facturas.index') }}">Facturas</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.ingresos.index') }}">Ingresos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaIngresos.index') }}">Categoría de Ingresos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.gastos.index') }}">Gastos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaGastos.index') }}">Categoría de Gastos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.bancos.index') }}">Bancos</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.upload.files') }}">Subida Ficheros</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('metalicos.index') }}">Metálicos</a></li>
-                                    </ul>
-                                </li>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('plan-contable*', 'cuentas-contables*', 'sub-cuentas-contables*', 'sub-cuentas-hijas-contables*', 'grupo-contable*', 'sub-grupo-contable*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Contabilidad
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('admin.planContable.index') }}">Plan General Contable</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.grupoContabilidad.index') }}">Grupos Contables</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.subGrupoContabilidad.index') }}">Sub-Grupos Contables</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.cuentasContables.index') }}">Cuentas Contables</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.subCuentasContables.index') }}">Sub-Cuentas Contables</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.subCuentasHijaContables.index') }}">Sub-Cuentas Hijas</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.pagos.index') }}">
+                                            <i class="fas fa-credit-card me-2"></i>Pagos Web
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.pagos.intentos') }}">
+                                            <i class="fas fa-history me-2"></i>Intentos de Pago
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.diarioCaja.index') }}">
+                                            <i class="fas fa-book me-2"></i>Diario de Caja
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.estadosDiario.index') }}">
+                                            <i class="fas fa-chart-bar me-2"></i>Estados del Diario
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('presupuestos.index') }}">
+                                            <i class="fas fa-chart-pie me-2"></i>Presupuestos
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.ingresos.index') }}">
+                                            <i class="fas fa-arrow-up me-2"></i>Ingresos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaIngresos.index') }}">
+                                            <i class="fas fa-folder-plus me-2"></i>Categoría de Ingresos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.gastos.index') }}">
+                                            <i class="fas fa-arrow-down me-2"></i>Gastos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaGastos.index') }}">
+                                            <i class="fas fa-folder-minus me-2"></i>Categoría de Gastos
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.facturas.index') }}">
+                                            <i class="fas fa-file-invoice me-2"></i>Facturas
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.bancos.index') }}">
+                                            <i class="fas fa-university me-2"></i>Bancos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('metalicos.index') }}">
+                                            <i class="fas fa-coins me-2"></i>Metálicos
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.upload.files') }}">
+                                            <i class="fas fa-upload me-2"></i>Subida Ficheros
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('informes.ai.index') }}">
+                                            <i class="fas fa-robot me-2"></i>Informes AI
+                                        </a></li>
                                     </ul>
                                 </li>
 
-                                <!-- Emails -->
+                                <!-- Comunicación -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Emails
+                                    <a class="nav-link dropdown-toggle {{ request()->is('emails*') || request()->is('status-mail*') || request()->is('category-email*') || request()->is('whatsapp*') || request()->is('templates*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-comments me-1"></i>Comunicación
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('admin.statusMail.index') }}">Status de Emails</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaEmail.index') }}">Categorías de Emails</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.statusMail.index') }}">
+                                            <i class="fas fa-envelope me-2"></i>Status de Emails
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.categoriaEmail.index') }}">
+                                            <i class="fas fa-tags me-2"></i>Categorías de Emails
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('templates.index') }}">
+                                            <i class="fas fa-file-alt me-2"></i>Plantilla de Mensajes
+                                        </a></li>
+                                        <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">
+                                            <i class="fab fa-whatsapp me-2"></i>Conversaciones
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.contactos-web.index') }}">
+                                            <i class="fas fa-envelope-open-text me-2"></i>Contactos desde la Web
+                                        </a></li>
                                     </ul>
                                 </li>
 
-                                <!-- Emails -->
+                                <!-- Configuración -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {{ request()->is('whatsapp*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
-                                        Plataforma de Mensajes
+                                    <a class="nav-link dropdown-toggle {{ request()->is('configuracion*') || request()->is('admin/servicios-tecnicos*') || request()->is('admin/tecnicos-servicios*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                        <i class="fas fa-cogs me-1"></i>Configuración
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('templates.index') }}">Plantilla de Mesanjes</a></li>
-                                        <li><a target="_blank" class="dropdown-item" href="{{ route('whatsapp.mensajes') }}">Conversaciones</a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.seo.*') ? 'active' : '' }}" href="{{ route('configuracion.seo.index') }}">
+                                            <i class="fas fa-search me-2"></i>SEO y SEM
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.portal-publico.*') ? 'active' : '' }}" href="{{ route('configuracion.portal-publico.index') }}">
+                                            <i class="fas fa-globe me-2"></i>Portal Público
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.credenciales.*') ? 'active' : '' }}" href="{{ route('configuracion.credenciales.index') }}">
+                                            <i class="fas fa-key me-2"></i>Credenciales
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.contabilidad.*') ? 'active' : '' }}" href="{{ route('configuracion.contabilidad.index') }}">
+                                            <i class="fas fa-calculator me-2"></i>Contabilidad
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.reparaciones.*') ? 'active' : '' }}" href="{{ route('configuracion.reparaciones.index') }}">
+                                            <i class="fas fa-tools me-2"></i>Reparaciones
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('admin.servicios-tecnicos.*') ? 'active' : '' }}" href="{{ route('admin.servicios-tecnicos.index') }}">
+                                            <i class="fas fa-wrench me-2"></i>Servicios Técnicos
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('admin.tecnicos-servicios.*') ? 'active' : '' }}" href="{{ route('admin.tecnicos-servicios.index') }}">
+                                            <i class="fas fa-user-cog me-2"></i>Técnicos y Servicios
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.limpiadoras.*') ? 'active' : '' }}" href="{{ route('configuracion.limpiadoras.index') }}">
+                                            <i class="fas fa-broom me-2"></i>Limpiadoras
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.notificaciones.*') ? 'active' : '' }}" href="{{ route('configuracion.notificaciones.index') }}">
+                                            <i class="fas fa-bell me-2"></i>Notificaciones
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.prompt-ia.*') ? 'active' : '' }}" href="{{ route('configuracion.prompt-ia.index') }}">
+                                            <i class="fas fa-robot me-2"></i>Prompt IA
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.plataforma-estado.*') ? 'active' : '' }}" href="{{ route('configuracion.plataforma-estado.index') }}">
+                                            <i class="fas fa-server me-2"></i>Plataforma Estado
+                                        </a></li>
+                                        <li><a class="dropdown-item {{ request()->routeIs('configuracion.mir.*') ? 'active' : '' }}" href="{{ route('configuracion.mir.index') }}">
+                                            <i class="fas fa-shield-alt me-2"></i>MIR Hospedajes
+                                        </a></li>
                                     </ul>
                                 </li>
-
-                                <!-- Otros -->
-                                {{-- <li class="nav-item"><a class="nav-link" href="#">Logs</a></li> --}}
-                                <li class="nav-item"><a class="nav-link" href="{{ route('configuracion.index') }}">Configuración</a></li>
                             </ul>
 
                             <!-- Notificaciones y Salir -->
@@ -549,7 +804,6 @@
         </script>
 
 
-        @yield('scripts')
         @include('sweetalert::alert')
 
         <!-- Script para comandos de descuento -->
@@ -642,6 +896,10 @@
                 }
             }
         </script>
+
+        <!-- Scripts personalizados de las vistas -->
+        @yield('scripts')
+        @stack('scripts')
 
     </body>
 </html>

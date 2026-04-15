@@ -44,6 +44,8 @@ class Alert extends Model
         'payment_due' => 'Pago Pendiente',
         'maintenance_required' => 'Mantenimiento Requerido',
         'cleaning_due' => 'Limpieza Pendiente',
+        'cleaning_observation' => 'Observación de Limpieza',
+        'incident_created' => 'Incidencia Creada',
         'check_in_reminder' => 'Recordatorio de Check-in',
         'check_out_reminder' => 'Recordatorio de Check-out',
         'system_notification' => 'Notificación del Sistema',

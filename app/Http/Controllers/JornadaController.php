@@ -13,8 +13,8 @@ class JornadaController extends Controller
     public function index(Request $request) {
         $anio = app('anio'); // Obtiene el año global usando el Service Provider
     
-        // Obtener todos los usuarios activos
-        $users = User::where('role', 'USER')
+        // Obtener todos los usuarios activos (empleados de limpieza)
+        $users = User::whereIn('role', ['USER', 'LIMPIEZA'])
                      ->where(function($query) {
                          $query->where('inactive', '=', 0)
                                ->orWhereNull('inactive');
@@ -45,12 +45,23 @@ class JornadaController extends Controller
             // Ejecutar la consulta y asignar resultados
             $user->jornada = $query->get();
     
-            // Añadir los datos de ApartamentoLimpieza a cada jornada
+            // Añadir los datos de ApartamentoLimpieza y TurnoTrabajo con tareas asignadas a cada jornada
             foreach ($user->jornada as $jornada) {
                 $jornada->limpiezas = ApartamentoLimpieza::where('user_id', $user->id)
                                                          ->whereDate('created_at', '=', $jornada->created_at)
                                                          ->get();
 
+                // Buscar TurnoTrabajo para esta fecha y usuario
+                $fechaJornada = \Carbon\Carbon::parse($jornada->created_at)->format('Y-m-d');
+                $turnoTrabajo = \App\Models\TurnoTrabajo::where('user_id', $user->id)
+                                                         ->whereDate('fecha', $fechaJornada)
+                                                         ->with(['tareasAsignadas' => function($query) {
+                                                             $query->with(['tipoTarea', 'apartamento', 'zonaComun'])
+                                                                   ->orderBy('orden_ejecucion');
+                                                         }])
+                                                         ->first();
+                
+                $jornada->turnoTrabajo = $turnoTrabajo;
             }
 
             

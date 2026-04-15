@@ -27,6 +27,13 @@ class PresupuestoConcepto extends Model
         'precio',
         'iva',
         'subtotal',
+        // campos de fechas opcionales para edición
+        'fecha_entrada',
+        'fecha_salida',
+        // campos de detalle opcionales
+        'precio_por_dia',
+        'dias_totales',
+        'precio_total',
     ];
 
     public function presupuesto()

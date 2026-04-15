@@ -4,20 +4,18 @@ namespace App\Console;
 
 use App\Mail\EnvioClavesEmail;
 use App\Models\Apartamento;
-use App\Models\Cliente;
-use App\Models\Huesped;
 use App\Models\Invoices;
 use App\Models\InvoicesReferenceAutoincrement;
 use App\Models\MensajeAuto;
 use App\Models\Reserva;
 use Carbon\Carbon;
 use App\Services\ClienteService;
+use App\Services\MetodoEntradaService;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use DateTime;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
@@ -35,6 +33,14 @@ class Kernel extends ConsoleKernel
         // \App\Console\Commands\CheckComprobacion::class,
         // \App\Console\Commands\FetchEmails::class,
         // \App\Console\Commands\CategorizeEmails::class,
+        \App\Console\Commands\CleanExpiredSessions::class,
+        \App\Console\Commands\CleanOldLogs::class,
+        \App\Console\Commands\GenerateLogReport::class,
+        \App\Console\Commands\CleanOldNotifications::class,
+        \App\Console\Commands\FixAmenityMovements::class,
+        \App\Console\Commands\FixAllAmenitiesMovements::class,
+        \App\Console\Commands\CheckOverlappingReservations::class,
+        \App\Console\Commands\EnviarClavesChannexCommand::class,
     ];
 
 
@@ -43,8 +49,20 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('reservas:sincronizar')->everyMinute(); // o daily(), hourly(), etc.
 
+        //$schedule->command('reservas:sincronizar')->hourly(); // o daily(), hourly(), etc.
+        $schedule->command('reservas:check-overlaps')->everyMinute();
+
+        // Generar token DNI en reservas activas que no tienen token (enlace DNI roto)
+        $schedule->command('reservas:generar-token-dni')->everyMinute();
+
+        $schedule->command('vacacioner:add')->monthlyOn(1, '08:00');
+
+        // Enviar claves por Channex todos los días a las 14:00
+        $schedule->command('ari:enviar-claves-channex')->dailyAt('14:00');
+
+        // Generar turnos de trabajo todos los días a las 7:00 AM
+        $schedule->command('turnos:generar')->dailyAt('07:00');
 
         // Ejecuta el comando cada hora
         $schedule->command('emails:categorize')->everyMinute();
@@ -72,13 +90,13 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Nacionalidad del cliente ejecutada con éxito.");
         })->everyMinute();
 
-        // Miramos si el cliente ha entregado el DNI el dia de entrada
+        // Aviso para gestion Miramos si el cliente ha entregado el DNI el dia de entrada
         $schedule->call(function (ClienteService $clienteService) {
             // Hoy
             $hoy = Carbon::now();
 
             // Solo ejecutar después de las 10 de la mañana
-            if ($hoy->hour >= 8) {
+            if ($hoy->hour >= 10) {
                 // Obtener reservas que tengan la fecha de entrada igual al día de hoy y que no tengan el DNI entregado
                 $reservasEntrada = Reserva::where('dni_entregado', null)
                                     ->where('estado_id', 1)
@@ -128,7 +146,26 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         // Tarea comprobacion del estado del PC
-        $schedule->command('check:comprobacion')->everyFifteenMinutes();
+        //$schedule->command('check:comprobacion')->everyFifteenMinutes();
+
+        // Limpiar logs antiguos cada día a las 2:00 AM
+        $schedule->command('logs:clean --days=30')->dailyAt('02:00');
+
+        // Limpiar notificaciones antiguas cada día a las 3:00 AM
+        $schedule->command('notifications:clean --days=30')->dailyAt('03:00');
+
+        // Aplicar descuento del 20% a apartamentos libres (SOLO lunes a jueves a las 10:00)
+        // NO se ejecuta viernes, sábado ni domingo
+        // Se ejecuta con --confirmar para evitar interacción en modo cron
+        // $schedule->command('aplicar:descuento-apartamentos-libres --confirmar')
+        //     ->at('10:00')
+        //     ->when(function () {
+        //         // Solo ejecutar de lunes a jueves
+        //         // En Carbon: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+        //         // Excluye: 0=Domingo, 5=Viernes, 6=Sábado
+        //         $dayOfWeek = Carbon::now()->dayOfWeek;
+        //         return in_array($dayOfWeek, [1, 2, 3, 4]);
+        //     });
 
         // Tarea de Generacion de Factura
         $schedule->call(function () {
@@ -150,10 +187,41 @@ class Kernel extends ConsoleKernel
                 $invoice = Invoices::where('reserva_id', $reserva->id)->first();
 
                 if ($invoice == null) {
+                    // Validar que la reserva no esté marcada para no facturar
+                    if ($reserva->no_facturar) {
+                        Log::info("Reserva {$reserva->id} no facturada (marcada como no_facturar)");
+                        continue; // Saltar esta reserva
+                    }
+
+                    // Validar que el precio sea mayor o igual a 10 euros
+                    if ($reserva->precio < 10) {
+                        Log::info("Reserva {$reserva->id} con precio {$reserva->precio}€ no facturada (menor a 10€)");
+                        continue; // Saltar esta reserva
+                    }
+
+                    // Obtener datos de facturación del cliente
+                    $cliente = $reserva->cliente;
+                    if (!$cliente) {
+                        Log::warning("Cliente no encontrado para reserva {$reserva->id}");
+                        continue;
+                    }
+
+                    // Verificar que el cliente tenga datos de facturación completos
+                    if (!$cliente->tieneDatosFacturacionCompletos()) {
+                        Log::warning("Cliente {$cliente->id} no tiene datos de facturación completos para reserva {$reserva->id}");
+                        continue;
+                    }
+
                      // Cálculo correcto de la base imponible y el IVA
                     $total = $reserva->precio;
                     $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
                     $iva = $total - $base; // Calcular el IVA
+
+                    // Generar descripción básica (los datos de facturación se obtienen dinámicamente en el PDF)
+                    $descripcion = "Estancia en apartamento: " . $reserva->apartamento->titulo;
+                    $descripcion .= "\nFecha de entrada: " . $reserva->fecha_entrada;
+                    $descripcion .= "\nFecha de salida: " . $reserva->fecha_salida;
+                    $descripcion .= "\nNúmero de personas: " . $reserva->numero_personas;
 
                     $data = [
                         'budget_id' => null,
@@ -161,7 +229,7 @@ class Kernel extends ConsoleKernel
                         'reserva_id' => $reserva->id,
                         'invoice_status_id' => 1,
                         'concepto' => 'Estancia en apartamento: '. $reserva->apartamento->titulo,
-                        'description' => '',
+                        'description' => $descripcion,
                         'fecha' => $reserva->fecha_salida,
                         'fecha_cobro' => null,
                         'base' => round($base, 2), // Redondear la base a 2 decimales
@@ -171,7 +239,8 @@ class Kernel extends ConsoleKernel
                         'created_at' => $reserva->fecha_salida,
                         'updated_at' => $reserva->fecha_salida,
                     ];
-                    // dd($data);
+
+                    Log::info("Generando factura para reserva {$reserva->id} con datos de facturación del cliente {$cliente->id}");
                     $crearFactura = Invoices::create($data);
 
                     $referencia = $this->generateBudgetReference($crearFactura);
@@ -181,11 +250,19 @@ class Kernel extends ConsoleKernel
                     $crearFactura->save();
                     $reserva->estado_id = 5;
                     $reserva->save();
+
+                    Log::info("Factura {$crearFactura->id} generada exitosamente para reserva {$reserva->id}");
                 }
 
             }
 
         })->everyMinute();
+
+        // Liberar holds de reserva web expirados en Channex
+        $schedule->command('ari:liberar-holds-expirados')->everyMinute();
+
+        // Cancelar reservas web con pago pendiente tras X minutos (config: web_reservas_hold_minutes, por defecto 10)
+        $schedule->command('ari:cancelar-reservas-web-pago-pendiente')->everyMinute();
 
         // Tarea para el envio por primera vez de DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -258,7 +335,7 @@ class Kernel extends ConsoleKernel
                         $enviarEmail = $this->enviarEmail($emailDestino, 'emails.envioClavesEmail', $mensajeEmail, 'Hawkins Suite - DNI', $token);
 
                                                 // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             // Crear mensaje específico para el chat
                             $datosDNI = [
                                 'token' => $token
@@ -280,9 +357,9 @@ class Kernel extends ConsoleKernel
             Log::info("Tarea programada de Primer envio de DNI ejecutada con éxito.");
         })->everyMinute();
 
-        // Ejecutar el comando cada minuto
-        $schedule->command('ari:fullsync')->everyMinute();
-        $schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
+        // Ejecutar el comando cada hora
+       // $schedule->command('ari:fullsync')->hourly();
+        //$schedule->command('ari:liberar-canceladas')->everyFiveMinutes();
 
         // Tarea par enviar los mensajes automatizados cuando se ha entregado el DNI
         $schedule->call(function (ClienteService $clienteService) {
@@ -291,11 +368,13 @@ class Kernel extends ConsoleKernel
 
             // Reservas
             $reservas = Reserva::whereDate('fecha_entrada', '=', date('Y-m-d'))
-            ->where('estado_id', '!=', 4)
-            /* ->where('dni_entregado', '!=', null) */
+            ->whereNotIn('estado_id', [4, 7, 8, 9, 10])
             ->get();
+            /* ->where('dni_entregado', '!=', null) */
 
             foreach($reservas as $reserva){
+                // 🔄 Refrescar la reserva para obtener datos actualizados (especialmente dni_entregado)
+                $reserva->refresh();
 
                 // Apartamento
                 $apartamentoReservado = Apartamento::find($reserva->apartamento_id);
@@ -308,10 +387,10 @@ class Kernel extends ConsoleKernel
 
                 // Horas objetivo para lanzar mensajes
                 // $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 08:48:00');
-                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 10:00:00');
-                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 12:00:00');
-                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 15:00:00');
-                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 17:00:00');
+                $horaObjetivoBienvenida = new \DateTime($fechaHoyStr . ' 12:00:00');
+                $horaObjetivoCodigo = new \DateTime($fechaHoyStr . ' 14:00:00');
+                $horaObjetivoConsulta = new \DateTime($fechaHoyStr . ' 16:00:00');
+                $horaObjetivoOcio = new \DateTime($fechaHoyStr . ' 18:00:00');
 
                 // Diferencias horarias para las horas objetivos
                 $diferenciasHoraBienvenida = $hoy->diff($horaObjetivoBienvenida)->format('%R%H%I');
@@ -329,10 +408,21 @@ class Kernel extends ConsoleKernel
                 // MENSAJE DE BIEVENIDA
                 if ($diferenciasHoraBienvenida <= 0 && $mensajeBienvenida == null) {
 
+                    // Asegurar que la reserva tenga token para el enlace del botón
+                    if (empty($reserva->token)) {
+                        $token = bin2hex(random_bytes(16)); // Genera un token de 32 caracteres
+                        $reserva->token = $token;
+                        $reserva->save();
+                        Log::info('🔑 Token generado para reserva en mensaje de bienvenida', [
+                            'reserva_id' => $reserva->id,
+                            'token' => $token
+                        ]);
+                    }
+
                     // Obtenemos codigo de idioma
                     $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
-                    // Enviamos el mensaje
-                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente );
+                    // Enviamos el mensaje con el token de la reserva para el botón
+                    $data = $this->bienvenidoMensaje($reserva->cliente->nombre, $phoneCliente, $idiomaCliente, $reserva->token);
                     Storage::disk('local')->put('Mensaje_bienvenida'.$reserva->cliente_id.'.txt', $data );
 
                                             // Creamos la data para guardar el mensaje
@@ -345,8 +435,11 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeBienvenida después de crearlo para el siguiente check
+                        $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 4)->first();
+
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
                                 $datosBienvenida = [
                                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
@@ -359,7 +452,7 @@ class Kernel extends ConsoleKernel
                                     $reserva->id_channex
                                 );
 
-                                Log::info('Mensaje de bienvenida enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Mensaje de bienvenida enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de bienvenida al chat:', [
                                     'error' => $e->getMessage(),
@@ -375,13 +468,80 @@ class Kernel extends ConsoleKernel
                 if ($diferenciasHoraCodigos <= 0 && $mensajeBienvenida != null && $mensajeClaves == null) {
                     $tiempoDesdeBienvenida = $mensajeBienvenida->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeBienvenida >= 1) {
+                        Log::info('🔑 PROCESANDO ENVÍO DE CLAVES AUTOMÁTICO', [
+                            'reserva_id' => $reserva->id,
+                            'cliente_id' => $reserva->cliente_id,
+                            'telefono_cliente' => $phoneCliente,
+                            'tiempo_desde_bienvenida' => $tiempoDesdeBienvenida
+                        ]);
+
+                        // Verificar que el DNI esté subido antes de enviar las claves
+                        if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+                            Log::warning('⚠️ No se pueden enviar claves: el DNI no ha sido subido', [
+                                'reserva_id' => $reserva->id,
+                                'dni_entregado' => $reserva->dni_entregado,
+                                'dni_entregado_tipo' => gettype($reserva->dni_entregado)
+                            ]);
+                            continue; // Saltar esta reserva y continuar con la siguiente
+                        }
+
+                        // Verificar que el teléfono no esté vacío
+                        if (empty($phoneCliente)) {
+                            Log::error('❌ No se pueden enviar claves: el teléfono del cliente está vacío', [
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'telefono_original' => $reserva->cliente->telefono ?? 'null'
+                            ]);
+                            continue;
+                        }
+
                         // Obtenemos el codigo de entrada del apartamento
                         //$code = $this->codigoApartamento($reserva->apartamento_id);
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
                         // Enviamos el mensaje
-                        $enlace = $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
-                        $enlaceLimpio = $apartamentoReservado->edificio == 1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+                        $edificioLegacy = $apartamentoReservado->edificio ?? null; // legacy (puede no existir)
+                        $edificioId = $apartamentoReservado->edificio_id ?? null;
+                        $esEdificio1 = ($edificioId === 1) || ($edificioLegacy === 1);
+                        $enlace = $esEdificio1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+                        $enlaceLimpio = $esEdificio1 ? 'goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'maps.app.goo.gl/t81tgLXnNYxKFGW4A';
+
+                        $metodoEntrada = app(MetodoEntradaService::class)->resolverParaReserva($reserva);
+                        if ($metodoEntrada === MetodoEntradaService::METODO_DIGITAL) {
+                            $mensajeDigital = match (substr((string) $idiomaCliente, 0, 2)) {
+                                'es' => "Tu acceso será mediante cerradura digital.\n\nLa entrega del código está pendiente de integración con nuestra plataforma de accesos (código único por cliente y ventana horaria). Si lo necesitas, contáctanos y te ayudamos.",
+                                'fr' => "Votre accès se fera via une serrure digitale.\n\nLa livraison du code est en attente d’intégration avec notre plateforme d’accès (code unique par client et fenêtre horaire). Si besoin, contactez-nous.",
+                                'de' => "Ihr Zugang erfolgt über ein digitales Schloss.\n\nDie Code-Zustellung wartet noch auf die Integration mit unserer Zugang-Plattform (ein Code pro Gast, zeitlich begrenzt). Bei Bedarf kontaktieren Sie uns.",
+                                default => "Your access will be via a digital lock.\n\nCode delivery is pending integration with our access platform (unique code per guest and time window). If you need it, please contact us.",
+                            };
+
+                            $this->enviarMensajeTextoWhatsapp($phoneCliente, $mensajeDigital);
+
+                            // Marcar como enviado (para evitar reintentos infinitos) aunque la integración real llegue después
+                            MensajeAuto::create([
+                                'reserva_id' => $reserva->id,
+                                'cliente_id' => $reserva->cliente_id,
+                                'categoria_id' => 3,
+                                'fecha_envio' => Carbon::now(),
+                            ]);
+
+                            Log::info('🔐 ACCESO DIGITAL - mensaje placeholder enviado', [
+                                'reserva_id' => $reserva->id,
+                                'apartamento_id' => $reserva->apartamento_id,
+                                'telefono_cliente' => $phoneCliente,
+                                'idioma' => $idiomaCliente,
+                            ]);
+
+                            continue;
+                        }
+
+                        Log::info('📤 INICIANDO ENVÍO DE MENSAJE DE CLAVES', [
+                            'reserva_id' => $reserva->id,
+                            'apartamento_id' => $reserva->apartamento_id,
+                            'telefono_cliente' => $phoneCliente,
+                            'idioma' => $idiomaCliente,
+                            'es_atico' => $reserva->apartamento_id === 1
+                        ]);
 
                         if ($reserva->apartamento_id === 1) {
                             $data = $this->clavesMensajeAtico(
@@ -407,6 +567,29 @@ class Kernel extends ConsoleKernel
 
                         }
 
+                        // Verificar respuesta del envío
+                        if ($data) {
+                            $responseData = json_decode($data, true);
+                            if (isset($responseData['messages'][0]['id'])) {
+                                Log::info('✅ Mensaje de claves enviado correctamente', [
+                                    'reserva_id' => $reserva->id,
+                                    'message_id' => $responseData['messages'][0]['id'],
+                                    'telefono' => $phoneCliente
+                                ]);
+                            } else {
+                                Log::error('❌ Error en respuesta de envío de claves', [
+                                    'reserva_id' => $reserva->id,
+                                    'telefono' => $phoneCliente,
+                                    'response' => substr($data, 0, 500)
+                                ]);
+                            }
+                        } else {
+                            Log::error('❌ No se recibió respuesta del envío de claves', [
+                                'reserva_id' => $reserva->id,
+                                'telefono' => $phoneCliente
+                            ]);
+                        }
+
                         // Creamos la data para guardar el mensaje
                         $dataMensaje = [
                             'reserva_id' => $reserva->id,
@@ -417,6 +600,8 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeClaves después de crearlo para el siguiente check
+                        $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 3)->first();
 
                         if ($reserva->apartamento_id === 1) {
                             $mensaje = $this->clavesEmailAtico(
@@ -478,38 +663,51 @@ class Kernel extends ConsoleKernel
                             );
                         }
 
-                                                // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
-                            try {
-                                // Crear mensaje específico para el chat
-                                $datosClaves = [
-                                    'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
-                                    'apartamento' => $reserva->apartamento->titulo,
-                                    'claveEntrada' => $reserva->apartamento->edificioName->clave,
-                                    'clavePiso' => $reserva->apartamento->claves,
-                                    'url' => $apartamentoReservado->edificio == 1 ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9' : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
-                                ];
+                        // Si la reserva NO es de la web, enviar también al chat de Channex
+                        Log::info('🔍 VERIFICANDO ENVÍO DE CLAVES POR CHANNEX - Inicio', [
+                            'reserva_id' => $reserva->id,
+                            'codigo_reserva' => $reserva->codigo_reserva,
+                            'origen' => $reserva->origen,
+                            'origen_es_web' => $reserva->origen === 'web',
+                            'id_channex' => $reserva->id_channex,
+                            'id_channex_vacio' => empty($reserva->id_channex),
+                            'condicion_origen' => $reserva->origen !== 'web',
+                            'condicion_id_channex' => !empty($reserva->id_channex),
+                            'condicion_completa' => ($reserva->origen !== 'web' && !empty($reserva->id_channex))
+                        ]);
 
-                                Log::info('Datos para mensaje de claves:', $datosClaves);
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
+                            Log::info('✅ ENTRANDO EN ENVÍO DE CLAVES POR CHANNEX', [
+                                'reserva_id' => $reserva->id,
+                                'codigo_reserva' => $reserva->codigo_reserva,
+                                'id_channex' => $reserva->id_channex,
+                                'idioma_cliente' => $idiomaCliente,
+                                'apartamento_id' => $apartamentoReservado->id ?? null,
+                                'apartamento_titulo' => $apartamentoReservado->titulo ?? null
+                            ]);
 
-                                $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+                            // Usar el método helper para enviar claves por Channex
+                            $resultadoEnvio = $this->enviarClavesPorChannex($reserva, $idiomaCliente, $apartamentoReservado);
 
-                                Log::info('Mensaje de chat creado:', ['mensaje' => $mensajeChat]);
-
-                                // Enviar al chat de Channex usando el bookingId
-                                $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
-                                    $mensajeChat,
-                                    $reserva->id_channex
-                                );
-
-                                Log::info('Resultado envío a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
-                            } catch (\Exception $e) {
-                                Log::error('Error al enviar mensaje de claves al chat:', [
-                                    'error' => $e->getMessage(),
-                                    'reserva_id' => $reserva->id,
-                                    'booking_id' => $reserva->codigo_reserva
-                                ]);
-                            }
+                            Log::info('📤 RESULTADO DEL ENVÍO DE CLAVES POR CHANNEX', [
+                                'reserva_id' => $reserva->id,
+                                'codigo_reserva' => $reserva->codigo_reserva,
+                                'id_channex' => $reserva->id_channex,
+                                'resultado' => $resultadoEnvio,
+                                'resultado_tipo' => gettype($resultadoEnvio),
+                                'resultado_booleano' => $resultadoEnvio === true ? 'true' : ($resultadoEnvio === false ? 'false' : 'otro'),
+                                'enviado_exitosamente' => $resultadoEnvio === true
+                            ]);
+                        } else {
+                            Log::warning('❌ NO SE ENVÍA CLAVES POR CHANNEX - Condición no cumplida', [
+                                'reserva_id' => $reserva->id,
+                                'codigo_reserva' => $reserva->codigo_reserva,
+                                'origen' => $reserva->origen,
+                                'origen_es_web' => $reserva->origen === 'web',
+                                'id_channex' => $reserva->id_channex,
+                                'id_channex_vacio' => empty($reserva->id_channex),
+                                'razon_no_envio' => $reserva->origen === 'web' ? 'Reserva es de la web' : 'Falta id_channex'
+                            ]);
                         }
 
                     }
@@ -535,8 +733,11 @@ class Kernel extends ConsoleKernel
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
 
+                        // 🔄 Refrescar mensajeConsulta después de crearlo para el siguiente check
+                        $mensajeConsulta = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 5)->first();
+
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             try {
                                 $datosConsulta = [
                                     'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
@@ -546,10 +747,10 @@ class Kernel extends ConsoleKernel
 
                                 $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                     $mensajeChat,
-                                    $reserva->codigo_reserva
+                                    $reserva->id_channex
                                 );
 
-                                Log::info('Mensaje de consulta enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->codigo_reserva]);
+                                Log::info('Mensaje de consulta enviado a Channex:', ['resultado' => $resultado, 'booking_id' => $reserva->id_channex]);
                             } catch (\Exception $e) {
                                 Log::error('Error al enviar mensaje de consulta al chat:', [
                                     'error' => $e->getMessage(),
@@ -563,7 +764,8 @@ class Kernel extends ConsoleKernel
 
                 // MENSAJE DE OCIO
                 if ($diferenciasHoraOcio <= 0 && $mensajeConsulta != null && $mensajeOcio == null) {
-                    $tiempoDesdeConsulta = $mensajeClaves->created_at->diffInMinutes(Carbon::now());
+                    // 🔄 BUG FIX: Usar mensajeConsulta en lugar de mensajeClaves
+                    $tiempoDesdeConsulta = $mensajeConsulta->created_at->diffInMinutes(Carbon::now());
                     if ($tiempoDesdeConsulta >= 1) {
                         // Obtenemos codigo de idioma
                         $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad);
@@ -580,6 +782,9 @@ class Kernel extends ConsoleKernel
                         ];
                         // Creamos el mensaje
                         MensajeAuto::create($dataMensaje);
+
+                        // 🔄 Refrescar mensajeOcio después de crearlo para el siguiente check
+                        $mensajeOcio = MensajeAuto::where('reserva_id', $reserva->id)->where('categoria_id', 6)->first();
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
                         if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
@@ -618,8 +823,8 @@ class Kernel extends ConsoleKernel
             $hoy = Carbon::now();
 
             $reservas = Reserva::whereDate('fecha_salida', '=', date('Y-m-d'))
-            /* ->where('dni_entregado', '!=', null) */
             ->get();
+            /* ->where('dni_entregado', '!=', null) */
 
             foreach($reservas as $reserva){
                 // Fecha de Hoy
@@ -656,7 +861,7 @@ class Kernel extends ConsoleKernel
                         MensajeAuto::create($dataMensaje);
 
                         // Si la reserva NO es de la web, enviar también al chat de Channex
-                        if ($reserva->origen !== 'web' && !empty($reserva->codigo_reserva)) {
+                        if ($reserva->origen !== 'web' && !empty($reserva->id_channex)) {
                             $datosDespedida = [
                                 'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias
                             ];
@@ -665,7 +870,7 @@ class Kernel extends ConsoleKernel
 
                             \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
                                 $mensajeChat,
-                                $reserva->codigo_reserva
+                                $reserva->id_channex
                             );
                         }
 
@@ -702,6 +907,64 @@ class Kernel extends ConsoleKernel
 
         // })->everyMinute();
 
+    }
+
+    private function enviarMensajeTextoWhatsapp(string $telefono, string $texto): ?string
+    {
+        $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+        $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $telefono,
+            'type' => 'text',
+            'text' => [
+                'preview_url' => true,
+                'body' => $texto,
+            ],
+        ];
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $urlMensajes,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $tokenEnv,
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de texto", [
+                'telefono' => $telefono,
+                'error' => $curlError,
+            ]);
+            return null;
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            Log::error("❌ Error al enviar mensaje de texto", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response,
+            ]);
+            return null;
+        }
+
+        return $response;
     }
 
     /**
@@ -1177,8 +1440,14 @@ class Kernel extends ConsoleKernel
         return $response;
     }
 
-    public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en'){
+    public function bienvenidoMensaje($nombre, $telefono, $idioma = 'en', $tokenReserva = null){
         $tokenEnv = env('TOKEN_WHATSAPP', 'valorPorDefecto');
+
+        // Generar URL del botón con el token de la reserva
+        $urlDNI = null;
+        if ($tokenReserva) {
+            $urlDNI = 'https://crm.apartamentosalgeciras.com/dni-user/' . $tokenReserva;
+        }
 
         $mensajePersonalizado = [
             "messaging_product" => "whatsapp",
@@ -1199,7 +1468,30 @@ class Kernel extends ConsoleKernel
             ],
         ];
 
+        // Agregar botón con URL dinámica si hay token de reserva
+        if ($urlDNI) {
+            $mensajePersonalizado["template"]["components"][] = [
+                "type" => "button",
+                "sub_type" => "url",
+                "index" => 0,
+                "parameters" => [
+                    [
+                        "type" => "text",
+                        "text" => $urlDNI
+                    ]
+                ]
+            ];
+        }
+
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
+
+        Log::info("📤 Enviando mensaje de bienvenida automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'idioma' => $idioma,
+            'token_reserva' => $tokenReserva,
+            'url_dni' => $urlDNI
+        ]);
 
         $curl = curl_init();
 
@@ -1221,8 +1513,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de bienvenida", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de bienvenida enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de bienvenida", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1264,6 +1582,13 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de claves automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'apartamento' => $apartamento,
+            'idioma' => $idioma
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1284,8 +1609,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de claves", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de claves enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de claves", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1328,6 +1679,14 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de claves (ático) automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'apartamento' => $apartamento,
+            'idioma' => $idioma,
+            'template' => $template
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1348,8 +1707,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de claves (ático)", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de claves (ático) enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de claves (ático)", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1377,6 +1762,12 @@ class Kernel extends ConsoleKernel
 
         $urlMensajes = 'https://graph.facebook.com/v16.0/102360642838173/messages';
 
+        Log::info("📤 Enviando mensaje de consulta automático", [
+            'telefono' => $telefono,
+            'nombre' => $nombre,
+            'idioma' => $idioma
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -1397,8 +1788,34 @@ class Kernel extends ConsoleKernel
         ));
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
         curl_close($curl);
-        // $responseJson = json_decode($response);
+
+        if ($curlError) {
+            Log::error("❌ Error de cURL al enviar mensaje de consulta", [
+                'telefono' => $telefono,
+                'error' => $curlError
+            ]);
+            return $response;
+        }
+
+        $responseJson = json_decode($response, true);
+
+        if ($httpCode >= 200 && $httpCode < 300 && isset($responseJson['messages'][0]['id'])) {
+            Log::info("✅ Mensaje de consulta enviado exitosamente", [
+                'telefono' => $telefono,
+                'message_id' => $responseJson['messages'][0]['id'],
+                'http_code' => $httpCode
+            ]);
+        } else {
+            Log::error("❌ Error al enviar mensaje de consulta", [
+                'telefono' => $telefono,
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+        }
+
         return $response;
     }
 
@@ -1714,16 +2131,16 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
+                Bonjour '.$cliente.'!! L\'emplacement des appartements est: <a class="btn btn-primary" href="'.$enlace.'">'.$enlace.'</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l\'appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
                 </p>
                 <p style="margin: 0 !important">
-                    J’espère que vous passerez un séjour merveilleux.
+                    J\'espère que vous passerez un séjour merveilleux.
                 </p>
                 <br>
-                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                <p style="margin: 0 !important">Merci d\'utiliser notre application!</p>
                 ';
 
                 return $temaplate;
@@ -1878,16 +2295,16 @@ class Kernel extends ConsoleKernel
                 </h3>
 
                 <p style="margin: 0 !important">
-                Bonjour '.$cliente.'!! L’emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Allez sur Google Map</a>.
+                Bonjour '.$cliente.'!! L\'emplacement des appartements est: <a class="btn btn-primary" href="https://goo.gl/maps/qb7AxP1JAxx5yg3N9">Allez sur Google Map</a>.
                 </p>
                 <p style="margin: 0 !important">
-                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l’appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
+                    Votre appartement est le '.$apartamento.', les codes pour entrer dans l\'appartement sont : Pour la porte principale '.$claveEntrada.' et pour la porte de votre appartement '.$clavePiso.'.
                 </p>
                 <p style="margin: 0 !important">
-                    J’espère que vous passerez un séjour merveilleux.
+                    J\'espère que vous passerez un séjour merveilleux.
                 </p>
                 <br>
-                <p style="margin: 0 !important">Merci d’utiliser notre application!</p>
+                <p style="margin: 0 !important">Merci d\'utiliser notre application!</p>
                 ';
 
                 return $temaplate;
@@ -2089,6 +2506,337 @@ class Kernel extends ConsoleKernel
            $formattedNumber = str_pad($incrementedNumber, 2, '0', STR_PAD_LEFT);
            // Concatena con la cadena "temp_"
            return "delete_" . $formattedNumber;
+       }
+   }
+
+   /**
+    * Envía las claves del apartamento por Channex cuando se crea una reserva nueva después de las 14:00
+    * Método estático que puede ser llamado desde cualquier lugar
+    *
+    * @param Reserva $reserva
+    * @return bool
+    */
+   public static function enviarClavesPorChannexSiEsNecesario($reserva)
+   {
+       try {
+           // 🔄 Refrescar la reserva para obtener datos actualizados (especialmente dni_entregado)
+           $reserva->refresh();
+
+           // Solo procesar si:
+           // 1. NO es de la web
+           // 2. Tiene id_channex
+           // 3. Es de hoy (fecha_entrada = hoy)
+           // 4. Son más de las 14:00
+           // 5. Tiene mensaje de bienvenida
+           if ($reserva->origen === 'web' || empty($reserva->id_channex)) {
+               return false;
+           }
+
+           $fechaHoy = Carbon::now()->format('Y-m-d');
+           $horaActual = Carbon::now()->hour;
+
+           // Verificar que sea de hoy
+           if ($reserva->fecha_entrada != $fechaHoy) {
+               return false;
+           }
+
+           // Verificar que sean más de las 14:00
+           if ($horaActual < 14) {
+               return false;
+           }
+
+           // Verificar que tenga mensaje de bienvenida
+           $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)
+               ->where('categoria_id', 4)
+               ->first();
+
+           if (!$mensajeBienvenida) {
+               Log::info('No se puede enviar claves por Channex: falta mensaje de bienvenida', [
+                   'reserva_id' => $reserva->id
+               ]);
+               return false;
+           }
+
+           // Verificar que el DNI esté subido antes de enviar las claves
+           if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+               Log::info('No se puede enviar claves por Channex: el DNI no ha sido subido', [
+                   'reserva_id' => $reserva->id,
+                   'dni_entregado' => $reserva->dni_entregado,
+                   'dni_entregado_tipo' => gettype($reserva->dni_entregado)
+               ]);
+               return false;
+           }
+
+           // Verificar que no se hayan enviado ya las claves
+           $mensajeClaves = MensajeAuto::where('reserva_id', $reserva->id)
+               ->where('categoria_id', 3)
+               ->first();
+
+           if ($mensajeClaves) {
+               Log::info('Las claves ya fueron enviadas por Channex', [
+                   'reserva_id' => $reserva->id
+               ]);
+               return false;
+           }
+
+           // Cargar relaciones necesarias
+           $reserva->load(['cliente', 'apartamento.edificioName']);
+
+           if (!$reserva->apartamento) {
+               Log::warning('No se puede enviar claves por Channex: apartamento no encontrado', [
+                   'reserva_id' => $reserva->id
+               ]);
+               return false;
+           }
+
+           $clienteService = app(ClienteService::class);
+           $idiomaCliente = $clienteService->idiomaCodigo($reserva->cliente->nacionalidad ?? 'ES');
+
+           // Preparar datos para el mensaje de claves
+           $datosClaves = [
+               'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
+               'apartamento' => $reserva->apartamento->titulo,
+               'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
+               'clavePiso' => $reserva->apartamento->claves ?? '',
+               'url' => $reserva->apartamento->edificio == 1
+                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9'
+                   : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
+           ];
+
+           // Crear mensaje de chat
+           $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+
+           Log::info('Enviando claves por Channex para reserva nueva después de las 14:00', [
+               'reserva_id' => $reserva->id,
+               'id_channex' => $reserva->id_channex,
+               'codigo_reserva' => $reserva->codigo_reserva,
+               'origen' => $reserva->origen,
+               'idioma' => $idiomaCliente,
+               'hora_actual' => $horaActual
+           ]);
+
+           // Enviar al chat de Channex usando el id_channex
+           $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+               $mensajeChat,
+               $reserva->id_channex
+           );
+
+           if ($resultado) {
+               // Crear registro de mensaje enviado
+               MensajeAuto::updateOrCreate(
+                   [
+                       'reserva_id' => $reserva->id,
+                       'categoria_id' => 3, // Mensaje de claves
+                   ],
+                   [
+                       'cliente_id' => $reserva->cliente_id,
+                       'fecha_envio' => Carbon::now()
+                   ]
+               );
+
+               Log::info('Claves enviadas exitosamente por Channex para reserva nueva', [
+                   'reserva_id' => $reserva->id,
+                   'id_channex' => $reserva->id_channex,
+                   'codigo_reserva' => $reserva->codigo_reserva
+               ]);
+
+               return true;
+           } else {
+               Log::error('Error al enviar claves por Channex para reserva nueva', [
+                   'reserva_id' => $reserva->id,
+                   'id_channex' => $reserva->id_channex,
+                   'codigo_reserva' => $reserva->codigo_reserva
+               ]);
+               return false;
+           }
+
+       } catch (\Exception $e) {
+           Log::error('Excepción al enviar claves por Channex para reserva nueva', [
+               'reserva_id' => $reserva->id ?? null,
+               'error' => $e->getMessage(),
+               'trace' => $e->getTraceAsString(),
+           ]);
+           return false;
+       }
+   }
+
+   /**
+    * Envía las claves del apartamento por Channex usando la misma lógica que el comando
+    *
+    * @param Reserva $reserva
+    * @param string $idiomaCliente
+    * @param Apartamento $apartamentoReservado
+    * @return bool
+    */
+   private function enviarClavesPorChannex($reserva, $idiomaCliente, $apartamentoReservado)
+   {
+       Log::info('🚀 MÉTODO enviarClavesPorChannex - Inicio', [
+           'reserva_id' => $reserva->id,
+           'codigo_reserva' => $reserva->codigo_reserva,
+           'id_channex' => $reserva->id_channex,
+           'idioma_cliente' => $idiomaCliente,
+           'apartamento_id' => $apartamentoReservado->id ?? null
+       ]);
+
+       try {
+           // Verificar que tenga id_channex
+           Log::info('🔍 Verificando id_channex', [
+               'reserva_id' => $reserva->id,
+               'id_channex' => $reserva->id_channex,
+               'id_channex_vacio' => empty($reserva->id_channex),
+               'id_channex_tipo' => gettype($reserva->id_channex)
+           ]);
+
+           if (empty($reserva->id_channex)) {
+               Log::warning('❌ No se puede enviar claves por Channex: falta id_channex', [
+                   'reserva_id' => $reserva->id,
+                   'codigo_reserva' => $reserva->codigo_reserva
+               ]);
+               return false;
+           }
+
+           // Verificar que tenga mensaje de bienvenida
+           Log::info('🔍 Verificando mensaje de bienvenida', [
+               'reserva_id' => $reserva->id
+           ]);
+
+           $mensajeBienvenida = MensajeAuto::where('reserva_id', $reserva->id)
+               ->where('categoria_id', 4)
+               ->first();
+
+           if (!$mensajeBienvenida) {
+               Log::warning('❌ No se puede enviar claves por Channex: falta mensaje de bienvenida', [
+                   'reserva_id' => $reserva->id,
+                   'codigo_reserva' => $reserva->codigo_reserva,
+                   'categoria_buscada' => 4
+               ]);
+               return false;
+           }
+
+           Log::info('✅ Mensaje de bienvenida encontrado', [
+               'reserva_id' => $reserva->id,
+               'mensaje_bienvenida_id' => $mensajeBienvenida->id,
+               'fecha_envio_bienvenida' => $mensajeBienvenida->fecha_envio ?? null
+           ]);
+
+           // Verificar que el DNI esté subido antes de enviar las claves
+           Log::info('🔍 Verificando DNI entregado', [
+               'reserva_id' => $reserva->id,
+               'dni_entregado' => $reserva->dni_entregado,
+               'dni_entregado_tipo' => gettype($reserva->dni_entregado),
+               'dni_entregado_es_true' => $reserva->dni_entregado === true,
+               'dni_entregado_es_1' => $reserva->dni_entregado == 1
+           ]);
+
+           if (empty($reserva->dni_entregado) || $reserva->dni_entregado != true) {
+               Log::warning('❌ No se puede enviar claves por Channex: el DNI no ha sido subido', [
+                   'reserva_id' => $reserva->id,
+                   'codigo_reserva' => $reserva->codigo_reserva,
+                   'dni_entregado' => $reserva->dni_entregado,
+                   'dni_entregado_tipo' => gettype($reserva->dni_entregado)
+               ]);
+               return false;
+           }
+
+           Log::info('✅ DNI entregado verificado correctamente', [
+               'reserva_id' => $reserva->id
+           ]);
+
+           // Preparar datos para el mensaje de claves
+           $datosClaves = [
+               'nombre' => $reserva->cliente->nombre ?? $reserva->cliente->alias,
+               'apartamento' => $reserva->apartamento->titulo,
+               'claveEntrada' => $reserva->apartamento->edificioName->clave ?? '',
+               'clavePiso' => $reserva->apartamento->claves ?? '',
+               'url' => $apartamentoReservado->edificio == 1
+                   ? 'https://goo.gl/maps/qb7AxP1JAxx5yg3N9'
+                   : 'https://maps.app.goo.gl/t81tgLXnNYxKFGW4A'
+           ];
+
+           // Crear mensaje de chat
+           $mensajeChat = \App\Http\Controllers\WebhookController::crearMensajeChat('claves', $datosClaves, $idiomaCliente);
+
+           Log::info('Enviando mensaje de claves por Channex desde Kernel', [
+               'reserva_id' => $reserva->id,
+               'id_channex' => $reserva->id_channex,
+               'codigo_reserva' => $reserva->codigo_reserva,
+               'origen' => $reserva->origen,
+               'idioma' => $idiomaCliente,
+               'datos_claves' => $datosClaves
+           ]);
+
+           // Enviar al chat de Channex usando el id_channex (booking ID de Channex)
+           Log::info('📤 Llamando a enviarMensajeAutomaticoAChannex', [
+               'reserva_id' => $reserva->id,
+               'id_channex' => $reserva->id_channex,
+               'mensaje_length' => strlen($mensajeChat),
+               'mensaje_preview' => substr($mensajeChat, 0, 150)
+           ]);
+
+           $resultado = \App\Http\Controllers\WebhookController::enviarMensajeAutomaticoAChannex(
+               $mensajeChat,
+               $reserva->id_channex
+           );
+
+           Log::info('📥 RESULTADO de enviarMensajeAutomaticoAChannex', [
+               'reserva_id' => $reserva->id,
+               'id_channex' => $reserva->id_channex,
+               'codigo_reserva' => $reserva->codigo_reserva,
+               'resultado' => $resultado,
+               'resultado_tipo' => gettype($resultado),
+               'resultado_es_true' => $resultado === true,
+               'resultado_es_false' => $resultado === false,
+               'resultado_booleano' => $resultado === true ? 'true' : ($resultado === false ? 'false' : 'otro')
+           ]);
+
+           if ($resultado) {
+               // Crear o actualizar registro de mensaje enviado
+               Log::info('💾 Guardando registro de mensaje enviado en MensajeAuto', [
+                   'reserva_id' => $reserva->id,
+                   'categoria_id' => 3
+               ]);
+
+               $mensajeAuto = MensajeAuto::updateOrCreate(
+                   [
+                       'reserva_id' => $reserva->id,
+                       'categoria_id' => 3, // Mensaje de claves
+                   ],
+                   [
+                       'cliente_id' => $reserva->cliente_id,
+                       'fecha_envio' => Carbon::now()
+                   ]
+               );
+
+               Log::info('✅ Mensaje de claves enviado exitosamente por Channex desde Kernel', [
+                   'reserva_id' => $reserva->id,
+                   'id_channex' => $reserva->id_channex,
+                   'codigo_reserva' => $reserva->codigo_reserva,
+                   'mensaje_auto_id' => $mensajeAuto->id,
+                   'fecha_envio' => $mensajeAuto->fecha_envio
+               ]);
+
+               return true;
+           } else {
+               Log::error('Error al enviar mensaje de claves por Channex desde Kernel', [
+                   'reserva_id' => $reserva->id,
+                   'id_channex' => $reserva->id_channex,
+                   'codigo_reserva' => $reserva->codigo_reserva,
+                   'resultado' => $resultado
+               ]);
+               return false;
+           }
+
+       } catch (\Exception $e) {
+           Log::error('❌ EXCEPCIÓN en enviarClavesPorChannex', [
+               'reserva_id' => $reserva->id ?? null,
+               'codigo_reserva' => $reserva->codigo_reserva ?? null,
+               'id_channex' => $reserva->id_channex ?? null,
+               'error' => $e->getMessage(),
+               'error_file' => $e->getFile(),
+               'error_line' => $e->getLine(),
+               'trace' => $e->getTraceAsString(),
+           ]);
+           return false;
        }
    }
 

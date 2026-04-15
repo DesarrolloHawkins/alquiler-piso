@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
+        '/login',
         '/agregar-reserva',
         '/comprobar-reserva/*',
 		'/verificar-reserva/*',
@@ -42,6 +43,7 @@ class VerifyCsrfToken extends Middleware
         '/channex/property',
         '/webhook-handler',
         '/dormitorio-store/*',
-        '/channex/full-sync'
+        '/channex/full-sync',
+        '/webhooks/stripe'
     ];
 }

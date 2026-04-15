@@ -19,14 +19,39 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Rutas para proxy de IA Ollama (sin CSRF)
+Route::get('/ollama-proxy/health', [App\Http\Controllers\OllamaProxyController::class, 'health']);
+Route::post('/ollama-proxy/analyze-image', [App\Http\Controllers\OllamaProxyController::class, 'analyzeImage']);
+
+// WhatsApp Tools API Routes
+Route::prefix('whatsapp-tools')->group(function () {
+    Route::post('/obtener-claves', [App\Http\Controllers\Api\WhatsappToolsController::class, 'obtenerClaves']);
+    Route::post('/notificar-tecnico', [App\Http\Controllers\Api\WhatsappToolsController::class, 'notificarTecnico']);
+    Route::post('/notificar-limpieza', [App\Http\Controllers\Api\WhatsappToolsController::class, 'notificarLimpieza']);
+    Route::post('/verificar-disponibilidad', [App\Http\Controllers\Api\WhatsappToolsController::class, 'verificarDisponibilidad']);
+    Route::post('/verificar-reserva', [App\Http\Controllers\Api\WhatsappToolsController::class, 'verificarReserva']);
+});
 Route::post('/obtener-reservas-hoy', [App\Http\Controllers\Api\ApiController::class, 'obtenerReservasHoy'])->name('obtenerReservasHoy');
 Route::get('/obtener-apartamentos', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentos'])->name('obtenerApartamentos');
 Route::get('/obtener-apartamentos-disponibles', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentosDisponibles'])->name('obtenerApartamentosDisponibles');
 Route::post('/averias-tecnico', [App\Http\Controllers\Api\ApiController::class, 'averiasTecnico'])->name('averiasTecnico');
 Route::post('/equipo-limpieza', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
-Route::post('/apartamentos-disponibles', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('equipoLimpieza');
+Route::post('/apartamentos-disponibles', [App\Http\Controllers\Api\ApiController::class, 'equipoLimpieza'])->name('apartamentosDisponibles');
 Route::post('/agregar-compra-reserva', [App\Http\Controllers\Api\ApiController::class, 'agregarCompraReserva'])->name('agregarCompraReserva');
 Route::post('/agregar-reserva', [App\Http\Controllers\ReservasController::class, 'agregarReserva'])->name('api.reserva.agregar');
+
+// Edificios para integraciones externas
+Route::get('/edificios', [App\Http\Controllers\Api\ApiController::class, 'obtenerEdificios'])
+    ->name('api.edificios.index');
+
+// Apartamentos activos en Channex (id_channex no nulo)
+Route::get('/apartamentos', [App\Http\Controllers\Api\ApiController::class, 'obtenerApartamentosChannex'])
+    ->name('api.apartamentos.index');
+
+// Reservas para integraciones externas (con filtros)
+Route::get('/reservas', [App\Http\Controllers\Api\ApiController::class, 'obtenerReservas'])
+    ->name('api.reservas.index');
 
 Route::get('/room-types/{propertyId}', [RatePlanController::class, 'getRoomTypes']);
 
@@ -39,7 +64,7 @@ Route::post('/modification-booking', [App\Http\Controllers\ChannexController::cl
 Route::post('/cancellation-booking', [App\Http\Controllers\ChannexController::class, 'cancellationBooking'])->name('channex.cancellationBooking');
 Route::post('/channel-sync-error', [App\Http\Controllers\ChannexController::class, 'channelSyncError'])->name('channex.channelSyncError');
 Route::post('/reservation-request', [App\Http\Controllers\ChannexController::class, 'reservationRequest'])->name('channex.reservationRequest');
-Route::post('/booking-unamapped-room', [App\Http\Controllers\ChannexController::class, 'bookingUnamappedRoom'])->name('channex.webhook');
+Route::post('/booking-unamapped-room', [App\Http\Controllers\ChannexController::class, 'bookingUnamappedRoom'])->name('channex.bookingUnamappedRoom');
 Route::post('/booking-unamapped-rate', [App\Http\Controllers\ChannexController::class, 'bookingUnamappedRate'])->name('channex.bookingUnamappedRate');
 Route::post('/sync-warning', [App\Http\Controllers\ChannexController::class, 'syncWarning'])->name('channex.syncWarning');
 Route::post('/new-message', [App\Http\Controllers\ChannexController::class, 'newMessage'])->name('channex.newMessage');
@@ -67,3 +92,8 @@ Route::prefix('/webhooks')->group(function () {
 });
 
 Route::post('/fotos-cocina-store/{id}/{cat}', [App\Http\Controllers\PhotoController::class, 'store'])->name('fotos.cocina-store');
+
+// Análisis de fotos con OpenAI
+Route::post('/analyze-photo', [App\Http\Controllers\Api\PhotoAnalysisController::class, 'analyzePhoto'])->name('api.analyze-photo');
+Route::post('/mark-responsibility', [App\Http\Controllers\Api\ResponsibilityController::class, 'markResponsibility'])->name('api.mark-responsibility');
+Route::get('/photo-analysis/{id}', [App\Http\Controllers\Api\PhotoAnalysisDetailController::class, 'show'])->name('api.photo-analysis.show');

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\DNIStoreRequest;
 
 class DNIController extends Controller
 {
@@ -270,24 +271,47 @@ class DNIController extends Controller
 
         $id = $reserva->id;
         if ($reserva->numero_personas > 0) {
-            if($reserva->dni_entregado == true){
+            if($reserva->dni_entregado === true){
                 return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
             }
         }
 
         $data = [];
+        
+        // Inicializar array con objetos vacíos para evitar errores de índice
+        for ($i = 0; $i < ($reserva->numero_personas ?? 1); $i++) {
+            $data[$i] = (object) [
+                'nombre' => '',
+                'primer_apellido' => '',
+                'apellido1' => '',
+                'segundo_apellido' => '',
+                'apellido2' => '',
+                'fecha_nacimiento' => '',
+                'nacionalidad' => '',
+                'tipo_documento' => '',
+                'num_identificacion' => '',
+                'numero_identificacion' => '',
+                'fecha_expedicion' => '',
+                'fecha_expedicion_doc' => '',
+                'sexo' => '',
+                'email' => ''
+            ];
+        }
+        
         if($cliente != null){
+            // Convertir el tipo_documento numérico a letra para el formulario
+            $cliente->tipo_documento = $this->obtenerTipoDocumentoFromNumber($cliente->tipo_documento);
 
-            if ($cliente->tipo_documento == 1) {
+            if ($cliente->tipo_documento == 'D') {
                 $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 13)->first();
                 $cliente['frontal'] = $photoFrontal;
                 $photoTrasera = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 14)->first();
                 $cliente['trasera'] = $photoTrasera;
-                array_push($data, $cliente);
+                $data[0] = $cliente;
             } else {
                 $photoFrontal = Photo::where('cliente_id', $cliente->id)->where('photo_categoria_id', 15)->first();
                 $cliente['pasaporte'] = $photoFrontal;
-                array_push($data, $cliente);
+                $data[0] = $cliente;
             }
 
         }
@@ -296,16 +320,19 @@ class DNIController extends Controller
 
         if (count($huespedes)>0) {
             foreach($huespedes as $huesped){
-                if ($huesped->tipo_documento == 1) {
+                // Convertir el tipo_documento numérico a letra para el formulario
+                $huesped->tipo_documento = $this->obtenerTipoDocumentoFromNumber($huesped->tipo_documento);
+                
+                if ($huesped->tipo_documento == 'D') {
                     $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 13)->first();
                     $huesped['frontal'] = $photoFrontal;
                     $photoTrasera = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 14)->first();
                     $huesped['trasera'] = $photoTrasera;
-                    array_push($data, $huesped);
+                    $data[$huesped->contador] = $huesped;
                 } else {
                     $photoFrontal = Photo::where('huespedes_id', $huesped->id)->where('photo_categoria_id', 15)->first();
                     $huesped['pasaporte'] = $photoFrontal;
-                    array_push($data, $huesped);
+                    $data[$huesped->contador] = $huesped;
                 }
             }
         }
@@ -373,13 +400,23 @@ class DNIController extends Controller
         } else {
             // Si no existe el archivo, hacer la petición a chatGpt
             $traduccion = $this->chatGpt('Puedes traducirme este array al idioma '. $idiomaCliente.', manteniendo la propiedad y traduciendo solo el valor. contestame solo con el array traducido, no me expliques nada devuelve solo el json en formato texto donde no se envie como code, te adjunto el array: ' . json_encode($textos));
-            $textosTraducidos = json_decode($traduccion['messages']['choices'][0]['message']['content'], true);
+            $contenidoTraducido = data_get($traduccion, 'messages.choices.0.message.content');
+            $textosTraducidos = is_string($contenidoTraducido) ? json_decode($contenidoTraducido, true) : null;
 
-            // Guardar la traducción en un nuevo archivo
-            file_put_contents($path, json_encode($textosTraducidos));
+            if (!is_array($textosTraducidos)) {
+                \Log::warning('DNIController: respuesta de traduccion invalida desde OpenAI', [
+                    'idioma' => $idiomaCliente,
+                    'has_choices' => isset($traduccion['messages']['choices']),
+                    'response_keys' => is_array($traduccion['messages'] ?? null) ? array_keys($traduccion['messages']) : [],
+                ]);
+                $textosTraducidos = $textos;
+            } else {
+                // Guardar la traducción en un nuevo archivo si es válida
+                file_put_contents($path, json_encode($textosTraducidos));
+            }
         }
 
-        $textos = $textosTraducidos;
+        $textos = is_array($textosTraducidos) ? $textosTraducidos : $textos;
 
 
         $paisesEuropeos = [
@@ -649,7 +686,7 @@ class DNIController extends Controller
         ]);
 
         //dd($data);
-        return view('dni.index', compact('id', 'paises', 'reserva', 'cliente', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo'));
+        return view('dni.index', compact('id', 'paises', 'reserva', 'cliente', 'data', 'textos','paisCliente','paisesDni', 'optionesTipo', 'token'));
     }
 
     public function listadoPaises(){
@@ -1028,6 +1065,32 @@ class DNIController extends Controller
         }
     }
 
+    public function obtenerTipoDocumentoFromNumber($numero){
+        switch ($numero) {
+            case 1:
+                return "D"; // DNI
+                break;
+            case 2:
+                return "P"; // Pasaporte
+                break;
+            case 3:
+                return "C"; // Permiso conducir
+                break;
+            case 4:
+                return "X"; // Permiso residencia UE
+                break;
+            case 5:
+                return "N"; // NIE/TIE
+                break;
+            case 6:
+                return "I"; // ID extranjera
+                break;
+            default:
+                return "D"; // Por defecto DNI
+                break;
+        }
+    }
+
     public function obtenerNacionalidad($tipo){
         $paisesEuropeos = [
             "ALBANIA", "ALEMANIA", "AUSTRIA", "BELGICA", "BULGARIA",
@@ -1286,8 +1349,42 @@ class DNIController extends Controller
 
 
 
-    public function store(Request $request)
+    public function store(DNIStoreRequest $request)
     {
+        Log::info('=== INICIO PROCESO SUBIDA DNI ===');
+        Log::info('Request method:', ['method' => $request->method()]);
+        Log::info('Request URL:', ['url' => $request->fullUrl()]);
+        Log::info('Request data:', ['data' => $request->all()]);
+        Log::info('Files count:', ['count' => count($request->allFiles())]);
+        Log::info('Content-Type:', ['content_type' => $request->header('Content-Type')]);
+        Log::info('Content-Length:', ['content_length' => $request->header('Content-Length')]);
+        
+        // Debugging detallado de archivos
+        $allFiles = $request->allFiles();
+        Log::info('Archivos recibidos:', $allFiles);
+        
+        foreach ($allFiles as $key => $file) {
+            if (is_array($file)) {
+                foreach ($file as $index => $singleFile) {
+                    Log::info("Archivo $key[$index]:", [
+                        'name' => $singleFile->getClientOriginalName(),
+                        'size' => $singleFile->getSize(),
+                        'mime' => $singleFile->getMimeType(),
+                        'isValid' => $singleFile->isValid(),
+                        'error' => $singleFile->getError()
+                    ]);
+                }
+            } else {
+                Log::info("Archivo $key:", [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime' => $file->getMimeType(),
+                    'isValid' => $file->isValid(),
+                    'error' => $file->getError()
+                ]);
+            }
+        }
+        
         // dd($request->all());
 
         // Definir las reglas de validación
@@ -1316,8 +1413,10 @@ class DNIController extends Controller
         // }
 
         $reserva = Reserva:: find($request->id);
+        Log::info('Reserva encontrada:', ['id' => $reserva->id, 'numero_personas' => $reserva->numero_personas]);
 
         for ($i=0; $i < $reserva->numero_personas; $i++) {
+            Log::info("Procesando persona $i");
             if ($i == 0 ) {
                 // dd($request->input('nacionalidad_'.$i));
 
@@ -1335,9 +1434,17 @@ class DNIController extends Controller
                 $cliente->sexo = $request->input('sexo_'.$i);
                 $cliente->sexo_str = $request->input('sexo_'.$i) == "Masculino" ? "M" : "F";
                 $cliente->email = $request->input('email_'.$i);
-                $cliente->nacionalidadStr = $resultado['index'];
-                $cliente->nacionalidadCode = $resultado['value'];
-                // $cliente->data_dni = true;
+                
+                // Verificar si obtenerNacionalidad devolvió un resultado válido
+                if ($resultado && isset($resultado['index']) && isset($resultado['value'])) {
+                    $cliente->nacionalidadStr = $resultado['index'];
+                    $cliente->nacionalidadCode = $resultado['value'];
+                } else {
+                    // Si no se encuentra el país, usar el valor original
+                    $cliente->nacionalidadStr = $request->input('nacionalidad_'.$i);
+                    $cliente->nacionalidadCode = null;
+                }
+                $cliente->data_dni = true;
                 $cliente->save();
                 // $data = [
                 //     'jsonHiddenComunes'=> null,
@@ -1361,16 +1468,18 @@ class DNIController extends Controller
                 //     '_csrf' => $csrfToken
                 // ];
                 if ($request->input('tipo_documento_'.$i) != 'P') {
+                    Log::info("Procesando DNI para persona $i");
 
                     // Si tenemos imagen Frontal DNI
                     if($request->hasFile('fontal_'.$i)){
+                        Log::info("Archivo frontal encontrado para persona $i");
                         // Imagen Frontal DNI
                         $file = $request->file('fontal_'.$i);
                         // Guardamos la imagen
                         $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 13, 'FrontalDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
 
@@ -1393,7 +1502,7 @@ class DNIController extends Controller
                         $reponseImage = $this->guardarImagen($fileTrasera, $cliente, $reserva, 14, 'TraseraDNI', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
                     if ($request->input('tipo_documento_'.$i) != 'P') {
@@ -1415,7 +1524,7 @@ class DNIController extends Controller
                         $reponseImage = $this->guardarImagen($file, $cliente, $reserva, 15, 'Pasaporte', null);
                         // Si devuelve error
                         if (!$reponseImage) {
-                            return redirect(route('dni.index', $reserva->token))->with('alerta', 'Error a la hora de guardar la imagen intentelo mas tarde.');
+                            return $this->handleUploadError($reserva, 'frontal del DNI', $i === 0 ? 'huésped principal' : "acompañante {$i}");
                         }
                     }
                     if ($request->input('tipo_documento_'.$i) == 'P') {
@@ -1449,8 +1558,16 @@ class DNIController extends Controller
                     $huesped->pais = $request->input('pais'.$i);
                     $huesped->email = $request->input('email_'.$i);
                     $huesped->contador = $i;
-                    $huesped->nacionalidadStr = $resultadoHuesped['index'];
-                    $huesped->nacionalidadCode = $resultadoHuesped['value'];
+                    
+                    // Verificar si obtenerNacionalidad devolvió un resultado válido
+                    if ($resultadoHuesped && isset($resultadoHuesped['index']) && isset($resultadoHuesped['value'])) {
+                        $huesped->nacionalidadStr = $resultadoHuesped['index'];
+                        $huesped->nacionalidadCode = $resultadoHuesped['value'];
+                    } else {
+                        // Si no se encuentra el país, usar el valor original
+                        $huesped->nacionalidadStr = $request->input('nacionalidad_'.$i);
+                        $huesped->nacionalidadCode = null;
+                    }
                     $huesped->nacionalidad = $request->input('nacionalidad_'.$i);
                     $huesped->save();
                     // dd($huesped);
@@ -1547,11 +1664,18 @@ class DNIController extends Controller
                         'email'  => $request->input('email_'.$i),
                         'contador' => $i,
                         'reserva_id' => $reserva->id,
-                        'nacionalidadStr' => $resultadoHuesped['index'],
-                        'nacionalidadCode' => $resultadoHuesped['value'],
                         'nacionalidad' => $request->input('nacionalidad_'.$i)
-
                     ];
+                    
+                    // Verificar si obtenerNacionalidad devolvió un resultado válido
+                    if ($resultadoHuesped && isset($resultadoHuesped['index']) && isset($resultadoHuesped['value'])) {
+                        $huespedNew['nacionalidadStr'] = $resultadoHuesped['index'];
+                        $huespedNew['nacionalidadCode'] = $resultadoHuesped['value'];
+                    } else {
+                        // Si no se encuentra el país, usar el valor original
+                        $huespedNew['nacionalidadStr'] = $request->input('nacionalidad_'.$i);
+                        $huespedNew['nacionalidadCode'] = null;
+                    }
                     $huespedFinal = Huesped::create($huespedNew);
                     // dd($huespedNew);
 
@@ -1622,14 +1746,13 @@ class DNIController extends Controller
                 }
             }
         }
+        
+        Log::info("Actualizando estado de reserva y cliente");
         $reserva->dni_entregado = true;
         $reserva->save();
 
-        $cliente = Cliente::where('id', $reserva->cliente_id)->first();
-        $cliente->data_dni = true;
-        $cliente->save();
-
-        return redirect(route('dni.index', $reserva->token));
+        Log::info("=== FIN PROCESO SUBIDA DNI EXITOSO ===");
+        return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
     }
 
     public function dni($token){
@@ -1640,7 +1763,7 @@ class DNIController extends Controller
         $id = $reserva->id;
         // Comprobamos si el cliente relleno los datos principales
         if ($cliente->data_dni) {
-            return redirect(route('dni.index', $token));
+            return redirect(route('gracias.index', $cliente->idioma ? $cliente->idioma : 'es'));
         }
 
         // Cargar la URL de la imagen si existe
@@ -1659,44 +1782,113 @@ class DNIController extends Controller
         return view('dni.pasaporte', compact('id'));
     }
 
+    /**
+     * Manejar errores de subida de archivos de manera consistente
+     */
+    private function handleUploadError($reserva, $tipoImagen, $persona = '')
+    {
+        $mensaje = "Error al guardar la imagen {$tipoImagen}";
+        if ($persona) {
+            $mensaje .= " del {$persona}";
+        }
+        $mensaje .= ". Por favor, verifica que el archivo sea una imagen válida (JPEG, PNG, WEBP) y no supere los 5MB.";
+        
+        Log::error($mensaje);
+        return redirect(route('dni.index', $reserva->token))->with('alerta', $mensaje);
+    }
+
     public function guardarImagen($file, $cliente, $reserva, $categoria, $name, $huesped)
     {
-        // Imagen Frontal DNI
-        // dd($cliente);
-        // $file = $file->file('fontal_'.$i);
-        $imageName = time().'_'.$cliente->id.'_'.$name.'.'.$file->getClientOriginalExtension();
-        $file->move(public_path('imagesCliente'), $imageName);
+        Log::info('=== INICIO GUARDAR IMAGEN ===');
+        Log::info('File info:', [
+            'original_name' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'extension' => $file->getClientOriginalExtension()
+        ]);
+        
+        // Validaciones adicionales de seguridad
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            Log::error("Tipo MIME no permitido: " . $file->getMimeType());
+            return false;
+        }
+        
+        // Validar tamaño máximo (5MB)
+        $maxSize = 5 * 1024 * 1024; // 5MB en bytes
+        if ($file->getSize() > $maxSize) {
+            Log::error("Archivo demasiado grande: " . $file->getSize() . " bytes");
+            return false;
+        }
+        
+        // Validar que sea una imagen válida
+        if (!getimagesize($file->getPathname())) {
+            Log::error("Archivo no es una imagen válida");
+            return false;
+        }
+        
+        // Generar nombre único para evitar colisiones
+        $imageName = time().'_'.$cliente->id.'_'.$name.'_'.uniqid().'.'.$file->getClientOriginalExtension();
+        Log::info("Nombre de archivo generado: $imageName");
+        
+        try {
+            // Crear directorio si no existe
+            $uploadPath = public_path('imagesCliente');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            
+            // Comprimir imagen antes de guardar
+            $compressed = $this->comprimirImagen($file, $uploadPath, $imageName);
+            if (!$compressed) {
+                Log::error("Error comprimiendo imagen");
+                return false;
+            }
+            
+            Log::info("Imagen comprimida y guardada exitosamente: " . $uploadPath . '/' . $imageName);
+        } catch (\Exception $e) {
+            Log::error("Error procesando archivo: " . $e->getMessage());
+            return false;
+        }
 
         $imageUrl = 'imagesCliente/' . $imageName;
+        Log::info("URL de imagen: $imageUrl");
 
         if($huesped == true){
+            Log::info("Buscando imagen existente para huésped");
             $imagenExistente = Photo::where('reserva_id', $reserva->id)
             ->where('photo_categoria_id', $categoria)
             ->where('huespedes_id', $cliente->id)
             ->first();
         }else {
+            Log::info("Buscando imagen existente para cliente");
             $imagenExistente = Photo::where('reserva_id', $reserva->id)
             ->where('photo_categoria_id', $categoria)
             ->where('cliente_id', $cliente->id)
             ->first();
         }
+        
+        Log::info("Imagen existente encontrada:", $imagenExistente ? ['id' => $imagenExistente->id] : ['existe' => false]);
         // Verificar si ya existe una imagen para ese limpieza_id y photo_categoria_id
 
 
         if ($imagenExistente) {
+            Log::info("Actualizando imagen existente");
             // Si existe, borrar la imagen antigua del servidor
             $rutaImagenAntigua = public_path($imagenExistente->url);
 
             if (file_exists($rutaImagenAntigua)) {
                 unlink($rutaImagenAntigua);
+                Log::info("Imagen antigua eliminada");
             }
 
             // Actualizar la URL en la base de datos
             $imagenExistente->url = $imageUrl;
             $imagenExistente->save();
+            Log::info("Imagen actualizada en BD exitosamente");
             return true;
         } else {
-
+            Log::info("Creando nueva imagen en BD");
             // $cliente = Cliente::where('id', $reserva->cliente_id)->first();
             // Si no existe, guardar la nueva imagen
             $imagenes = new Photo;
@@ -1711,10 +1903,18 @@ class DNIController extends Controller
             }else {
                 $imagenes->cliente_id = $cliente->id;
             }
-            $imagenes->save();
-            return true;
+            
+            try {
+                $imagenes->save();
+                Log::info("Nueva imagen guardada en BD exitosamente");
+                return true;
+            } catch (\Exception $e) {
+                Log::error("Error guardando imagen en BD: " . $e->getMessage());
+                return false;
+            }
         }
 
+        Log::error("Error: llegó al final del método sin retornar");
         return false;
     }
 
@@ -1759,23 +1959,150 @@ class DNIController extends Controller
             'idioma_establecido' => true
         ]);
         
-        // Guardar el idioma en la sesión
+        // Guardar el idioma en la sesión (usar ambas claves para compatibilidad)
         session(['locale' => $idioma]);
+        session(['idioma' => $idioma]); // Mantener compatibilidad
         
         // Establecer el idioma para la aplicación
         App::setLocale($idioma);
         
+        // Forzar guardado de la sesión
+        session()->save();
+        
+        // Verificar que se guardó correctamente
+        $sessionLocale = session('locale');
+        $sessionIdioma = session('idioma');
+        
         \Log::info('Idioma cambiado exitosamente', [
             'cliente_id' => $cliente->id,
             'idioma' => $idioma,
-            'token' => $token
+            'token' => $token,
+            'session_locale' => $sessionLocale,
+            'session_idioma' => $sessionIdioma,
+            'app_locale' => \App::getLocale(),
+            'cliente_refreshed_idioma' => $cliente->fresh()->idioma
         ]);
         
         return response()->json([
             'success' => true, 
             'message' => 'Idioma cambiado correctamente',
-            'redirect' => route('dni.index', $token)
+            'redirect' => route('dni.scanner.index', $token),
+            'locale' => $idioma
         ]);
+    }
+
+    /**
+     * Comprimir imagen para reducir su tamaño
+     */
+    private function comprimirImagen($file, $uploadPath, $imageName)
+    {
+        try {
+            $mimeType = $file->getMimeType();
+            $filePath = $file->getPathname();
+            
+            // Obtener información de la imagen
+            $imageInfo = getimagesize($filePath);
+            if (!$imageInfo) {
+                Log::error("No se pudo obtener información de la imagen");
+                return false;
+            }
+            
+            $width = $imageInfo[0];
+            $height = $imageInfo[1];
+            
+            // Calcular nuevas dimensiones (máximo 1920x1080)
+            $maxWidth = 1920;
+            $maxHeight = 1080;
+            
+            if ($width > $maxWidth || $height > $maxHeight) {
+                $ratio = min($maxWidth / $width, $maxHeight / $height);
+                $newWidth = (int)($width * $ratio);
+                $newHeight = (int)($height * $ratio);
+            } else {
+                $newWidth = $width;
+                $newHeight = $height;
+            }
+            
+            // Crear imagen desde archivo según el tipo
+            switch ($mimeType) {
+                case 'image/jpeg':
+                case 'image/jpg':
+                    $sourceImage = imagecreatefromjpeg($filePath);
+                    break;
+                case 'image/png':
+                    $sourceImage = imagecreatefrompng($filePath);
+                    break;
+                case 'image/webp':
+                    $sourceImage = imagecreatefromwebp($filePath);
+                    break;
+                default:
+                    Log::error("Tipo de imagen no soportado para compresión: " . $mimeType);
+                    return false;
+            }
+            
+            if (!$sourceImage) {
+                Log::error("No se pudo crear imagen desde archivo");
+                return false;
+            }
+            
+            // Crear nueva imagen redimensionada
+            $newImage = imagecreatetruecolor($newWidth, $newHeight);
+            
+            // Preservar transparencia para PNG
+            if ($mimeType === 'image/png') {
+                imagealphablending($newImage, false);
+                imagesavealpha($newImage, true);
+                $transparent = imagecolorallocatealpha($newImage, 255, 255, 255, 127);
+                imagefilledrectangle($newImage, 0, 0, $newWidth, $newHeight, $transparent);
+            }
+            
+            // Redimensionar imagen
+            imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            
+            // Guardar imagen comprimida
+            $outputPath = $uploadPath . '/' . $imageName;
+            $quality = 85; // Calidad de compresión (0-100)
+            
+            switch ($mimeType) {
+                case 'image/jpeg':
+                case 'image/jpg':
+                    $result = imagejpeg($newImage, $outputPath, $quality);
+                    break;
+                case 'image/png':
+                    $result = imagepng($newImage, $outputPath, 8); // Compresión PNG (0-9)
+                    break;
+                case 'image/webp':
+                    $result = imagewebp($newImage, $outputPath, $quality);
+                    break;
+            }
+            
+            // Limpiar memoria
+            imagedestroy($sourceImage);
+            imagedestroy($newImage);
+            
+            if (!$result) {
+                Log::error("Error guardando imagen comprimida");
+                return false;
+            }
+            
+            // Verificar tamaño del archivo comprimido
+            $compressedSize = filesize($outputPath);
+            $originalSize = $file->getSize();
+            $compressionRatio = round((1 - $compressedSize / $originalSize) * 100, 2);
+            
+            Log::info("Imagen comprimida exitosamente", [
+                'original_size' => $originalSize,
+                'compressed_size' => $compressedSize,
+                'compression_ratio' => $compressionRatio . '%',
+                'new_dimensions' => $newWidth . 'x' . $newHeight
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error("Error comprimiendo imagen: " . $e->getMessage());
+            return false;
+        }
     }
 
 }

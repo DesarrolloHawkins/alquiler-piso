@@ -29,8 +29,8 @@ class Photo extends Model
         'url',
         'cliente_id',
         'reserva_id',
-        'requirement_id'
-        
+        'requirement_id',
+        'huespedes_id'
     ];
 
     /**

@@ -1,115 +1,162 @@
 @extends('layouts.appAdmin')
 
-@section('titulo', 'Vacaciones')
-
-@section('css')
-    <link rel="stylesheet" href="assets/vendors/simple-datatables/style.css">
-@endsection
+@section('title', 'Gestión de Peticiones de Vacaciones')
 
 @section('content')
-    <style>#calendar {
-        width: 100%;
-        min-height: 600px;
-        margin: 0 auto;
-    }
-    </style>
-    <div class="page-heading" style="box-shadow: none !important" >
-
-        {{-- Titulos --}}
-        <div class="page-title">
-            <div class="row justify-content-center">
-                <div class="col-sm-12 col-md-12">
-                    <h3 class="fs-3 text-center"><i class="fa-solid fa-umbrella-beach me-3"></i>Vacaciones</h3>
-                    <p class="text-subtitle text-muted text-center">Listado de vacaciones</p>
-                </div>
-                <div class="col-sm-12 col-md-12">
-                    <nav aria-label="breadcrumb" class="breadcrumb-header text-center">
-                        <ol class="breadcrumb mb-0" style="width: 100%; justify-content: center;">
-                            <li class="breadcrumb-item"><a href="{{route('home')}}">Dashboard</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Gestión de vacaciones</li>
-                        </ol>
-                    </nav>
-
-                </div>
-            </div>
+<div class="container-fluid">
+    <!-- Header de la Página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-calendar-check me-2 text-primary"></i>
+                Gestión de Peticiones de Vacaciones
+            </h1>
+            <p class="text-muted mb-0">Administra las solicitudes de vacaciones de los empleados</p>
         </div>
-        <div class="row">
-            <div class="col-lg col-md-6 mt-4">
-                <div class="card2">
-                    <div class="card-body ">
-                        <div class="col-12" style="text-align: center">
-                            <p for="">&nbsp;</p>
-                            @if( $numberOfholidaysPetitions == 1)
-                                <p for="pendant">Tienes <span style="color:red"><strong>{{ $numberOfholidaysPetitions }}</strong></span> petición pendiente de gestión</p>
-                            @else
-                                <p for="pendant">Tienes <span style="color:red"><strong>{{ $numberOfholidaysPetitions }}</strong></span> peticiones pendientes de gestión</p>
-                            @endif
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestión de Vacaciones</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Tarjetas de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-lg-6 col-md-12">
+            <div class="card shadow-sm border-0 bg-gradient-warning text-white">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-clock fa-2x me-3"></i>
+                        <div>
+                            <h3 class="mb-0 fw-bold">{{ $numberOfholidaysPetitions ?? 0 }}</h3>
+                            <small class="opacity-75">
+                                @if(($numberOfholidaysPetitions ?? 0) == 1)
+                                    Petición Pendiente
+                                @else
+                                    Peticiones Pendientes
+                                @endif
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg col-md-6 mt-4">
-                <div class="card2">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12" style="text-align: center">
-                                <p for="status"><strong>ESTADOS</strong></p>
-                                <p for="pendant">
-                                    <i class="fa fa-square" aria-hidden="true" style="color:#FFDD9E"></i>&nbsp;&nbsp;PENDIENTE
-                                    <i class="fa fa-square" aria-hidden="true" style="margin-left:5%;color:#C3EBC4"></i>&nbsp;&nbsp;ACEPTADA
-                                    <i class="fa fa-square" aria-hidden="true" style="margin-left:5%;color:#FBC4C4"></i>&nbsp;&nbsp;DENEGADA
-                                </p>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <div class="card shadow-sm border-0 bg-gradient-info text-white">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Estados de Peticiones</h6>
+                            <small class="opacity-75">Leyenda de colores</small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-warning-subtle text-warning me-2">
+                            <i class="fas fa-square me-1"></i>Pendiente
+                        </span>
+                        <span class="badge bg-success-subtle text-success me-2">
+                            <i class="fas fa-square me-1"></i>Aceptada
+                        </span>
+                        <span class="badge bg-danger-subtle text-danger">
+                            <i class="fas fa-square me-1"></i>Denegada
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario de Vacaciones -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                Calendario de Vacaciones
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="calendar" class="p-4 border rounded-3" style="min-height: 600px;">
+                <!-- Aquí se renderizará el calendario -->
+            </div>
+        </div>
+    </div>
+    <!-- Modal de Gestión de Vacaciones -->
+    <div class="modal fade" id="holidayModal" tabindex="-1" aria-labelledby="holidayModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-semibold" id="holidayModalLabel">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Gestión de Vacaciones
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                <div class="avatar-sm bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="fas fa-user text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Empleado</h6>
+                                    <p class="mb-0 text-muted" id="holidayUser">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                <div class="avatar-sm bg-info-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="fas fa-calendar-plus text-info"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Fecha de Solicitud</h6>
+                                    <p class="mb-0 text-muted" id="holidayCreate">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                <div class="avatar-sm bg-success-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="fas fa-calendar-day text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Fecha de Inicio</h6>
+                                    <p class="mb-0 text-muted" id="holidayStart">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                                <div class="avatar-sm bg-warning-subtle rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="fas fa-calendar-times text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-semibold">Fecha de Fin</h6>
+                                    <p class="mb-0 text-muted" id="holidayEnd">-</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" id="holidayId">
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="acceptHoliday()">
+                        <i class="fas fa-check me-2"></i>Aceptar
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="denyHoliday()">
+                        <i class="fas fa-times me-2"></i>Rechazar
+                    </button>
                 </div>
             </div>
         </div>
-{{--
-        @php
-            use Jenssegers\Agent\Agent;
-
-            $agent = new Agent();
-        @endphp
-        @if ($agent->isMobile())
-            <div>
-                <span>Es movil</span>
-            </div>
-            @livewire('holidays-table')
-
-        @else
-
-            @livewire('holidays-table')
-        @endif --}}
-
-        <div class="card mt-4 col-12" >
-            <div class="card-body">
-                <div id="calendar" class="p-4" style="margin-top: 0.75rem; margin-bottom: 0.75rem; overflow-y: auto; border-color:black; border-width: thin; border-radius: 20px;" >
-                    <!-- Aquí se renderizarán las tareas según la vista seleccionada -->
-                </div>
-            </div>
-        </div>
-        <div class="modal fade" id="holidayModal" tabindex="-1" aria-labelledby="holidayModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="holidayModalLabel">Gestión de Vacaciones</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p><strong>Usuario:</strong> <span id="holidayUser"></span></p>
-                        <p><strong>Fecha de inicio:</strong> <span id="holidayStart"></span></p>
-                        <p><strong>Fecha de fin:</strong> <span id="holidayEnd"></span></p>
-                        <p><strong>Fecha de solicitud:</strong> <span id="holidayCreate"></span></p>
-                        <input type="hidden" id="holidayId">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-success" onclick="acceptHoliday()">Aceptar</button>
-                        <button type="button" class="btn btn-danger" onclick="denyHoliday()">Rechazar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
     </div>
 @endsection
 

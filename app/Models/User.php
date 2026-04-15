@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Reserva;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -23,7 +24,13 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'inactive'
+        'inactive',
+        'avatar',
+        'phone',
+        'address',
+        'birth_date',
+        'emergency_contact',
+        'emergency_phone'
     ];
 
     /**
@@ -44,16 +51,35 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'birth_date' => 'date',
+        'stripe_payment_methods' => 'array',
     ];
 
     public function hasRole($role)
     {
-        return $this->roles()->where('name', $role)->exists();
+        return $this->role === $role;
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     // /**
     //  * The roles that belong to the user.
     //  */
+    // Relaciones
+    public function empleadaHorario()
+    {
+        return $this->hasOne(EmpleadaHorario::class);
+    }
+    
     // public function roles()
     // {
     //     // Asumiendo que existe una tabla 'roles' y la relación es muchos-a-muchos
@@ -74,6 +100,21 @@ class User extends Authenticatable
             default:
                 abort(403, 'No tienes permiso para acceder a esta página.');
         }
+    }
+
+    /**
+     * Obtener reservas del usuario a través del email del cliente
+     */
+    public function reservas()
+    {
+        return $this->hasManyThrough(
+            Reserva::class,
+            \App\Models\Cliente::class,
+            'email', // Foreign key en clientes
+            'cliente_id', // Foreign key en reservas
+            'email', // Local key en users
+            'id' // Local key en clientes
+        );
     }
 
 }

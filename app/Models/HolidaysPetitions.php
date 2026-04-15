@@ -56,6 +56,6 @@ class HolidaysPetitions extends Model
      */
     public function status()
     {
-        return $this->belongsTo(HolidaysStatus::class,'holidays_status_id');
+        return $this->belongsTo(HolidaysStatus::class, 'holidays_status_id', 'id', 'holidays_status');
     }
 }

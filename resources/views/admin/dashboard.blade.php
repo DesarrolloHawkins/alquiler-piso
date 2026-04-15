@@ -271,7 +271,90 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalNoFacturadas" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">No Facturadas</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($sumPrecioNoFacturado, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                
+                @if(isset($categoria45) && $categoria45)
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalCategoria45" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">{{ $categoria45->nombre ?? 'Categoría 45' }}</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastosCategoria45, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
+                @if(isset($categoria53) && $categoria53)
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalCategoria53" style="cursor:pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6">{{ $categoria53->nombre ?? 'Categoría 53' }}</h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4"><strong>{{ number_format($gastosCategoria53, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
+            
+            
+            {{-- Sección Obra / Contabilización Separada: siempre visible para ver datos de obra (aunque sean 0) --}}
+            @if(isset($ingresosMismaEmpresa) && isset($gastosMismaEmpresa))
+            <div class="row justify-content-start align-items-stretch mt-4">
+                <h5 class="text-left mt-1 text-warning">
+                    <i class="fas fa-hard-hat me-2"></i>Obra / Contabilización Separada (Misma Empresa)
+                </h5>
+                <hr>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalIngresosSeparados" style="background-color: #fff3cd; border-left: 4px solid #ffc107; cursor: pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-warning">
+                                <i class="fas fa-arrow-up me-1"></i>Ingresos Separados
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-warning"><strong>{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalGastosSeparados" style="background-color: #f8d7da; border-left: 4px solid #dc3545; cursor: pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>Gastos Obra / Separados
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-danger"><strong>{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="row p-3 card m-3 flex-row align-items-center clickable-card" data-bs-toggle="modal" data-bs-target="#modalBalanceSeparado" style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; cursor: pointer;">
+                        <div class="col-6">
+                            <h4 class="text-start mb-0 fs-6 text-info">
+                                <i class="fas fa-calculator me-1"></i>Balance Separado
+                            </h4>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-end mb-0 fs-4 text-info"><strong>{{ number_format(($ingresosMismaEmpresa ?? 0) - ($gastosMismaEmpresa ?? 0), 2) }} €</strong></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
         {{-- <div class="col-md-3">
             <div class="row mx-1 bg-primero p-3 rounded-4">
@@ -411,6 +494,16 @@
         <div class="col-md-4 rounded-4 mt-3">
             <div class="card h-100">
                 <div class="card-body">
+                    <h2 class="text-center">Ingresos por Mes - Comparativa {{ $anioActual }} vs {{ $anioAnterior }}</h2>
+                    <div id="chartIngresosPorMes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 rounded-4 mt-3">
+            <div class="card h-100">
+                <div class="card-body">
                     <h2 class="text-center">Disponibilidad Mensual de Apartamentos</h2>
                     <div id="chartDisponibilidadMensual"></div>
                 </div>
@@ -506,6 +599,81 @@
     </div>
 </div>
 
+<!-- Nueva fila de tarjetas de gestión -->
+<div class="row justify-content-between align-items-stretch mb-4">
+    <!-- Tarjeta de Incidencias -->
+    <div class="col-md-3">
+        <div class="card h-100 border-danger clickable-card" onclick="window.location.href='{{ route('admin.incidencias.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                </div>
+                <h5 class="card-title text-danger">Gestión de Incidencias</h5>
+                <p class="card-text">Gestionar y resolver incidencias reportadas por el personal</p>
+                <div class="mt-3">
+                    <span class="badge bg-danger fs-6" id="incidenciasPendientes">
+                        <i class="fas fa-clock me-1"></i>Cargando...
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Limpiezas -->
+    <div class="col-md-3">
+        <div class="card h-100 border-info clickable-card" onclick="window.location.href='{{ route('admin.limpiezas.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-broom fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title text-info">Gestión de Limpiezas</h5>
+                <p class="card-text">Supervisar y gestionar las tareas de limpieza</p>
+                <div class="mt-3">
+                    <a href="{{ route('admin.limpiezas.index') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-eye me-1"></i>Ver Limpiezas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Personal -->
+    <div class="col-md-3">
+        <div class="card h-100 border-warning clickable-card" onclick="window.location.href='{{ route('admin.empleados.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-users-cog fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title text-warning">Gestión de Personal</h5>
+                <p class="card-text">Administrar empleados, jornadas y vacaciones</p>
+                <div class="mt-3">
+                    <a href="{{ route('admin.empleados.index') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-users me-1"></i>Ver Personal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Clientes -->
+    <div class="col-md-3">
+        <div class="card h-100 border-success clickable-card" onclick="window.location.href='{{ route('clientes.index') }}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-friends fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title text-success">Gestión de Clientes</h5>
+                <p class="card-text">Administrar la base de datos de clientes</p>
+                <div class="mt-3">
+                    <a href="{{ route('clientes.create') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- MODALES --}}
 <!-- Modal de Libres Hoy -->
 <div class="modal fade" id="modalLibresHoy" tabindex="-1" aria-labelledby="modalLibresHoyLabel" aria-hidden="true">
@@ -533,7 +701,7 @@
                         <tbody>
                             @foreach($apartamentosLibresHoy as $apartamento)
                                 <tr>
-                                    <td>{{ $apartamento->nombre }}</td>
+                                    <td>{{ $apartamento->titulo }}</td>
                                     <td>
                                         <span class="badge bg-success">Libre</span>
                                     </td>
@@ -572,7 +740,7 @@
                         <select id="filtroApartamento" class="form-select">
                             <option value="">Todos los apartamentos</option>
                             @foreach($apartamentos as $apartamento)
-                                <option value="{{ $apartamento->nombre }}">{{ $apartamento->nombre }}</option>
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -609,7 +777,7 @@
                             @foreach($reservas as $reserva)
                                 <tr data-id="{{ $reserva->id }}" style="cursor: pointer;">
                                     <td>{{ $reserva->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>{{ $reserva->apartamento->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ number_format($reserva->precio, 2, ',', '.') }} €</td>
@@ -674,7 +842,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <select id="filtroApartamentoFacturacion" class="form-select">
                             <option value="">Todos los apartamentos</option>
                             @foreach($apartamentos as $apartamento)
-                                <option value="{{ $apartamento->nombre }}">{{ $apartamento->nombre }}</option>
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -704,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <!-- Total -->
                 <div class="alert alert-info mb-4">
-                    <strong>Total Facturación Filtrada: <span id="totalFacturacion">{{ number_format($totalFacturacion, 2, ',', '.') }} €</span></strong>
+                    <strong>Total Facturación Filtrada: <span id="totalFiltradoFacturacion">0,00 €</span></strong>
                 </div>
 
                 <!-- Tabla -->
@@ -726,7 +894,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             @foreach($reservas as $reserva)
                                 <tr data-id="{{ $reserva->id }}" style="cursor: pointer;">
                                     <td>{{ $reserva->cliente->nombre ?? 'N/A' }}</td>
-                                    <td>{{ $reserva->apartamento->nombre ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>{{ number_format($reserva->precio, 2, ',', '.') }} €</td>
@@ -918,11 +1086,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="modal-body p-4">
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <label for="filtroConceptoCobrado" class="form-label fw-bold">Filtrar por Concepto</label>
-                        <select id="filtroConceptoCobrado" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                        <label for="filtroCategoriaCobrado" class="form-label fw-bold">Filtrar por Categoría</label>
+                        <select id="filtroCategoriaCobrado" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach($ingresosLista->pluck('categoria.nombre')->unique()->filter()->sort() as $categoria)
+                                <option value="{{ $categoria }}">{{ $categoria }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -941,9 +1109,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaCobrado" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 20%;">FECHA</th>
-                                <th style="width: 50%;">CONCEPTO</th>
-                                <th style="width: 30%;">CANTIDAD</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
+                                <th style="width: 25%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -951,6 +1120,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
                                     <td>{{ $ingreso->title }}</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -986,11 +1156,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="modal-body p-4">
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <label for="filtroConceptoIngresos" class="form-label fw-bold">Filtrar por Concepto</label>
-                        <select id="filtroConceptoIngresos" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($ingresosLista->pluck('concept')->unique()->filter()->sort() as $concepto)
-                                <option value="{{ $concepto }}">{{ $concepto }}</option>
+                        <label for="filtroCategoriaIngresos" class="form-label fw-bold">Filtrar por Categoría</label>
+                        <select id="filtroCategoriaIngresos" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach($ingresosLista->pluck('categoria.nombre')->unique()->filter()->sort() as $categoria)
+                                <option value="{{ $categoria }}">{{ $categoria }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -1009,9 +1179,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table id="tablaIngresos" class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 20%;">FECHA</th>
-                                <th style="width: 50%;">CONCEPTO</th>
-                                <th style="width: 30%;">CANTIDAD</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
+                                <th style="width: 25%;">CATEGORÍA</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1019,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <tr data-id="{{ $ingreso->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
                                     <td>{{ $ingreso->title }}</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -1078,17 +1250,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         <thead class="table-dark">
                             <tr>
                                 <th style="width: 15%;">FECHA</th>
+                                <th style="width: 40%;">CONCEPTO</th>
                                 <th style="width: 25%;">CATEGORÍA</th>
-                                <th style="width: 35%;">CONCEPTO</th>
-                                <th style="width: 25%;">CANTIDAD</th>
+                                <th style="width: 20%;">CANTIDAD</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($gastosLista as $gasto)
                                 <tr data-id="{{ $gasto->id }}" style="cursor: pointer">
                                     <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
-                                    <td>{{ $gasto->categoria->nombre ?? 'N/A' }}</td>
                                     <td>{{ $gasto->title }}</td>
+                                    <td>{{ $gasto->categoria->nombre ?? 'Sin categoría' }}</td>
                                     <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
                                 </tr>
                             @endforeach
@@ -1111,8 +1283,621 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<!-- Modal de Reservas No Facturadas -->
+<div class="modal fade" id="modalNoFacturadas" tabindex="-1" aria-labelledby="modalNoFacturadasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalNoFacturadasLabel">
+                    <i class="fas fa-ban me-2"></i>Reservas No Facturadas entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="filtroApartamentoNoFacturadas" class="form-label fw-bold">Filtrar por Apartamento</label>
+                        <select id="filtroApartamentoNoFacturadas" class="form-select">
+                            <option value="">Todos los apartamentos</option>
+                            @foreach($apartamentos as $apartamento)
+                                <option value="{{ $apartamento->titulo }}">{{ $apartamento->titulo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchNoFacturadas" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchNoFacturadas" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-warning mb-0">
+                            <strong>Total No Facturadas: <span id="totalFiltradoNoFacturadas">{{ number_format($sumPrecioNoFacturado, 2) }} €</span></strong>
+                            <br>
+                            <small>Reservas: <span id="countNoFacturadas">{{ $countReservasNoFacturadas }}</span></small>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="table-responsive">
+                    <table id="tablaNoFacturadas" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 15%;">CÓDIGO</th>
+                                <th style="width: 20%;">APARTAMENTO</th>
+                                <th style="width: 15%;">CLIENTE</th>
+                                <th style="width: 15%;">FECHA ENTRADA</th>
+                                <th style="width: 15%;">FECHA SALIDA</th>
+                                <th style="width: 10%;">PRECIO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($reservas->where('no_facturar', true) as $reserva)
+                                <tr data-id="{{ $reserva->id }}" style="cursor: pointer">
+                                    <td>{{ $reserva->id }}</td>
+                                    <td>{{ $reserva->codigo_reserva }}</td>
+                                    <td>{{ $reserva->apartamento->titulo ?? 'N/A' }}</td>
+                                    <td>{{ $reserva->cliente->nombre ?? 'N/A' }} {{ $reserva->cliente->apellido1 ?? '' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($reserva->fecha_entrada)->format('d/m/Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($reserva->fecha_salida)->format('d/m/Y') }}</td>
+                                    <td data-precio="{{ $reserva->precio }}">{{ number_format($reserva->precio, 2) }} €</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Modal de Gastos Categoría 45 -->
+@if(isset($categoria45) && $categoria45)
+<div class="modal fade" id="modalCategoria45" tabindex="-1" aria-labelledby="modalCategoria45Label" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalCategoria45Label">
+                    <i class="fas fa-receipt me-2"></i>{{ $categoria45->nombre }} - Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="searchCategoria45" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchCategoria45" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total {{ $categoria45->nombre }}: <span id="totalFiltradoCategoria45">{{ number_format($gastosCategoria45, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countCategoria45">{{ $gastosListaCategoria45->count() }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaCategoria45" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">NOTAS</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaCategoria45 as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->notes ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Modal de Gastos Categoría 53 -->
+@if(isset($categoria53) && $categoria53)
+<div class="modal fade" id="modalCategoria53" tabindex="-1" aria-labelledby="modalCategoria53Label" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalCategoria53Label">
+                    <i class="fas fa-receipt me-2"></i>{{ $categoria53->nombre }} - Gastos entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="searchCategoria53" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchCategoria53" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total {{ $categoria53->nombre }}: <span id="totalFiltradoCategoria53">{{ number_format($gastosCategoria53, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countCategoria53">{{ $gastosListaCategoria53->count() }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaCategoria53" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">ID</th>
+                                <th style="width: 20%;">DESCRIPCIÓN</th>
+                                <th style="width: 15%;">FECHA</th>
+                                <th style="width: 15%;">CANTIDAD</th>
+                                <th style="width: 20%;">NOTAS</th>
+                                <th style="width: 20%;">CREADO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaCategoria53 as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->notes ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Modal de Ingresos Separados -->
+<div class="modal fade" id="modalIngresosSeparados" tabindex="-1" aria-labelledby="modalIngresosSeparadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalIngresosSeparadosLabel">
+                    <i class="fas fa-arrow-up me-2"></i>Ingresos Separados - Contabilización Separada entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="filtroCategoriaIngresosSeparados" class="form-label fw-bold">Filtrar por Categoría:</label>
+                        <select id="filtroCategoriaIngresosSeparados" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach(collect($ingresosListaSeparados ?? [])->pluck('categoria')->unique('id')->filter() as $categoria)
+                                <option value="{{ $categoria->nombre }}">{{ $categoria->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="searchIngresosSeparados" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchIngresosSeparados" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total Ingresos Separados: <span id="totalFiltradoIngresosSeparados">{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</span></strong>
+                        <br>
+                        <small>Ingresos: <span id="countIngresosSeparados">{{ count($ingresosListaSeparados ?? []) }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaIngresosSeparados" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 8%;">ID</th>
+                                <th style="width: 18%;">DESCRIPCIÓN</th>
+                                <th style="width: 12%;">FECHA</th>
+                                <th style="width: 12%;">CANTIDAD</th>
+                                <th style="width: 18%;">CATEGORÍA</th>
+                                <th style="width: 15%;">CREADO</th>
+                                <th style="width: 17%;">ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($ingresosListaSeparados ?? [] as $ingreso)
+                                <tr>
+                                    <td>{{ $ingreso->id }}</td>
+                                    <td>{{ $ingreso->title ?? 'Sin descripción' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ $ingreso->quantity }}">{{ number_format($ingreso->quantity, 2) }} €</td>
+                                    <td>{{ $ingreso->categoria->nombre ?? 'Sin categoría' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ingreso->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.ingresos.edit', $ingreso->id) }}" 
+                                           class="btn btn-sm btn-primary" 
+                                           title="Editar ingreso"
+                                           target="_blank">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gastos Separados -->
+<div class="modal fade" id="modalGastosSeparados" tabindex="-1" aria-labelledby="modalGastosSeparadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalGastosSeparadosLabel">
+                    <i class="fas fa-arrow-down me-2"></i>Gastos Separados - Contabilización Separada entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="filtroCategoriaGastosSeparados" class="form-label fw-bold">Filtrar por Categoría:</label>
+                        <select id="filtroCategoriaGastosSeparados" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach(collect($gastosListaSeparados ?? [])->pluck('categoria')->unique()->filter() as $categoria)
+                                <option value="{{ $categoria->nombre }}">{{ $categoria->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="searchGastosSeparados" class="form-label fw-bold">Buscar en la tabla:</label>
+                        <input type="text" id="searchGastosSeparados" class="form-control" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total Gastos Separados: <span id="totalFiltradoGastosSeparados">{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</span></strong>
+                        <br>
+                        <small>Gastos: <span id="countGastosSeparados">{{ count($gastosListaSeparados ?? []) }}</span></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tablaGastosSeparados" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 8%;">ID</th>
+                                <th style="width: 18%;">DESCRIPCIÓN</th>
+                                <th style="width: 12%;">FECHA</th>
+                                <th style="width: 12%;">CANTIDAD</th>
+                                <th style="width: 18%;">CATEGORÍA</th>
+                                <th style="width: 15%;">CREADO</th>
+                                <th style="width: 17%;">ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($gastosListaSeparados ?? [] as $gasto)
+                                <tr>
+                                    <td>{{ $gasto->id }}</td>
+                                    <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                    <td data-cantidad="{{ abs($gasto->quantity) }}">{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                    <td>{{ $gasto->categoria->nombre ?? 'Sin categoría' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.gastos.edit', $gasto->id) }}" 
+                                           class="btn btn-sm btn-primary" 
+                                           title="Editar gasto"
+                                           target="_blank">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Balance Separado -->
+<div class="modal fade" id="modalBalanceSeparado" tabindex="-1" aria-labelledby="modalBalanceSeparadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalBalanceSeparadoLabel">
+                    <i class="fas fa-calculator me-2"></i>Balance Separado - Resumen entre {{ $fechaInicio->format('d/m/Y') }} y {{ $fechaFin->format('d/m/Y') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Ingresos Separados</h5>
+                                <h3 class="card-text">{{ number_format($ingresosMismaEmpresa ?? 0, 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Gastos Separados</h5>
+                                <h3 class="card-text">{{ number_format($gastosMismaEmpresa ?? 0, 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Balance Final</h5>
+                                <h3 class="card-text">{{ number_format(($ingresosMismaEmpresa ?? 0) - ($gastosMismaEmpresa ?? 0), 2) }} €</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="text-warning"><i class="fas fa-arrow-up me-2"></i>Ingresos Separados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-white">Descripción</th>
+                                        <th class="text-white">Fecha</th>
+                                        <th class="text-white">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($ingresosListaSeparados ?? [] as $ingreso)
+                                        <tr>
+                                            <td>{{ $ingreso->description ?? 'Sin descripción' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($ingreso->date)->format('d/m/Y') }}</td>
+                                            <td>{{ number_format($ingreso->quantity, 2) }} €</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="text-danger"><i class="fas fa-arrow-down me-2"></i>Gastos Separados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-white">Descripción</th>
+                                        <th class="text-white">Fecha</th>
+                                        <th class="text-white">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($gastosListaSeparados ?? [] as $gasto)
+                                        <tr>
+                                            <td>{{ $gasto->title ?? 'Sin título' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($gasto->date)->format('d/m/Y') }}</td>
+                                            <td>{{ number_format(abs($gasto->quantity), 2) }} €</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Configurar DataTable para reservas no facturadas
+    const tableNoFacturadas = $('#tablaNoFacturadas').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Filtro por apartamento
+    $('#filtroApartamentoNoFacturadas').on('change', function () {
+        tableNoFacturadas.column(2).search(this.value).draw();
+    });
+
+    // Búsqueda en la tabla
+    $('#searchNoFacturadas').on('keyup', function () {
+        tableNoFacturadas.search(this.value).draw();
+    });
+
+    // Click en fila para editar reserva
+    $('#tablaNoFacturadas tbody').on('click', 'tr', function () {
+        var idReserva = $(this).data('id');
+        if (idReserva) {
+            window.open('/reservas/' + idReserva + '/edit', '_blank');
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos
+    tableNoFacturadas.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableNoFacturadas.rows({ search: 'applied' }).every(function () {
+            const precio = parseFloat($(this.node()).find('td[data-precio]').attr('data-precio') || 0);
+            total += precio;
+            count++;
+        });
+        
+        $('#totalFiltradoNoFacturadas').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countNoFacturadas').text(count);
+    });
+
+    // Configurar DataTable para categoría 45
+    @if(isset($categoria45) && $categoria45)
+    const tableCategoria45 = $('#tablaCategoria45').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla categoría 45
+    $('#searchCategoria45').on('keyup', function () {
+        tableCategoria45.search(this.value).draw();
+    });
+
+    // Actualizar totales cuando se filtren los datos categoría 45
+    tableCategoria45.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableCategoria45.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoCategoria45').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countCategoria45').text(count);
+    });
+    @endif
+
+    // Configurar DataTable para categoría 53
+    @if(isset($categoria53) && $categoria53)
+    const tableCategoria53 = $('#tablaCategoria53').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla categoría 53
+    $('#searchCategoria53').on('keyup', function () {
+        tableCategoria53.search(this.value).draw();
+    });
+
+    // Actualizar totales cuando se filtren los datos categoría 53
+    tableCategoria53.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableCategoria53.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoCategoria53').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countCategoria53').text(count);
+    });
+    @endif
+
+    // Configurar DataTable para ingresos separados
+    const tableIngresosSeparados = $('#tablaIngresosSeparados').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla ingresos separados
+    $('#searchIngresosSeparados').on('keyup', function () {
+        tableIngresosSeparados.search(this.value).draw();
+    });
+
+    // Filtro por categoría en ingresos separados
+    $('#filtroCategoriaIngresosSeparados').on('change', function () {
+        const categoria = this.value;
+        if (categoria) {
+            tableIngresosSeparados.column(4).search(categoria).draw();
+        } else {
+            tableIngresosSeparados.column(4).search('').draw();
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos ingresos separados
+    tableIngresosSeparados.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableIngresosSeparados.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoIngresosSeparados').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countIngresosSeparados').text(count);
+    });
+
+    // Configurar DataTable para gastos separados
+    const tableGastosSeparados = $('#tablaGastosSeparados').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100]
+    });
+
+    // Búsqueda en la tabla gastos separados
+    $('#searchGastosSeparados').on('keyup', function () {
+        tableGastosSeparados.search(this.value).draw();
+    });
+
+    // Filtro por categoría en gastos separados
+    $('#filtroCategoriaGastosSeparados').on('change', function () {
+        const categoria = this.value;
+        if (categoria) {
+            tableGastosSeparados.column(4).search(categoria).draw();
+        } else {
+            tableGastosSeparados.column(4).search('').draw();
+        }
+    });
+
+    // Actualizar totales cuando se filtren los datos gastos separados
+    tableGastosSeparados.on('draw', function () {
+        let total = 0;
+        let count = 0;
+        tableGastosSeparados.rows({ search: 'applied' }).every(function () {
+            const cantidad = parseFloat($(this.node()).find('td[data-cantidad]').attr('data-cantidad') || 0);
+            total += cantidad;
+            count++;
+        });
+        
+        $('#totalFiltradoGastosSeparados').text(total.toLocaleString('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' €');
+        $('#countGastosSeparados').text(count);
+    });
+});
+</script>
 
 <style>
     #legendNacionalidad {
@@ -1281,8 +2066,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
       }
 
-      $('#filtroConceptoCobrado').on('change', function () {
-        tablaCobrado.column(1).search(this.value).draw();
+      $('#filtroCategoriaCobrado').on('change', function () {
+        tablaCobrado.column(2).search(this.value).draw();
       });
 
       $('#searchCobrado').on('keyup', function () {
@@ -1318,8 +2103,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
       }
 
-      $('#filtroConceptoIngresos').on('change', function () {
-        tablaIngresos.column(1).search(this.value).draw();
+      $('#filtroCategoriaIngresos').on('change', function () {
+        tablaIngresos.column(2).search(this.value).draw();
       });
 
       $('#searchIngresos').on('keyup', function () {
@@ -1356,7 +2141,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       $('#filtroCategoriaGastos').on('change', function () {
-        tablaGastos.column(1).search(this.value).draw();
+        tablaGastos.column(2).search(this.value).draw();
       });
 
       $('#searchGastos').on('keyup', function () {
@@ -1899,6 +2684,84 @@ document.addEventListener('DOMContentLoaded', function () {
         chart.render();
     });
 
+    // Gráfico de Ingresos por Mes
+    document.addEventListener('DOMContentLoaded', function () {
+        var options = {
+            series: [{
+                name: '{{ $anioActual }}',
+                data: @json($ingresosAnioActual)
+            }, {
+                name: '{{ $anioAnterior }}',
+                data: @json($ingresosAnioAnterior)
+            }],
+            chart: {
+                type: 'line',
+                height: 350,
+                zoom: {
+                    enabled: false
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return val.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' €';
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            colors: ['#10B981', '#8B5CF6'],
+            xaxis: {
+                categories: @json($meses),
+                title: {
+                    text: 'Mes'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Ingresos (€)'
+                },
+                labels: {
+                    formatter: function (val) {
+                        return val.toLocaleString('es-ES', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }) + ' €';
+                    }
+                }
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right'
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val.toLocaleString('es-ES', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }) + ' €';
+                    }
+                }
+            },
+            title: {
+                text: 'Comparativa de Ingresos por Mes',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#chartIngresosPorMes"), options);
+        chart.render();
+    });
+
     // Gráfico de Noches Reservadas por Mes
     document.addEventListener('DOMContentLoaded', function () {
         var options = {
@@ -2068,5 +2931,31 @@ document.addEventListener('DOMContentLoaded', function () {
         var chart = new ApexCharts(document.querySelector("#chartDisponibilidadMensual"), options);
         chart.render();
     });
+
+    // Cargar incidencias pendientes
+    document.addEventListener('DOMContentLoaded', function () {
+        cargarIncidenciasPendientes();
+    });
+
+    function cargarIncidenciasPendientes() {
+        fetch('{{ route("admin.incidencias.pendientes") }}')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('incidenciasPendientes');
+                if (data.length > 0) {
+                    badge.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${data.length} Pendientes`;
+                    badge.className = 'badge bg-danger fs-6';
+                } else {
+                    badge.innerHTML = `<i class="fas fa-check me-1"></i>0 Pendientes`;
+                    badge.className = 'badge bg-success fs-6';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar incidencias:', error);
+                const badge = document.getElementById('incidenciasPendientes');
+                badge.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>Error`;
+                badge.className = 'badge bg-secondary fs-6';
+            });
+    }
 </script>
 @endsection

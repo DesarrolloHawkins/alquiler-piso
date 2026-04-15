@@ -149,13 +149,32 @@ class MovimientosController extends Controller
             return (float)$a[0] <=> (float)$b[0];
         });
 
+        // Contadores para el reporte
+        $procesados = 0;
+        $duplicados = [];
+        $errores = [];
+        $ingresosCreados = 0;
+        $gastosCreados = 0;
+        $hashesHuérfanosEliminados = 0;
+
         // Procesar cada fila
-        foreach ($filteredRows as $row) {
+        foreach ($filteredRows as $index => $row) {
+            $diarioCajaIdParaHash = null;
             try {
                 // Convertir el número de fecha de Excel en una fecha válida de Carbon
                 $fecha_contable = Carbon::createFromFormat('Y-m-d', \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[0])->format('Y-m-d'));
             } catch (\Exception $e) {
-                // Si no se puede convertir a fecha, saltar esta fila
+                // Si no se puede convertir a fecha, agregar a errores
+                $errores[] = [
+                    'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
+                    'error' => 'Error al convertir fecha: ' . $e->getMessage(),
+                    'datos' => [
+                        'fecha' => $row[0] ?? 'N/A',
+                        'descripcion' => $row[5] ?? 'N/A',
+                        'debe' => $row[7] ?? 'N/A',
+                        'haber' => $row[8] ?? 'N/A'
+                    ]
+                ];
                 continue;
             }
 
@@ -171,14 +190,104 @@ class MovimientosController extends Controller
             $existingHash = DB::table('hash_movimientos')
                 ->where('hash', $hash)
                 ->first();
-            // dd($existingHash, $hash);
+
             if ($existingHash) {
-                continue; // Si ya existe el hash, saltar esta fila para evitar duplicados
+                // DEBUG: Mostrar valores cuando encuentra hash coincidente
+                return response()->json([
+                    'debug' => 'Hash coincidente encontrado',
+                    'valores_usados' => [
+                        'fecha' => $fecha_contable->format('Y-m-d'),
+                        'descripcion' => $descripcion,
+                        'debe' => $debe,
+                        'haber' => $haber,
+                        'saldo' => $saldo,
+                        'hash_generado' => $hash,
+                        'hash_existente_id' => $existingHash->id,
+                        'hash_existente_created_at' => $existingHash->created_at
+                    ],
+                    'tipos_datos' => [
+                        'fecha_tipo' => gettype($fecha_contable->format('Y-m-d')),
+                        'descripcion_tipo' => gettype($descripcion),
+                        'debe_tipo' => gettype($debe),
+                        'haber_tipo' => gettype($haber),
+                        'saldo_tipo' => gettype($saldo)
+                    ],
+                    'valores_float' => [
+                        'debe_float' => (float)$debe,
+                        'haber_float' => (float)$haber,
+                        'saldo_float' => (float)$saldo
+                    ]
+                ]);
+                // Buscar el registro original que generó este hash
+                $registroOriginal = null;
+                
+                // Buscar en ingresos
+                $ingresoOriginal = DB::table('ingresos')
+                    ->where('date', $fecha_contable->format('Y-m-d'))
+                    ->where('title', $descripcion)
+                    ->where('quantity', $haber > 0 ? $haber : $debe)
+                    ->first();
+                
+                if ($ingresoOriginal) {
+                    $registroOriginal = [
+                        'tipo' => 'ingreso',
+                        'id' => $ingresoOriginal->id,
+                        'fecha' => $ingresoOriginal->date,
+                        'concepto' => $ingresoOriginal->title,
+                        'importe' => $ingresoOriginal->quantity,
+                        'categoria_id' => $ingresoOriginal->categoria_id,
+                        'created_at' => $ingresoOriginal->created_at
+                    ];
+                } else {
+                    // Buscar en gastos
+                    $gastoOriginal = DB::table('gastos')
+                        ->where('date', $fecha_contable->format('Y-m-d'))
+                        ->where('title', $descripcion)
+                        ->where('quantity', $debe > 0 ? $debe : $haber)
+                        ->first();
+                    
+                    if ($gastoOriginal) {
+                        $registroOriginal = [
+                            'tipo' => 'gasto',
+                            'id' => $gastoOriginal->id,
+                            'fecha' => $gastoOriginal->date,
+                            'concepto' => $gastoOriginal->title,
+                            'importe' => $gastoOriginal->quantity,
+                            'categoria_id' => $gastoOriginal->categoria_id,
+                            'created_at' => $gastoOriginal->created_at
+                        ];
+                    }
+                }
+
+                // Si encontramos el registro original, es un duplicado real
+                if ($registroOriginal) {
+                    $duplicados[] = [
+                        'fila' => $index + 6, // +6 porque empezamos desde la fila 5 del Excel
+                        'fecha' => $fecha_contable->format('Y-m-d'),
+                        'descripcion' => $descripcion,
+                        'debe' => $debe,
+                        'haber' => $haber,
+                        'saldo' => $saldo,
+                        'hash' => $hash,
+                        'hash_id' => $existingHash->id,
+                        'hash_created_at' => $existingHash->created_at,
+                        'registro_original' => $registroOriginal,
+                        'razon' => 'Registro duplicado (ya existe en la base de datos)'
+                    ];
+                    continue; // Saltar esta fila para evitar duplicados
+                } else {
+                    // Hash huérfano: eliminar el hash y continuar con el procesamiento
+                    DB::table('hash_movimientos')->where('id', $existingHash->id)->delete();
+                    $hashesHuérfanosEliminados++;
+                    // Continuar con el procesamiento normal (no hacer continue)
+                }
             }
 
             // Obtener una categoría por defecto (ajustar según tu lógica)
             $categoria_ingreso = CategoriaIngresos::first();
             $categoria_gasto = CategoriaGastos::first();
+
+            $registroProcesado = false;
 
             // Si es un ingreso (HABER)
             if (!empty($haber) && $haber > 0) {
@@ -199,8 +308,8 @@ class MovimientosController extends Controller
                         'estado_id' => 1
                     ]);
 
-                    // Reflejar el ingreso en el Diario de Caja
-                    DiarioCaja::create([
+                    // Reflejar el ingreso en el Diario de Caja (guardar instancia para vincular hash)
+                    $diarioCaja = DiarioCaja::create([
                         'asiento_contable' => $this->generarAsientoContable(),
                         'cuenta_id' => 1, // Aquí seleccionas la cuenta contable adecuada
                         'ingreso_id' => $ingreso->id,
@@ -210,6 +319,10 @@ class MovimientosController extends Controller
                         'tipo' => 'ingreso',
                         'estado_id' => 1
                     ]);
+                    $diarioCajaIdParaHash = $diarioCaja->id;
+
+                    $ingresosCreados++;
+                    $registroProcesado = true;
                 }
             }
 
@@ -232,8 +345,8 @@ class MovimientosController extends Controller
                         'estado_id' => 1
                     ]);
 
-                    // Reflejar el gasto en el Diario de Caja
-                    DiarioCaja::create([
+                    // Reflejar el gasto en el Diario de Caja (guardar instancia para vincular hash)
+                    $diarioCaja = DiarioCaja::create([
                         'asiento_contable' => $this->generarAsientoContable(),
                         'cuenta_id' => 1, // Aquí seleccionas la cuenta contable adecuada
                         'gasto_id' => $gasto->id,
@@ -243,18 +356,52 @@ class MovimientosController extends Controller
                         'tipo' => 'gasto',
                         'estado_id' => 1
                     ]);
+                    $diarioCajaIdParaHash = $diarioCaja->id;
+
+                    $gastosCreados++;
+                    $registroProcesado = true;
                 }
             }
 
-            // Guardar el hash en la tabla de hash_movimientos para evitar duplicados futuros
-            DB::table('hash_movimientos')->insert([
-                'hash' => $hash,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // Solo guardar el hash si se procesó algún registro (con diario_caja_id para poder borrarlo al eliminar la línea)
+            if ($registroProcesado) {
+                $insertHash = [
+                    'hash' => $hash,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                if (isset($diarioCajaIdParaHash) && \Schema::hasColumn('hash_movimientos', 'diario_caja_id')) {
+                    $insertHash['diario_caja_id'] = $diarioCajaIdParaHash;
+                }
+                DB::table('hash_movimientos')->insert($insertHash);
+                $procesados++;
+            }
         }
 
-        return response()->json(['message' => 'Archivo procesado correctamente.']);
+        // Preparar respuesta detallada
+        $response = [
+            'message' => 'Archivo procesado correctamente.',
+            'resumen' => [
+                'total_filas' => count($filteredRows),
+                'procesados' => $procesados,
+                'duplicados' => count($duplicados),
+                'errores' => count($errores),
+                'ingresos_creados' => $ingresosCreados,
+                'gastos_creados' => $gastosCreados,
+                'hashes_huérfanos_eliminados' => $hashesHuérfanosEliminados
+            ]
+        ];
+
+        // Agregar detalles si hay duplicados o errores
+        if (!empty($duplicados)) {
+            $response['duplicados_detalle'] = $duplicados;
+        }
+
+        if (!empty($errores)) {
+            $response['errores_detalle'] = $errores;
+        }
+
+        return response()->json($response);
     }
 
 

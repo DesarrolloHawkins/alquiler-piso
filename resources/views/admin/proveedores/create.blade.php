@@ -1,300 +1,208 @@
-
 @extends('layouts.appAdmin')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-colum mb-3">
-        <h2 class="mb-0 me-3 encabezado_top">{{ __('Crear Proveedor') }}</h2>
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">
+            <i class="fas fa-plus text-primary me-2"></i>
+            Crear Proveedor
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('inicio') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.proveedores.index') }}">Proveedores</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Crear</li>
+            </ol>
+        </nav>
     </div>
-    <hr>
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            @if (session('status'))
-                <div class="alert alert-success" role="alert">
-                    {{ session('status') }}
-                </div>
-            @endif
+    <div>
+        <a href="{{ route('admin.proveedores.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>
+            Volver
+        </a>
+    </div>
+</div>
 
-            <form action="{{ route('admin.proveedores.store') }}" method="POST" class="row">
-                @csrf  <!-- Token CSRF para proteger tu formulario -->
+<!-- Formulario -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-truck me-2"></i>
+                    Información del Proveedor
+                </h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('admin.proveedores.store') }}" method="POST">
+                    @csrf
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-building me-1"></i>
+                                Nombre del Proveedor <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('nombre') is-invalid @enderror" 
+                                   id="nombre" 
+                                   name="nombre" 
+                                   value="{{ old('nombre') }}" 
+                                   required>
+                            @error('nombre')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="nombre" class="form-label">Nombre</label>
-                    <input type="text" class="form-control {{ $errors->has('nombre') ? 'is-invalid' : '' }}" id="nombre" name="nombre" value="{{ old('nombre') }}">
-                    @error('nombre')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="contacto" class="form-label">
+                                <i class="fas fa-user me-1"></i>
+                                Persona de Contacto
+                            </label>
+                            <input type="text" 
+                                   class="form-control @error('contacto') is-invalid @enderror" 
+                                   id="contacto" 
+                                   name="contacto" 
+                                   value="{{ old('contacto') }}">
+                            @error('contacto')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="dni" class="form-label">DNI</label>
-                    <input type="text" class="form-control {{ $errors->has('dni') ? 'is-invalid' : '' }}" id="dni" name="dni" value="{{ old('dni') }}">
-                    @error('dni')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">
+                                <i class="fas fa-phone me-1"></i>
+                                Teléfono
+                            </label>
+                            <input type="tel" 
+                                   class="form-control @error('telefono') is-invalid @enderror" 
+                                   id="telefono" 
+                                   name="telefono" 
+                                   value="{{ old('telefono') }}">
+                            @error('telefono')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="cif" class="form-label">CIF</label>
-                    <input type="text" class="form-control {{ $errors->has('cif') ? 'is-invalid' : '' }}" id="cif" name="cif" value="{{ old('cif') }}">
-                    @error('cif')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                Email
+                            </label>
+                            <input type="email" 
+                                   class="form-control @error('email') is-invalid @enderror" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ old('email') }}">
+                            @error('email')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                    </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control {{ $errors->has('email') ? 'is-invalid' : '' }}" id="email" name="email" value="{{ old('email') }}">
-                    @error('email')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            Dirección
+                        </label>
+                        <textarea class="form-control @error('direccion') is-invalid @enderror" 
+                                  id="direccion" 
+                                  name="direccion" 
+                                  rows="3">{{ old('direccion') }}</textarea>
+                        @error('direccion')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="pais" class="form-label">País</label>
-                    <select id="pais" name="pais" class="form-control {{ $errors->has('pais') ? 'is-invalid' : '' }}">
-                        <option value="">Selecciona un país</option>
-                        <!-- Aquí se cargarán los países dinámicamente -->
-                    </select>
-                    @error('pais')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="activo" 
+                                   name="activo" 
+                                   value="1" 
+                                   {{ old('activo', true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="activo">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Proveedor activo
+                            </label>
+                        </div>
+                    </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="provincia" class="form-label">Provincia</label>
-                    <select id="provincia" name="provincia" class="form-control {{ $errors->has('provincia') ? 'is-invalid' : '' }}">
-                        <option value="">Selecciona una provincia</option>
-                        <!-- Aquí se cargarán las provincias dinámicamente -->
-                    </select>
-                    @error('provincia')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ route('admin.proveedores.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Crear Proveedor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="ciudad" class="form-label">Ciudad</label>
-                    <select id="ciudad" name="ciudad" class="form-control {{ $errors->has('ciudad') ? 'is-invalid' : '' }}">
-                        <option value="">Selecciona una ciudad</option>
-                        <!-- Aquí se cargarán las ciudades dinámicamente -->
-                    </select>
-                    @error('ciudad')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Consejo:</strong> Los campos marcados con <span class="text-danger">*</span> son obligatorios.
                 </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="direccion" class="form-label">Dirección</label>
-                    <input type="text" class="form-control {{ $errors->has('direccion') ? 'is-invalid' : '' }}" id="direccion" name="direccion" value="{{ old('direccion') }}">
-                    @error('direccion')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Nota:</strong> Una vez creado el proveedor, podrás agregar artículos asociados.
                 </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="zipcode" class="form-label">Código Postal</label>
-                    <input type="text" class="form-control {{ $errors->has('zipcode') ? 'is-invalid' : '' }}" id="zipcode" name="zipcode" value="{{ old('zipcode') }}">
-                    @error('zipcode')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="work_activity" class="form-label">Actividad Laboral</label>
-                    <input type="text" class="form-control {{ $errors->has('work_activity') ? 'is-invalid' : '' }}" id="work_activity" name="work_activity" value="{{ old('work_activity') }}">
-                    @error('work_activity')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="fax" class="form-label">Fax</label>
-                    <input type="text" class="form-control {{ $errors->has('fax') ? 'is-invalid' : '' }}" id="fax" name="fax" value="{{ old('fax') }}">
-                    @error('fax')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="phone" class="form-label">Teléfono</label>
-                    <input type="text" class="form-control {{ $errors->has('phone') ? 'is-invalid' : '' }}" id="phone" name="phone" value="{{ old('phone') }}">
-                    @error('phone')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="web" class="form-label">Página Web</label>
-                    <input type="text" class="form-control {{ $errors->has('web') ? 'is-invalid' : '' }}" id="web" name="web" value="{{ old('web') }}">
-                    @error('web')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="facebook" class="form-label">Facebook</label>
-                    <input type="text" class="form-control {{ $errors->has('facebook') ? 'is-invalid' : '' }}" id="facebook" name="facebook" value="{{ old('facebook') }}">
-                    @error('facebook')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="twitter" class="form-label">Twitter</label>
-                    <input type="text" class="form-control {{ $errors->has('twitter') ? 'is-invalid' : '' }}" id="twitter" name="twitter" value="{{ old('twitter') }}">
-                    @error('twitter')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="linkedin" class="form-label">LinkedIn</label>
-                    <input type="text" class="form-control {{ $errors->has('linkedin') ? 'is-invalid' : '' }}" id="linkedin" name="linkedin" value="{{ old('linkedin') }}">
-                    @error('linkedin')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="instagram" class="form-label">Instagram</label>
-                    <input type="text" class="form-control {{ $errors->has('instagram') ? 'is-invalid' : '' }}" id="instagram" name="instagram" value="{{ old('instagram') }}">
-                    @error('instagram')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 col-12 mb-3">
-                    <label for="pinterest" class="form-label">Pinterest</label>
-                    <input type="text" class="form-control {{ $errors->has('pinterest') ? 'is-invalid' : '' }}" id="pinterest" name="pinterest" value="{{ old('pinterest') }}">
-                    @error('pinterest')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-12 mb-3">
-                    <label for="note" class="form-label">Nota</label>
-                    <textarea class="form-control {{ $errors->has('note') ? 'is-invalid' : '' }}" id="note" name="note">{{ old('note') }}</textarea>
-                    @error('note')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-12">
-                    <button type="submit" class="btn btn-terminar w-100 fs-4 mt-4">Guardar</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 @endsection
+
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    //f70b99b7f3msh675b920689d2542p1c18a1jsn4c4c3387811a
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación del formulario
+    const form = document.querySelector('form');
+    const nombreInput = document.getElementById('nombre');
     
-    document.addEventListener('DOMContentLoaded', function () {
-        let token;
-        var req = axios.get('https://www.universal-tutorial.com/api/getaccesstoken', {
-            headers: {
-                "Accept": "application/json",
-                "api-token": "okiCmY0EwJykpQWDAtYRNqPGLfHp6zH6KHnWQbqNC-i315D9WZuwBLdrRAkCxYHq3nA",
-                "user-email": "p.ragel@hawkins.es"
-            }
-        }). then(resp => {
-            token = resp.data.auth_token;
-            console.log("Bearer " + token)
-            // Cargar países al cargar la página usando REST Countries API
-            axios.get('https://www.universal-tutorial.com/api/countries/',{
-                headers: {
-                        "Authorization": "Bearer " + token,
-                        "Accept": "application/json"
-                }
-            })
-            .then(response => {
-                console.log(response)
-                const paises = response.data;
-                paises.forEach(pais => {
-                    const option = document.createElement('option');
-                    option.value = pais.country_name;  // Usamos el nombre común del país
-                    option.textContent = pais.country_name; // Mostrar el nombre en español si está disponible
-                    paisSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error al cargar los países:', error));
-        })
-        // var req = unirest("GET", "https://www.universal-tutorial.com/api/getaccesstoken");
-        const paisSelect = document.getElementById('pais');
-        const regionSelect = document.getElementById('provincia');
-        const ciudadSelect = document.getElementById('ciudad');
-
-        
-
-        // Cargar regiones/provincias cuando se selecciona un país
-        paisSelect.addEventListener('change', function () {
-            const pais = paisSelect.value;
-            if (pais) {
-                axios.get('https://www.universal-tutorial.com/api/states/' +  pais, {
-                    headers: {
-                            "Authorization": "Bearer " + token,
-                            "Accept": "application/json"
-                    }
-                })
-                    .then(response => {
-                        console.log(response)
-                        const regiones = response.data;
-                        regionSelect.innerHTML = '<option value="">Selecciona una región/provincia</option>';
-                        ciudadSelect.innerHTML = '<option value="">Selecciona una ciudad</option>';
-                        regiones.forEach(region => {
-                            const option = document.createElement('option');
-                            option.value = region.state_name;
-                            option.textContent = region.state_name;
-                            regionSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error al cargar las regiones/provincias:', error));
-            } else {
-                regionSelect.innerHTML = '<option value="">Selecciona una región/provincia</option>';
-                ciudadSelect.innerHTML = '<option value="">Selecciona una ciudad</option>';
-            }
-        });
-
-        // Cargar ciudades cuando se selecciona una región/provincia
-        regionSelect.addEventListener('change', function () {
-            const provincia = regionSelect.value;
-            const pais = paisSelect.value;
-
-            if (provincia) {
-                axios.get('https://www.universal-tutorial.com/api/cities/' +  provincia, {
-                    headers: {
-                            "Authorization": "Bearer " + token,
-                            "Accept": "application/json"
-                    }
-                })
-                    .then(response => {
-                        const ciudades = response.data;
-                        console.log(response)
-
-                        ciudadSelect.innerHTML = '<option value="">Selecciona una ciudad</option>';
-                        if (ciudades.length > 0) {
-                            ciudades.forEach(ciudad => {
-                                const option = document.createElement('option');
-                                option.value = ciudad.city_name;
-                                option.textContent = ciudad.city_name;
-                                ciudadSelect.appendChild(option);
-                            });
-                        } else {
-                            ciudadSelect.innerHTML = '<option value="">No hay ciudades disponibles para esta provincia</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al cargar las ciudades:', error);
-                        ciudadSelect.innerHTML = '<option value="">No se pudieron cargar las ciudades</option>';
-                    });
-            } else {
-                ciudadSelect.innerHTML = '<option value="">Selecciona una ciudad</option>';
-            }
-        });
+    form.addEventListener('submit', function(e) {
+        if (!nombreInput.value.trim()) {
+            e.preventDefault();
+            nombreInput.classList.add('is-invalid');
+            nombreInput.focus();
+            return false;
+        }
     });
-
+    
+    // Limpiar errores al escribir
+    nombreInput.addEventListener('input', function() {
+        if (this.classList.contains('is-invalid')) {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
 </script>
 @endsection

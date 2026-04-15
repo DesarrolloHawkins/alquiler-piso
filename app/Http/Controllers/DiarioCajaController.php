@@ -14,6 +14,7 @@ use App\Models\SubCuentaContable;
 use App\Models\SubCuentaHijo;
 use App\Models\SubGrupoContable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 
 use DataTables;
@@ -124,7 +125,7 @@ class DiarioCajaController extends Controller
     //     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
     // }
 
-    public function index(Request $request)
+   /*  public function index(Request $request)
 {
     // Recuperar el saldo inicial de la base de datos
     $anio = Anio::first(); // Ajusta este modelo según cómo estés almacenando el saldo inicial
@@ -154,14 +155,15 @@ class DiarioCajaController extends Controller
         $query->where('concepto', 'like', '%' . $request->concepto . '%');
     }
 
-    // Ordenar los resultados por fecha ascendente para calcular el saldo inicial correctamente
-    $entries = $query->orderBy('id', 'asc')->get();
+    // Obtener todas las entradas del diario de caja filtradas en orden de visualización para calcular el saldo
+    $entriesForCalculation = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
 
     // Inicializar el saldo acumulado con el saldo inicial
     $saldoAcumulado = $saldoInicial;
+    $saldoMap = [];
 
-    // Recorrer todas las líneas del diario y calcular el saldo
-    foreach ($entries as $linea) {
+    // Recorrer todas las líneas del diario en orden descendente para calcular el saldo
+    foreach ($entriesForCalculation as $linea) {
         // Asegúrate de que 'debe' y 'haber' sean siempre valores positivos al calcular el saldo.
         $debe = abs($linea->debe);
         $haber = abs($linea->haber);
@@ -174,18 +176,89 @@ class DiarioCajaController extends Controller
             $saldoAcumulado += $haber;
         }
 
-        // Añadir el saldo acumulado a cada línea
-        $linea->saldo = $saldoAcumulado;
+        // Guardar el saldo calculado en el mapa
+        $saldoMap[$linea->id] = $saldoAcumulado;
     }
 
-    // Reordenar los resultados en orden descendente por fecha para la vista
-    $response = $entries->sortByDesc('id');
+    // Obtener las entradas en orden de visualización (más recientes primero)
+    $response = $query->orderBy('date', 'desc')->orderBy('id', 'desc')->get();
+
+    // Asignar los saldos calculados a las entradas en orden de visualización
+    foreach ($response as $linea) {
+        $linea->saldo = $saldoMap[$linea->id] ?? 0;
+    }
 
     // Recuperar los estados y cuentas para los filtros
     $estados = EstadosDiario::all(); // Asegúrate de tener este modelo ajustado
     $cuentas = CuentasContable::all(); // Asegúrate de tener este modelo ajustado
 
     return view('admin.contabilidad.diarioCaja.index', compact('response', 'saldoInicial', 'estados', 'cuentas'));
+}
+ */
+
+ public function index(Request $request)
+{
+    // 1) Saldo inicial
+    $anio = Anio::first();
+    $saldoInicial = $anio->saldo_inicial ?? 0;
+
+    // 2) Base de consulta con filtros (SIN orden todavía)
+    $baseQuery = DiarioCaja::query();
+
+    if ($request->filled('start_date')) {
+        $baseQuery->where('date', '>=', $request->start_date);
+    }
+    if ($request->filled('end_date')) {
+        $baseQuery->where('date', '<=', $request->end_date);
+    }
+    if ($request->filled('estado_id')) {
+        $baseQuery->where('estado_id', $request->estado_id);
+    }
+    if ($request->filled('cuenta_id')) {
+        $baseQuery->where('cuenta_id', $request->cuenta_id);
+    }
+    if ($request->filled('concepto')) {
+        $baseQuery->where('concepto', 'like', '%'.$request->concepto.'%');
+    }
+
+    // 3) Cálculo del saldo recorriendo de la más vieja a la más nueva
+    $calcQuery = (clone $baseQuery)
+        ->orderBy('date', 'asc')
+        ->orderBy('id', 'asc');
+
+    $entriesForCalculation = $calcQuery->get();
+
+    $saldoAcumulado = $saldoInicial;
+    $saldoMap = [];
+
+    foreach ($entriesForCalculation as $linea) {
+        $debe  = abs($linea->debe ?? 0);   // salida
+        $haber = abs($linea->haber ?? 0);  // entrada
+
+        // primero aplicamos el movimiento y luego guardamos el saldo resultante
+        if ($debe > 0)  $saldoAcumulado -= $debe;
+        if ($haber > 0) $saldoAcumulado += $haber;
+
+        $saldoMap[$linea->id] = $saldoAcumulado;
+    }
+
+    // 4) Recuperar para mostrar (más recientes arriba)
+    $viewQuery = (clone $baseQuery)
+        ->orderBy('date', 'desc')
+        ->orderBy('id', 'desc');
+
+    $response = $viewQuery->get();
+
+    // 5) Inyectar el saldo calculado a cada línea
+    foreach ($response as $linea) {
+        $linea->saldo = $saldoMap[$linea->id] ?? $saldoInicial;
+    }
+
+    // 6) Datos auxiliares
+    $estados = EstadosDiario::all();
+    $cuentas = CuentasContable::all();
+
+    return view('admin.contabilidad.diarioCaja.index', compact('response','saldoInicial','estados','cuentas'));
 }
 
 
@@ -275,28 +348,38 @@ class DiarioCajaController extends Controller
         $estados = EstadosDiario::all();
         return view('admin.contabilidad.diarioCaja.create', compact('ingresos','grupos','response','numeroAsiento','estados'));
     }
+    /**
+     * Elimina una línea del diario de caja y el ingreso o gasto asociado (soft delete).
+     */
     public function destroyDiarioCaja($id)
     {
         $diario = DiarioCaja::findOrFail($id);
 
-        // Verificar si hay un ingreso relacionado
-        if ($diario->ingreso_id) {
-            $ingreso = Ingresos::find($diario->ingreso_id);
-            if ($ingreso) {
-                $ingreso->delete();
+        DB::transaction(function () use ($diario) {
+            // 1) Borrar el hash asociado (si existe) para que no quede huérfano
+            if (\Schema::hasColumn('hash_movimientos', 'diario_caja_id')) {
+                DB::table('hash_movimientos')->where('diario_caja_id', $diario->id)->delete();
             }
-        }
 
-        // Verificar si hay un gasto relacionado
-        if ($diario->gasto_id) {
-            $gasto = Gastos::find($diario->gasto_id);
-            if ($gasto) {
-                $gasto->delete();
+            // 2) Borrar el ingreso asociado (si existe)
+            if ($diario->ingreso_id) {
+                $ingreso = Ingresos::find($diario->ingreso_id);
+                if ($ingreso) {
+                    $ingreso->delete();
+                }
             }
-        }
 
-        // Eliminar la línea del Diario de Caja
-        $diario->delete();
+            // 3) Borrar el gasto asociado (si existe)
+            if ($diario->gasto_id) {
+                $gasto = Gastos::find($diario->gasto_id);
+                if ($gasto) {
+                    $gasto->delete();
+                }
+            }
+
+            // 4) Borrar la línea del diario de caja
+            $diario->delete();
+        });
 
         return redirect()->route('admin.diarioCaja.index')->with('status', 'Registro del Diario de Caja eliminado con éxito.');
     }

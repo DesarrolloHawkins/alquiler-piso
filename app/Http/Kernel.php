@@ -15,6 +15,7 @@ class Kernel extends HttpKernel
      */
     protected $middleware = [
         // \App\Http\Middleware\TrustHosts::class,
+        \App\Http\Middleware\BlockSiteAndRedirect::class, // Bloqueo global del sitio
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -37,13 +38,14 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\Idioma::class,
-
+            \App\Http\Middleware\LogUserActivity::class,
         ],
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\LogUserActivity::class,
         ],
     ];
 
@@ -66,6 +68,11 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'redirect.after.login' => \App\Http\Middleware\RedirectAfterLogin::class,
+        'mobile.redirect' => \App\Http\Middleware\MobileRedirect::class,
+        'log.activity' => \App\Http\Middleware\LogUserActivity::class,
+        'log.auth' => \App\Http\Middleware\LogAuthentication::class,
+        'validate.file.upload' => \App\Http\Middleware\ValidateFileUpload::class,
     ];
 
     /**

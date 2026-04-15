@@ -15,11 +15,14 @@ use App\Models\RatePlan;
 use App\Models\Reserva;
 use App\Models\RoomType;
 use App\Services\ChatGptService;
+use App\Services\NotificationService;
+use App\Services\MIRService;
 use Carbon\Carbon;
 use Carbon\Cli\Invoker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ReservasController extends Controller
 {
@@ -44,11 +47,22 @@ class ReservasController extends Controller
     // Obtener fechas del request, usando null como predeterminado si no se especifican
     $fechaEntrada = $request->get('fecha_entrada');
     $fechaSalida = $request->get('fecha_salida');
+
+    // Log the search operation
+    $this->logRead('RESERVAS', null, [
+        'order_by' => $orderBy,
+        'direction' => $direction,
+        'per_page' => $perPage,
+        'search' => $searchTerm,
+        'fecha_entrada' => $fechaEntrada,
+        'fecha_salida' => $fechaSalida
+    ]);
+
     $query = Reserva::with('cliente');
-    
+
     // Aplicar filtro de estado de reservas
     $filtroEstado = $request->get('filtro_estado', 'activas');
-    
+
     if ($filtroEstado === 'activas') {
         $query->where('estado_id', '!=', 4);
     } elseif ($filtroEstado === 'eliminadas') {
@@ -181,18 +195,96 @@ class ReservasController extends Controller
             'verificado' => 'nullable|integer',
             'dni_entregado' => 'nullable|integer',
             'enviado_webpol' => 'nullable|integer',
-            'fecha_limpieza' => 'nullable|date'
+            'no_facturar' => 'nullable|boolean'
         ]);
 
         $input = $request->all();
         $input['precio'] = floatval(str_replace(',', '.', preg_replace('/[^\d,\.]/', '', $input['precio'])));
-        $reserva = new Reserva($input);
-        $reserva->save();
 
+        // Crear la reserva con los datos validados
+        $reserva = Reserva::create([
+            'cliente_id' => $input['cliente_id'],
+            'apartamento_id' => $input['apartamento_id'],
+            'room_type_id' => $input['room_type_id'],
+            'estado_id' => $input['estado_id'],
+            'origen' => $input['origen'],
+            'fecha_entrada' => $input['fecha_entrada'],
+            'fecha_salida' => $input['fecha_salida'],
+            'codigo_reserva' => $input['codigo_reserva'],
+            'precio' => $input['precio'],
+            'verificado' => $input['verificado'] ?? null,
+            'dni_entregado' => $input['dni_entregado'] ?? null,
+            'enviado_webpol' => $input['enviado_webpol'] ?? null,
+            'no_facturar' => $input['no_facturar'] ?? false
+        ]);
 
-        // Llamar a la función para actualizar la disponibilidad en Channex
-        $response = $this->updateChannexAvailability($reserva);
-        // return response()->json($response);
+        // Log the creation
+        $this->logCreate('RESERVA', $reserva->id, $reserva->toArray());
+
+        // Crear notificación de nueva reserva
+        NotificationService::notifyNewReservation($reserva);
+
+        // Si la reserva es de hoy y son más de las 14:00, intentar enviar claves por Channex
+        \App\Console\Kernel::enviarClavesPorChannexSiEsNecesario($reserva);
+
+        // Actualizar Channex para TODAS las reservas creadas manualmente (sin id_channex)
+        // Esto incluye reservas presenciales, web, admin, manual, etc.
+        // Solo excluimos las reservas que vienen de Channex (tienen id_channex) porque ya están sincronizadas
+        if (empty($reserva->id_channex)) {
+            // Obtener el room_type correcto del apartamento si no está asignado o no es válido
+            $apartamento = Apartamento::with('roomTypes')->find($reserva->apartamento_id);
+            $roomType = null;
+
+            // Si la reserva ya tiene room_type_id, verificar que pertenezca al apartamento
+            if ($reserva->room_type_id) {
+                $roomType = RoomType::where('id', $reserva->room_type_id)
+                    ->where('property_id', $reserva->apartamento_id)
+                    ->first();
+            }
+
+            // Si no hay room_type válido, obtener el primero del apartamento con id_channex
+            if (!$roomType && $apartamento) {
+                $roomType = $this->obtenerRoomTypeParaChannex($apartamento);
+
+                // Si encontramos un room_type, actualizar la reserva
+                if ($roomType) {
+                    $reserva->room_type_id = $roomType->id;
+                    $reserva->save();
+                }
+            }
+
+            // Actualizar Channex si tenemos todos los datos necesarios
+            if ($apartamento && $apartamento->id_channex && $roomType && $roomType->id_channex) {
+                $this->updateChannexAvailability($reserva);
+
+                Log::info('Reserva creada manualmente - Channex actualizado (disponibilidad cerrada)', [
+                    'reserva_id' => $reserva->id,
+                    'apartamento_id' => $apartamento->id,
+                    'apartamento_titulo' => $apartamento->titulo,
+                    'room_type_id' => $roomType->id,
+                    'origen' => $reserva->origen,
+                    'fecha_entrada' => $reserva->fecha_entrada,
+                    'fecha_salida' => $reserva->fecha_salida
+                ]);
+            } else {
+                Log::warning('No se pudo actualizar Channex al crear reserva manual - faltan datos', [
+                    'reserva_id' => $reserva->id,
+                    'apartamento_id' => $apartamento ? $apartamento->id : null,
+                    'apartamento_tiene_channex' => $apartamento ? !empty($apartamento->id_channex) : false,
+                    'room_type_id' => $roomType ? $roomType->id : null,
+                    'room_type_tiene_channex' => $roomType ? !empty($roomType->id_channex) : false,
+                    'origen' => $reserva->origen
+                ]);
+            }
+        } else {
+            // Para reservas con id_channex (vienen de Channex), no actualizamos porque ya están sincronizadas
+            Log::info('Reserva con id_channex creada - no se actualiza Channex (ya sincronizada)', [
+                'reserva_id' => $reserva->id,
+                'id_channex' => $reserva->id_channex,
+                'origen' => $reserva->origen
+            ]);
+        }
+
         return redirect()->route('reservas.index')->with('success', 'Reserva creada con éxito');
     }
 
@@ -220,13 +312,13 @@ class ReservasController extends Controller
         'availability' => 0, // Bloqueamos la disponibilidad
     ];
 
-    // Enviar actualización a Channex
-    $response = Http::withHeaders([
+    // Enviar actualización a Channex (sin verificación SSL)
+    $response = Http::withoutVerifying()->withHeaders([
         'user-api-key' => $this->apiToken,
     ])->post("{$this->apiUrl}/availability", ['values' => [$update]]);
 
     if (!$response->successful()) {
-        \Log::error('Error al actualizar disponibilidad en Channex', [
+        Log::error('Error al actualizar disponibilidad en Channex', [
             'error' => $response->body(),
             'data' => $update
         ]);
@@ -234,18 +326,248 @@ class ReservasController extends Controller
     return [$response->json(), $update];
 }
 
+    /**
+     * Libera la disponibilidad en Channex para un apartamento en un rango de fechas.
+     */
+    private function liberarChannexAvailability($apartamento, $roomType, $fechaEntrada, $fechaSalida)
+    {
+        $startDate = Carbon::parse($fechaEntrada);
+        $endDate = Carbon::parse($fechaSalida)->subDay(); // Restamos un día a la fecha de salida
+
+        if (!$apartamento || !$apartamento->id_channex || !$roomType || !$roomType->id_channex) {
+            return; // Si falta algún ID necesario, no hacemos nada
+        }
+
+        $update = [
+            'property_id' => $apartamento->id_channex,
+            'room_type_id' => $roomType->id_channex,
+            'date_from' => $startDate->toDateString(),
+            'date_to' => $endDate->toDateString(),
+            'update_type' => 'availability',
+            'availability' => 1, // Liberamos la disponibilidad
+        ];
+
+        // Enviar actualización a Channex (sin verificación SSL)
+        $response = Http::withoutVerifying()->withHeaders([
+            'user-api-key' => $this->apiToken,
+        ])->post("{$this->apiUrl}/availability", ['values' => [$update]]);
+
+        if (!$response->successful()) {
+            Log::error('Error al liberar disponibilidad en Channex', [
+                'error' => $response->body(),
+                'data' => $update
+            ]);
+        } else {
+            Log::info('Disponibilidad liberada en Channex', [
+                'apartamento_id' => $apartamento->id,
+                'apartamento_titulo' => $apartamento->titulo,
+                'room_type_id' => $roomType->id,
+                'fecha_entrada' => $fechaEntrada,
+                'fecha_salida' => $fechaSalida
+            ]);
+        }
+        return [$response->json(), $update];
+    }
+
+    /**
+     * Obtiene el room_type de un apartamento que tenga id_channex para usar en Channex.
+     */
+    private function obtenerRoomTypeParaChannex($apartamento)
+    {
+        if (!$apartamento || !$apartamento->id_channex) {
+            return null;
+        }
+
+        // Obtener el primer room_type del apartamento que tenga id_channex
+        return $apartamento->roomTypes()
+            ->whereNotNull('id_channex')
+            ->first();
+    }
+
 
     /**
      * Display the specified resource.
      */
     public function show(Reserva $reserva)
     {
+        // Cargar las relaciones necesarias
+        $reserva->load([
+            'apartamento.edificioName',
+            'cliente',
+            'estado',
+            'serviciosExtras.servicio',
+            'serviciosExtras.pago'
+        ]);
+
         $huespedes = Huesped::where('reserva_id', $reserva->id)->get();
-        $mensajes = MensajeAuto::where('reserva_id', $reserva->id)->get();
+        $mensajes = MensajeAuto::with('categoria')->where('reserva_id', $reserva->id)->get();
         $photos = Photo::where('reserva_id', $reserva->id)->get();
         $factura = Invoices::where('reserva_id', $reserva->id)->first();
-        return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes', 'factura'));
 
+        return view('reservas.show', compact('reserva', 'mensajes', 'photos','huespedes', 'factura'));
+    }
+
+    /**
+     * Enviar datos de la reserva a la plataforma externa (URL en PLATAFORMA_RESERVAS_URL).
+     * Envía: fecha_entrada, fecha_salida, codigo_reserva, apartamento_id, nombre_apartamento, id_channex.
+     */
+    public function enviarPlataforma(Reserva $reserva)
+    {
+        $url = config('services.plataforma_reservas_url');
+
+        if (empty($url)) {
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'No está configurada la URL de la plataforma. Añade PLATAFORMA_RESERVAS_URL en el .env');
+        }
+
+        $reserva->loadMissing('apartamento');
+
+        $payload = [
+            'fecha_entrada' => $reserva->fecha_entrada ? \Carbon\Carbon::parse($reserva->fecha_entrada)->format('Y-m-d') : null,
+            'fecha_salida'  => $reserva->fecha_salida ? \Carbon\Carbon::parse($reserva->fecha_salida)->format('Y-m-d') : null,
+            'codigo_reserva' => $reserva->codigo_reserva,
+            'apartamento_id' => $reserva->apartamento_id,
+            'nombre_apartamento' => $reserva->apartamento?->titulo ?? null,
+            'id_channex' => $reserva->apartamento?->id_channex ?? null,
+        ];
+
+        try {
+            // Petición POST con body JSON (la plataforma debe aceptar POST en su ruta)
+            $response = Http::timeout(15)
+                ->asJson()
+                ->acceptJson()
+                ->post($url, $payload);
+
+            $status = $response->status();
+            $body = $response->json() ?? $response->body();
+
+            Log::info('Petición a plataforma externa', [
+                'reserva_id' => $reserva->id,
+                'codigo_reserva' => $reserva->codigo_reserva,
+                'url' => $url,
+                'status' => $status,
+            ]);
+
+            $payloadJson = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+            if ($response->successful()) {
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('success', 'Datos enviados correctamente a la plataforma. Respuesta: ' . (is_array($body) ? json_encode($body) : $body))
+                    ->with('plataforma_payload', $payloadJson)
+                    ->with('plataforma_response', is_array($body) ? json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $body);
+            }
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'La plataforma respondió con error (HTTP ' . $status . '). Respuesta: ' . (is_array($body) ? json_encode($body) : substr((string) $body, 0, 500)))
+                ->with('plataforma_payload', $payloadJson)
+                ->with('plataforma_response', is_array($body) ? json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : substr((string) $body, 0, 1000));
+        } catch (\Exception $e) {
+            Log::error('Error al enviar reserva a plataforma', [
+                'reserva_id' => $reserva->id,
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+
+            $payloadJson = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error al conectar con la plataforma: ' . $e->getMessage())
+                ->with('plataforma_payload', $payloadJson);
+        }
+    }
+
+    /**
+     * Enviar reserva a MIR (Servicio de Hospedajes)
+     */
+    public function enviarMIR(Reserva $reserva)
+    {
+        try {
+            $mirService = new MIRService();
+            $resultado = $mirService->enviarReserva($reserva);
+
+            // Actualizar la reserva con el resultado
+            $reserva->mir_enviado = $resultado['success'];
+            $reserva->mir_estado = $resultado['estado'];
+            $reserva->mir_respuesta = json_encode($resultado);
+            $reserva->mir_fecha_envio = now();
+            $reserva->mir_codigo_referencia = $resultado['codigo_referencia'] ?? null;
+            $reserva->save();
+
+            if ($resultado['success']) {
+                Log::info('Reserva enviada exitosamente a MIR', [
+                    'reserva_id' => $reserva->id,
+                    'codigo_referencia' => $resultado['codigo_referencia'],
+                ]);
+
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('success', 'Reserva enviada exitosamente a MIR. Código de referencia: ' . ($resultado['codigo_referencia'] ?? 'N/A'));
+            } else {
+                Log::error('Error al enviar reserva a MIR', [
+                    'reserva_id' => $reserva->id,
+                    'error' => $resultado['mensaje'],
+                ]);
+
+                return redirect()->route('reservas.show', $reserva->id)
+                    ->with('error', 'Error al enviar la reserva a MIR: ' . $resultado['mensaje']);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al enviar reserva a MIR', [
+                'reserva_id' => $reserva->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error inesperado al enviar la reserva a MIR: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Toggle el estado de conversacion_plataforma de una reserva
+     */
+    public function toggleConversacionPlataforma(Reserva $reserva)
+    {
+        try {
+            // Cambiar el estado (toggle)
+            $reserva->conversacion_plataforma = !$reserva->conversacion_plataforma;
+            $reserva->save();
+
+            $estadoTexto = $reserva->conversacion_plataforma ? 'desactivadas' : 'activadas';
+
+            Log::info('Estado de conversacion_plataforma actualizado', [
+                'reserva_id' => $reserva->id,
+                'nuevo_estado' => $reserva->conversacion_plataforma,
+            ]);
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Contestaciones por plataforma {$estadoTexto} correctamente",
+                    'conversacion_plataforma' => $reserva->conversacion_plataforma
+                ]);
+            }
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('success', "Contestaciones por plataforma {$estadoTexto} correctamente");
+
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar conversacion_plataforma', [
+                'reserva_id' => $reserva->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al actualizar el estado: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->route('reservas.show', $reserva->id)
+                ->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -267,10 +589,12 @@ class ReservasController extends Controller
         'fecha_entrada' => 'required|date',
         'fecha_salida' => 'required|date|after_or_equal:fecha_entrada',
         'precio' => 'required|numeric|min:0',
+        'no_facturar' => 'nullable|boolean',
     ]);
 
     // Buscar la reserva
     $reserva = Reserva::findOrFail($id);
+    $oldData = $reserva->toArray();
     $validated['precio'] = floatval(str_replace(',', '.', $validated['precio']));
 
     // Actualizar los campos
@@ -280,7 +604,127 @@ class ReservasController extends Controller
         'fecha_entrada' => $validated['fecha_entrada'],
         'fecha_salida' => $validated['fecha_salida'],
         'precio' => $validated['precio'],
+        'no_facturar' => $validated['no_facturar'] ?? false,
     ]);
+
+    // Log the update
+    $this->logUpdate('RESERVA', $reserva->id, $oldData, $reserva->toArray());
+
+    // Crear notificación de actualización de reserva
+    NotificationService::notifyReservationUpdate($reserva, $oldData);
+
+    // Actualizar Channex si es necesario (TODAS las reservas sin id_channex)
+    // Solo excluimos las reservas que vienen de Channex (tienen id_channex) porque ya están sincronizadas
+    if (empty($reserva->id_channex)) {
+        // Detectar cambios
+        $cambioApartamento = $oldData['apartamento_id'] != $validated['apartamento_id'];
+        $cambioFechaEntrada = $oldData['fecha_entrada'] != $validated['fecha_entrada'];
+        $cambioFechaSalida = $oldData['fecha_salida'] != $validated['fecha_salida'];
+
+        $hayCambios = $cambioApartamento || $cambioFechaEntrada || $cambioFechaSalida;
+
+        if ($hayCambios) {
+            // Obtener apartamentos con sus roomTypes
+            $apartamentoAnterior = Apartamento::with('roomTypes')->find($oldData['apartamento_id']);
+            $apartamentoNuevo = Apartamento::with('roomTypes')->find($validated['apartamento_id']);
+
+            // CASO 1: Cambió apartamento
+            if ($cambioApartamento) {
+                // Obtener room_type_id del apartamento anterior (desde oldData)
+                $roomTypeAnterior = null;
+                if (!empty($oldData['room_type_id'])) {
+                    $roomTypeAnterior = RoomType::find($oldData['room_type_id']);
+                }
+
+                // Si no hay room_type_id en oldData, intentar obtenerlo del apartamento anterior
+                if (!$roomTypeAnterior && $apartamentoAnterior) {
+                    $roomTypeAnterior = $this->obtenerRoomTypeParaChannex($apartamentoAnterior);
+                }
+
+                // Obtener room_type_id del nuevo apartamento
+                $roomTypeNuevo = $this->obtenerRoomTypeParaChannex($apartamentoNuevo);
+
+                // Liberar apartamento anterior
+                if ($apartamentoAnterior && $apartamentoAnterior->id_channex && $roomTypeAnterior && $roomTypeAnterior->id_channex) {
+                    $this->liberarChannexAvailability(
+                        $apartamentoAnterior,
+                        $roomTypeAnterior,
+                        $oldData['fecha_entrada'],
+                        $oldData['fecha_salida']
+                    );
+                }
+
+                // Bloquear nuevo apartamento
+                if ($apartamentoNuevo && $apartamentoNuevo->id_channex && $roomTypeNuevo && $roomTypeNuevo->id_channex) {
+                    // Actualizar room_type_id de la reserva si es necesario
+                    if ($reserva->room_type_id != $roomTypeNuevo->id) {
+                        $reserva->room_type_id = $roomTypeNuevo->id;
+                        $reserva->save();
+                    }
+
+                    // Bloquear en Channex
+                    $this->updateChannexAvailability($reserva);
+
+                    Log::info('Apartamento cambiado en reserva manual - Channex actualizado', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_anterior_id' => $apartamentoAnterior->id,
+                        'apartamento_anterior_titulo' => $apartamentoAnterior->titulo,
+                        'apartamento_nuevo_id' => $apartamentoNuevo->id,
+                        'apartamento_nuevo_titulo' => $apartamentoNuevo->titulo,
+                        'origen' => $reserva->origen
+                    ]);
+                } else {
+                    Log::warning('No se pudo actualizar Channex - faltan datos', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_nuevo_id' => $apartamentoNuevo ? $apartamentoNuevo->id : null,
+                        'apartamento_nuevo_tiene_channex' => $apartamentoNuevo ? !empty($apartamentoNuevo->id_channex) : false,
+                        'room_type_nuevo_id' => $roomTypeNuevo ? $roomTypeNuevo->id : null,
+                        'room_type_nuevo_tiene_channex' => $roomTypeNuevo ? !empty($roomTypeNuevo->id_channex) : false
+                    ]);
+                }
+            }
+            // CASO 2: Solo cambió fecha (mismo apartamento)
+            else if ($cambioFechaEntrada || $cambioFechaSalida) {
+                // Obtener room_type del apartamento actual
+                $roomTypeActual = $this->obtenerRoomTypeParaChannex($apartamentoNuevo);
+
+                // Si no se encuentra, intentar usar el room_type_id de la reserva
+                if (!$roomTypeActual && $reserva->room_type_id) {
+                    $roomTypeActual = RoomType::find($reserva->room_type_id);
+                }
+
+                // Liberar fechas antiguas
+                if ($apartamentoNuevo && $apartamentoNuevo->id_channex && $roomTypeActual && $roomTypeActual->id_channex) {
+                    $this->liberarChannexAvailability(
+                        $apartamentoNuevo,
+                        $roomTypeActual,
+                        $oldData['fecha_entrada'],
+                        $oldData['fecha_salida']
+                    );
+                }
+
+                // Bloquear nuevas fechas
+                if ($apartamentoNuevo && $apartamentoNuevo->id_channex && $roomTypeActual && $roomTypeActual->id_channex) {
+                    $this->updateChannexAvailability($reserva);
+
+                    Log::info('Fechas cambiadas en reserva manual - Channex actualizado', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_id' => $apartamentoNuevo->id,
+                        'fecha_entrada_anterior' => $oldData['fecha_entrada'],
+                        'fecha_salida_anterior' => $oldData['fecha_salida'],
+                        'fecha_entrada_nueva' => $validated['fecha_entrada'],
+                        'fecha_salida_nueva' => $validated['fecha_salida'],
+                        'origen' => $reserva->origen
+                    ]);
+                } else {
+                    Log::warning('No se pudo actualizar Channex por cambio de fechas - faltan datos', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_id' => $apartamentoNuevo ? $apartamentoNuevo->id : null
+                    ]);
+                }
+            }
+        }
+    }
 
     // Redirigir con mensaje
     return redirect()->route('reservas.index')->with('success', 'Reserva actualizada correctamente.');
@@ -342,6 +786,78 @@ class ReservasController extends Controller
     {
         $reserva = Reserva::find($id);
         if ($reserva) {
+            // Guardar datos antes de eliminar para liberar Channex
+            $reservaData = $reserva->toArray();
+
+            // Liberar Channex si es reserva presencial o web (sin id_channex)
+            $origenLower = strtolower($reserva->origen);
+            $esPresencialOWeb = (
+                ($origenLower === 'presencial' || $origenLower === 'web')
+                && empty($reserva->id_channex)
+            );
+
+            if ($esPresencialOWeb) {
+                // Obtener apartamento y room_type antes de eliminar
+                $apartamento = Apartamento::with('roomTypes')->find($reserva->apartamento_id);
+                $roomType = null;
+
+                // Intentar obtener el room_type de la reserva
+                if ($reserva->room_type_id) {
+                    $roomType = RoomType::where('id', $reserva->room_type_id)
+                        ->where('property_id', $reserva->apartamento_id)
+                        ->first();
+                }
+
+                // Si no hay room_type válido, obtener el primero del apartamento con id_channex
+                if (!$roomType && $apartamento) {
+                    $roomType = $this->obtenerRoomTypeParaChannex($apartamento);
+                }
+
+                // Liberar disponibilidad en Channex
+                if ($apartamento && $apartamento->id_channex && $roomType && $roomType->id_channex) {
+                    $this->liberarChannexAvailability(
+                        $apartamento,
+                        $roomType,
+                        $reserva->fecha_entrada,
+                        $reserva->fecha_salida
+                    );
+
+                    Log::info('Reserva presencial/web eliminada - Channex liberado', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_id' => $apartamento->id,
+                        'apartamento_titulo' => $apartamento->titulo,
+                        'room_type_id' => $roomType->id,
+                        'origen' => $reserva->origen,
+                        'fecha_entrada' => $reserva->fecha_entrada,
+                        'fecha_salida' => $reserva->fecha_salida
+                    ]);
+                } else {
+                    Log::warning('No se pudo liberar Channex al eliminar reserva presencial/web - faltan datos', [
+                        'reserva_id' => $reserva->id,
+                        'apartamento_id' => $apartamento ? $apartamento->id : null,
+                        'apartamento_tiene_channex' => $apartamento ? !empty($apartamento->id_channex) : false,
+                        'room_type_id' => $roomType ? $roomType->id : null,
+                        'room_type_tiene_channex' => $roomType ? !empty($roomType->id_channex) : false
+                    ]);
+                }
+            } else {
+                // Para reservas con id_channex, no liberamos porque vienen de Channex
+                // Channex manejará la cancelación automáticamente
+                if (!empty($reserva->id_channex)) {
+                    Log::info('Reserva con id_channex eliminada - Channex no se libera (gestionado por Channex)', [
+                        'reserva_id' => $reserva->id,
+                        'id_channex' => $reserva->id_channex,
+                        'origen' => $reserva->origen
+                    ]);
+                }
+            }
+
+            // Log the deletion
+            $this->logDelete('RESERVA', $reserva->id, $reservaData);
+
+            // Crear notificación de cancelación de reserva
+            NotificationService::notifyReservationCancellation($reserva, 'Eliminada por administrador');
+
             $reserva->delete(); // Esto ahora usa soft delete
             return redirect()->route('reservas.index')->with('success', 'Reserva eliminada correctamente.');
         } else {
@@ -390,11 +906,17 @@ class ReservasController extends Controller
         // Obtenemos la Fecha de Hoy
         $hoy = Carbon::now();
         // Declaramos Variables
-        $cliente;
-        $reserva;
-        $num_adultos;
+        $cliente = null;
+        $reserva = null;
+        $num_adultos = null;
         // Convertimos las Request en la data
         $data = $request->all();
+
+        // Validamos que los campos obligatorios existan
+        if (!isset($data['codigo_reserva'])) {
+            return response()->json(['error' => 'Código de reserva requerido'], 400);
+        }
+
         // Almacenamos la peticion en un archivo
         Storage::disk('local')->put($data['codigo_reserva'].'-' . $hoy .'.txt', json_encode($request->all()));
 
@@ -403,11 +925,11 @@ class ReservasController extends Controller
         // Si la reserva no existe procedemos al registro
         if ($comprobarReserva == null) {
             // Obtenemos el Cliente si existe por el numero de telefono
-            $verificarCliente = Cliente::where('telefono', $data['telefono'] )->first();
+            $verificarCliente = Cliente::where('telefono', $data['telefono'] ?? null)->first();
             // Validamos si existe el cliente
             if ($verificarCliente == null) {
                 // Si no existe separamos el nombre y el numero de personas para el apartamento
-				if (preg_match('/^(.*?)\n(\d+)\s*adulto(?:s)?/', $data['alias'], $matches)) {
+				if (isset($data['alias']) && preg_match('/^(.*?)\n(\d+)\s*adulto(?:s)?/', $data['alias'], $matches)) {
                     // Establecemos el nombre y numero de adultos
 					$nombre = trim($matches[1]);
 					$num_adultos = $matches[2];
@@ -415,19 +937,19 @@ class ReservasController extends Controller
                     // Creamos el cliente
 					$crearCliente = Cliente::create([
 						'alias' => $nombre,
-						'idiomas' => $data['idiomas'],
-						'telefono' => $data['telefono'],
-						'email_secundario' => $data['email'],
+						'idiomas' => $data['idiomas'] ?? null,
+						'telefono' => $data['telefono'] ?? null,
+						'email_secundario' => $data['email'] ?? null,
 					]);
 					$cliente = $crearCliente;
 
 				}else {
                     // Si existe creamos al cliente
 					$crearCliente = Cliente::create([
-						'alias' => $data['alias'],
-						'idiomas' => $data['idiomas'],
-						'telefono' => $data['telefono'],
-						'email_secundario' => $data['email'],
+						'alias' => $data['alias'] ?? 'Cliente',
+						'idiomas' => $data['idiomas'] ?? null,
+						'telefono' => $data['telefono'] ?? null,
+						'email_secundario' => $data['email'] ?? null,
 					]);
 					$cliente = $crearCliente;
 				}
@@ -441,19 +963,20 @@ class ReservasController extends Controller
             $locale = 'es';
 			Carbon::setLocale($locale);
             // Parseamos las Fechas
-           	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada']);
-			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida']);
+           	$fecha_entrada = Carbon::createFromFormat('Y-m-d', $data['fecha_entrada'] ?? date('Y-m-d'));
+			$fecha_salida = Carbon::createFromFormat('Y-m-d', $data['fecha_salida'] ?? date('Y-m-d', strtotime('+1 day')));
 
             // Verificamos si la reserva existe por el codigo de reserva
             $verificarReserva = Reserva::where('codigo_reserva',$data['codigo_reserva'] )->first();
             // Si la reserva no existe
             if ($verificarReserva == null) {
                 // Comprobamos el origen para obtener el ID del apartamento
-                if ($data['origen'] == 'Booking') {
+                $origen = $data['origen'] ?? 'Web';
+                if ($origen == 'Booking') {
                     // Si es booking lo obtenemos por el id del apartamento en booking
-                    $apartamento = Apartamento::where('id_booking', $data['apartamento'])->first();
+                    $apartamento = Apartamento::where('id_booking', $data['apartamento'] ?? null)->first();
                 }
-                else if($data['origen'] == 'Airbnb'){
+                else if($origen == 'Airbnb'){
                     // Si es de Airbnb lo obtenemos por el nombre del apartamento
                     $searchQuery = $request->input('apartamento');
                     $bestMatch = $this->findClosestMatch($searchQuery);
@@ -463,11 +986,11 @@ class ReservasController extends Controller
                     }
 
                 } else {
-                    $apartamento = Apartamento::where('id_web', $data['apartamento'])->first();
+                    $apartamento = Apartamento::where('id_web', $data['apartamento'] ?? null)->first();
 
                 }
                 // Formateamos el precio
-                $precioOriginal = $data['precio'];
+                $precioOriginal = $data['precio'] ?? '0';
                 $precioSinSimbolo = preg_replace('/[€\s]/', '', $precioOriginal);
                 $precio = floatval($precioSinSimbolo);
                 $roomType = RoomType::where('property_id', $apartamento->id)->first();
@@ -475,7 +998,7 @@ class ReservasController extends Controller
                 $crearReserva = Reserva::create([
                     'codigo_reserva' => $data['codigo_reserva'],
                     'room_type_id' => $roomType->id,
-                    'origen' => $data['origen'],
+                    'origen' => $origen,
                     'fecha_entrada' =>  $fecha_entrada,
                     'fecha_salida' => $fecha_salida,
                     'precio' => $precio,
@@ -486,6 +1009,9 @@ class ReservasController extends Controller
                     // 'numero_personas' => $data['numero_personas']
                 ]);
                 $reserva = $crearReserva;
+
+                // Si la reserva es de hoy y son más de las 14:00, intentar enviar claves por Channex
+                \App\Console\Kernel::enviarClavesPorChannexSiEsNecesario($reserva);
 
                 // Llamada al controlador ARIController para ejecutar fullSync
                 $ariController = new \App\Http\Controllers\ARIController();  // Instanciar el ARIController
@@ -638,6 +1164,16 @@ class ReservasController extends Controller
             ->whereNotIn('estado_id', [5, 6]) // Filtrar estado_id diferente de 5 o 6
             ->get();
         foreach( $reservas as $reserva){
+            // Cálculo correcto de la base imponible y el IVA
+            // El precio de la reserva YA INCLUYE el IVA al 10%
+            // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+            // Base = 180.00 / 1.10 = 163.64 €
+            // IVA = 180.00 - 163.64 = 16.36 €
+            // Total = 180.00 € (precio original)
+            $total = $reserva->precio; // Precio ya incluye IVA
+            $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+            $iva = $total - $base; // Calcular el IVA
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -647,10 +1183,10 @@ class ReservasController extends Controller
                 'description' => '',
                 'fecha' => $reserva->fecha_salida,
                 'fecha_cobro' => null,
-                'base' => $reserva->precio - ($reserva->precio * 0.10),
-                'iva' => $reserva->precio * 0.10,
+                'base' => round($base, 2),
+                'iva' => round($iva, 2),
                 'descuento' => null,
-                'total' => $reserva->precio,
+                'total' => round($total, 2),
             ];
             $crear = Invoices::create($data);
             $referencia = $this->generateBudgetReference($crear);
@@ -1252,6 +1788,16 @@ class ReservasController extends Controller
             return response()->json('Añadido correctamente',200);
         }else {
 
+            // Cálculo correcto de la base imponible y el IVA
+            // El precio de la reserva YA INCLUYE el IVA al 10%
+            // Ejemplo: Si el precio es 180.00 € (con IVA incluido)
+            // Base = 180.00 / 1.10 = 163.64 €
+            // IVA = 180.00 - 163.64 = 16.36 €
+            // Total = 180.00 € (precio original)
+            $total = $reserva->precio; // Precio ya incluye IVA
+            $base = $total / 1.10; // Descomponer el total en base imponible (IVA 10%)
+            $iva = $total - $base; // Calcular el IVA
+
             $data = [
                 'budget_id' => null,
                 'cliente_id' => $reserva->cliente_id,
@@ -1261,10 +1807,10 @@ class ReservasController extends Controller
                 'description' => null,
                 'fecha' => $reserva->fecha_entrada,
                 'fecha_cobro' => Carbon::now(),
-                'base' => $reserva->precio,
-                'iva' => $reserva->precio * 0.10,
+                'base' => round($base, 2),
+                'iva' => round($iva, 2),
                 'descuento' => isset($reserva->descuento) ? $reserva->descuento : null,
-                'total' => $reserva->precio,
+                'total' => round($total, 2),
             ];
 
             $crear = Invoices::create($data);
@@ -1384,7 +1930,41 @@ class ReservasController extends Controller
         return response()->json('Hemos avisado al equipo de limpieza.', 200);
     }
 
+    public function getApartamentosOcupacion()
+    {
+        try {
+            // Obtener TODOS los apartamentos (misma lógica que el dashboard)
+            $apartamentos = Apartamento::whereNotNull('edificio_id')
+                ->whereNotNull('id_channex')
+                ->with(['reservas' => function($query) {
+                    $query->where('fecha_salida', '>=', Carbon::today())
+                          ->where('fecha_entrada', '<=', Carbon::today()->addDays(30)) // Próximos 30 días
+                          ->where('deleted_at', null)
+                          ->where('estado_id', '!=', 4); // Excluir canceladas
+                }])->get();
 
+            // Formatear los datos para el frontend
+            $apartamentosData = $apartamentos->map(function($apartamento) {
+                return [
+                    'id' => $apartamento->id,
+                    'nombre' => $apartamento->nombre,
+                    'reservas' => $apartamento->reservas->map(function($reserva) {
+                        return [
+                            'id' => $reserva->id,
+                            'fecha_entrada' => $reserva->fecha_entrada,
+                            'fecha_salida' => $reserva->fecha_salida,
+                            'cliente_alias' => $reserva->cliente->alias ?? 'Sin cliente',
+                            'codigo_reserva' => $reserva->codigo_reserva ?? 'Sin código'
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json($apartamentosData);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al obtener apartamentos: ' . $e->getMessage()], 500);
+        }
+    }
 
 }
 

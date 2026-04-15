@@ -52,18 +52,18 @@ class WebhookController extends Controller
 
     /**
      * Maneja webhooks de reservas de Channex
-     * 
+     *
      * Según la documentación de Channex:
      * - Cada modificación de reserva genera un nuevo revision_id
      * - El booking_id permanece igual para la misma reserva
      * - Se debe verificar si la reserva ya existe antes de crear una nueva
      * - Las modificaciones incluyen cambios en fechas, habitaciones, precios, etc.
-     * 
+     *
      * LÓGICA IMPLEMENTADA:
      * 1. Si la reserva existe (modificación): ACTUALIZAR la existente
      * 2. Si la reserva NO existe (nueva): CREAR una nueva
      * 3. NUNCA crear nueva reserva después de actualizar una existente
-     * 
+     *
      * @param Request $request
      * @param int $id ID del apartamento
      * @return \Illuminate\Http\JsonResponse
@@ -82,6 +82,101 @@ class WebhookController extends Controller
             $messageId = $payload['ota_message_id'];
 
             if (!MensajeChat::where('channex_message_id', $messageId)->exists() && $payload['sender'] != 'property') {
+                // VALIDACIÓN: Verificar si las contestaciones están desactivadas para esta reserva
+                // Si conversacion_plataforma = true, significa que las contestaciones están desactivadas
+                $reserva = Reserva::where('id_channex', $payload['booking_id'])->first();
+
+                if ($reserva && $reserva->conversacion_plataforma === true) {
+                    Log::info("🚫 Contestaciones desactivadas para esta reserva - No se responderá al mensaje", [
+                        'booking_id' => $payload['booking_id'],
+                        'reserva_id' => $reserva->id,
+                        'codigo_reserva' => $reserva->codigo_reserva,
+                        'sender' => $payload['sender'],
+                        'conversacion_plataforma' => $reserva->conversacion_plataforma
+                    ]);
+
+                    // Asegurar que message nunca sea NULL
+                    $messageText = $payload['message'] ?? '';
+                    if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                        $messageText = '[Adjunto]';
+                    }
+
+                    // Guardar el mensaje pero sin responder
+                    MensajeChat::create([
+                        'channex_message_id' => $messageId,
+                        'booking_id' => $payload['booking_id'],
+                        'thread_id' => $payload['message_thread_id'],
+                        'property_id' => $payload['property_id'],
+                        'sender' => $payload['sender'],
+                        'message' => $messageText,
+                        'attachments' => $payload['attachments'] ?? [],
+                        'have_attachment' => $payload['have_attachment'] ?? false,
+                        'received_at' => Carbon::parse($request->input('timestamp')),
+                        'openai_thread_id' => null,
+                    ]);
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Contestaciones desactivadas para esta reserva - No se responde',
+                        'ignored' => true
+                    ]);
+                }
+
+                // VALIDACIÓN: Verificar si es un mensaje repetido de un contestador automático
+                // Buscar mensajes idénticos del mismo booking_id en los últimos 10 minutos
+                // Asegurar que message nunca sea NULL para la verificación
+                $messageTextForVerification = $payload['message'] ?? '';
+                if (empty($messageTextForVerification) && ($payload['have_attachment'] ?? false)) {
+                    $messageTextForVerification = '[Adjunto]';
+                }
+                $mensajeRepetido = $this->verificarMensajeRepetidoChannex(
+                    $payload['booking_id'],
+                    $messageTextForVerification,
+                    $payload['sender']
+                );
+
+                if ($mensajeRepetido) {
+                    // Asegurar que message nunca sea NULL
+                    $messageText = $payload['message'] ?? '';
+                    if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                        $messageText = '[Adjunto]';
+                    }
+
+                    Log::info("🔄 Mensaje repetido detectado en Channex - No se responderá para evitar bucle con contestador automático", [
+                        'booking_id' => $payload['booking_id'],
+                        'sender' => $payload['sender'],
+                        'mensaje' => substr($messageText, 0, 100),
+                        'mensaje_anterior_id' => $mensajeRepetido->id,
+                        'fecha_mensaje_anterior' => $mensajeRepetido->received_at
+                    ]);
+
+                    // Guardar el mensaje pero sin responder (marcado como repetido en logs)
+                    $mensajeChat = MensajeChat::create([
+                        'channex_message_id' => $messageId,
+                        'booking_id' => $payload['booking_id'],
+                        'thread_id' => $payload['message_thread_id'],
+                        'property_id' => $payload['property_id'],
+                        'sender' => $payload['sender'],
+                        'message' => $messageText,
+                        'attachments' => $payload['attachments'] ?? [],
+                        'have_attachment' => $payload['have_attachment'] ?? false,
+                        'received_at' => Carbon::parse($request->input('timestamp')),
+                        'openai_thread_id' => null,
+                    ]);
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Mensaje repetido detectado - No se responde para evitar bucle',
+                        'ignored' => true
+                    ]);
+                }
+
+                // Asegurar que message nunca sea NULL
+                $messageText = $payload['message'] ?? '';
+                if (empty($messageText) && ($payload['have_attachment'] ?? false)) {
+                    $messageText = '[Adjunto]';
+                }
+
                 // Guardamos el mensaje en la base de datos
                 $mensajeChat = MensajeChat::create([
                     'channex_message_id' => $messageId,
@@ -89,7 +184,7 @@ class WebhookController extends Controller
                     'thread_id' => $payload['message_thread_id'], // Channex thread_id
                     'property_id' => $payload['property_id'],
                     'sender' => $payload['sender'],
-                    'message' => $payload['message'],
+                    'message' => $messageText,
                     'attachments' => $payload['attachments'] ?? [],
                     'have_attachment' => $payload['have_attachment'] ?? false,
                     'received_at' => Carbon::parse($request->input('timestamp')),
@@ -106,7 +201,7 @@ class WebhookController extends Controller
                 // $responseMessage = $this->procesarMensajeConAsistente($payload['message'], $openaiThreadId);
                 //function enviarMensajeOpenAiChatCompletions($id, $nuevoMensaje, $remitente)
 
-                $enviaChatGPT = $this->enviarMensajeOpenAiChatCompletions($mensajeChat->id, $payload['message'], $payload['sender']);
+                $enviaChatGPT = $this->enviarMensajeOpenAiChatCompletions($mensajeChat->id, $messageText, $payload['sender']);
                 // Enviar la respuesta a Channex
                 $this->enviarRespuestaAChannex($enviaChatGPT, $payload['booking_id']);
 
@@ -131,7 +226,7 @@ class WebhookController extends Controller
         }
 
         // Obtener la reserva desde Channex
-        $bookingResponse = Http::withHeaders([
+        $bookingResponse = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->get("https://app.channex.io/api/v1/bookings/{$bookingId}");
 
@@ -171,7 +266,7 @@ class WebhookController extends Controller
                         ];
                     }
 
-                    Http::withHeaders([
+                    Http::withoutVerifying()->withHeaders([
                         'user-api-key' => $this->apiToken,
                     ])->post("{$this->apiUrl}/availability", [
                         'values' => $values
@@ -251,7 +346,7 @@ class WebhookController extends Controller
 
             // Actualizar datos del cliente si han cambiado
             $reservaExistente->cliente_id = $cliente->id;
-            
+
             // Actualizar datos generales de la reserva
             $reservaExistente->update([
                 'cliente_id' => $cliente->id,
@@ -260,11 +355,11 @@ class WebhookController extends Controller
                 'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
                 'updated_at' => now(),
             ]);
-            
+
             // Actualizar las habitaciones con los nuevos datos (fechas y precios)
             // Estos son los campos más importantes que suelen cambiar en las modificaciones:
             // - fecha_entrada: Cambio de fecha de llegada
-            // - fecha_salida: Cambio de fecha de salida  
+            // - fecha_salida: Cambio de fecha de salida
             // - precio: Cambio de tarifa/precio
             // - numero_personas: Cambio en el número de huéspedes
             // - room_type_id: Cambio de tipo de habitación
@@ -289,9 +384,12 @@ class WebhookController extends Controller
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
+                    'notas_ninos' => $this->generarNotasNinos($room['occupancy']),
                     'room_type_id' => $roomTypeId,
                 ]);
-                
+
                 // Detectar cambios importantes
                 $cambios = [];
                 if ($reservaExistente->fecha_entrada != $room['checkin_date']) {
@@ -318,22 +416,42 @@ class WebhookController extends Controller
                         'nuevo' => $room['occupancy']['adults']
                     ];
                 }
-                
+
+                // Detectar cambios en información de niños
+                $numeroNinosNuevo = ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0);
+                $edadesNinosNuevas = $room['occupancy']['ages'] ?? [];
+
+                if ($reservaExistente->numero_ninos != $numeroNinosNuevo) {
+                    $cambios['numero_ninos'] = [
+                        'anterior' => $reservaExistente->numero_ninos,
+                        'nuevo' => $numeroNinosNuevo
+                    ];
+                }
+
+                if ($reservaExistente->edades_ninos != $edadesNinosNuevas) {
+                    $cambios['edades_ninos'] = [
+                        'anterior' => $reservaExistente->edades_ninos,
+                        'nuevo' => $edadesNinosNuevas
+                    ];
+                }
+
                 Log::info('Reserva actualizada con nuevos datos', [
                     'reserva_id' => $reservaExistente->id,
                     'fecha_entrada' => $room['checkin_date'],
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
                     'cambios_detectados' => $cambios
                 ]);
             }
-            
+
             Log::info('Reserva existente actualizada', [
                 'reserva_id' => $reservaExistente->id,
                 'codigo_reserva' => $codigoReserva
             ]);
-            
+
             // IMPORTANTE: No crear nueva reserva, solo actualizar la existente
             Log::info('Modificación completada - NO se creará nueva reserva');
         } else {
@@ -360,7 +478,7 @@ class WebhookController extends Controller
 
                 $roomTypeId = $ratePlan->room_type_id;
 
-                Reserva::create([
+                $nuevaReserva = Reserva::create([
                     'cliente_id' => $cliente->id,
                     'apartamento_id' => $apartamento->id,
                     'room_type_id' => $roomTypeId,
@@ -370,6 +488,9 @@ class WebhookController extends Controller
                     'codigo_reserva' => $codigoReserva,
                     'precio' => floatval(str_replace(',', '.', $room['amount'])),
                     'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? [],
+                    'notas_ninos' => $this->generarNotasNinos($room['occupancy']),
                     'neto' => floatval(str_replace(',', '.', $bookingData['amount'])),
                     'comision' => floatval(str_replace(',', '.', $bookingData['ota_commission'])),
                     'estado_id' => 1, // Nueva reserva
@@ -377,19 +498,26 @@ class WebhookController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                
+
+                // Si la reserva es de hoy y son más de las 14:00, intentar enviar claves por Channex
+                // (solo si ya tiene mensaje de bienvenida, que se enviará después por el cron)
+                \App\Console\Kernel::enviarClavesPorChannexSiEsNecesario($nuevaReserva);
+
                 Log::info('Nueva reserva creada', [
                     'codigo_reserva' => $codigoReserva,
                     'booking_id' => $bookingId,
                     'fecha_entrada' => $room['checkin_date'],
                     'fecha_salida' => Carbon::parse($room['checkout_date'])->toDateString(),
-                    'precio' => floatval(str_replace(',', '.', $room['amount']))
+                    'precio' => floatval(str_replace(',', '.', $room['amount'])),
+                    'numero_personas' => $room['occupancy']['adults'],
+                    'numero_ninos' => ($room['occupancy']['children'] ?? 0) + ($room['occupancy']['infants'] ?? 0),
+                    'edades_ninos' => $room['occupancy']['ages'] ?? []
                 ]);
             }
         }
 
         // Marcar la revisión como revisada en Channex
-        $ackResponse = Http::withHeaders([
+        $ackResponse = Http::withoutVerifying()->withHeaders([
             'user-api-key' => $this->apiToken,
         ])->post("https://app.channex.io/api/v1/booking_revisions/{$revisionId}/ack", ['values' => []]);
 
@@ -401,12 +529,12 @@ class WebhookController extends Controller
             ], $ackResponse->status());
         }
 
-        $mensaje = $reservaExistente 
-            ? 'Reserva modificada y marcada como revisada' 
+        $mensaje = $reservaExistente
+            ? 'Reserva modificada y marcada como revisada'
             : 'Nueva reserva guardada y marcada como revisada';
 
         $response = [
-            'status' => true, 
+            'status' => true,
             'message' => $mensaje,
             'tipo' => $reservaExistente ? 'modificacion' : 'nueva',
             'codigo_reserva' => $codigoReserva,
@@ -552,27 +680,42 @@ class WebhookController extends Controller
         if (!$apiToken || !$bookingId) {
             Log::error('Faltan credenciales o bookingId para enviar mensaje a Channex', [
                 'apiToken' => $apiToken ? 'presente' : 'ausente',
-                'bookingId' => $bookingId
+                'bookingId' => $bookingId,
+                'token_length' => $apiToken ? strlen($apiToken) : 0
             ]);
             return false;
         }
 
+        $url = "https://app.channex.io/api/v1/bookings/{$bookingId}/messages";
+        
+        $payload = [
+            'message' => [
+                'message' => $mensaje
+            ],
+        ];
+
+        // Loggear información antes de enviar
+        Log::info('Intentando enviar mensaje a Channex', [
+            'booking_id' => $bookingId,
+            'url' => $url,
+            'mensaje_length' => strlen($mensaje),
+            'mensaje_preview' => substr($mensaje, 0, 100),
+            'token_presente' => !empty($apiToken),
+            'token_length' => strlen($apiToken)
+        ]);
+
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-            CURLOPT_URL => "https://app.channex.io/api/v1/bookings/{$bookingId}/messages",
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 30, // Timeout de 30 segundos
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode([
-                'message' => [
-                    'message' => $mensaje
-                ],
-            ]),
+            CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_HTTPHEADER => [
                 'user-api-key: ' . $apiToken,
                 'Content-Type: application/json'
@@ -581,19 +724,54 @@ class WebhookController extends Controller
 
         $response = curl_exec($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        $curlErrno = curl_errno($curl);
         curl_close($curl);
 
+        // Loggear respuesta completa
+        Log::info('Respuesta de Channex API', [
+            'booking_id' => $bookingId,
+            'http_code' => $httpCode,
+            'curl_error' => $curlError ?: 'ninguno',
+            'curl_errno' => $curlErrno ?: 0,
+            'response_length' => strlen($response),
+            'response_preview' => substr($response, 0, 500),
+            'response_full' => $response
+        ]);
+
+        // Verificar errores de cURL
+        if ($curlError) {
+            Log::error('Error cURL al enviar mensaje a Channex', [
+                'booking_id' => $bookingId,
+                'curl_error' => $curlError,
+                'curl_errno' => $curlErrno,
+                'url' => $url
+            ]);
+            return false;
+        }
+
+        // Verificar código HTTP
         if ($httpCode === 200 || $httpCode === 201) {
             Log::info('Mensaje automático enviado exitosamente a Channex', [
                 'booking_id' => $bookingId,
-                'http_code' => $httpCode
+                'http_code' => $httpCode,
+                'response' => $response
             ]);
             return true;
         } else {
+            // Intentar parsear respuesta de error
+            $errorData = null;
+            if (!empty($response)) {
+                $errorData = json_decode($response, true);
+            }
+
             Log::error('Error al enviar mensaje automático a Channex', [
                 'booking_id' => $bookingId,
                 'http_code' => $httpCode,
-                'response' => $response
+                'response' => $response,
+                'response_parsed' => $errorData,
+                'url' => $url,
+                'payload' => $payload
             ]);
             return false;
         }
@@ -793,99 +971,254 @@ class WebhookController extends Controller
         return response()->json(['status' => true]);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public function handleWebhook(Request $request)
+    /**
+     * Genera notas descriptivas sobre los niños en la reserva
+     *
+     * @param array $occupancy
+     * @return string|null
+     */
+    private function generarNotasNinos($occupancy)
     {
-        // Log de ejemplo para depuración
-        Log::info('Webhook recibido', $request->all());
+        $notas = [];
 
-        // Verifica si la estructura del evento es válida
-        $validated = $request->validate([
-            'event' => 'required|string',
-            'property_id' => 'required|string',
-            'payload' => 'nullable|array',
-        ]);
+        $totalNinos = ($occupancy['children'] ?? 0) + ($occupancy['infants'] ?? 0);
 
-        // Procesa el evento según el tipo
-        switch ($validated['event']) {
-            case 'ari':
-                $this->processAriEvent($validated['property_id'], $validated['payload']);
-                break;
-            case 'booking':
-                $this->processBookingEvent($validated['property_id'], $validated['payload']);
-                break;
-            case 'booking_unmapped_room':
-                $this->processUnmappedRoomEvent($validated['property_id'], $validated['payload']);
-                break;
-            default:
-                Log::warning("Evento desconocido recibido: {$validated['event']}");
+        if ($totalNinos > 0) {
+            $notas[] = "Niños: {$totalNinos}";
+
+            // Información específica sobre infants (bebés)
+            if (isset($occupancy['infants']) && $occupancy['infants'] > 0) {
+                $notas[] = "Bebés: {$occupancy['infants']}";
+            }
+
+            // Información específica sobre children (niños)
+            if (isset($occupancy['children']) && $occupancy['children'] > 0) {
+                $notas[] = "Niños mayores: {$occupancy['children']}";
+            }
+
+            if (isset($occupancy['ages']) && is_array($occupancy['ages'])) {
+                $edades = [];
+                foreach ($occupancy['ages'] as $edad) {
+                    if ($edad <= 2) {
+                        $edades[] = "bebé ({$edad} años)";
+                    } elseif ($edad <= 12) {
+                        $edades[] = "niño ({$edad} años)";
+                    } else {
+                        $edades[] = "adolescente ({$edad} años)";
+                    }
+                }
+                $notas[] = "Edades: " . implode(', ', $edades);
+            }
+
+            // Información adicional sobre cunas si hay bebés
+            if (isset($occupancy['ages']) && in_array(0, $occupancy['ages'])) {
+                $notas[] = "Se requiere cuna para bebé";
+            }
+
+            // Información sobre camas adicionales si hay niños
+            if ($totalNinos > 0) {
+                $notas[] = "Se pueden proporcionar camas adicionales para niños";
+            }
+
+            // Información específica sobre infants
+            if (isset($occupancy['infants']) && $occupancy['infants'] > 0) {
+                $notas[] = "Consideraciones especiales para bebés";
+            }
         }
 
-        return response()->json(['message' => 'Webhook recibido con éxito'], 200);
+        return !empty($notas) ? implode('. ', $notas) . '.' : null;
     }
 
-    private function processAriEvent($propertyId, $data)
+    /**
+     * Normaliza un mensaje eliminando códigos, IDs, números de solicitud y otros elementos variables
+     * para comparar el contenido real del mensaje
+     *
+     * @param string $mensaje Mensaje original
+     * @return string Mensaje normalizado
+     */
+    private function normalizarMensajeParaComparacion($mensaje)
     {
-        $fecha = Carbon::now()->format('Y-m-d_H-i-s'); // Puedes cambiar el formato según lo que necesites
-
-        Log::info("Procesando evento ARI para la propiedad {$propertyId}", $data);
-        Storage::disk('publico')->put("accepted-reservation{$fecha}.txt", json_encode($data));
-
-        // Lógica para manejar los cambios en ARI
-    }
-
-    private function processBookingEvent($propertyId, $data)
-    {
-        // Encuentra la propiedad en la base de datos
-        $apartamento = Apartamento::where('id_channex', $propertyId)->first();
-
-        if (!$apartamento) {
-            Log::error("Propiedad no encontrada para ID: {$propertyId}");
-            return;
+        // Asegurar que el mensaje nunca sea NULL
+        if ($mensaje === null || $mensaje === '') {
+            return '';
         }
+        
+        // Convertir a minúsculas y eliminar espacios extra
+        $normalizado = trim(strtolower($mensaje));
 
-        // Guarda o actualiza la información de la reserva
-        foreach ($data['bookings'] ?? [] as $booking) {
-            Reserva::updateOrCreate(
-                ['booking_id' => $booking['id']],
-                [
-                    'apartamento_id' => $apartamento->id,
-                    'fecha_inicio' => $booking['start_date'],
-                    'fecha_fin' => $booking['end_date'],
-                    'huespedes' => $booking['guests'],
-                    'estado' => $booking['status'],
-                ]
-            );
-        }
+        // Eliminar prefijos comunes de Channex/email
+        $normalizado = preg_replace('/\[request received\].*?from.*?suite.*?hawkins.*?exterior.*?\d+[a-z]/i', '', $normalizado);
+        $normalizado = preg_replace('/##-.*?por favor.*?escriba.*?respuesta.*?por encima.*?esta.*?línea.*?##/i', '', $normalizado);
+        $normalizado = preg_replace('/<img[^>]*>/i', '', $normalizado);
+        $normalizado = preg_replace('/reply after this/i', '', $normalizado);
+
+        // Eliminar códigos de solicitud como (39386268), (39386265), etc.
+        $normalizado = preg_replace('/\([0-9]{6,}\)/i', '', $normalizado);
+
+        // Eliminar códigos alfanuméricos al final como [Y7EG4J-PPLRK], [ND0PR5-05YP7], etc.
+        $normalizado = preg_replace('/\[[A-Z0-9\-]+\]/i', '', $normalizado);
+
+        // Eliminar líneas de separación como "--------------------------------"
+        $normalizado = preg_replace('/-{3,}/', '', $normalizado);
+
+        // Eliminar texto de servicio como "Este correo electrónico es un servicio de TravelPerk."
+        $normalizado = preg_replace('/este.*?correo.*?electrónico.*?es.*?un.*?servicio.*?de.*?travelperk/i', '', $normalizado);
+
+        // Eliminar URLs y enlaces
+        $normalizado = preg_replace('/https?:\/\/[^\s]+/i', '', $normalizado);
+        $normalizado = preg_replace('/<a[^>]*>.*?<\/a>/i', '', $normalizado);
+
+        // Eliminar tags HTML
+        $normalizado = strip_tags($normalizado);
+
+        // Eliminar números de teléfono (formato variado)
+        $normalizado = preg_replace('/\+?[0-9]{1,3}[\s\-]?[0-9]{1,4}[\s\-]?[0-9]{1,4}[\s\-]?[0-9]{1,9}/', '', $normalizado);
+
+        // Eliminar múltiples espacios, saltos de línea y caracteres especiales repetidos
+        $normalizado = preg_replace('/\s+/', ' ', $normalizado);
+        // NO eliminar todos los caracteres especiales, solo normalizar espacios
+        // $normalizado = preg_replace('/[^\w\sáéíóúñü]/u', '', $normalizado);
+
+        // Eliminar espacios al inicio y final
+        $normalizado = trim($normalizado);
+
+        return $normalizado;
     }
 
-    private function processUnmappedRoomEvent($propertyId, $data)
+    /**
+     * Verifica si un mensaje de Channex es repetido (contestador automático)
+     * Busca mensajes similares del mismo booking_id en los últimos 10 minutos
+     * que ya hayan sido respondidos, ignorando códigos y IDs variables
+     *
+     * @param string $bookingId ID de la reserva en Channex
+     * @param string $contenido Contenido del mensaje
+     * @param string $sender Remitente del mensaje
+     * @return MensajeChat|null Mensaje repetido encontrado o null
+     */
+    private function verificarMensajeRepetidoChannex($bookingId, $contenido, $sender)
     {
-        Log::info("Procesando evento de habitación no mapeada para la propiedad {$propertyId}", $data);
-        // Lógica para manejar habitaciones no mapeadas
+        try {
+            // Asegurar que el contenido nunca sea NULL
+            $contenido = $contenido ?? '';
+            
+            // Normalizar el contenido eliminando códigos, IDs y elementos variables
+            $contenidoNormalizado = $this->normalizarMensajeParaComparacion($contenido);
+
+            Log::info("🔍 Verificando mensaje repetido", [
+                'booking_id' => $bookingId,
+                'sender' => $sender,
+                'contenido_original_length' => strlen($contenido),
+                'contenido_normalizado_length' => strlen($contenidoNormalizado),
+                'contenido_normalizado_preview' => substr($contenidoNormalizado, 0, 150)
+            ]);
+
+            // Si el mensaje normalizado es muy corto, no aplicar la detección (podría ser un saludo simple)
+            if (strlen($contenidoNormalizado) < 30) {
+                Log::info("⚠️ Mensaje normalizado muy corto, no se aplica detección", [
+                    'length' => strlen($contenidoNormalizado)
+                ]);
+                return null;
+            }
+
+            // Buscar mensajes del mismo booking_id en los últimos 15 minutos (aumentado de 10)
+            $fechaLimite = Carbon::now()->subMinutes(15);
+
+            $mensajesRecientes = MensajeChat::where('booking_id', $bookingId)
+                ->where('sender', $sender)
+                ->where('received_at', '>=', $fechaLimite)
+                ->orderBy('received_at', 'desc')
+                ->limit(15) // Revisar los últimos 15 mensajes
+                ->get();
+
+            Log::info("📊 Mensajes recientes encontrados", [
+                'count' => $mensajesRecientes->count(),
+                'booking_id' => $bookingId
+            ]);
+
+            $mensajeAnterior = null;
+            foreach ($mensajesRecientes as $mensaje) {
+                $mensajeNormalizado = $this->normalizarMensajeParaComparacion($mensaje->message ?? '');
+
+                // Si el mensaje normalizado es muy corto, saltarlo
+                if (strlen($mensajeNormalizado) < 30) {
+                    continue;
+                }
+
+                // Comparar mensajes normalizados
+                if ($mensajeNormalizado === $contenidoNormalizado) {
+                    // Mensaje idéntico después de normalización
+                    Log::info("✅ Mensaje idéntico encontrado", [
+                        'mensaje_id' => $mensaje->id,
+                        'received_at' => $mensaje->received_at
+                    ]);
+                    $mensajeAnterior = $mensaje;
+                    break;
+                }
+
+                // Verificar similitud alta (más del 85% de similitud - más agresivo)
+                // para capturar variaciones menores del contestador automático
+                if (strlen($contenidoNormalizado) > 30 && strlen($mensajeNormalizado) > 30) {
+                    $similitud = similar_text($contenidoNormalizado, $mensajeNormalizado, $percent);
+                    if ($percent > 85) {
+                        Log::info("🔍 Mensaje similar detectado", [
+                            'similitud' => round($percent, 2) . '%',
+                            'mensaje_id' => $mensaje->id,
+                            'mensaje_actual_preview' => substr($contenidoNormalizado, 0, 100),
+                            'mensaje_anterior_preview' => substr($mensajeNormalizado, 0, 100)
+                        ]);
+                        $mensajeAnterior = $mensaje;
+                        break;
+                    }
+                }
+            }
+
+            // Si encontramos un mensaje anterior similar, verificar que ya se haya respondido
+            if ($mensajeAnterior) {
+                // Buscar respuesta en ChatGpt usando el sender como remitente
+                // Verificar si hay alguna respuesta reciente (últimos 15 minutos)
+                $respuestaExistente = ChatGpt::where('remitente', $sender)
+                    ->where('date', '>=', $fechaLimite)
+                    ->where('status', 1) // Respondido
+                    ->whereNotNull('respuesta')
+                    ->where('respuesta', '!=', '')
+                    ->orderBy('date', 'desc')
+                    ->limit(10) // Revisar las últimas 10 respuestas
+                    ->get();
+
+                Log::info("📨 Respuestas encontradas en ChatGpt", [
+                    'count' => $respuestaExistente->count(),
+                    'sender' => $sender
+                ]);
+
+                // Si hay al menos una respuesta reciente, considerar que ya se respondió
+                // No necesitamos comparar el contenido exacto, solo verificar que hay respuesta
+                if ($respuestaExistente->count() > 0) {
+                    Log::info("✅ Mensaje repetido encontrado en Channex y ya respondido", [
+                        'booking_id' => $bookingId,
+                        'sender' => $sender,
+                        'mensaje_anterior_id' => $mensajeAnterior->id,
+                        'fecha_anterior' => $mensajeAnterior->received_at,
+                        'respuestas_encontradas' => $respuestaExistente->count(),
+                        'tiempo_transcurrido' => Carbon::now()->diffInSeconds($mensajeAnterior->received_at) . ' segundos',
+                        'contenido_normalizado' => substr($contenidoNormalizado, 0, 150)
+                    ]);
+                    return $mensajeAnterior;
+                } else {
+                    Log::info("⚠️ Mensaje similar encontrado pero sin respuesta aún", [
+                        'mensaje_anterior_id' => $mensajeAnterior->id,
+                        'fecha_anterior' => $mensajeAnterior->received_at
+                    ]);
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error("❌ Error verificando mensaje repetido en Channex: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            // En caso de error, no bloquear el mensaje (mejor responder que no responder)
+            return null;
+        }
     }
 }
 

@@ -55,6 +55,8 @@ class InvoicesExport implements FromCollection, WithHeadings
                 'fecha' => $invoice->fecha
                     ? Carbon::parse($invoice->fecha)->format('d/m/Y')
                     : 'Sin información',
+                'base' => $invoice->base ?? 0,
+                'iva' => $invoice->iva ?? 0,
                 'total' => $invoice->total,
                 'estado' => optional($invoice->estado)->name ?? 'Sin información',
             ];
@@ -74,6 +76,8 @@ class InvoicesExport implements FromCollection, WithHeadings
             'Fecha de Entrada',
             'Fecha de Salida',
             'Fecha de Factura',
+            'Base Imponible',
+            'IVA',
             'Total',
             'Estado',
         ];

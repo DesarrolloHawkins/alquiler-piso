@@ -100,7 +100,7 @@ class GestionApartamentoController extends Controller
 
         // Obtener el edificio del apartamento y los checklists asociados a ese edificio
         $apartamento = Apartamento::find($apartamentoLimpieza->apartamento_id);
-        $edificio = $apartamento->edificioRelacion; // Asumimos que el apartamento tiene una relación con el modelo Edificio
+        $edificio = $apartamento->edificioName; // Relación con el modelo Edificio
         $checklists = Checklist::where('edificio_id', $edificio->id)->with('items')->get();
 
         return view('gestion.edit', compact('apartamentoLimpieza', 'checklists', 'id'));
@@ -215,7 +215,7 @@ class GestionApartamentoController extends Controller
         $apartamento = $apartamentoLimpieza->apartamento;
 
         // Obtener el edificio relacionado
-        $edificio = $apartamento->edificioRelacion;
+        $edificio = $apartamento->edificioName;
 
         // Obtener los checklists y sus items relacionados con el edificio
         $checklists = $edificio ? $edificio->checklists()->with('items', 'photoRequirements')->get() : collect();

@@ -152,4 +152,33 @@ class AlertService
             ]);
         }
     }
+
+    /**
+     * Crear alerta para incidencias creadas por limpiadoras
+     */
+    public static function createIncidentAlert($incidenciaId, $titulo, $tipo, $elementoNombre, $prioridad, $empleadaNombre)
+    {
+        // Obtener todos los usuarios con rol ADMIN
+        $adminUsers = User::where('role', 'ADMIN')->get();
+        
+        foreach ($adminUsers as $adminUser) {
+            self::createForUser($adminUser->id, [
+                'type' => $prioridad === 'urgente' ? 'error' : ($prioridad === 'alta' ? 'warning' : 'info'),
+                'scenario' => 'incident_created',
+                'title' => 'Nueva Incidencia Reportada',
+                'content' => "La limpiadora {$empleadaNombre} ha reportado una incidencia en {$tipo} '{$elementoNombre}': {$titulo}",
+                'action_url' => "/admin/incidencias/{$incidenciaId}",
+                'action_text' => 'Ver Incidencia',
+                'is_dismissible' => true,
+                'metadata' => [
+                    'incidencia_id' => $incidenciaId,
+                    'titulo' => $titulo,
+                    'tipo' => $tipo,
+                    'elemento_nombre' => $elementoNombre,
+                    'prioridad' => $prioridad,
+                    'empleada_nombre' => $empleadaNombre
+                ]
+            ]);
+        }
+    }
 }

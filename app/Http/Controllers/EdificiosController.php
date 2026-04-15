@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Edificio;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\Html\Editor\Editor;
+use App\Services\MetodoEntradaService;
 
 class EdificiosController extends Controller
 {
@@ -13,13 +15,15 @@ class EdificiosController extends Controller
         $sort = $request->get('sort', 'id'); // Default sort column
         $order = $request->get('order', 'asc'); // Default sort order
 
-        $edificios = Edificio::where(function ($query) use ($search) {
-            $query->where('nombre', 'like', '%'.$search.'%');
-        })
-        ->orderBy($sort, $order)
-        ->paginate(30);
-        // $bancos = Bancos::all();
-        return view('admin.edificios.index', compact('edificios'));
+        $edificios = Edificio::with(['apartamentos', 'checklists'])
+            ->where(function ($query) use ($search) {
+                $query->where('nombre', 'like', '%'.$search.'%')
+                      ->orWhere('clave', 'like', '%'.$search.'%');
+            })
+            ->orderBy($sort, $order)
+            ->paginate(20);
+
+        return view('admin.edificios.index', compact('edificios', 'search', 'sort', 'order'));
     }
 
     public function create(){
@@ -27,44 +31,149 @@ class EdificiosController extends Controller
     }
 
     public function store(Request $request){
+        // El option "por defecto" llega como string vacío (""), normalizamos a null.
+        $request->merge([
+            'metodo_entrada' => $request->filled('metodo_entrada') ? $request->input('metodo_entrada') : null,
+        ]);
+
         $rules = [
-            'nombre' => 'required|string|max:255',
-            'clave' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:edificios,nombre',
+            'clave' => 'required|string|max:255|unique:edificios,clave',
+            'codigo_establecimiento' => 'nullable|string|max:50',
+            'metodo_entrada' => 'nullable|string|in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
         ];
 
-        // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
-        $edificio = Edificio::create($validatedData);
+        $messages = [
+            'nombre.required' => 'El nombre del edificio es obligatorio.',
+            'nombre.unique' => 'Ya existe un edificio con ese nombre.',
+            'clave.required' => 'La clave de acceso es obligatoria.',
+            'clave.unique' => 'Ya existe un edificio con esa clave.',
+        ];
 
-        return redirect()->route('admin.edificios.index')->with('status', 'Edificio creado con éxito!');
+        try {
+            $validatedData = $request->validate($rules, $messages);
+            $edificio = Edificio::create([
+                'nombre' => $validatedData['nombre'],
+                'clave' => $validatedData['clave'],
+                'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
+                'metodo_entrada' => $validatedData['metodo_entrada'] ?? null,
+            ]);
 
+            return redirect()->route('admin.edificios.index')
+                ->with('swal_success', '¡Edificio creado con éxito!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al crear el edificio: ' . $e->getMessage());
+        }
     }
+
     public function edit($id){
-        $edificio = Edificio::find($id);
+        $edificio = Edificio::findOrFail($id);
         return view('admin.edificios.edit', compact('edificio'));
     }
 
     public function update(Request $request, $id){
+        $edificio = Edificio::findOrFail($id);
+
+        // El option "por defecto" llega como string vacío (""), normalizamos a null.
+        $request->merge([
+            'metodo_entrada' => $request->filled('metodo_entrada') ? $request->input('metodo_entrada') : null,
+        ]);
+        
         $rules = [
-            'nombre' => 'required|string|max:255',
-            'clave' => 'required|string|max:255',
+            'nombre' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('edificios')->ignore($edificio->id)
+            ],
+            'clave' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('edificios')->ignore($edificio->id)
+            ],
+            'codigo_establecimiento' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'metodo_entrada' => [
+                'nullable',
+                'string',
+                'in:' . MetodoEntradaService::METODO_FISICA . ',' . MetodoEntradaService::METODO_DIGITAL,
+            ],
         ];
 
-        // Validar los datos del formulario
-        $validatedData = $request->validate($rules);
-        $edificio = Edificio::find($id);
+        $messages = [
+            'nombre.required' => 'El nombre del edificio es obligatorio.',
+            'nombre.unique' => 'Ya existe un edificio con ese nombre.',
+            'clave.required' => 'La clave de acceso es obligatoria.',
+            'clave.unique' => 'Ya existe un edificio con esa clave.',
+        ];
 
-        $edificio->update([
-            'nombre' => $validatedData['nombre'],
-            'clave' => $validatedData['clave']
-        ]);
+        try {
+            $validatedData = $request->validate($rules, $messages);
 
-        return redirect()->route('admin.edificios.index')->with('status', 'Edificio actualizado con éxito!');
+            $edificio->update([
+                'nombre' => $validatedData['nombre'],
+                'clave' => $validatedData['clave'],
+                'codigo_establecimiento' => $validatedData['codigo_establecimiento'] ?? null,
+                'metodo_entrada' => $validatedData['metodo_entrada'] ?? null,
+            ]);
 
+            return redirect()->route('admin.edificios.index')
+                ->with('swal_success', '¡Edificio actualizado con éxito!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('swal_error', 'Error al actualizar el edificio: ' . $e->getMessage());
+        }
     }
+
     public function destroy($id){
-        $edificio = Edificio::find($id);
-        $edificio->delete();
-        return redirect()->route('admin.edificios.index')->with('status', 'Edificio eliminado con éxito!');
+        try {
+            $edificio = Edificio::findOrFail($id);
+            
+            // Verificar si tiene apartamentos asociados
+            if ($edificio->apartamentos()->count() > 0) {
+                return redirect()->back()
+                    ->with('swal_error', 'No se puede eliminar el edificio porque tiene apartamentos asociados.');
+            }
+
+            $edificio->delete();
+            return redirect()->route('admin.edificios.index')
+                ->with('swal_success', '¡Edificio eliminado con éxito!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('swal_error', 'Error al eliminar el edificio: ' . $e->getMessage());
+        }
+    }
+
+    public function show($id) {
+        $edificio = Edificio::with(['apartamentos', 'checklists'])
+            ->findOrFail($id);
+        
+        // Estadísticas del edificio
+        $totalApartamentos = $edificio->apartamentos->count();
+        $totalChecklists = $edificio->checklists->count();
+        $apartamentosActivos = $edificio->apartamentos->where('estado', 'activo')->count();
+        
+        // Apartamentos por estado
+        $apartamentosPorEstado = $edificio->apartamentos
+            ->groupBy('estado')
+            ->map(function ($apartamentos) {
+                return $apartamentos->count();
+            })
+            ->toArray();
+
+        return view('admin.edificios.show', compact(
+            'edificio', 
+            'totalApartamentos', 
+            'totalChecklists', 
+            'apartamentosActivos',
+            'apartamentosPorEstado'
+        ));
     }
 }

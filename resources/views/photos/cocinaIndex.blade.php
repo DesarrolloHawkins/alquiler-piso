@@ -9,44 +9,114 @@
 @endsection
 
 @section('content')
-<style>
-    .file-input {
-      display: none;
-    }
-</style>
-<div class="container-fluid">
+
+<div class="apple-container">
     <form action="{{ route('fotos.cocinaStore', $id) }}" method="POST" enctype="multipart/form-data" id="uploadForm">
         @csrf
-        <div class="filesc card p-2">
-            <h3 class="text-center text-uppercase fw-bold">Cocina General</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_general_cocina" id="image_general_cocina">
-            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_general_cocina').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
-            <img id="image-preview" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
-            <input type="hidden" name="image_general_resized" id="image_general_resized">
-        </div>
-        <div class="files mt-4 card p-2">
-            <h3 class="text-center text-uppercase fw-bold">Cocina Nevera</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_nevera" id="image_nevera">
-            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_nevera').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
-            <img id="image-preview2" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
-            <input type="hidden" name="image_nevera_resized" id="image_nevera_resized">
-        </div>
-        <div class="files mt-4 card p-2">
-            <h3 class="text-center text-uppercase fw-bold">Cocina Microondas</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_microondas" id="image_microondas">
-            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_microondas').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
-            <img id="image-preview3" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
-            <input type="hidden" name="image_microondas_resized" id="image_microondas_resized">
-        </div>
-        <div class="files mt-4 card p-2">
-            <h3 class="text-center text-uppercase fw-bold">Cocina Bajos</h3>
-            <input type="file" accept="image/*" class="file-input" capture="camera" name="image_bajos" id="image_bajos">
-            <button type="button" class="btn btn-secundario fs-5" onclick="document.getElementById('image_bajos').click()"><i class="fa-solid fa-camera me-2"></i> CÁMARA</button>
-            <img id="image-preview4" style="max-width: 100%; max-height: auto; margin-top: 10px;"/>
-            <input type="hidden" name="image_bajos_resized" id="image_bajos_resized">
+        
+        <!-- Cocina General -->
+        <div class="apple-photo-section">
+            <div class="apple-photo-header">
+                <div class="apple-photo-title">
+                    <i class="fa-solid fa-utensils"></i>
+                    <span>COCINA GENERAL</span>
+                </div>
+                <div class="apple-photo-status" id="status-general">
+                    <i class="fa-solid fa-circle"></i>
+                </div>
+            </div>
+            <div class="apple-photo-content">
+                <input type="file" accept="image/*" class="apple-file-input" capture="camera" name="image_general_cocina" id="image_general_cocina">
+                <button type="button" class="apple-camera-btn" onclick="document.getElementById('image_general_cocina').click()">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>CÁMARA</span>
+                </button>
+                <div class="apple-preview-container" id="preview-container-general">
+                    <img id="image-preview" class="apple-preview-image"/>
+                </div>
+                <input type="hidden" name="image_general_resized" id="image_general_resized">
+            </div>
         </div>
 
-        <button id="btn_continuar" class="btn btn-terminar mt-3 w-100 text-uppercase fs-4" type="submit">Continuar</button>
+        <!-- Cocina Nevera -->
+        <div class="apple-photo-section">
+            <div class="apple-photo-header">
+                <div class="apple-photo-title">
+                    <i class="fa-solid fa-snowflake"></i>
+                    <span>COCINA - NEVERA</span>
+                </div>
+                <div class="apple-photo-status" id="status-nevera">
+                    <i class="fa-solid fa-circle"></i>
+                </div>
+            </div>
+            <div class="apple-photo-content">
+                <input type="file" accept="image/*" class="apple-file-input" capture="camera" name="image_nevera" id="image_nevera">
+                <button type="button" class="apple-camera-btn" onclick="document.getElementById('image_nevera').click()">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>CÁMARA</span>
+                </button>
+                <div class="apple-preview-container" id="preview-container-nevera">
+                    <img id="image-preview2" class="apple-preview-image"/>
+                </div>
+                <input type="hidden" name="image_nevera_resized" id="image_nevera_resized">
+            </div>
+        </div>
+
+        <!-- Cocina Microondas -->
+        <div class="apple-photo-section">
+            <div class="apple-photo-header">
+                <div class="apple-photo-title">
+                    <i class="fa-solid fa-microwave"></i>
+                    <span>COCINA - MICROONDAS</span>
+                </div>
+                <div class="apple-photo-status" id="status-microondas">
+                    <i class="fa-solid fa-circle"></i>
+                </div>
+            </div>
+            <div class="apple-photo-content">
+                <input type="file" accept="image/*" class="apple-file-input" capture="camera" name="image_microondas" id="image_microondas">
+                <button type="button" class="apple-camera-btn" onclick="document.getElementById('image_microondas').click()">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>CÁMARA</span>
+                </button>
+                <div class="apple-preview-container" id="preview-container-microondas">
+                    <img id="image-preview3" class="apple-preview-image"/>
+                </div>
+                <input type="hidden" name="image_microondas_resized" id="image_microondas_resized">
+            </div>
+        </div>
+
+        <!-- Cocina Bajos -->
+        <div class="apple-photo-section">
+            <div class="apple-photo-header">
+                <div class="apple-photo-title">
+                    <i class="fa-solid fa-drawer"></i>
+                    <span>COCINA - BAJOS</span>
+                </div>
+                <div class="apple-photo-status" id="status-bajos">
+                    <i class="fa-solid fa-circle"></i>
+                </div>
+            </div>
+            <div class="apple-photo-content">
+                <input type="file" accept="image/*" class="apple-file-input" capture="camera" name="image_bajos" id="image_bajos">
+                <button type="button" class="apple-camera-btn" onclick="document.getElementById('image_bajos').click()">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>CÁMARA</span>
+                </button>
+                <div class="apple-preview-container" id="preview-container-bajos">
+                    <img id="image-preview4" class="apple-preview-image"/>
+                </div>
+                <input type="hidden" name="image_bajos_resized" id="image_bajos_resized">
+            </div>
+        </div>
+
+        <!-- Botón Continuar -->
+        <div class="apple-continue-section">
+            <button id="btn_continuar" class="apple-continue-btn" type="submit" disabled>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span>CONTINUAR</span>
+            </button>
+        </div>
     </form>
 </div>
 @endsection
@@ -67,9 +137,69 @@
                 var output = document.getElementById(id);
                 output.src = url;
                 output.style.display = 'block';
+                
+                // Mostrar contenedor de preview
+                var containerId = id.replace('image-preview', 'preview-container');
+                if (id === 'image-preview') containerId = 'preview-container-general';
+                if (id === 'image-preview2') containerId = 'preview-container-nevera';
+                if (id === 'image-preview3') containerId = 'preview-container-microondas';
+                if (id === 'image-preview4') containerId = 'preview-container-bajos';
+                
+                var container = document.getElementById(containerId);
+                if (container) {
+                    container.classList.add('has-image');
+                }
+                
+                // Actualizar estado
+                updatePhotoStatus(id);
             }
         }
+        
+        // Verificar estado inicial del botón continuar
+        checkContinueButton();
     };
+
+    // Función para actualizar el estado de las fotos
+    function updatePhotoStatus(previewId) {
+        var statusId = '';
+        if (previewId === 'image-preview') statusId = 'status-general';
+        if (previewId === 'image-preview2') statusId = 'status-nevera';
+        if (previewId === 'image-preview3') statusId = 'status-microondas';
+        if (previewId === 'image-preview4') statusId = 'status-bajos';
+        
+        var statusElement = document.getElementById(statusId);
+        if (statusElement) {
+            statusElement.classList.add('completed');
+        }
+    }
+
+    // Función para verificar si se puede habilitar el botón continuar
+    function checkContinueButton() {
+        var requiredPhotos = 4; // Total de fotos requeridas
+        var completedPhotos = 0;
+        
+        var statusElements = [
+            document.getElementById('status-general'),
+            document.getElementById('status-nevera'),
+            document.getElementById('status-microondas'),
+            document.getElementById('status-bajos')
+        ];
+        
+        statusElements.forEach(function(element) {
+            if (element && element.classList.contains('completed')) {
+                completedPhotos++;
+            }
+        });
+        
+        var continueBtn = document.getElementById('btn_continuar');
+        if (continueBtn) {
+            if (completedPhotos >= requiredPhotos) {
+                continueBtn.disabled = false;
+            } else {
+                continueBtn.disabled = true;
+            }
+        }
+    }
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -112,6 +242,22 @@
 
                 // Set the resized image data in the hidden input
                 document.getElementById(hiddenInputId).value = dataurl;
+                
+                // Mostrar contenedor de preview
+                var containerId = previewElementId.replace('image-preview', 'preview-container');
+                if (previewElementId === 'image-preview') containerId = 'preview-container-general';
+                if (previewElementId === 'image-preview2') containerId = 'preview-container-nevera';
+                if (previewElementId === 'image-preview3') containerId = 'preview-container-microondas';
+                if (previewElementId === 'image-preview4') containerId = 'preview-container-bajos';
+                
+                var container = document.getElementById(containerId);
+                if (container) {
+                    container.classList.add('has-image');
+                }
+                
+                // Actualizar estado y verificar botón continuar
+                updatePhotoStatus(previewElementId);
+                checkContinueButton();
             }
             img.src = e.target.result;
         }
